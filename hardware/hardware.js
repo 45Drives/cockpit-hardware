@@ -1,13 +1,13 @@
 function test()
 {
-	var test = document.getElementsByClassName("test_output");
-	test.innerhtml = "BUTTON WAS CLICKED"
+	var test = document.getElementById("test_output");
+	test.innerhtml = "BUTTON WAS CLICKED";
 }
 
 function reset_test()
 {
-	var test = document.getElementsByClassName("test_output");
-	test.innerhtml = " "
+	var test = document.getElementById("test_output");
+	test.innerhtml = " ";
 }
 
 

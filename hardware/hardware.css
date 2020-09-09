@@ -18,3 +18,11 @@
     flex-grow: 0;
     padding: 25px;
 }
+
+.test_output{
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    flex-grow: 0;
+    padding: 25px;
+}
