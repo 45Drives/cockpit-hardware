@@ -1,0 +1,20 @@
+.hardware_container {
+    margin: 0;
+    padding: 0;
+}
+
+.top_banner {
+    background-color: #151515;
+    width: 100%;
+    padding: 15px;
+    margin: 0;
+    overflow: auto;
+}
+
+.test_container{
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    flex-grow: 0;
+    padding: 25px;
+}

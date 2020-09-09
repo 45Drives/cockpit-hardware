@@ -1,0 +1,10 @@
+{
+    "version": 0,
+
+    "tools": {
+        "hardware": {
+            "label": "Hardware",
+            "path": "hardware.html"
+        }
+    }
+}
