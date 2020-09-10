@@ -1,8 +1,9 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
     <title>Hardware Info</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link href="../base1/patternfly.css" type="text/css" rel="stylesheet">
     <link href="hardware.css" type="text/css" rel="stylesheet">
     <script src="../base1/jquery.js"></script>
@@ -12,15 +13,71 @@
 </head>
 <body>
     <div class="hardware_container">
-        <div class="top_banner">
-            <h1>Hardware Info</h1>
+        <div class="header-45D">
+            <img src="img/45-brand-dark.png">
+            <h1>Hardware</h1>
         </div>
-        <div class="test_container">
-            <button class="btn btn-primary btn-lg" id="clickme">click me</button>
-            <button class="btn btn-primary btn-lg" id="reset">reset</button>
-            <div class="test_output" id="test_output">click the button</div>
+        <ul class="nav nav-tabs">
+            <li class="active"><a data-toggle="tab" href="#system_tab" id="system_tab_link">System</a></li>
+            <li><a data-toggle="tab" href="#motherboard_tab" id="motherboard_tab_link">Motherboard</a></li>
+            <li><a data-toggle="tab" href="#rear_tab" id="rear_tab_link">Rear</a></li>
+            <li><a data-toggle="tab" href="#disks_tab" id="disks_tab_link">Disks</a></li>
+            <li><a data-toggle="tab" href="#power_tab" id="power_tab_link">Power</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <div id="system_tab" class="tab-pane fade in active">
+                <div class="tab_content_header">
+                    <h3>System</h3>
+                    <button type="button" class="btn" id="system_button">Run</button>
+                </div>
+                <div class="system_content">
+                    <div id="system_output">SYSTEM OUTPUT</div>
+                </div>
+            </div>
+            <div id="motherboard_tab" class="tab-pane fade">
+                <div class="tab_content_header">
+                    <h3>Motherboard     </h3>
+                    <button type="button" class="btn" id="motherboard_button">Run</button>
+                </div>
+                <div class="motherboard_content">
+                    <div id="motherboard_output">MOTHERBOARD OUTPUT</div>
+                </div>
+            </div>
+            <div id="rear_tab" class="tab-pane fade">
+                <div class="tab_content_header">
+                    <h3>Rear     </h3>
+                    <button type="button" class="btn" id="rear_button">Run</button>
+                </div>
+                <div class="rear_content">
+                    <div id="rear_output">REAR OUTPUT</div>
+                </div>
+            </div>
+            <div id="disks_tab" class="tab-pane fade">
+                <div class="tab_content_header">
+                    <h3>Disks     </h3>
+                    <button type="button" class="btn" id="disks_button">Run</button>
+                </div>
+                <div class="disks_content">
+                    <div id="disks_output">DISKS OUTPUT</div>
+                </div>
+            </div>
+            <div id="power_tab" class="tab-pane fade">
+                <div class="tab_content_header">
+                    <h3>Power     </h3>
+                    <button type="button" class="btn" id="power_button">Run</button>
+                </div>
+                <div class="power_content">
+                    <div id="power_output">OUTPUT</div>
+                </div>
+            </div>
         </div>
+
     </div>
 </body>
+
+
 <script src="hardware.js"></script>
+
+
 </html>

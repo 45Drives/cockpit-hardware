@@ -3,7 +3,7 @@
     padding: 0;
 }
 
-.top_banner {
+.header-45D {
     background-color: #151515;
     width: 100%;
     padding: 15px;
@@ -11,18 +11,85 @@
     overflow: auto;
 }
 
-.test_container{
+.header-45D img {
+    width: 250px;
+    height: auto;
+    float: left;
+}
+
+.header-45D h1 {
+    color: #FFFFFF;
+    padding: 15px;
+}
+
+.system_content {
     display: flex;
-    flex-direction: column;
-    justify-content: stretch;
+    flex-direction: row;
+    justify-content: flex-start;
     flex-grow: 0;
     padding: 25px;
 }
 
-.test_output{
+.motherboard_content {
     display: flex;
-    flex-direction: column;
-    justify-content: stretch;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-grow: 0;
+    padding: 25px;
+}
+
+.rear_content {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-grow: 0;
+    padding: 25px;
+}
+
+.disks_content {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-grow: 0;
+    padding: 25px;
+}
+
+.power_content {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-grow: 0;
+    padding: 25px;
+}
+
+.nav-tabs, .nav-tabs > li > a {
+    color: rgb(200,200,200);
+    background-color: rgb(24,26,27);
+    border-top-color: rgb(56, 61, 63);
+    border-right-color: rgb(56, 61, 63);
+    border-bottom-color: rgb(48, 52, 54);
+    border-left-color: rgb(56, 61, 63);
+}
+
+.nav-tabs > li > a:hover  {
+    color: rgb(255,255,255);
+    background-color: rgb(100,100,100);
+    border-top-color: rgb(56, 61, 63);
+    border-right-color: rgb(56, 61, 63);
+    border-bottom-color: rgb(48, 52, 54);
+    border-left-color: rgb(56, 61, 63);
+}
+
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
+    cursor: default;
+    background-color: #F0F0F0;
+    border-bottom-color: transparent;
+}
+
+.tab_content_header{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
     flex-grow: 0;
     padding: 25px;
 }
