@@ -1,7 +1,23 @@
 function motherboard()
 {
-	var test = document.getElementById("motherboard_output");
-	test.innerHTML = "Motherboard";
+	var dfd = cockpit.defer();
+	var m_output = document.getElementById("motherboard_output");
+	//m_output.innerHTML = "Motherboard";
+	var proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/python_stdout_test"
+			], 
+			{err: "out"}
+	);
+
+	proc.stream(
+		function(data)
+		{
+			m_output.innerHTML = data;
+			dfd.resolve();
+		}
+	);
 }
 
 function system()

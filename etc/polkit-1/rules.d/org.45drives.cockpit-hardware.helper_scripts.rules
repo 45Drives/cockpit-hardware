@@ -1,0 +1,9 @@
+// Allow any user in the 'smbadmin' group to use helper scripts:
+// /usr/share/cockpit/hardware/helper_scripts/
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.45drives.cockpit-hardware.helper_scripts.python_stdout_test") &&
+        subject.isInGroup("smbadmin")) {
+        return polkit.Result.YES;
+    }
+});
