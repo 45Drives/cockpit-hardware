@@ -30,4 +30,14 @@ License along with this library.  If not, see
       </defaults>
       <annotate key="org.freedesktop.policykit.exec.path">/usr/share/cockpit/hardware/helper_scripts/python_stdout_test</annotate>
     </action>
+    <action id="org.45drives.cockpit-hardware.helper_scripts.motherboard">
+      <description>python_stdout_test</description>
+      <message>python_stdout_test</message>
+      <defaults>
+        <allow_any>auth_admin</allow_any>
+        <allow_inactive>auth_admin</allow_inactive>
+        <allow_active>auth_admin</allow_active>
+      </defaults>
+      <annotate key="org.freedesktop.policykit.exec.path">/usr/share/cockpit/hardware/helper_scripts/motherboard</annotate>
+    </action>
 </policyconfig>

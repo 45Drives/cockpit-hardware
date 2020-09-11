@@ -6,4 +6,8 @@ polkit.addRule(function(action, subject) {
         subject.isInGroup("smbadmin")) {
         return polkit.Result.YES;
     }
+    else if ((action.id == "org.45drives.cockpit-hardware.helper_scripts.motherboard") &&
+        subject.isInGroup("smbadmin")) {
+        return polkit.Result.YES;
+    }
 });
