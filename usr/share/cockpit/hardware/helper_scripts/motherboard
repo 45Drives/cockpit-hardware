@@ -192,7 +192,27 @@ def get_hba_info():
 	hba_json_str += "]}"
 	return hba_json_str
 				
-
+def get_lan_info():
+	try:
+		ipaddr_result = subprocess.Popen(
+			["ip","-j","addr"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+	lan_json_dict = json.loads(ipaddr_result.read())
+	lan_info = []
+	for i in lan_json_dict:
+		lan_info.append(
+			[
+				("ifname",i["ifname"]),
+				("operstate",i["operstate"]),
+				("link_type",i["link_type"]),
+				("address",i["address"]),
+				("addr_info",i["addr_info"]),
+			]
+		)
+	print(json.dumps(lan_json_dict,indent=4))
+	print(lan_info)
+	return True
 
 def main():
 	model = get_motherboard_model()
@@ -200,6 +220,9 @@ def main():
 	sensor_readings = get_sensor_readings()
 	system = get_system_info()
 	hba = get_hba_info()
+	#lan = get_lan_info()
+
+	
 	if model:
 		print("<p>"+model)
 	if cpu:
@@ -210,6 +233,7 @@ def main():
 		print("<p>"+system)
 	if hba:
 		print("<p>"+hba)
+
 
 if __name__ == "__main__":
     main()
