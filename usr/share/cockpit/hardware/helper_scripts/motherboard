@@ -18,6 +18,7 @@ import subprocess
 import os
 import sys
 import json
+from pprint import pprint
 
 
 # supported motherboard manufacturers and models can be adjusted here
@@ -52,7 +53,8 @@ g_ipmitool_sensor_fields = {
 g_ipmitool_fru_fields = {
 	"Product Manufacturer": ["45Drives"],
 	"Product Name": ["Storinator","Destroyinator"],
-	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60"]
+	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60"],
+	"Product Serial":None
 }
 
 g_storcli64_fields = {
@@ -198,21 +200,30 @@ def get_lan_info():
 			["ip","-j","addr"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
 		return False
-	lan_json_dict = json.loads(ipaddr_result.read())
-	lan_info = []
-	for i in lan_json_dict:
-		lan_info.append(
-			[
-				("ifname",i["ifname"]),
-				("operstate",i["operstate"]),
-				("link_type",i["link_type"]),
-				("address",i["address"]),
-				("addr_info",i["addr_info"]),
-			]
-		)
-	print(json.dumps(lan_json_dict,indent=4))
-	print(lan_info)
-	return True
+	lan_json_dict_lst = json.loads(ipaddr_result.read())
+	lan_json_str = "{\"Lan Information\":["
+	for entry in lan_json_dict_lst:
+		lan_json_str += (
+			"{" + 
+			"\"ifname\":" + "\"" + entry["ifname"] + "\"," +
+			"\"operstate\":" + "\"" + entry["operstate"] + "\"," +
+			"\"link_type\":" + "\"" + entry["link_type"] + "\"," +
+			"\"mac_address\":" + "\"" + entry["address"] + "\"," +
+			"\"addr_info\": ["
+			)
+		if len(entry["addr_info"]) > 0:  
+			for i in entry["addr_info"]:
+				lan_json_str += (
+					"{"
+					"\"family\":" + "\"" + i["family"] + "\","
+					"\"local\":" + "\"" + i["local"] + "\"" +
+					"},"
+				)
+			lan_json_str = lan_json_str[:-1]
+		lan_json_str += "]},"
+	lan_json_str = lan_json_str[:-1]
+	lan_json_str += "]}"
+	return lan_json_str
 
 def main():
 	model = get_motherboard_model()
@@ -220,20 +231,21 @@ def main():
 	sensor_readings = get_sensor_readings()
 	system = get_system_info()
 	hba = get_hba_info()
-	#lan = get_lan_info()
+	lan = get_lan_info()
 
 	
 	if model:
 		print("<p>"+model)
 	if cpu:
-		print("<p>"+cpu)
+		print("<p>"+cpu+" <p> ")
 	if sensor_readings:
-		print("<p>"+sensor_readings)
+		print("<p>"+sensor_readings+" <p> ")
 	if system:
-		print("<p>"+system)
+		print("<p>"+system+" <p> ")
 	if hba:
-		print("<p>"+hba)
-
+		print("<p>"+hba+" <p> ")
+	if lan:
+		print("<p>"+lan+" <p> ")
 
 if __name__ == "__main__":
     main()
