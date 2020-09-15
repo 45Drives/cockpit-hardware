@@ -1,4 +1,6 @@
 
+var hardware_info;
+
 //listener for clicking on the motherboard tab
 function motherboard()
 {
@@ -15,6 +17,7 @@ function motherboard()
 	proc.stream(
 		function(data)
 		{
+			hardware_info = data;
 			m_output.innerHTML = data;
 			dfd.resolve();
 		}

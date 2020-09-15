@@ -225,13 +225,19 @@ def get_lan_info():
 	lan_json_str += "]}"
 	return lan_json_str
 
-def determine_product(mobo,hba,cpu):
+def get_product_info(mobo,hba,cpu,system):
+	MANUAL_CHECK = True
 	if mobo and hba and cpu:
 		jmobo = json.loads(mobo)
 		jhba = json.loads(hba)
 		jcpu = json.loads(cpu)
 	else:
 		return False
+
+	if system:
+		jsystem = json.loads(system)
+		MANUAL_CHECK = False
+
 
 	# A Look up table for determining the product.
 	# List entries correspond as follows
@@ -244,6 +250,16 @@ def determine_product(mobo,hba,cpu):
 	#TODO: PEFORM THE (dmidecode -t 2) AND (dmidecode -t 1) ON THE FOLLOWING MOTHERBOARDS
 	#      AND UPDATE THIS TABLE!:
 	#			H11SSL-i, X11SPL-F, X11SSH-CTF, X11SSM-F
+
+	product_lut_idx = {
+		"MOBO_MODEL":	0,
+		"CPU": 			1,
+		"CPU_COUNT":	2,
+		"24I_COUNT":	3,
+		"16I_COUNT":	4,
+		"CHASSIS_SIZE": 5,
+		"SSD_CHECK":	6
+	}
 
 	product_lut = {
 		"Storinator-H16 Q30 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,1,1,"Q30",False],
@@ -331,6 +347,50 @@ def determine_product(mobo,hba,cpu):
 						]
 	}
 
+	cpu_count = len(jcpu["CPU"])
+	mobo_model = jmobo["Motherboard"][0]["Product Name"]
+	chassis_size = "N/A"
+	hba_24i_count = 0
+	hba_16i_count = 0
+
+	for hba in jhba["HBA Cards"]:
+		if hba["Model"] == "SAS9305-16i":
+			hba_16i_count += 1
+		elif hba["Model"] == "SAS9305-24i":
+			hba_24i_count += 1
+
+	if system:
+		chassis_size = jsystem["System Information"][0]["Product Part Number"]
+
+	product_json_str = None
+
+	for product in mobo_to_product_lut[mobo_model]:
+		if system:
+			if (
+				product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
+				product_lut[product][product_lut_idx["CHASSIS_SIZE"]] == chassis_size and
+				product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
+				product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
+				product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count
+				):
+				return ("{\"Product Info\": \"" + product + "\"}")
+		elif (
+			product_lut[product][product_lut_idx["SSD_CHECK"]] == False and
+			product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
+			product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
+			product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
+			product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count 
+			):
+				#there is a unique pairing of parameters without having 
+				#to check for hdd or ssd count
+				#TODO: write a function that will perform the required modifications using ipmitool 
+				return ("{\"Product Info\": \"" + product + "\"}")
+		else:
+			#TODO: use rotational to detect if there are more HDDs or SSDs
+			#TODO: call the same function to modify the ipmitool entries
+			return False
+
+
 
 
 def main():
@@ -340,20 +400,22 @@ def main():
 	system = get_system_info()
 	hba = get_hba_info()
 	lan = get_lan_info()
-
+	product = get_product_info(mobo,hba,cpu,system)
 	
 	if mobo:
-		print("<p>"+mobo)
+		print(mobo,",")
 	if cpu:
-		print("<p>"+cpu+" <p> ")
+		print(cpu,",")
 	if sensor_readings:
-		print("<p>"+sensor_readings+" <p> ")
+		print(sensor_readings,",")
 	if system:
-		print("<p>"+system+" <p> ")
+		print(system,",")
 	if hba:
-		print("<p>"+hba+" <p> ")
+		print(hba,",")
 	if lan:
-		print("<p>"+lan+" <p> ")
+		print(lan,",")
+	if product:
+		print(product)
 
 if __name__ == "__main__":
     main()
