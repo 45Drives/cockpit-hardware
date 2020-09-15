@@ -232,39 +232,106 @@ def determine_product(mobo,hba,cpu):
 		jcpu = json.loads(cpu)
 	else:
 		return False
-	Products = {
-		"Storinator AV15 Base":			["X11SSH-CTF",	"Intel Xeon E3-1220"						,1,0,0],
-		"Storinator AV15 Enhanced":		["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,1],
-		"Storinator AV15 Turbo":		["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,1],
-		"Storinator	Q30	Base":			["X11SSH-CTF",	"Intel Xeon E3-1220"						,1,0,2],
-		"Storinator	Q30	Enhanced":		["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,2],
-		"Storinator	Q30	Turbo":			["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,2],
-		"Storinator	S45	Base":			["X11SSM-F",	"Intel Xeon E3-1220"						,1,0,3],
-		"Storinator	S45	Enhanced":		["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,3],
-		"Storinator	S45	Turbo":			["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,3],
-		"Storinator	XL60 Enhanced":		["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,4],
-		"Storinator	XL60 Turbo":		["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,4],
-		"Stornado AV15 Enhanced":		["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,2],
-		"Stornado AV15 Turbo":			["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,2],
-		"Storinator-H16 Q30	Enhanced":	["H11SSL-i",	"AMD EPYC 7281"								,1,1,1],
-		"Storinator-H16 Q30 Enhanced":	["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,1,1],
-		"Storinator-H16	Q30	Turbo":		["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,1,1],
-		"Storinator-H16	S45	AMD":		["H11SSL-i",	"AMD EPYC 7281"								,1,1,2],
-		"Storinator-H16	S45	Enhanced":	["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,1,2],
-		"Storinator-H16	S45	Turbo":		["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,1,2],
-		"Storinator-H16	XL60 AMD":		["H11SSL-i",	"AMD EPYC 7281"								,1,1,3],
-		"Storinator-H16	XL60 Enhanced":	["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,1,3],
-		"Storinator-H16	XL60 Turbo":	["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,1,3],
-		"Storinator-H32	Q30 AMD":		["H11SSL-i",	"AMD EPYC 7281"								,1,2,0],
-		"Storinator-H32	Q30 Enhanced":	["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,0],
-		"Storinator-H32	Q30 Turbo":		["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,2,0],
-		"Storinator-H32	S45 AMD":		["H11SSL-i",	"AMD EPYC 7281"								,1,2,1],
-		"Storinator-H32	S45 Enhanced":	["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,1],
-		"Storinator-H32	S45 Turbo":		["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,2,1],
-		"Storinator-H32	XL60 AMD":		["H11SSL-i",	"AMD EPYC 7281"								,1,2,2],
-		"Storinator-H32	XL60 Enhanced":	["X11SPL-F",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,2],
-		"Storinator-H32	XL60 Turbo":	["X11DPL-i",	"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,2,2]
+
+	# A Look up table for determining the product.
+	# List entries correspond as follows
+	# [Motherboard Model, CPU, CPU Count, 24-i count, 16-i count, chassis size, SSD Check Flag]
+	# Note!! SSD Check flag assumes that we are unable to reliably determine
+	#        chassis size. So this flag will be used to determine if we need
+	#        to querey the connected drives to determine if we have more SSDs or HDDs
+	#        to address the discrepancy 
+
+	#TODO: PEFORM THE (dmidecode -t 2) AND (dmidecode -t 1) ON THE FOLLOWING MOTHERBOARDS
+	#      AND UPDATE THIS TABLE!:
+	#			H11SSL-i, X11SPL-F, X11SSH-CTF, X11SSM-F
+
+	product_lut = {
+		"Storinator-H16 Q30 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,1,1,"Q30",False],
+		"Storinator-H16 S45 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,1,2,"S45",False],
+		"Storinator-H16 XL60 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,1,3,"XL60",False],
+		"Storinator-H32 Q30 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,2,0,"Q30",False],
+		"Storinator-H32 S45 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,2,1,"S45",False],
+		"Storinator-H32 XL60 Enhanced":	["H11SSL-i","AMD EPYC 7281",1,2,2,"XL60",False],
+
+		"Storinator AV15 Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,1,"AV15",False],
+		"Storinator Q30 Turbo":			["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,2,"Q30",True],
+		"Storinator S45 Turbo":			["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,3,"S45",False],
+		"Storinator XL60 Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,4,"XL60",False],
+		"Stornado AV15 Turbo":			["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,2,"AV15",True],
+		"Storinator-H16 Q30 Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,1,1,"Q30",False],
+		"Storinator-H16 S45 Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,1,2,"S45",False],
+		"Storinator-H16 XL60 Turbo":	["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,1,3,"XL60",False],
+		"Storinator-H32 Q30 Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,2,0,"Q30",False],
+		"Storinator-H32 S45 Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,2,1,"S45",False],
+		"Storinator-H32 XL60 Turbo":	["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,2,2,"XL60",False],
+
+		"Storinator AV15 Enhanced":		["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,1,"AV15",False],
+		"Storinator Q30 Enhanced":		["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,2,"Q30",False],
+		"Storinator S45 Enhanced":		["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,3,"S45",False],
+		"Storinator XL60 Enhanced":		["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,4,"XL60",False],
+		"Stornado AV15 Enhanced":		["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,0,2,"AV15",False],
+		"Storinator-H16 Q30 Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,1,1,"Q30",False],
+		"Storinator-H16 S45 Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,1,2,"S45",False],
+		"Storinator-H16 XL60 Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,1,3,"XL60",False],
+		"Storinator-H32 Q30 Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,0,"Q30",False],
+		"Storinator-H32 S45 Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,1,"S45",False],
+		"Storinator-H32 XL60 Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,2,"XL60",False],
+
+		"Storinator AV15 Base":			["X11SSH-CTF","Intel Xeon E3-1220",1,0,0,"AV15",False],
+		"Storinator Q30 Base":			["X11SSH-CTF","Intel Xeon E3-1220",1,0,2,"Q30",False],
+
+		"Storinator S45 Base":			["X11SSM-F","Intel Xeon E3-1220",1,0,3,"S45",False]
 	}
+
+	mobo_to_product_lut = {
+		"X11SSH-CTF"	:[
+							"Storinator-H32 XL60 Enhanced",
+							"Storinator AV15 Base"
+						],
+		
+		"X11SPL-F"		:[
+							"Storinator AV15 Enhanced",
+							"Storinator Q30 Enhanced",
+							"Storinator S45 Enhanced",
+							"Storinator XL60 Enhanced",
+							"Stornado AV15 Enhanced",
+							"Storinator-H16 Q30 Enhanced",					
+							"Storinator-H16 S45 Enhanced",
+							"Storinator-H16 XL60 Enhanced",
+							"Storinator-H32 Q30 Enhanced",
+							"Storinator-H32 S45 Enhanced",
+							"Storinator-H32 XL60 Enhanced"	
+						],
+		
+		"X11DPL-i"		:[
+							"Storinator AV15 Turbo",
+							"Storinator Q30 Turbo",	
+							"Storinator S45 Turbo",		
+							"Storinator XL60 Turbo",	
+							"Stornado AV15 Turbo",	
+							"Storinator-H16 Q30 Turbo",	
+							"Storinator-H16 S45 Turbo",	
+							"Storinator-H16 XL60 Turbo",
+							"Storinator-H32 Q30 Turbo",	
+							"Storinator-H32 S45 Turbo",	
+							"Storinator-H32 XL60 Turbo"
+						],
+		
+		"X11SSM-F"		:[
+							"Storinator S45 Base"
+						],
+
+		"H11SSL-i"		:[
+							"Storinator-H16 Q30 Enhanced",
+							"Storinator-H16 S45 Enhanced",	
+							"Storinator-H16 XL60 Enhanced",
+							"Storinator-H32 Q30 Enhanced",	
+							"Storinator-H32 S45 Enhanced",	
+							"Storinator-H32 XL60 Enhanced"
+						]
+	}
+
+
 
 def main():
 	mobo = get_motherboard_model()
