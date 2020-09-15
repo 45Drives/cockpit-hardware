@@ -193,7 +193,9 @@ def get_hba_info():
 	hba_json_str = hba_json_str[:-1]
 	hba_json_str += "]}"
 	return hba_json_str
-				
+
+
+# TODO: the -j option isn't working on centOS7, re-write this.				
 def get_lan_info():
 	try:
 		ipaddr_result = subprocess.Popen(
@@ -237,8 +239,7 @@ def get_product_info(mobo,hba,cpu,system):
 	if system:
 		jsystem = json.loads(system)
 		MANUAL_CHECK = False
-
-
+		
 	# A Look up table for determining the product.
 	# List entries correspond as follows
 	# [Motherboard Model, CPU, CPU Count, 24-i count, 16-i count, chassis size, SSD Check Flag]
@@ -389,9 +390,6 @@ def get_product_info(mobo,hba,cpu,system):
 			#TODO: use rotational to detect if there are more HDDs or SSDs
 			#TODO: call the same function to modify the ipmitool entries
 			return False
-
-
-
 
 def main():
 	mobo = get_motherboard_model()
