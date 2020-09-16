@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+################################################################################
+# network:
+# 	used to return information about the network configuration in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+
+
+import re
+import subprocess
+import os
+import sys
+import json
+from optparse import OptionParser
+
+def get_network_info():
+	try:
+		ipaddr_result = subprocess.Popen(
+			["ip","addr"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+	network_json_str = "{\"Network Info\":["
+
+	for line in ipaddr_result:
+		regex_connection = re.search("^(\w)\S+\s+(\w+).*state\s(\w+).*",line)
+		regex_link = re.search("^\s+link/(\S+)\s(\S+).*",line)
+		regex_inet = re.search("^\s+inet\s(\S+).*$",line)
+		regex_inet6 = re.search("^\s+inet6\s(\S+).*$",line)
+		if regex_connection != None:
+			network_json_str += (
+					"{\"connection name\":\"" + regex_connection.group(2)+"\"," +
+					"\"connection state\":\"" + regex_connection.group(3)+"\"},"
+				)
+		if regex_link != None:
+			network_json_str = network_json_str[:-2]
+			network_json_str += (",\"type\":\""+regex_link.group(1)+"\",")
+			network_json_str += ("\"mac\":\""+regex_link.group(2)+"\"},")
+		if regex_inet != None:
+			network_json_str = network_json_str[:-2]
+			network_json_str += (",\"inet\":\""+regex_inet.group(1)+"\"},")
+		if regex_inet6 != None:
+			network_json_str = network_json_str[:-2]
+			network_json_str += (",\"inet6\":\""+regex_inet6.group(1)+"\"},")
+
+	network_json_str = network_json_str[:-1]
+	network_json_str += "]}"
+
+	return network_json_str
+
+def main():
+	parser = OptionParser()
+	parser.add_option("-j","--json",action="store_true",dest="json",default=False,help="output network info in .json format")
+	parser.add_option("-m","--mac",action="store_true",dest="mac",default=False,help="format output as \"connection name\" : \"mac address\"")
+	parser.add_option("-4","--ipv4",action="store_true",dest="ipv4",default=False,help="format output as \"connection name\" : \"ipv4 address\"")
+	parser.add_option("-6","--ipv6",action="store_true",dest="ipv6",default=False,help="format output as \"connection name\" : \"ipv6 address\"")
+	(options, args) = parser.parse_args()
+
+	if not (options.json or options.mac or options.ipv4 or options.ipv6):
+		print("Please provide option (type \"network -h\" for help menu )")
+
+	network = get_network_info()
+	if options.json and network:
+		print(network)
+	if (options.mac or options.ipv4 or options.ipv6) and network:
+		j_obj = json.loads(network)
+		for connection in j_obj["Network Info"]:
+			output = connection["connection name"] + ":\t\t"
+			if options.mac:
+				output += "{message:{fill}{align}{width}}".format(message=connection["mac"],fill=' ',align='<',width=20)
+			if options.ipv4 and "inet" in connection.keys():
+				output += "{message:{fill}{align}{width}}".format(message=connection["inet"],fill=' ',align='<',width=20)
+			if options.ipv6 and "inet6" in connection.keys():
+				output += "{message:{fill}{align}{width}}".format(message=connection["inet6"],fill=' ',align='<',width=32)
+			print(output)
+
+if __name__ == "__main__":
+    main()

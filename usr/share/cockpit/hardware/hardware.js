@@ -1,5 +1,5 @@
 
-var hardware_info;
+var hardware_info = null;
 
 //listener for clicking on the motherboard tab
 function motherboard()
@@ -17,7 +17,6 @@ function motherboard()
 	proc.stream(
 		function(data)
 		{
-			hardware_info = data;
 			m_output.innerHTML = data;
 			dfd.resolve();
 		}
@@ -29,6 +28,29 @@ function system()
 {
 	var test = document.getElementById("system_output");
 	test.innerHTML = "System";
+	var dfd = cockpit.defer();
+	var sys_output = document.getElementById("system_output");
+	var proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/system"
+			], 
+			{err: "out"}
+	);
+
+	proc.stream(
+		function(data)
+		{
+			hardware_info = JSON.parse(data);
+			sys_output.innerHTML = JSON.stringify(hardware_info.System[0]);
+			dfd.resolve();
+		}
+	);
+
+	if(hardware_info)
+	{
+
+	}
 }
 
 //listener for clicking on the rear tab
@@ -54,6 +76,7 @@ function power()
 
 function main()
 {
+	if(!hardware_info){ system(); }
 	document.getElementById("system_tab_link").addEventListener("click", system);
 	document.getElementById("motherboard_tab_link").addEventListener("click", motherboard);
 	document.getElementById("rear_tab_link").addEventListener("click", rear);
