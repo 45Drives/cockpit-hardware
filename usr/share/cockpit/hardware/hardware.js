@@ -41,8 +41,13 @@ function system()
 	proc.stream(
 		function(data)
 		{
+			//TODO: fix the way that this is loaded in
 			hardware_info = JSON.parse(data);
-			sys_output.innerHTML = JSON.stringify(hardware_info.System[0]);
+			var img = document.createElement("img");
+			img.src = "img/products/" + hardware_info.System[0]["Product Image"];
+			sys_output.innerHTML = 	hardware_info.System[0]["Product Info"];
+			sys_output.appendChild(img);
+
 			dfd.resolve();
 		}
 	);
