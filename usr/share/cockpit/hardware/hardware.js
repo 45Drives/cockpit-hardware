@@ -26,10 +26,9 @@ function motherboard()
 //listener for clicking on the system tab
 function system()
 {
-	var test = document.getElementById("system_output");
-	test.innerHTML = "System";
 	var dfd = cockpit.defer();
 	var sys_output = document.getElementById("system_output");
+	var sys_img = document.getElementById("system_image");
 	var proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -41,21 +40,12 @@ function system()
 	proc.stream(
 		function(data)
 		{
-			//TODO: fix the way that this is loaded in
 			hardware_info = JSON.parse(data);
-			var img = document.createElement("img");
-			img.src = "img/products/" + hardware_info.System[0]["Product Image"];
+			sys_img.src = "img/products/" + hardware_info.System[0]["Product Image"];
 			sys_output.innerHTML = 	hardware_info.System[0]["Product Info"];
-			sys_output.appendChild(img);
-
 			dfd.resolve();
 		}
 	);
-
-	if(hardware_info)
-	{
-
-	}
 }
 
 //listener for clicking on the rear tab

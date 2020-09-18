@@ -30,6 +30,14 @@
     padding: 25px;
 }
 
+.system_output{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex-grow: 0;
+    padding: 25px;
+}
+
 .motherboard_content {
     display: flex;
     flex-direction: row;

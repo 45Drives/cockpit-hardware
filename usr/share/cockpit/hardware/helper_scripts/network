@@ -21,6 +21,12 @@ import sys
 import json
 from optparse import OptionParser
 
+g_dmi_fields = [
+	"Bus Address",
+	"Designation",
+	"Type"
+]
+
 def get_network_info():
 	try:
 		ipaddr_result = subprocess.Popen(
@@ -53,7 +59,66 @@ def get_network_info():
 	network_json_str = network_json_str[:-1]
 	network_json_str += "]}"
 
-	return network_json_str
+	# LSHW COMMAND
+	try:
+		lshw_result = subprocess.Popen(
+			["lshw","-C","network","-businfo","-quiet"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+	lshw = []
+	for line in lshw_result:
+		regex_lshw = re.search("^pci@(\S+)\s+(\S+)",line)
+		if regex_lshw != None:
+			lshw.append([regex_lshw.group(1),regex_lshw.group(2)])
+	#print("LSHW: ",lshw)
+
+	#DMIDECODE COMMAND
+	try:
+		dmi_result = subprocess.Popen(
+			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+
+	slot_entries = []
+	for line in dmi_result:
+		for field in g_dmi_fields:
+			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
+			if regex != None:
+				slot_entries.append((regex.group(1),regex.group(2)))
+	
+	#print("SLOT ENTRIES: ", slot_entries)
+
+
+	cards = []
+	for i in range(0,len(slot_entries),len(g_dmi_fields)):
+		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
+
+	valid_cards = []
+	for card in cards:
+		for hw_entry in lshw:
+			if card["Bus Address"] == hw_entry[0]:
+				card["connection name"] = hw_entry[1]
+				valid_cards.append(card)
+				break
+
+	final_card_lst = []
+	for card in valid_cards:
+		card_duplicate = card.copy()
+		card_duplicate["Bus Address"] = card_duplicate["Bus Address"][:-1] + "1"
+		card_duplicate["connection name"] = card_duplicate["connection name"][:-1] + "1"
+		final_card_lst.append(card)
+		final_card_lst.append(card_duplicate)
+
+	j_dict = json.loads(network_json_str)
+
+	for obj in j_dict["Network Info"]:
+		for card in final_card_lst:		
+			if obj["connection name"] == card["connection name"]:
+				obj["Bus Address"] = card["Bus Address"]
+				obj["Designation"] = card["Designation"]
+				obj["PCI Type"] = card["Type"]
+
+	return json.dumps(j_dict)
 
 def main():
 	parser = OptionParser()
@@ -65,14 +130,14 @@ def main():
 
 	if not (options.json or options.mac or options.ipv4 or options.ipv6):
 		print("Please provide option (type \"network -h\" for help menu )")
-
+		return
 	network = get_network_info()
 	if options.json and network:
 		print(network)
 	if (options.mac or options.ipv4 or options.ipv6) and network:
 		j_obj = json.loads(network)
 		for connection in j_obj["Network Info"]:
-			output = connection["connection name"] + ":\t\t"
+			output = "{message:{fill}{align}{width}}".format(message=connection["connection name"],fill=' ',align='<',width=16)
 			if options.mac:
 				output += "{message:{fill}{align}{width}}".format(message=connection["mac"],fill=' ',align='<',width=20)
 			if options.ipv4 and "inet" in connection.keys():
