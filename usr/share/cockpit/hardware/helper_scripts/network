@@ -70,7 +70,6 @@ def get_network_info():
 		regex_lshw = re.search("^pci@(\S+)\s+(\S+)",line)
 		if regex_lshw != None:
 			lshw.append([regex_lshw.group(1),regex_lshw.group(2)])
-	#print("LSHW: ",lshw)
 
 	#DMIDECODE COMMAND
 	try:
