@@ -32,7 +32,7 @@
 
 .system_output{
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
     padding: 25px;
@@ -100,4 +100,21 @@
     justify-content: flex-start;
     flex-grow: 0;
     padding: 25px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th, td {
+    text-align: left;
+    padding: 8px;
+}
+
+tr:nth-child(even){background-color: #f2f2f2}
+
+th {
+    background-color: rgb(24,26,27);
+    color: white;
 }

@@ -1,0 +1,262 @@
+[
+  {
+    "type": "board_outline",
+    "id": 0,
+    "shape": "round_rect",
+    "x0": 0,
+    "y0": 0,
+    "width": 555,
+    "height": 466,
+    "diam": 1449.387456824434
+  },
+  {
+    "type": "cpu",
+    "id": 0,
+    "shape": "rect",
+    "x0": 271,
+    "y0": 253,
+    "width": 160,
+    "height": 167,
+    "diam": 462.5537806569091
+  },
+  {
+    "type": "cpu",
+    "id": 1,
+    "shape": "rect",
+    "x0": 313,
+    "y0": 50,
+    "width": 160,
+    "height": 167,
+    "diam": 462.5537806569091
+  },
+  {
+    "type": "dimm_blue",
+    "id": 0,
+    "shape": "rect",
+    "x0": 477,
+    "y0": 203,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 1,
+    "shape": "rect",
+    "x0": 497,
+    "y0": 203,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 2,
+    "shape": "rect",
+    "x0": 210,
+    "y0": 204,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 3,
+    "shape": "rect",
+    "x0": 191,
+    "y0": 204,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 4,
+    "shape": "rect",
+    "x0": 247,
+    "y0": 26,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 5,
+    "shape": "rect",
+    "x0": 228,
+    "y0": 26,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 6,
+    "shape": "rect",
+    "x0": 516,
+    "y0": 30,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "dimm_blue",
+    "id": 7,
+    "shape": "rect",
+    "x0": 535,
+    "y0": 30,
+    "width": 17,
+    "height": 259,
+    "diam": 519.1146308860885
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 0,
+    "shape": "rect",
+    "x0": 29,
+    "y0": 79,
+    "width": 17,
+    "height": 101,
+    "diam": 204.84140206510986
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 1,
+    "shape": "rect",
+    "x0": 66,
+    "y0": 80,
+    "width": 17,
+    "height": 101,
+    "diam": 204.84140206510986
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 2,
+    "shape": "rect",
+    "x0": 102,
+    "y0": 79,
+    "width": 17,
+    "height": 101,
+    "diam": 204.84140206510986
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 3,
+    "shape": "rect",
+    "x0": 140,
+    "y0": 80,
+    "width": 17,
+    "height": 101,
+    "diam": 204.84140206510986
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 4,
+    "shape": "rect",
+    "x0": 175,
+    "y0": 80,
+    "width": 17,
+    "height": 101,
+    "diam": 204.84140206510986
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 5,
+    "shape": "rect",
+    "x0": 211,
+    "y0": 80,
+    "width": 17,
+    "height": 101,
+    "diam": 204.84140206510986
+  },
+  {
+    "type": "pci_16x_black",
+    "id": 0,
+    "shape": "rect",
+    "x0": 103,
+    "y0": 81,
+    "width": 16,
+    "height": 159,
+    "diam": 319.60600745292635
+  },
+  {
+    "type": "pci_16x_black",
+    "id": 1,
+    "shape": "rect",
+    "x0": 175,
+    "y0": 80,
+    "width": 16,
+    "height": 159,
+    "diam": 319.60600745292635
+  },
+  {
+    "type": "atx_holes",
+    "id": 0,
+    "shape": "circle",
+    "x0": 31,
+    "y0": 19,
+    "width": 6,
+    "height": 6,
+    "diam": 16.97056274847714
+  },
+  {
+    "type": "atx_holes",
+    "id": 1,
+    "shape": "circle",
+    "x0": 256,
+    "y0": 18,
+    "width": 6,
+    "height": 6,
+    "diam": 16.97056274847714
+  },
+  {
+    "type": "atx_holes",
+    "id": 2,
+    "shape": "circle",
+    "x0": 541,
+    "y0": 19,
+    "width": 6,
+    "height": 6,
+    "diam": 16.97056274847714
+  },
+  {
+    "type": "atx_holes",
+    "id": 3,
+    "shape": "circle",
+    "x0": 540,
+    "y0": 298,
+    "width": 6,
+    "height": 6,
+    "diam": 16.97056274847714
+  },
+  {
+    "type": "atx_holes",
+    "id": 4,
+    "shape": "circle",
+    "x0": 540,
+    "y0": 430,
+    "width": 6,
+    "height": 6,
+    "diam": 16.97056274847714
+  },
+  {
+    "type": "atx_holes",
+    "id": 5,
+    "shape": "circle",
+    "x0": 29,
+    "y0": 430,
+    "width": 6,
+    "height": 6,
+    "diam": 16.97056274847714
+  },
+  {
+    "type": "cmos_battery",
+    "id": 0,
+    "shape": "circle",
+    "x0": 147,
+    "y0": 203,
+    "width": 13,
+    "height": 13,
+    "diam": 36.76955262170047
+  }
+]

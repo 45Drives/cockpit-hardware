@@ -27,14 +27,33 @@
 
         <div class="tab-content">
             <div id="system_tab" class="tab-pane fade in active">
-                <div class="tab_content_header">
-                    <h3>System     </h3>
-                </div>
                 <div class="system_content">
                     <div id="system_output">
-                        System Information Loading...
+                        <table id="system_table">
+                          <tr>
+                            <th>System</th>
+                            <th></th>
+                          </tr>
+                          <tr>
+                            <td>System Model</td>
+                            <td id="sys_model">Loading...</td>
+                          </tr>
+                          <tr>
+                            <td>Chassis Size</td>
+                            <td id="sys_chassis_size">Loading...</td>
+                          </tr>
+                          <tr>
+                            <td>Product Serial</td>
+                            <td id="sys_product_serial">Loading...</td>
+                          </tr>
+                          <tr>
+                                <td colspan="2">
+                                    Product Image
+                                    <img class="sys_img" id="system_image">
+                                </td>
+                          </tr>
+                        </table>
                     </div>
-                    <img id="system_image">
                 </div>
             </div>
             <div id="motherboard_tab" class="tab-pane fade">
@@ -42,7 +61,9 @@
                     <h3>Motherboard     </h3>
                 </div>
                 <div class="motherboard_content">
-                    <div id="motherboard_output">MOTHERBOARD OUTPUT</div>
+                    <div id="motherboard_output">
+                        <img class="mobo_image" id="mobo_image">
+                    </div>
                 </div>
             </div>
             <div id="rear_tab" class="tab-pane fade">
