@@ -45,6 +45,20 @@
     flex-grow: 0;
     padding: 25px;
 }
+.motherboard_output {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-grow: 0;
+    padding: 25px;
+    margin:0 -15px;
+}
+
+.component_output{
+    padding:25px;
+    width: 200px;
+    background-color: #f2f2f2;
+}
 
 .rear_content {
     display: flex;
