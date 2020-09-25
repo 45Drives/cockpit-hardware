@@ -139,6 +139,11 @@ function jsonLoadMotherboard(fname){
 					document.getElementById("mobo_map").appendChild(map_area);
 				}
 			}
+
+			var canvas = document.getElementById("mobo_canvas");
+			var ctx = canvas.getContext("2d");
+			var img = document.getElementById("mobo_image");
+			ctx.drawImage(img,10,10); 
 			dfd.resolve();
 		}
 	);

@@ -4,259 +4,389 @@
     "id": 0,
     "shape": "round_rect",
     "x0": 0,
-    "y0": 0,
-    "width": 555,
-    "height": 466,
-    "diam": 1449.387456824434
-  },
-  {
-    "type": "cpu",
-    "id": 0,
-    "shape": "rect",
-    "x0": 271,
-    "y0": 253,
-    "width": 160,
-    "height": 167,
-    "diam": 462.5537806569091
+    "y0": 21,
+    "width": 959,
+    "height": 807,
+    "diam": 2506.7349281485667
   },
   {
     "type": "cpu",
     "id": 1,
     "shape": "rect",
-    "x0": 313,
-    "y0": 50,
-    "width": 160,
-    "height": 167,
-    "diam": 462.5537806569091
+    "x0": 521,
+    "y0": 503,
+    "width": 222,
+    "height": 305,
+    "diam": 754.4773025081669
   },
   {
-    "type": "dimm_blue",
-    "id": 0,
+    "type": "cpu",
+    "id": 2,
     "shape": "rect",
-    "x0": 477,
-    "y0": 203,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 548,
+    "y0": 125,
+    "width": 222,
+    "height": 304,
+    "diam": 752.8612089887484
   },
   {
     "type": "dimm_blue",
     "id": 1,
     "shape": "rect",
-    "x0": 497,
-    "y0": 203,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 830,
+    "y0": 369,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "dimm_blue",
     "id": 2,
     "shape": "rect",
-    "x0": 210,
-    "y0": 204,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 858,
+    "y0": 369,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "dimm_blue",
     "id": 3,
     "shape": "rect",
-    "x0": 191,
-    "y0": 204,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 365,
+    "y0": 367,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "dimm_blue",
     "id": 4,
     "shape": "rect",
-    "x0": 247,
-    "y0": 26,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 338,
+    "y0": 367,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "dimm_blue",
     "id": 5,
     "shape": "rect",
-    "x0": 228,
-    "y0": 26,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 431,
+    "y0": 67,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "dimm_blue",
     "id": 6,
     "shape": "rect",
-    "x0": 516,
-    "y0": 30,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 401,
+    "y0": 67,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "dimm_blue",
     "id": 7,
     "shape": "rect",
-    "x0": 535,
-    "y0": 30,
-    "width": 17,
-    "height": 259,
-    "diam": 519.1146308860885
+    "x0": 889,
+    "y0": 69,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
-    "type": "pci_8x_black",
-    "id": 0,
+    "type": "dimm_blue",
+    "id": 8,
     "shape": "rect",
-    "x0": 29,
-    "y0": 79,
-    "width": 17,
-    "height": 101,
-    "diam": 204.84140206510986
-  },
-  {
-    "type": "pci_8x_black",
-    "id": 1,
-    "shape": "rect",
-    "x0": 66,
-    "y0": 80,
-    "width": 17,
-    "height": 101,
-    "diam": 204.84140206510986
-  },
-  {
-    "type": "pci_8x_black",
-    "id": 2,
-    "shape": "rect",
-    "x0": 102,
-    "y0": 79,
-    "width": 17,
-    "height": 101,
-    "diam": 204.84140206510986
-  },
-  {
-    "type": "pci_8x_black",
-    "id": 3,
-    "shape": "rect",
-    "x0": 140,
-    "y0": 80,
-    "width": 17,
-    "height": 101,
-    "diam": 204.84140206510986
-  },
-  {
-    "type": "pci_8x_black",
-    "id": 4,
-    "shape": "rect",
-    "x0": 175,
-    "y0": 80,
-    "width": 17,
-    "height": 101,
-    "diam": 204.84140206510986
-  },
-  {
-    "type": "pci_8x_black",
-    "id": 5,
-    "shape": "rect",
-    "x0": 211,
-    "y0": 80,
-    "width": 17,
-    "height": 101,
-    "diam": 204.84140206510986
-  },
-  {
-    "type": "pci_16x_black",
-    "id": 0,
-    "shape": "rect",
-    "x0": 103,
-    "y0": 81,
-    "width": 16,
-    "height": 159,
-    "diam": 319.60600745292635
-  },
-  {
-    "type": "pci_16x_black",
-    "id": 1,
-    "shape": "rect",
-    "x0": 175,
-    "y0": 80,
-    "width": 16,
-    "height": 159,
-    "diam": 319.60600745292635
-  },
-  {
-    "type": "atx_holes",
-    "id": 0,
-    "shape": "circle",
-    "x0": 31,
-    "y0": 19,
-    "width": 6,
-    "height": 6,
-    "diam": 16.97056274847714
-  },
-  {
-    "type": "atx_holes",
-    "id": 1,
-    "shape": "circle",
-    "x0": 256,
-    "y0": 18,
-    "width": 6,
-    "height": 6,
-    "diam": 16.97056274847714
-  },
-  {
-    "type": "atx_holes",
-    "id": 2,
-    "shape": "circle",
-    "x0": 541,
-    "y0": 19,
-    "width": 6,
-    "height": 6,
-    "diam": 16.97056274847714
-  },
-  {
-    "type": "atx_holes",
-    "id": 3,
-    "shape": "circle",
-    "x0": 540,
-    "y0": 298,
-    "width": 6,
-    "height": 6,
-    "diam": 16.97056274847714
-  },
-  {
-    "type": "atx_holes",
-    "id": 4,
-    "shape": "circle",
-    "x0": 540,
-    "y0": 430,
-    "width": 6,
-    "height": 6,
-    "diam": 16.97056274847714
-  },
-  {
-    "type": "atx_holes",
-    "id": 5,
-    "shape": "circle",
-    "x0": 29,
-    "y0": 430,
-    "width": 6,
-    "height": 6,
-    "diam": 16.97056274847714
+    "x0": 921,
+    "y0": 69,
+    "width": 24,
+    "height": 449,
+    "diam": 899.2819357687555
   },
   {
     "type": "cmos_battery",
     "id": 0,
     "shape": "circle",
-    "x0": 147,
-    "y0": 203,
-    "width": 13,
-    "height": 13,
-    "diam": 36.76955262170047
+    "x0": 256,
+    "y0": 372,
+    "width": 32,
+    "height": 10,
+    "diam": 67.05221845696084
+  },
+  {
+    "type": "vga",
+    "id": 0,
+    "shape": "rect",
+    "x0": 842,
+    "y0": 0,
+    "width": 99,
+    "height": 45,
+    "diam": 217.4948275247023
+  },
+  {
+    "type": "atx_holes",
+    "id": 0,
+    "shape": "circle",
+    "x0": 56,
+    "y0": 54,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "atx_holes",
+    "id": 1,
+    "shape": "circle",
+    "x0": 445,
+    "y0": 52,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "atx_holes",
+    "id": 2,
+    "shape": "circle",
+    "x0": 938,
+    "y0": 53,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "atx_holes",
+    "id": 3,
+    "shape": "circle",
+    "x0": 937,
+    "y0": 538,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "atx_holes",
+    "id": 4,
+    "shape": "circle",
+    "x0": 938,
+    "y0": 765,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "atx_holes",
+    "id": 5,
+    "shape": "circle",
+    "x0": 56,
+    "y0": 765,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "atx_holes",
+    "id": 6,
+    "shape": "circle",
+    "x0": 56,
+    "y0": 538,
+    "width": 11,
+    "height": 8,
+    "diam": 27.202941017470888
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 1,
+    "shape": "rect",
+    "x0": 56,
+    "y0": 153,
+    "width": 25,
+    "height": 185,
+    "diam": 373.3630940518894
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 2,
+    "shape": "rect",
+    "x0": 121,
+    "y0": 153,
+    "width": 25,
+    "height": 185,
+    "diam": 373.3630940518894
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 3,
+    "shape": "rect",
+    "x0": 247,
+    "y0": 152,
+    "width": 25,
+    "height": 185,
+    "diam": 373.3630940518894
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 4,
+    "shape": "rect",
+    "x0": 375,
+    "y0": 154,
+    "width": 25,
+    "height": 185,
+    "diam": 373.3630940518894
+  },
+  {
+    "type": "pci_16x_black",
+    "id": 1,
+    "shape": "rect",
+    "x0": 187,
+    "y0": 154,
+    "width": 22,
+    "height": 281,
+    "diam": 563.7197885474662
+  },
+  {
+    "type": "pci_16x_black",
+    "id": 2,
+    "shape": "rect",
+    "x0": 314,
+    "y0": 152,
+    "width": 22,
+    "height": 281,
+    "diam": 563.7197885474662
+  },
+  {
+    "type": "rj45",
+    "id": 0,
+    "shape": "rect",
+    "x0": 478,
+    "y0": 16,
+    "width": 54,
+    "height": 91,
+    "diam": 211.6317556511782
+  },
+  {
+    "type": "sata_orange",
+    "id": 0,
+    "shape": "rect",
+    "x0": 68,
+    "y0": 580,
+    "width": 22,
+    "height": 57,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_orange",
+    "id": 1,
+    "shape": "rect",
+    "x0": 67,
+    "y0": 697,
+    "width": 22,
+    "height": 57,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 0,
+    "shape": "rect",
+    "x0": 9,
+    "y0": 559,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 1,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 584,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 2,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 608,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 3,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 632,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 4,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 656,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 5,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 680,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 6,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 704,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "sata_white",
+    "id": 7,
+    "shape": "rect",
+    "x0": 8,
+    "y0": 728,
+    "width": 57,
+    "height": 22,
+    "diam": 122.19656296312102
+  },
+  {
+    "type": "heatsink_large",
+    "id": 0,
+    "shape": "rect",
+    "x0": 105,
+    "y0": 638,
+    "width": 171,
+    "height": 115,
+    "diam": 412.1456053386958
+  },
+  {
+    "type": "atx_holes",
+    "id": 7,
+    "shape": "circle",
+    "x0": 302,
+    "y0": 609,
+    "width": 12,
+    "height": 9,
+    "diam": 30
   }
 ]
