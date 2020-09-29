@@ -45,6 +45,12 @@
     flex-grow: 0;
     padding: 25px;
 }
+
+.motherboard_output {
+    padding: 25px;
+}
+
+/*
 .motherboard_output {
     display: flex;
     flex-direction: row;
@@ -52,6 +58,11 @@
     flex-grow: 0;
     padding: 25px;
     margin:0 -15px;
+}
+*/
+
+.motherboard_output img {
+    display: none;
 }
 
 .component_output{

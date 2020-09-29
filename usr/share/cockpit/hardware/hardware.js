@@ -1,7 +1,6 @@
 
 var hardware_info = null;
 var mobo_info = null;
-var mobo_json = null;
 var mobo_json_path = null;
 
 //listener for clicking on the motherboard tab
@@ -66,113 +65,31 @@ function motherboard()
 			//}
 			mobo_info = JSON.parse(data);
 			mobo_img.src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png";
-			mobo_img.setAttribute("usemap","#mobo_map");
+			mobo_img.setAttribute("style","display:none;");
 			
-			//var mobo_map = document.createElement("MAP");
-			//mobo_map.setAttribute("id","mobo_map");
-			//mobo_map.setAttribute("name","mobo_map");
-			//m_output.appendChild(mobo_map);
-
-			//var testMap = document.createElement("AREA");
-  			//testMap.setAttribute("shape", "rect");
-  			//testMap.setAttribute("coords", "0,0,200,200");
-  			//testMap.setAttribute("href","www.google.com");
-  			//document.getElementById("mobo_map").appendChild(testMap);
 
   			mobo_json_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json"
-  			if(!mobo_json){
-  				jsonLoadMotherboard(mobo_json_path);
-  			}
+			launchP5JS();
   			dfd.resolve();
 		}
 	);
 }
 
-function jsonLoadMotherboard(fname){
-	var dfd = cockpit.defer();
-	var mobo_img = document.getElementById("mobo_image");
-	var m_output = document.getElementById("motherboard_output");
-	var proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/dump_json",
-				fname 
-			], 
-			{err: "out"}
-	);
-	proc.stream(
-		function(data){
-			mobo_json = JSON.parse(data);
-			mobo_img.setAttribute("usemap","#mobo_map");
+function launchP5JS(){
+	var p5js = document.createElement('script');
+	p5js.onload = function() {
+	};
+	p5js.src = "p5.js";
+	document.getElementsByTagName('head')[0].appendChild(p5js);
 
-			var mobo_map = document.createElement("MAP");
-			mobo_map.setAttribute("id","mobo_map");
-			mobo_map.setAttribute("name","mobo_map");
-			m_output.appendChild(mobo_map);
-
-			var map_area;
-			var coord_str_rect;
-			var coord_str_circle;
-			for(let i = 0; i < mobo_json.length; i++){
-				if(mobo_json[i]["shape"] == "rect"){
-					map_area = document.createElement("AREA");
-					map_area.setAttribute("shape", "rect");
-					coord_str_rect = (
-						String(mobo_json[i]["x0"]) + "," +
-						String(mobo_json[i]["y0"]) + "," +
-						String(mobo_json[i]["width"] + mobo_json[i]["x0"]) + "," +
-						String(mobo_json[i]["height"]+ mobo_json[i]["y0"])
-					);
-					map_area.setAttribute("coords",coord_str_rect);
-					if(mobo_json[i]["type"] == "cpu"){
-						map_area.addEventListener("mouseover",function(){cpu_mouseover(i);});
-						map_area.addEventListener("mouseout",function(){clear_menu();});
-					}
-					else if(mobo_json[i]["type"] == "pci_8x_black"){
-						map_area.addEventListener("mouseover",function(){pci_mouseover(i);});
-						map_area.addEventListener("mouseout",function(){clear_menu();});
-					}
-					else if(mobo_json[i]["type"] == "dimm_blue"){
-						map_area.addEventListener("mouseover",function(){dimm_mouseover(i);});
-						map_area.addEventListener("mouseout",function(){clear_menu();});
-					}
-					document.getElementById("mobo_map").appendChild(map_area);
-				}
-			}
-
-			var canvas = document.getElementById("mobo_canvas");
-			var ctx = canvas.getContext("2d");
-			var img = document.getElementById("mobo_image");
-			ctx.drawImage(img,10,10); 
-			dfd.resolve();
-		}
-	);
+	var sketch = document.createElement('script');
+	sketch.onload = function() {	
+	};
+	sketch.src = "sketch.js";
+	document.getElementsByTagName('head')[0].appendChild(sketch);
 }
 
-function clear_menu(){
-	var component_output = document.getElementById("component_output");
-	component_output.innerHTML = "";
-}
 
-function dimm_mouseover(mobo_json_idx){
-	var component_output = document.getElementById("component_output");
-	var msg = "dimm: " + String(mobo_json[mobo_json_idx]["id"]);
-	component_output.innerHTML = msg;
-}
-
-function pci_mouseover(mobo_json_idx){
-	var component_output = document.getElementById("component_output");
-	var msg = "pci: " + String(mobo_json[mobo_json_idx]["id"]);
-	component_output.innerHTML = msg;
-}
-
-function cpu_mouseover(mobo_json_idx){
-	var component_output = document.getElementById("component_output");
-	var msg = "CPU: " + String(mobo_json[mobo_json_idx]["id"]);
-	component_output.innerHTML = msg;
-}
-
-//listener for clicking on the system tab
 function system()
 {
 	var dfd = cockpit.defer();

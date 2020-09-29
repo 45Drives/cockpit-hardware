@@ -1,0 +1,10 @@
+{
+    "version": 0,
+
+    "tools": {
+        "draw": {
+            "label": "Draw",
+            "path": "draw.html"
+        }
+    }
+}
