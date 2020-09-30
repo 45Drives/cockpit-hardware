@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+################################################################################
+# pci:
+# 	used to return information about pci cards in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+
+import subprocess
+import re
+import json
+
+g_dmi_fields = [
+	"Designation",
+	"Type",
+	"Current Usage",
+	"ID"
+]
+
+def dmidecode():
+	try:
+		dmi_result = subprocess.Popen(
+			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+
+	slot_entries = []
+	for line in dmi_result:
+		for field in g_dmi_fields:
+			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
+			if regex != None:
+				slot_entries.append((regex.group(1),regex.group(2)))
+
+	# Take the subset of fields in the list for each card and 
+	# append them as a dictionary into a new list. 
+	cards = []
+	for i in range(0,len(slot_entries),len(g_dmi_fields)):
+		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
+
+	return cards
+
+
+def main():
+	cards = dmidecode()
+	if cards:
+		for card in cards:
+			print(json.dumps(card,indent=4))
+
+if __name__ == "__main__":
+    main()

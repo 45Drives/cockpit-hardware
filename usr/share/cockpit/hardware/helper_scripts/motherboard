@@ -45,7 +45,15 @@ g_ipmitool_sensor_fields = {
 	"FAN5": "(RPM)",
 	"FAN6": "(RPM)",
 	"FANA": "(RPM)",
-	"FANB": "(RPM)"
+	"FANB": "(RPM)",
+	"P1-DIMMA1 Temp": " (C)",
+	"P1-DIMMB1 Temp": " (C)",
+	"P1-DIMMD1 Temp": " (C)",
+	"P1-DIMME1 Temp": " (C)",
+	"P2-DIMMA1 Temp": " (C)",
+	"P2-DIMMB1 Temp": " (C)",
+	"P2-DIMMD1 Temp": " (C)",
+	"P2-DIMME1 Temp": " (C)"
 }
 
 ################################################################################
@@ -125,10 +133,9 @@ def get_sensor_readings():
 		for field in g_ipmitool_sensor_fields.keys():
 			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
 			if regex != None:
-				if regex.group(2) != "na":
-					sensor_readings.append(
-						(regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
-					)
+				sensor_readings.append(
+				(regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
+				)
 	sensor_readings_json_str = "{\"Sensor Readings\":["+json.dumps(dict(sensor_readings))+"]}"
 	return sensor_readings_json_str
 

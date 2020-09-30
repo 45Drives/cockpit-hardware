@@ -9,6 +9,7 @@ function motherboard()
 	var dfd = cockpit.defer();
 	var m_output = document.getElementById("motherboard_output");
 	var mobo_img = document.getElementById("mobo_image");
+	var temp_output = document.getElementById("temp_output");
 	var proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -21,7 +22,7 @@ function motherboard()
 		function(data)
 		{
 			/**************************************************************************/
-			/* Example Output: /usr/share/cockpit/hardware/helper_scripts/system      */
+			/* Example Output: /usr/share/cockpit/hardware/helper_scripts/motherboard */
 			/**************************************************************************/
 			//{
 			//  "Motherboard Info": [
@@ -66,7 +67,7 @@ function motherboard()
 			mobo_info = JSON.parse(data);
 			mobo_img.src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png";
 			mobo_img.setAttribute("style","display:none;");
-			
+			temp_output.innerHTML = data;
 
   			mobo_json_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json"
 			launchP5JS();
@@ -85,7 +86,7 @@ function launchP5JS(){
 	var sketch = document.createElement('script');
 	sketch.onload = function() {	
 	};
-	sketch.src = "sketch.js";
+	sketch.src = "mobo.js";
 	document.getElementsByTagName('head')[0].appendChild(sketch);
 }
 
