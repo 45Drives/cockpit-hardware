@@ -21,7 +21,15 @@ g_dmi_fields = [
 	"Designation",
 	"Type",
 	"Current Usage",
-	"ID"
+	"ID",
+	"Bus Address"
+]
+
+
+
+g_storcli64_fields = [
+	"SAS9305-16i",
+	"SAS9305-24i"
 ]
 
 def dmidecode():
@@ -47,11 +55,80 @@ def dmidecode():
 	return cards
 
 
+def storcli():
+	try:
+		storcli64_result = subprocess.Popen(
+			["/opt/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
+	except:
+		return False
+	hba_cards = []
+	hba_dict = {}
+	for line in storcli64_result.stdout:
+		for field in g_storcli64_fields:
+			# Model AdapterType VendId DevId SubVendId SubDevId PCIAddress 	
+			regex = re.search("({fld}).*(00:\w\w:\w\w:\w\w)\s+$".format(fld=field),line)
+			if regex != None:
+				hba_dict["Model"] = regex.group(1)
+				hba_dict["Bus Address"] = "00" + regex.group(2)
+				hba_dict["Bus Address"] = hba_dict["Bus Address"][:-3] + ".0"
+				hba_cards.append(hba_dict.copy())
+	
+	return hba_cards
+
+def network():
+	try:
+		network_result = subprocess.Popen(
+			["/usr/share/cockpit/hardware/helper_scripts/network"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		return False
+	
+	network_output = json.loads(network_result.read())
+
+	network_cards = []
+	for connection in network_output["Network Info"]:
+		if "PCI Slot" in connection.keys():
+			network_cards.append(connection)
+
+	return network_cards
+
 def main():
-	cards = dmidecode()
-	if cards:
-		for card in cards:
-			print(json.dumps(card,indent=4))
+	pci_slots = dmidecode()
+	hba_cards = storcli()
+	network_cards = network()
+
+	# Look for hba cards and pci slots with matching bus addresses.
+	# and add a "Card Type" field to the list of pci slot dictionaries
+	if pci_slots and hba_cards:
+		for hba in hba_cards:
+			for slot in pci_slots:
+				if(hba["Bus Address"] == slot["Bus Address"]):
+					slot["Card Type"] = hba["Model"]
+	
+	# for each pci slot with an ID that corresponds to 
+	# the "PCI Slot" field from the 
+	# /usr/share/cockpit/hardware/helper_scripts/network script's
+	# .json formatted output. Append this network connection 
+	# to a list of connections for that specific PCI slot
+	if pci_slots and network_cards:
+		for slot in pci_slots:
+			for card in network_cards:
+				if "ID" in slot.keys() and card["PCI Slot"] == slot["ID"]:
+					slot["Card Type"] = "Network Card"
+					if "Connections" not in slot.keys():
+						slot["Connections"] = []
+					slot["Connections"].append(card)
+
+	# Create .json formatted output string
+	output_str = "{ \"PCI Info\":["
+	
+	for slot in pci_slots:
+		output_str += json.dumps(slot) + ","
+	
+	output_str = output_str[:-1] + "]}"
+
+	# print output string to stdout
+	print(json.dumps(json.loads(output_str),indent=4))
+
 
 if __name__ == "__main__":
     main()
