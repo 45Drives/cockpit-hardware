@@ -2,6 +2,8 @@
 var hardware_info = null;
 var mobo_info = null;
 var mobo_json_path = null;
+var pci_info = null;
+var ram_info = null;
 
 //listener for clicking on the motherboard tab
 function motherboard()
@@ -10,6 +12,7 @@ function motherboard()
 	var m_output = document.getElementById("motherboard_output");
 	var mobo_img = document.getElementById("mobo_image");
 	var temp_output = document.getElementById("temp_output");
+	temp_output.innerHTML = "Gathering Motherboard Information. Please Wait.."
 	var proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -67,11 +70,39 @@ function motherboard()
 			mobo_info = JSON.parse(data);
 			mobo_img.src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png";
 			mobo_img.setAttribute("style","display:none;");
-			temp_output.innerHTML = data;
 
   			mobo_json_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json"
-			launchP5JS();
-  			dfd.resolve();
+			
+			// load the pci information
+			var pci_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/pci"
+			], 
+			{err: "out"}
+			);
+
+			pci_proc.stream(
+				function(data){
+					pci_info = JSON.parse(data);
+					//load the ram information
+					var ram_proc = cockpit.spawn(
+							[
+								"/usr/bin/pkexec",
+								"/usr/share/cockpit/hardware/helper_scripts/ram"
+							], 
+							{err: "out"}
+					);
+					ram_proc.stream(
+						function(data){
+						ram_info = JSON.parse(data);
+						launchP5JS();
+						temp_output.innerHTML = ""
+  						dfd.resolve();
+					}
+					);
+				}
+			);
 		}
 	);
 }

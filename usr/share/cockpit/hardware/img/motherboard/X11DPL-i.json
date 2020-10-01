@@ -30,7 +30,7 @@
     "diam": 752.8612089887484
   },
   {
-    "type": "dimm_blue",
+    "type": "P1-DIMMA1",
     "id": 1,
     "shape": "rect",
     "x0": 830,
@@ -40,7 +40,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P1-DIMMB1",
     "id": 2,
     "shape": "rect",
     "x0": 858,
@@ -50,7 +50,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P1-DIMMD1",
     "id": 3,
     "shape": "rect",
     "x0": 365,
@@ -60,7 +60,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P1-DIMME1",
     "id": 4,
     "shape": "rect",
     "x0": 338,
@@ -70,7 +70,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P2-DIMMA1",
     "id": 5,
     "shape": "rect",
     "x0": 431,
@@ -80,7 +80,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P2-DIMMB1",
     "id": 6,
     "shape": "rect",
     "x0": 401,
@@ -90,7 +90,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P2-DIMMD1",
     "id": 7,
     "shape": "rect",
     "x0": 889,
@@ -100,7 +100,7 @@
     "diam": 899.2819357687555
   },
   {
-    "type": "dimm_blue",
+    "type": "P2-DIMME1",
     "id": 8,
     "shape": "rect",
     "x0": 921,
@@ -221,7 +221,7 @@
   },
   {
     "type": "pci_8x_black",
-    "id": 3,
+    "id": 4,
     "shape": "rect",
     "x0": 247,
     "y0": 152,
@@ -231,7 +231,7 @@
   },
   {
     "type": "pci_8x_black",
-    "id": 4,
+    "id": 6,
     "shape": "rect",
     "x0": 375,
     "y0": 154,
@@ -241,7 +241,7 @@
   },
   {
     "type": "pci_16x_black",
-    "id": 1,
+    "id": 3,
     "shape": "rect",
     "x0": 187,
     "y0": 154,
@@ -251,7 +251,7 @@
   },
   {
     "type": "pci_16x_black",
-    "id": 2,
+    "id": 5,
     "shape": "rect",
     "x0": 314,
     "y0": 152,

@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+################################################################################
+# sata:
+# 	used to return information about the status of sata connections in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+import subprocess
+import re
+import json
+
+def ls_by_path():
+	try:
+		ls_result = subprocess.Popen(
+			["ls","-l","/dev/disk/by-path"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+
+	sata_connections = []
+	for line in ls_result:
+		regex = re.search("ata-(\d)\s->\s\W+(.*)",line)
+		if regex != None:
+			sata_connections.append(
+					{
+						"Connector":("I-SATA"+regex.group(1)),
+					"Device":regex.group(2)
+					}
+				)
+	return sata_connections
+
+def lsblk(device):
+	try:
+		lsblk_result = subprocess.Popen(
+			["lsblk","-l","/dev/"+device],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+
+	partitions = []
+	for line in lsblk_result:
+		regex = re.search("^(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s+(\S+)(.*)$",line)
+		if regex != None and regex.group(1) != "NAME":
+			partitions.append(
+					{
+						"Name":regex.group(1),
+						"Size":regex.group(2),
+						"Type":regex.group(3),
+						"Mount Point":regex.group(4).lstrip()
+					}
+				)
+	return partitions
+
+def main():
+	sata = ls_by_path()
+	
+	if sata:
+		for connection in sata:
+			partitions = lsblk(connection["Device"])
+			if partitions:
+				connection["Partitions"] = []
+				for entry in partitions:
+					connection["Partitions"].append(entry)
+
+	if sata:
+		output_str = "{\"SATA Info\":["
+		for connection in sata:
+			output_str += json.dumps(connection) + ","
+	output_str = output_str[:-1] + "]}"
+
+	# print output string to stdout
+	print(json.dumps(json.loads(output_str),indent=4))
+
+if __name__ == "__main__":
+    main()

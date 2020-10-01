@@ -16,6 +16,8 @@ let POPUP_IDX = 0;
 let MASK_ARR = [];
 let MASK_COUNT = 0;
 
+let peripherals = [];
+
 // steps:
 // - load the background image
 // - load the .json file
@@ -97,6 +99,9 @@ function draw(){
   if(READY){
     background(255);
     image(background_img,0,0);
+    for(let i = 0; i < peripherals.length; i++){
+      peripherals[i].show();
+    }
     if(POPUP_ACTIVE){
       push();
       tint(100,100,100,128);
@@ -154,9 +159,24 @@ function draw(){
 //    }
 }
 
+class peripheral{
+  constructor(x0,y0,width,height,fill){
+    this.x0 = x0;
+    this.y0 = y0;
+    this.width = width;
+    this.height = height;
+    this.fill = fill;
+  }
+  show(){
+    push();
+    fill(this.fill);
+    noStroke();
+    rect(this.x0,this.y0,this.width,this.height);
+    pop();
+  }
+}
+
 function populateSlots(){
-  console.log(hardware_info);
-  console.log(mobo_info);
   getRam();
   getPCI();
   getCPU();
@@ -164,10 +184,84 @@ function populateSlots(){
 
 function getRam(){
   console.log("getRam");
+  var dfd = cockpit.defer();
+  if(ram_info){
+    for(let i = 0; i < ram_info["Ram Info"].length; i++){
+      for(let c = 0; c < components.length; c++){
+        if(ram_info["Ram Info"][i]["Locator"] == components[c]["type"]){
+          components[c].popup.content = JSON.stringify(ram_info["Ram Info"][i],null,"\t");
+          var linecount = components[c].popup.content.split(/\r\n|\r|\n/).length;
+          components[c].popup.height = 20*linecount + 10;
+          if(ram_info["Ram Info"][i]["Size"] != "No Module Installed"){
+            peripherals.push(
+              new peripheral(
+              components[c]["x0"],
+              components[c]["y0"],
+              components[c]["width"],
+              components[c]["height"],
+              "#8080FF80"
+              )
+            );
+          }
+        }
+      }
+    }
+  }
+  dfd.resolve();
 }
 
 function getPCI(){
-  console.log("getPCI");
+  var dfd = cockpit.defer();
+  if(pci_info){
+    for(let i = 0; i < pci_info["PCI Info"].length; i++){
+      if(pci_info["PCI Info"][i].hasOwnProperty("ID")){
+        for(let c = 0; c < components.length; c++){
+          if(components[c]["id"] == pci_info["PCI Info"][i]["ID"] && components[c]["type"].search("pci") != -1){
+            components[c].popup.content = JSON.stringify(pci_info["PCI Info"][i],null,"\t");
+            var linecount = components[c].popup.content.split(/\r\n|\r|\n/).length;
+            components[c].popup.height = 20*linecount + 10;
+            if(pci_info["PCI Info"][i].hasOwnProperty("Card Type")){
+              if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-24i"){
+                peripherals.push(
+                  new peripheral(
+                    components[c]["x0"],
+                    components[c]["y0"],
+                    components[c]["width"],
+                    components[c]["height"],
+                    "#FF800080"
+                    )
+                  );
+              }
+              else if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-16i"){
+                peripherals.push(
+                  new peripheral(
+                    components[c]["x0"],
+                    components[c]["y0"],
+                    components[c]["width"],
+                    components[c]["height"],
+                    "#80FF0080"
+                    )
+                  );
+              }
+              else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card"){
+                peripherals.push(
+                  new peripheral(
+                    components[c]["x0"],
+                    components[c]["y0"],
+                    components[c]["width"],
+                    components[c]["height"],
+                    "#0080FF80"
+                    )
+                  );
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+  dfd.resolve();
 }
 
 function getCPU(){
@@ -200,7 +294,6 @@ function loadAssets(){
     jsonLoadMotherboard(mobo_json_path);
   }
 }
-
 
 function jsonLoadMotherboard(fname){
   var dfd = cockpit.defer();
