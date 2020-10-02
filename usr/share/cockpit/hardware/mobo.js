@@ -70,12 +70,13 @@ class popup_window{
     push();
     fill(this.fill);
     stroke(this.border);
-    rect(this.x0,this.y0,this.width,this.height);
+    rect(this.x0,this.y0,this.width,this.height,10,10);
     stroke(0);
     strokeWeight(1);
-    textSize(16);
+    textSize(14);
     fill(0);
-    text(this.content,this.x0+20,this.y0+20);
+    textFont("Courier New");
+    text(this.content,this.x0+9,this.y0+20);
     pop();
   }
 }
@@ -95,7 +96,6 @@ function setup() {
 }
 
 function draw(){
-  
   if(READY){
     background(255);
     image(background_img,0,0);
@@ -112,12 +112,14 @@ function draw(){
   }
   else if(STATE == 0){
     background(255);
+    textFont("Courier New");
     text("Loading Motherboard Info ... Please Wait.",40,40);
     loadAssets();
     STATE = 1;
   }
   else if(STATE == 1){
     background(255);
+    textFont("Courier New");
     text("Loading Motherboard Assets ... Please Wait.",40,40);
     if(verifyAssetsLoaded()){
       STATE = 2;
@@ -125,9 +127,11 @@ function draw(){
   }
   else if(STATE == 2){
     background(255);
+    textFont("Courier New");
     text("Generating Masks ... Please Wait.",40,40);
     if(components.length > 0){
       let myStr = "Mask: " + String(MASK_COUNT) + " of " + String(components.length);
+      textFont("Courier New");
       text(myStr,40,70);
       createComponentMasks(MASK_COUNT);
       MASK_COUNT++;
@@ -140,23 +144,6 @@ function draw(){
     populateSlots();
     READY = true;
   }
-
-//    if(background_img){
-//      image(background_img,0,0);
-//    }
-//    //if(pop_up.active){
-//    //  if(!mask_complete){
-//    //    testMask();
-//    //  }
-//    //  push();
-//    //  tint(100,100,100,128);
-//    //  image(bg_masked,0,0);
-//    //  pop();
-//    //}
-//    //pop_up.show();
-//    //}
-//    else{
-//    }
 }
 
 class peripheral{
@@ -180,18 +167,46 @@ function populateSlots(){
   getRam();
   getPCI();
   getCPU();
+  getSATA();
+  resizePopups();
+}
+
+function resizePopups(){
+  var dfd = cockpit.defer();
+  for(let i = 0; i < components.length; i++){
+    var lines = components[i].popup.content.split(/\r\n|\r|\n/);
+    var linecount = components[i].popup.content.split(/\r\n|\r|\n/).length;
+    components[i].popup.height = 18*linecount + 10;
+    
+    var max_chars = 0;
+    for(let j=0; j<lines.length; j++){
+      if(lines[j].length > max_chars){
+        max_chars = lines[j].length;
+      }
+    }
+    components[i].popup.width = 9*max_chars + 10;
+  }
+  dfd.resolve();
 }
 
 function getRam(){
-  console.log("getRam");
   var dfd = cockpit.defer();
   if(ram_info){
     for(let i = 0; i < ram_info["Ram Info"].length; i++){
       for(let c = 0; c < components.length; c++){
         if(ram_info["Ram Info"][i]["Locator"] == components[c]["type"]){
           components[c].popup.content = JSON.stringify(ram_info["Ram Info"][i],null,"\t");
-          var linecount = components[c].popup.content.split(/\r\n|\r|\n/).length;
-          components[c].popup.height = 20*linecount + 10;
+          
+          var content_str = "";
+          content_str += "Connector: " + ram_info["Ram Info"][i]["Locator"] + "\n";
+          content_str += "Capacity: " + ram_info["Ram Info"][i]["Size"] + "\n";
+          content_str += "Form Factor: " + ram_info["Ram Info"][i]["Form Factor"] + "\n";
+          content_str += "Type: " + ram_info["Ram Info"][i]["Type"] + "\n";
+          content_str += "Manufacturer: " + ram_info["Ram Info"][i]["Manufacturer"] + "\n";
+          content_str += "Temperature: " + ram_info["Ram Info"][i]["Temperature"];
+
+          components[c].popup.content = content_str;
+
           if(ram_info["Ram Info"][i]["Size"] != "No Module Installed"){
             peripherals.push(
               new peripheral(
@@ -217,9 +232,8 @@ function getPCI(){
       if(pci_info["PCI Info"][i].hasOwnProperty("ID")){
         for(let c = 0; c < components.length; c++){
           if(components[c]["id"] == pci_info["PCI Info"][i]["ID"] && components[c]["type"].search("pci") != -1){
-            components[c].popup.content = JSON.stringify(pci_info["PCI Info"][i],null,"\t");
-            var linecount = components[c].popup.content.split(/\r\n|\r|\n/).length;
-            components[c].popup.height = 20*linecount + 10;
+            components[c].popup.content = JSON.stringify(pci_info["PCI Info"][i],null," ").replaceAll("{\n","").replaceAll("\"","").replaceAll("[","").replaceAll("]\n","").replaceAll("}","").replaceAll(",","").replaceAll("    ","  ");
+            components[c].popup.content = components[c].popup.content.slice(0,-1);
             if(pci_info["PCI Info"][i].hasOwnProperty("Card Type")){
               if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-24i"){
                 peripherals.push(
@@ -265,7 +279,6 @@ function getPCI(){
 }
 
 function getCPU(){
-  console.log("getcpu");
   let contentStr;
   for(let i = 0; i < components.length; i++){
     if(components[i].type == "cpu" && components[i].id == 1){
@@ -275,6 +288,7 @@ function getCPU(){
       contentStr += "Max Speed: " + mobo_info["Motherboard Info"][1]["CPU"][0]["Max Speed"] + "\n";
       contentStr += "Temperature: " + mobo_info["Motherboard Info"][2]["Sensor Readings"][0]["CPU1 Temp"] + "\n";
       components[i].popup.content = contentStr;
+      components[i].popup.content = components[i].popup.content.slice(0,-1);
     }
     else if(components[i].type == "cpu" && components[i].id == 2){
       contentStr = "";
@@ -283,8 +297,51 @@ function getCPU(){
       contentStr += "Max Speed: " + mobo_info["Motherboard Info"][1]["CPU"][1]["Max Speed"] + "\n";
       contentStr += "Temperature: " + mobo_info["Motherboard Info"][2]["Sensor Readings"][0]["CPU2 Temp"] + "\n";
       components[i].popup.content = contentStr;
+      components[i].popup.content = components[i].popup.content.slice(0,-1);
     }
   }
+}
+
+function getSATA(){
+  var dfd = cockpit.defer();
+  if(sata_info){
+    //sata info is a global variable in hardware.js
+    for(let i = 0; i < sata_info["SATA Info"].length; i++){
+      for(let c = 0; c < components.length; c++){
+        if(sata_info["SATA Info"][i]["Connector"] == components[c].type){
+          let popup_str = ""
+          let padding = 11;
+          popup_str += "Connector: " + sata_info["SATA Info"][i]["Connector"] + "\n";
+          popup_str += "Device: " + sata_info["SATA Info"][i]["Device"] + "\n";
+          popup_str += "Partition Information: \n";
+          popup_str += (
+            "| " + "Name".padEnd(padding," ") + 
+            "Size".padEnd(padding," ") + 
+            "Type".padEnd(padding," ") + 
+            "Mount Point".padEnd(padding," ") + " |\n"
+            );
+          for(let p = 0; p < sata_info["SATA Info"][i]["Partitions"].length; p++){
+            popup_str += "| " + sata_info["SATA Info"][i]["Partitions"][p]["Name"].padEnd(padding," ");
+            popup_str += sata_info["SATA Info"][i]["Partitions"][p]["Size"].padEnd(padding," ");
+            popup_str += sata_info["SATA Info"][i]["Partitions"][p]["Type"].padEnd(padding," ");
+            popup_str += sata_info["SATA Info"][i]["Partitions"][p]["Mount Point"].padEnd(padding," ") + " |\n";
+          }
+          components[c].popup.content = popup_str.slice(0,-1);
+            peripherals.push(
+            new peripheral(
+              components[c]["x0"],
+              components[c]["y0"],
+              components[c]["width"],
+              components[c]["height"],
+              "#FF80FF80"
+              )
+            );
+          break;
+        }
+      }
+    }
+  }
+  dfd.resolve();
 }
 
 function loadAssets(){
@@ -320,7 +377,7 @@ function jsonLoadMotherboard(fname){
               mobo_json[i]["height"],
               mobo_json[i]["id"],
               mobo_json[i]["type"],
-              new popup_window( mobo_json[i]["x0"], mobo_json[i]["y0"], 450, 200,  mobo_json[i]["type"])
+              new popup_window( mobo_json[i]["x0"], mobo_json[i]["y0"], 550, 200,  mobo_json[i]["type"])
             )
           );
         }
@@ -329,36 +386,6 @@ function jsonLoadMotherboard(fname){
     }
   );
 }
-
-//function mouseActivity(){
-//  //mouse is moving over the canvas.
-//  let hit = false;
-//  for(let i = 0; i < mobo_json.length; i++){
-//    if(mobo_json[i]["shape"] == "rect"){
-//      if((mouseX > mobo_json[i]["x0"]) && (mouseX < mobo_json[i]["x0"]+mobo_json[i]["width"]) &&
-//        (mouseY > mobo_json[i]["y0"]) && (mouseY < mobo_json[i]["y0"]+mobo_json[i]["height"])){
-//        hit = true;
-//        if((mobo_json[i]["x0"] + mobo_json[i]["width"] + 20 + pop_up.width) < width){
-//          pop_up.x0 = mobo_json[i]["x0"] + mobo_json[i]["width"] + 20;
-//        }
-//        else{
-//          pop_up.x0 = mobo_json[i]["x0"] - 20 - pop_up.width;
-//        }
-//
-//        if((mobo_json[i]["y0"] - 20 ) > 0 ){
-//          pop_up.y0 = mobo_json[i]["y0"] - 20;
-//        }
-//        else{
-//          pop_up.y0 = 0;
-//        }
-//
-//        pop_up.content = mobo_json[i]["type"] + String(mobo_json[i]["id"]);
-//        break;
-//      }
-//    }
-//  }
-//  pop_up.active = hit;
-//}
 
 function mouseActivity(){
   if(READY){
@@ -385,6 +412,5 @@ function mouseActivity(){
     }
   }
 }
-
 
 cockpit.transport.wait(function() { });

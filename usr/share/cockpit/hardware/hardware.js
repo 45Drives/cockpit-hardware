@@ -4,6 +4,9 @@ var mobo_info = null;
 var mobo_json_path = null;
 var pci_info = null;
 var ram_info = null;
+var sata_info = null;
+var p5_running = null;
+var temp_output = document.getElementById("temp_output");
 
 //listener for clicking on the motherboard tab
 function motherboard()
@@ -11,9 +14,9 @@ function motherboard()
 	var dfd = cockpit.defer();
 	var m_output = document.getElementById("motherboard_output");
 	var mobo_img = document.getElementById("mobo_image");
-	var temp_output = document.getElementById("temp_output");
-	temp_output.innerHTML = "Gathering Motherboard Information. Please Wait.."
-	var proc = cockpit.spawn(
+	temp_output.innerHTML = "Gathering Motherboard Information. Please Wait..";
+	
+	var motherboard_proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
 				"/usr/share/cockpit/hardware/helper_scripts/motherboard"
@@ -21,104 +24,95 @@ function motherboard()
 			{err: "out"}
 	);
 
-	proc.stream(
+	motherboard_proc.stream(
 		function(data)
 		{
-			/**************************************************************************/
-			/* Example Output: /usr/share/cockpit/hardware/helper_scripts/motherboard */
-			/**************************************************************************/
-			//{
-			//  "Motherboard Info": [
-			//    {
-			//      "Motherboard": [
-			//        {
-			//          "Manufacturer": "Supermicro",
-			//          "Product Name": "X11DPL-i",
-			//          "Serial Number": "WM19AS004505"
-			//        }
-			//      ]
-			//    },
-			//    {
-			//      "CPU": [
-			//        {
-			//          "Socket Designation": "CPU1",
-			//          "Version": "Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-			//          "Max Speed": "4500 MHz"
-			//        },
-			//        {
-			//          "Socket Designation": "CPU2",
-			//          "Version": "Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-			//          "Max Speed": "4500 MHz"
-			//        }
-			//      ]
-			//    },
-			//    {
-			//      "Sensor Readings": [
-			//        {
-			//          "CPU1 Temp": "28.000(C)",
-			//          "CPU2 Temp": "30.000(C)",
-			//          "FAN2": "2700.000(RPM)",
-			//          "FAN3": "3800.000(RPM)",
-			//          "FAN4": "2700.000(RPM)",
-			//          "FAN6": "3700.000(RPM)",
-			//          "PW Consumption": "262.000(W)"
-			//        }
-			//      ]
-			//    }
-			//  ]
-			//}
 			mobo_info = JSON.parse(data);
 			mobo_img.src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png";
 			mobo_img.setAttribute("style","display:none;");
-
   			mobo_json_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json"
 			
-			// load the pci information
-			var pci_proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/pci"
-			], 
-			{err: "out"}
-			);
-
-			pci_proc.stream(
-				function(data){
-					pci_info = JSON.parse(data);
-					//load the ram information
-					var ram_proc = cockpit.spawn(
-							[
-								"/usr/bin/pkexec",
-								"/usr/share/cockpit/hardware/helper_scripts/ram"
-							], 
-							{err: "out"}
-					);
-					ram_proc.stream(
-						function(data){
-						ram_info = JSON.parse(data);
-						launchP5JS();
-						temp_output.innerHTML = ""
-  						dfd.resolve();
-					}
-					);
-				}
-			);
+			temp_output.innerHTML = "Gathering Connector Information. Please Wait..";
+			gather_connector_data();
+		
+			launchP5JS();
+  			dfd.resolve();
 		}
 	);
 }
 
-function launchP5JS(){
-	var p5js = document.createElement('script');
-	p5js.onload = function() {
-	};
-	p5js.src = "p5.js";
-	document.getElementsByTagName('head')[0].appendChild(p5js);
 
-	var sketch = document.createElement('script');
-	sketch.onload = function() {	
-	};
-	sketch.src = "mobo.js";
-	document.getElementsByTagName('head')[0].appendChild(sketch);
+
+function gather_connector_data(){
+	var pci_promise = cockpit.defer();
+	var ram_promise = cockpit.defer();
+	var sata_promise = cockpit.defer();
+
+	// load the pci information
+	var pci_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/hardware/helper_scripts/pci"
+		], 
+		{err: "out"}
+	);
+
+	pci_proc.stream(
+		function(data){
+			pci_info = JSON.parse(data);
+			launchP5JS();
+			pci_promise.resolve();
+		}
+	);
+
+	//load the ram information
+	var ram_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/hardware/helper_scripts/ram"
+		], 
+		{err: "out"}
+	);
+	ram_proc.stream(
+		function(data){
+			ram_info = JSON.parse(data);
+			launchP5JS();
+			ram_promise.resolve();
+		}
+	);
+
+	//load the sata information
+	var sata_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/hardware/helper_scripts/sata"
+		], 
+		{err: "out"}
+	);
+	sata_proc.stream(
+		function(data){
+			sata_info = JSON.parse(data);
+			launchP5JS();
+			sata_promise.resolve();
+		}
+	);
+}
+
+
+function launchP5JS(){
+	if(mobo_info && mobo_json_path && pci_info && sata_info && !p5_running){
+		p5_running = true;
+		var p5js = document.createElement('script');
+		p5js.onload = function() {};
+		p5js.src = "p5.js";
+		document.getElementsByTagName('head')[0].appendChild(p5js);
+	
+		var sketch = document.createElement('script');
+		sketch.onload = function() {};
+		sketch.src = "mobo.js";
+		document.getElementsByTagName('head')[0].appendChild(sketch);
+		temp_output.innerHTML = "";
+	}
 }
 
 
