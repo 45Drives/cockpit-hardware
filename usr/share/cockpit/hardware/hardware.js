@@ -28,9 +28,13 @@ function motherboard()
 		function(data)
 		{
 			mobo_info = JSON.parse(data);
-			mobo_img.src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png";
+			mobo_img.src = ("img/motherboard/" + 
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png");
 			mobo_img.setAttribute("style","display:none;");
-  			mobo_json_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json"
+  			mobo_json_path = ("img/motherboard/" + 
+  				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+  				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json");
 			
 			temp_output.innerHTML = "Gathering Connector Information. Please Wait..";
 			gather_connector_data();

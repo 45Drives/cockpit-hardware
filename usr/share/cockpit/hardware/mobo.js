@@ -28,19 +28,26 @@ let peripherals = [];
 
 function createComponentMasks(a){
   var dfd = cockpit.defer();
-  MASK_ARR.push(createImage(background_img.width, background_img.height));
-  MASK_ARR[a].loadPixels();
-  for(let i = 0; i < MASK_ARR[a].width; i++){
-    for(let j = 0; j < MASK_ARR[a].height; j++){
-      if((i > components[a].x0) && (i < components[a].x0 + components[a].width) &&
-         (j > components[a].y0) && (j < components[a].y0 + components[a].height)){
-        MASK_ARR[a].set(i, j, color(0, 0, 0, 0));
-      }else{
-        MASK_ARR[a].set(i, j, color(0, 0, 0, 255));
-      }
-    }
-  }
-  MASK_ARR[a].updatePixels();
+  //MASK_ARR.push(createImage(background_img.width, background_img.height));
+  //MASK_ARR[a].loadPixels();
+  //for(let i = 0; i < MASK_ARR[a].width; i++){
+  //  for(let j = 0; j < MASK_ARR[a].height; j++){
+  //    if((i > components[a].x0) && (i < components[a].x0 + components[a].width) &&
+  //       (j > components[a].y0) && (j < components[a].y0 + components[a].height)){
+  //      MASK_ARR[a].set(i, j, color(0, 0, 0, 0));
+  //    }else{
+  //      MASK_ARR[a].set(i, j, color(0, 0, 0, 255));
+  //    }
+  //  }
+  //}
+  //MASK_ARR[a].updatePixels();
+  //var msk = document.createElement("img");
+  //msk.onload = function(){
+  //  MASK_ARR[a].src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" + mobo_json[a]["type"] + String(mobo_json[a]["id"]) + ".png";
+  //  MASK_ARR[a].setAttribute("style","display:none;");
+  //};
+  var img_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" + mobo_json[a]["type"] + String(mobo_json[a]["id"]) + ".png";
+  MASK_ARR.push(loadImage(img_path));
   dfd.resolve();
 }
 
@@ -104,7 +111,6 @@ function draw(){
     }
     if(POPUP_ACTIVE){
       push();
-      tint(100,100,100,128);
       image(MASK_ARR[POPUP_IDX],0,0);
       pop();
       components[POPUP_IDX].popup.show();
