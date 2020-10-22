@@ -32,6 +32,13 @@ g_storcli64_fields = [
 	"SAS9305-24i"
 ]
 
+g_network_card_models = [
+	"X540-AT2", 
+	"XL710", 
+	"XXV710", 
+	"82599ES"
+]
+
 def dmidecode():
 	try:
 		dmi_result = subprocess.Popen(
@@ -91,6 +98,24 @@ def network():
 
 	return network_cards
 
+def getNetworkCardModel(busAddress):
+	trimmedBusAddress = busAddress[5:]
+	try:
+		lspci_result = subprocess.Popen(
+			["lspci"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		return "unknown"
+
+	for line in lspci_result:
+		regex_addr = re.search("^{addr}\s(.*)$".format(addr=trimmedBusAddress),line)
+		if regex_addr != None:
+			for model in g_network_card_models:
+				regex_model = re.search("{mdl}".format(mdl=model),regex_addr.group(1))
+				if regex_model != None:
+					return model
+
+	return "unknown"
+
 def main():
 	pci_slots = dmidecode()
 	hba_cards = storcli()
@@ -114,6 +139,7 @@ def main():
 			for card in network_cards:
 				if "ID" in slot.keys() and card["PCI Slot"] == slot["ID"]:
 					slot["Card Type"] = "Network Card"
+					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]));
 					if "Connections" not in slot.keys():
 						slot["Connections"] = []
 					slot["Connections"].append(card)

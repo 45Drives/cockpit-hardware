@@ -16,7 +16,11 @@ let POPUP_IDX = 0;
 let MASK_ARR = [];
 let MASK_COUNT = 0;
 
+let peripheralImages = [];
 let peripherals = [];
+
+let pciScale = 0.02;
+let ramScale = 0.024;
 
 // steps:
 // - load the background image
@@ -28,25 +32,12 @@ let peripherals = [];
 
 function createComponentMasks(a){
   var dfd = cockpit.defer();
-  //MASK_ARR.push(createImage(background_img.width, background_img.height));
-  //MASK_ARR[a].loadPixels();
-  //for(let i = 0; i < MASK_ARR[a].width; i++){
-  //  for(let j = 0; j < MASK_ARR[a].height; j++){
-  //    if((i > components[a].x0) && (i < components[a].x0 + components[a].width) &&
-  //       (j > components[a].y0) && (j < components[a].y0 + components[a].height)){
-  //      MASK_ARR[a].set(i, j, color(0, 0, 0, 0));
-  //    }else{
-  //      MASK_ARR[a].set(i, j, color(0, 0, 0, 255));
-  //    }
-  //  }
-  //}
-  //MASK_ARR[a].updatePixels();
-  //var msk = document.createElement("img");
-  //msk.onload = function(){
-  //  MASK_ARR[a].src = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" + mobo_json[a]["type"] + String(mobo_json[a]["id"]) + ".png";
-  //  MASK_ARR[a].setAttribute("style","display:none;");
-  //};
-  var img_path = "img/motherboard/" + String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" + mobo_json[a]["type"] + String(mobo_json[a]["id"]) + ".png";
+  var img_path = (
+    "img/motherboard/" + 
+    String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + 
+    "/" + mobo_json[a]["type"] + 
+    String(mobo_json[a]["id"]) + ".png"
+  );
   MASK_ARR.push(loadImage(img_path));
   dfd.resolve();
 }
@@ -153,20 +144,124 @@ function draw(){
 }
 
 class peripheral{
-  constructor(x0,y0,width,height,fill){
+  constructor(pType,x0,y0,width,height,fill,img_idx,wScale=1.0){
+    this.pType = pType;
     this.x0 = x0;
     this.y0 = y0;
     this.width = width;
     this.height = height;
     this.fill = fill;
+    this.img_idx = img_idx;
+    this.wScale = wScale;
+    //this.mask = createImage(background_img.width,background_img.height);
+    //this.maskCreated = false;
   }
   show(){
     push();
-    fill(this.fill);
-    noStroke();
-    rect(this.x0,this.y0,this.width,this.height);
+    if(this.img_idx != -1){
+      let aspectRatio = peripheralImages[this.img_idx].width/peripheralImages[this.img_idx].height;
+      let newWidth = peripheralImages[this.img_idx].width*this.wScale;
+      let newHeight = newWidth/aspectRatio;
+      image(peripheralImages[this.img_idx],this.x0,this.y0,newWidth,newHeight);
+    }else{
+      fill(this.fill);
+      noStroke();
+      rect(this.x0,this.y0,this.width,this.height);
+    }
     pop();
   }
+
+  //generateMask(w,h){
+  //  if(!this.maskCreated){
+  //    let padding = 50;
+  //    this.mask.loadPixels();
+  //    for(let i = 0; i < w; i++){
+  //      for(let j = 0; j < h; j++){
+  //        if((i > this.x0) && (i < this.x0 + this.x1) &&
+  //          (j > this.y0) && (j < this.y0 + this.y1)){
+  //          // inside footprint of component.
+  //          this.mask.set(i, j, color(0, 0, 0, 0));
+  //        }
+  //        else if((i > this.x0 - padding) && (i < this.x0 -padding + this.x1 + 2*padding) &&
+  //          (j > this.y0-padding) && (j < this.y0 - padding + this.y1 + 2*padding)){
+  //          //inside transition between box and background.
+  //          let falloff_x;
+  //          let falloff_y;
+  //          let x_map;
+  //          let y_map;
+  //          let r_map;
+  //          let corner=false;
+  //          let y;
+  //          let x;
+  //          let r;
+  //          if(i < this.x0 && j < this.y0){
+  //            //top left
+  //            x = this.x0 - i;
+  //            y = this.y0 - j;
+  //            r = sqrt(x*x + y*y);
+  //            r_map = map(r,0,padding,0,128,true);
+  //            this.mask.set(i,j,color(0,0,0,r_map));
+  //            corner = true;
+  //          }else if(i > this.x0 + this.x1 && j < this.y0 ){
+  //            //top right
+  //            x = this.x0 + this.x1 - i;
+  //            y = this.y0 - j;
+  //            r = int(sqrt(x*x + y*y));
+  //            r_map = map(r,0,padding,0,128,true);
+  //            this.mask.set(i,j,color(0,0,0,r_map));
+  //            corner = true;
+  //          }
+  //          else if(i < this.x0 && j > this.y0 + this.y1){
+  //            //bottom left
+  //            x = this.x0 - i;
+  //            y = this.y0 + this.y1 - j;
+  //            r = int(sqrt(x*x + y*y));
+  //            r_map = map(r,0,padding,0,128,true);
+  //            this.mask.set(i,j,color(0,0,0,r_map));
+  //            corner = true;
+  //          }
+  //          else if(i > this.x0 + this.x1 && j > this.y0 + this.y1) {
+  //            //bottom right
+  //            x = this.x0 + this.x1 - i;
+  //            y = this.y0 + this.y1 - j;
+  //            r = int(sqrt(x*x + y*y));
+  //            r_map = map(r,0,padding,0,128,true);
+  //            this.mask.set(i,j,color(0,0,0,r_map));
+  //            corner = true;
+  //          }
+  //          if(!corner){
+  //            if(i < this.x0){
+  //              falloff_x = this.x0 - i;
+  //            }
+  //            else{
+  //              falloff_x = i - (this.x0 + this.x1);
+  //            }
+  //            if(j < this.y0){
+  //              falloff_y = this.y0 - j;
+  //            }
+  //            else{
+  //              falloff_y = j - (this.y0 + this.y1);
+  //            }
+  //            x_map = map(falloff_x,0,padding,0,128);
+  //            y_map = map(falloff_y,0,padding,0,128);
+  //            if(x_map > y_map){
+  //              this.mask.set(i,j,color(0,0,0,x_map));
+  //            }
+  //            else{
+  //              this.mask.set(i,j,color(0,0,0,y_map));
+  //            }
+  //          }
+  //        }
+  //        else{
+  //          //outside box
+  //          this.mask.set(i, j, color(0, 0, 0, 128));
+  //        }
+  //      }
+  //    }
+  //    this.mask.updatePixels();
+  //    this.maskCreated = true;
+  //  }
+  //}
 }
 
 function populateSlots(){
@@ -176,6 +271,7 @@ function populateSlots(){
   getSATA();
   resizePopups();
 }
+
 
 function resizePopups(){
   var dfd = cockpit.defer();
@@ -216,13 +312,17 @@ function getRam(){
           if(ram_info["Ram Info"][i]["Size"] != "No Module Installed"){
             peripherals.push(
               new peripheral(
-              components[c]["x0"],
-              components[c]["y0"],
+              "RAM",
+              components[c]["x0"]+components[c]["width"]*0.1,
+              components[c]["y0"]+components[c]["height"]*0.08,
               components[c]["width"],
               components[c]["height"],
-              "#8080FF80"
+              "#8080FF80",
+              peripheralImages.length,
+              components[c]["width"]*ramScale,
               )
             );
+            peripheralImages.push(loadImage("img/motherboard/ram.png"));
           }
         }
       }
@@ -233,46 +333,130 @@ function getRam(){
 
 function getPCI(){
   var dfd = cockpit.defer();
+  let VERTOFFSET = 5.37;
+  let VERTSCALE = 19.0;
+  let WIDTHOFFSET = 1.24;
   if(pci_info){
     for(let i = 0; i < pci_info["PCI Info"].length; i++){
       if(pci_info["PCI Info"][i].hasOwnProperty("ID")){
         for(let c = 0; c < components.length; c++){
           if(components[c]["id"] == pci_info["PCI Info"][i]["ID"] && components[c]["type"].search("pci") != -1){
             components[c].popup.content = JSON.stringify(pci_info["PCI Info"][i],null," ").replaceAll("{\n","").replaceAll("\"","").replaceAll("[","").replaceAll("]\n","").replaceAll("}","").replaceAll(",","").replaceAll("    ","  ");
-            components[c].popup.content = components[c].popup.content.slice(0,-1);
+            components[c].popup.content = components[c].popup.content.slice(0,-2);
             if(pci_info["PCI Info"][i].hasOwnProperty("Card Type")){
               if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-24i"){
                 peripherals.push(
                   new peripheral(
-                    components[c]["x0"],
-                    components[c]["y0"],
+                    "PCI",
+                    components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET),
+                    components[c]["y0"]-(components[c]["width"]*VERTOFFSET),
                     components[c]["width"],
                     components[c]["height"],
-                    "#FF800080"
+                    "#FF800080",
+                    peripheralImages.length,
+                    components[c]["width"]*pciScale
                     )
                   );
+                peripheralImages.push(loadImage("img/motherboard/24i.png"));
+                components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
+                components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
+                components[c]["width"] = 108.0*components[c]["width"]*pciScale;
+                components[c]["height"] = components[c]["width"]/(108.0/884.0);
               }
               else if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-16i"){
                 peripherals.push(
                   new peripheral(
-                    components[c]["x0"],
-                    components[c]["y0"],
+                    "PCI",
+                    components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET),
+                    components[c]["y0"]-(components[c]["width"]*VERTOFFSET),
                     components[c]["width"],
                     components[c]["height"],
-                    "#80FF0080"
+                    "#FF800080",
+                    peripheralImages.length,
+                    components[c]["width"]*pciScale
                     )
                   );
+                peripheralImages.push(loadImage("img/motherboard/16i.png"));
+                components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
+                components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
+                components[c]["width"] = 108.0*components[c]["width"]*pciScale;
+                components[c]["height"] = components[c]["width"]/(108.0/884.0);
               }
-              else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card"){
+              else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "82599ES"){
                 peripherals.push(
                   new peripheral(
-                    components[c]["x0"],
-                    components[c]["y0"],
+                    "PCI",
+                    components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET),
+                    components[c]["y0"]-(components[c]["width"]*VERTOFFSET),
                     components[c]["width"],
                     components[c]["height"],
-                    "#0080FF80"
+                    "#FF800080",
+                    peripheralImages.length,
+                    components[c]["width"]*pciScale
                     )
                   );
+                peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+                components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
+                components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
+                components[c]["width"] = 99.0*components[c]["width"]*pciScale;
+                components[c]["height"] = components[c]["width"]/(99.0/593.0);
+              }
+              else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "X540-AT2"){
+                peripherals.push(
+                  new peripheral(
+                    "PCI",
+                    components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET),
+                    components[c]["y0"]-(components[c]["width"]*VERTOFFSET),
+                    components[c]["width"],
+                    components[c]["height"],
+                    "#FF800080",
+                    peripheralImages.length,
+                    components[c]["width"]*pciScale
+                    )
+                  );
+                peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+                components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
+                components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
+                components[c]["width"] = 98.0*components[c]["width"]*pciScale;
+                components[c]["height"] = components[c]["width"]/(98.0/813.0);
+              }
+              else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "XL710"){
+                peripherals.push(
+                  new peripheral(
+                    "PCI",
+                    components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET),
+                    components[c]["y0"]-(components[c]["width"]*VERTOFFSET),
+                    components[c]["width"],
+                    components[c]["height"],
+                    "#FF800080",
+                    peripheralImages.length,
+                    components[c]["width"]*pciScale
+                    )
+                  );
+                peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+                components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
+                components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
+                components[c]["width"] = 99.0*components[c]["width"]*pciScale;
+                components[c]["height"] = components[c]["width"]/(99.0/886.0);
+              }
+              else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "XXV710"){
+                peripherals.push(
+                  new peripheral(
+                    "PCI",
+                    components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET),
+                    components[c]["y0"]-(components[c]["width"]*VERTOFFSET),
+                    components[c]["width"],
+                    components[c]["height"],
+                    "#FF800080",
+                    peripheralImages.length,
+                    components[c]["width"]*pciScale
+                    )
+                  );
+                peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+                components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
+                components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
+                components[c]["width"] = 98.0*components[c]["width"]*pciScale;
+                components[c]["height"] = components[c]["width"]/(98.0/886.0);
               }
             }
           }
@@ -335,11 +519,14 @@ function getSATA(){
           components[c].popup.content = popup_str.slice(0,-1);
             peripherals.push(
             new peripheral(
+              "SATA",
               components[c]["x0"],
               components[c]["y0"],
               components[c]["width"],
               components[c]["height"],
-              "#FF80FF80"
+              "#FF80FF80",
+              -1,
+              1.0
               )
             );
           break;
@@ -399,13 +586,23 @@ function mouseActivity(){
     for(let i = 0; i < components.length; i++){
       if((mouseX > components[i].x0) && (mouseX < components[i].x0 + components[i].width) &&
         (mouseY > components[i].y0) && (mouseY < components[i].y0 + components[i].height)){
+        //cursor is within the boundaries of a component.
         POPUP_ACTIVE = true;
         POPUP_IDX = i;
         if((components[i].x0 + components[i].width + 20 + components[i].popup.width) < width){
+          //popup window can fit if placed near the top right of the component and 
+          //still fit on screen.
           components[i].popup.x0 = components[i].x0 + components[i].width + 20;
         }
-        else{
+        else if((components[i].x0 - 20 -components[i].popup.width)>20){
+          //popup window can be placed near the upper left region of the component footprint
           components[i].popup.x0 = components[i].x0 - 20 - components[i].popup.width;
+        }else{
+          //popup window is very wide, we need to place it above the component,
+          //starting from the left and sliding it toward the right
+          //until it fits on the canvas.
+          components[i].popup.x0 = ((components[i].x0 - 20 -components[i].popup.width)*-1)+20;
+           
         }
         if((components[i].y0 - 20 ) > 0 ){
         components[i].popup.y0 = components[i].y0 - 20;
