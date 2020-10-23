@@ -18,11 +18,9 @@
             <h1>Hardware</h1>
         </div>
         <ul class="nav nav-tabs">
-            <li class="active"><a data-toggle="tab" href="#system_tab" id="system_tab_link">System</a></li>
-            <li><a data-toggle="tab" href="#motherboard_tab" id="motherboard_tab_link">Motherboard</a></li>
-            <li><a data-toggle="tab" href="#rear_tab" id="rear_tab_link">Rear</a></li>
-            <li><a data-toggle="tab" href="#disks_tab" id="disks_tab_link">Disks</a></li>
-            <li><a data-toggle="tab" href="#power_tab" id="power_tab_link">Power</a></li>
+            <li class="active"><a data-toggle="tab" href="#system_tab" id="system_tab_link">System Overview</a></li>
+            <li><a data-toggle="tab" href="#detail_tab" id="detail_tab_link">System Detail</a></li>
+            <li><a data-toggle="tab" href="#motherboard_tab" id="motherboard_tab_link">Interactive Motherboard</a></li>
         </ul>
 
         <div class="tab-content">
@@ -31,7 +29,7 @@
                     <div id="system_output">
                         <table id="system_table">
                           <tr>
-                            <th>System</th>
+                            <th>System Overview</th>
                             <th></th>
                           </tr>
                           <tr>
@@ -71,32 +69,15 @@
                     </div>
                 </div>
             </div>
-            <div id="rear_tab" class="tab-pane fade">
+            <div id="detail_tab" class="tab-pane fade">
                 <div class="tab_content_header">
-                    <h3>Rear     </h3>
+                    <h3>System Detail     </h3>
                 </div>
-                <div class="rear_content">
-                    <div id="rear_output">REAR OUTPUT</div>
-                </div>
-            </div>
-            <div id="disks_tab" class="tab-pane fade">
-                <div class="tab_content_header">
-                    <h3>Disks     </h3>
-                </div>
-                <div class="disks_content">
-                    <div id="disks_output">DISKS OUTPUT</div>
-                </div>
-            </div>
-            <div id="power_tab" class="tab-pane fade">
-                <div class="tab_content_header">
-                    <h3>Power     </h3>
-                </div>
-                <div class="power_content">
-                    <div id="power_output">OUTPUT</div>
+                <div class="detail_content">
+                    <div id="detail_output">DETAIL OUTPUT</div>
                 </div>
             </div>
         </div>
-
     </div>
 </body>
 

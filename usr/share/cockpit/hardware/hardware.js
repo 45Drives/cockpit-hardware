@@ -12,37 +12,38 @@ var temp_output = document.getElementById("temp_output");
 function motherboard()
 {
 	var dfd = cockpit.defer();
-	var m_output = document.getElementById("motherboard_output");
-	var mobo_img = document.getElementById("mobo_image");
-	temp_output.innerHTML = "Gathering Motherboard Information. Please Wait..";
-	
-	var motherboard_proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/motherboard"
-			], 
-			{err: "out"}
-	);
-
-	motherboard_proc.stream(
-		function(data)
-		{
-			mobo_info = JSON.parse(data);
-			mobo_img.src = ("img/motherboard/" + 
-				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
-				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png");
-			mobo_img.setAttribute("style","display:none;");
-  			mobo_json_path = ("img/motherboard/" + 
-  				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
-  				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json");
+	if(!mobo_info){
+		temp_output = "Loading... Please Wait.";
+		var m_output = document.getElementById("motherboard_output");
+		var mobo_img = document.getElementById("mobo_image");
 			
-			temp_output.innerHTML = "Gathering Connector Information. Please Wait..";
-			gather_connector_data();
-		
-			launchP5JS();
-  			dfd.resolve();
-		}
-	);
+		var motherboard_proc = cockpit.spawn(
+				[
+					"/usr/bin/pkexec",
+					"/usr/share/cockpit/hardware/helper_scripts/motherboard"
+				], 
+				{err: "out"}
+		);
+		motherboard_proc.stream(
+			function(data)
+			{
+				mobo_info = JSON.parse(data);
+				mobo_img.src = ("img/motherboard/" + 
+					String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+					String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png");
+				mobo_img.setAttribute("style","display:none;");
+		 			mobo_json_path = ("img/motherboard/" + 
+		 				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+		 				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json");
+				launchP5JS();
+		 		dfd.resolve();
+			}
+		);
+	}
+	if(!(pci_info && ram_info && sata_info)){
+		gather_connector_data();
+	}
+	launchP5JS();
 }
 
 
@@ -93,6 +94,7 @@ function gather_connector_data(){
 		], 
 		{err: "out"}
 	);
+
 	sata_proc.stream(
 		function(data){
 			sata_info = JSON.parse(data);
@@ -244,30 +246,55 @@ function system()
 			sys_model.innerHTML = hardware_info["System"][product_idx]["Product"][0]["System Model"];
 			sys_chassis_size.innerHTML = hardware_info["System"][product_idx]["Product"][0]["Chassis Size"];
 			sys_product_serial.innerHTML = hardware_info["System"][ipmi_idx]["IPMI Information"][0]["Product Serial"];
+			getMoboInfo();
+			gather_connector_data();
 			dfd.resolve();
 		}
 	);
 }
 
-//listener for clicking on the rear tab
-function rear()
-{
-	var test = document.getElementById("rear_output");
-	test.innerHTML = "Rear";
+function getMoboInfo(){
+	var m_output = document.getElementById("motherboard_output");
+	var mobo_img = document.getElementById("mobo_image");
+	var dfd = cockpit.defer();
+		
+	var motherboard_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/motherboard"
+			], 
+			{err: "out"}
+	);
+	motherboard_proc.stream(
+		function(data)
+		{
+			mobo_info = JSON.parse(data);
+			mobo_img.src = ("img/motherboard/" + 
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png");
+			mobo_img.setAttribute("style","display:none;");
+	 			mobo_json_path = ("img/motherboard/" + 
+	 				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+	 				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json");
+	 		dfd.resolve();
+		}
+	);	
 }
 
-//listener for clicking on the disks tab
-function disks()
+//listener for clicking on the system detail tab
+function detail()
 {
-	var test = document.getElementById("disks_output");
-	test.innerHTML = "Disks";
-}
-
-//listener for clicking on the power tab
-function power()
-{
-	var test = document.getElementById("power_output");
-	test.innerHTML = "Power";
+	var test = document.getElementById("detail_output");
+	test.innerHTML = "Detail";
+	var dfd = cockpit.defer();
+	
+	if(!(mobo_info && pci_info && ram_info && sata_info)){
+		getMoboInfo();
+		gather_connector_data();
+	}else{
+		test.innerHTML = "IT WORKS";
+	}
+	test.innerHTML = "IT WORKS";
 }
 
 function main()
@@ -275,9 +302,7 @@ function main()
 	if(!hardware_info){ system();}
 	document.getElementById("system_tab_link").addEventListener("click", system);
 	document.getElementById("motherboard_tab_link").addEventListener("click", motherboard);
-	document.getElementById("rear_tab_link").addEventListener("click", rear);
-	document.getElementById("disks_tab_link").addEventListener("click", disks);
-	document.getElementById("power_tab_link").addEventListener("click", power);
+	document.getElementById("detail_tab_link").addEventListener("click",detail);
 }
 
 main();

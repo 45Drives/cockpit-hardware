@@ -22,6 +22,9 @@ let peripherals = [];
 let pciScale = 0.02;
 let ramScale = 0.024;
 
+let globalMask;
+let APPLIED_COUNT = 0;
+
 // steps:
 // - load the background image
 // - load the .json file
@@ -91,6 +94,7 @@ function setup() {
   let cnv = createCanvas(1024,1024);
   cnv.parent("motherboard_app");
   cnv.mouseMoved(mouseActivity);
+  mobo_image = document.getElementById("mobo_image");
 }
 
 function draw(){
@@ -127,21 +131,41 @@ function draw(){
     textFont("Courier New");
     text("Generating Masks ... Please Wait.",40,40);
     if(components.length > 0){
+      createComponentMasks(MASK_COUNT);
+      MASK_COUNT++;
       let myStr = "Mask: " + String(MASK_COUNT) + " of " + String(components.length);
       textFont("Courier New");
       text(myStr,40,70);
-      createComponentMasks(MASK_COUNT);
-      MASK_COUNT++;
     }
     if(MASK_ARR.length == components.length && MASK_ARR.length != 0){
       STATE = 3;
+      background(255);
+      textFont("Courier New");
+      text("Creating graphics for supported PCI cards ... Please Wait.",40,40);
     }
   }
   else if(STATE == 3){
     populateSlots();
-    READY = true;
+    setGlobalMask();
+    STATE = 4;
+  }else if(STATE == 4){
+    if(APPLIED_COUNT < components.length){
+      MASK_ARR[APPLIED_COUNT].mask(globalMask);
+      APPLIED_COUNT++;
+    }else{
+      READY = true;
+    }
   }
 }
+
+function setGlobalMask(){
+  var dfd = cockpit.defer();
+  let inset = 30;
+  let yTrim = 30;
+  globalMask = generateMask(background_img.width,background_img.height,inset,inset+yTrim,background_img.width-(2*inset),background_img.height-((2*inset)+yTrim),true);
+  dfd.resolve();
+}
+
 
 class peripheral{
   constructor(pType,x0,y0,width,height,fill,img_idx,wScale=1.0){
@@ -153,8 +177,6 @@ class peripheral{
     this.fill = fill;
     this.img_idx = img_idx;
     this.wScale = wScale;
-    //this.mask = createImage(background_img.width,background_img.height);
-    //this.maskCreated = false;
   }
   show(){
     push();
@@ -170,98 +192,6 @@ class peripheral{
     }
     pop();
   }
-
-  //generateMask(w,h){
-  //  if(!this.maskCreated){
-  //    let padding = 50;
-  //    this.mask.loadPixels();
-  //    for(let i = 0; i < w; i++){
-  //      for(let j = 0; j < h; j++){
-  //        if((i > this.x0) && (i < this.x0 + this.x1) &&
-  //          (j > this.y0) && (j < this.y0 + this.y1)){
-  //          // inside footprint of component.
-  //          this.mask.set(i, j, color(0, 0, 0, 0));
-  //        }
-  //        else if((i > this.x0 - padding) && (i < this.x0 -padding + this.x1 + 2*padding) &&
-  //          (j > this.y0-padding) && (j < this.y0 - padding + this.y1 + 2*padding)){
-  //          //inside transition between box and background.
-  //          let falloff_x;
-  //          let falloff_y;
-  //          let x_map;
-  //          let y_map;
-  //          let r_map;
-  //          let corner=false;
-  //          let y;
-  //          let x;
-  //          let r;
-  //          if(i < this.x0 && j < this.y0){
-  //            //top left
-  //            x = this.x0 - i;
-  //            y = this.y0 - j;
-  //            r = sqrt(x*x + y*y);
-  //            r_map = map(r,0,padding,0,128,true);
-  //            this.mask.set(i,j,color(0,0,0,r_map));
-  //            corner = true;
-  //          }else if(i > this.x0 + this.x1 && j < this.y0 ){
-  //            //top right
-  //            x = this.x0 + this.x1 - i;
-  //            y = this.y0 - j;
-  //            r = int(sqrt(x*x + y*y));
-  //            r_map = map(r,0,padding,0,128,true);
-  //            this.mask.set(i,j,color(0,0,0,r_map));
-  //            corner = true;
-  //          }
-  //          else if(i < this.x0 && j > this.y0 + this.y1){
-  //            //bottom left
-  //            x = this.x0 - i;
-  //            y = this.y0 + this.y1 - j;
-  //            r = int(sqrt(x*x + y*y));
-  //            r_map = map(r,0,padding,0,128,true);
-  //            this.mask.set(i,j,color(0,0,0,r_map));
-  //            corner = true;
-  //          }
-  //          else if(i > this.x0 + this.x1 && j > this.y0 + this.y1) {
-  //            //bottom right
-  //            x = this.x0 + this.x1 - i;
-  //            y = this.y0 + this.y1 - j;
-  //            r = int(sqrt(x*x + y*y));
-  //            r_map = map(r,0,padding,0,128,true);
-  //            this.mask.set(i,j,color(0,0,0,r_map));
-  //            corner = true;
-  //          }
-  //          if(!corner){
-  //            if(i < this.x0){
-  //              falloff_x = this.x0 - i;
-  //            }
-  //            else{
-  //              falloff_x = i - (this.x0 + this.x1);
-  //            }
-  //            if(j < this.y0){
-  //              falloff_y = this.y0 - j;
-  //            }
-  //            else{
-  //              falloff_y = j - (this.y0 + this.y1);
-  //            }
-  //            x_map = map(falloff_x,0,padding,0,128);
-  //            y_map = map(falloff_y,0,padding,0,128);
-  //            if(x_map > y_map){
-  //              this.mask.set(i,j,color(0,0,0,x_map));
-  //            }
-  //            else{
-  //              this.mask.set(i,j,color(0,0,0,y_map));
-  //            }
-  //          }
-  //        }
-  //        else{
-  //          //outside box
-  //          this.mask.set(i, j, color(0, 0, 0, 128));
-  //        }
-  //      }
-  //    }
-  //    this.mask.updatePixels();
-  //    this.maskCreated = true;
-  //  }
-  //}
 }
 
 function populateSlots(){
@@ -270,6 +200,139 @@ function populateSlots(){
   getCPU();
   getSATA();
   resizePopups();
+}
+
+function generateMask(w,h,x0,y0,x1,y1,invert=false){
+  let mask = createImage(w,h);
+  let padding = 50;
+  mask.loadPixels();
+  for(let i = 0; i < w; i++){
+    for(let j = 0; j < h; j++){
+      if((i > x0) && (i < x0 + x1) &&
+        (j > y0) && (j < y0 + y1)){
+        // inside footprint of component.
+          if(invert){
+            mask.set(i, j, color(0, 0, 0, 255));
+          }else{
+            mask.set(i, j, color(0, 0, 0, 0));
+          }
+      }
+      else if((i > x0 - padding) && (i < x0 -padding + x1 + 2*padding) &&
+        (j > y0-padding) && (j < y0 - padding + y1 + 2*padding)){
+        //inside transition between box and background.
+        let falloff_x;
+        let falloff_y;
+        let x_map;
+        let y_map;
+        let r_map;
+        let corner=false;
+        let y;
+        let x;
+        let r;
+        if(i < x0 && j < y0){
+          //top left
+          x = x0 - i;
+          y = y0 - j;
+          r = sqrt(x*x + y*y);
+          r_map = map(r,0,padding,0,128,true);
+          if(invert){
+            r_map = map(r,0,padding,0,255,true);
+            mask.set(i,j,color(0,0,0,127+(128-r_map)));
+          }else{
+            mask.set(i,j,color(0,0,0,r_map));  
+          }
+          corner = true;
+        }else if(i > x0 + x1 && j < y0 ){
+          //top right
+          x = x0 + x1 - i;
+          y = y0 - j;
+          r = int(sqrt(x*x + y*y));
+          r_map = map(r,0,padding,0,128,true);
+          if(invert){
+            r_map = map(r,0,padding,0,255,true);
+            mask.set(i,j,color(0,0,0,127+(128-r_map)));
+          }else{
+            mask.set(i,j,color(0,0,0,r_map));  
+          }
+          
+          corner = true;
+        }
+        else if(i < x0 && j > y0 + y1){
+          //bottom left
+          x = x0 - i;
+          y = y0 + y1 - j;
+          r = int(sqrt(x*x + y*y));
+          r_map = map(r,0,padding,0,128,true);
+          if(invert){
+            r_map = map(r,0,padding,0,255,true);
+            mask.set(i,j,color(0,0,0,127+(128-r_map)));
+          }else{
+            mask.set(i,j,color(0,0,0,r_map));  
+          }
+          
+          corner = true;
+        }
+        else if(i > x0 + x1 && j > y0 + y1) {
+          //bottom right
+          x = x0 + x1 - i;
+          y = y0 + y1 - j;
+          r = int(sqrt(x*x + y*y));
+          r_map = map(r,0,padding,0,128,true);
+          if(invert){
+            r_map = map(r,0,padding,0,255,true);
+            mask.set(i,j,color(0,0,0,127+(128-r_map)));
+          }else{
+            mask.set(i,j,color(0,0,0,r_map));  
+          }
+          
+          corner = true;
+        }
+        if(!corner){
+          if(i < x0){
+            falloff_x = x0 - i;
+          }
+          else{
+            falloff_x = i - (x0 + x1);
+          }
+          if(j < y0){
+            falloff_y = y0 - j;
+          }
+          else{
+            falloff_y = j - (y0 + y1);
+          }
+          x_map = map(falloff_x,0,padding,0,128);
+          y_map = map(falloff_y,0,padding,0,128);
+          if(x_map > y_map){
+            if(invert){
+              x_map = map(falloff_x,0,padding,0,255);
+              mask.set(i,j,color(0,0,0,127+(128-x_map)));
+            }else{
+              mask.set(i,j,color(0,0,0,x_map));  
+            }
+          }
+          else{
+            if(invert){
+              y_map = map(falloff_y,0,padding,0,255);
+              mask.set(i,j,color(0,0,0,127+(128-y_map)));
+            }else{
+              mask.set(i,j,color(0,0,0,y_map));  
+            }
+            
+          }
+        }
+      }
+      else{
+        //outside box
+        if(invert){
+          mask.set(i, j, color(0, 0, 0, 0));
+        }else{
+          mask.set(i, j, color(0, 0, 0, 128));  
+        }
+      }
+    }
+  }
+  mask.updatePixels();
+  return mask;
 }
 
 
@@ -362,6 +425,8 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 108.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(108.0/884.0);
+                let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+                MASK_ARR[c] = newMask;
               }
               else if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-16i"){
                 peripherals.push(
@@ -381,6 +446,8 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 108.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(108.0/884.0);
+                let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+                MASK_ARR[c] = newMask;
               }
               else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "82599ES"){
                 peripherals.push(
@@ -400,6 +467,8 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 99.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(99.0/593.0);
+                let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+                MASK_ARR[c] = newMask;
               }
               else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "X540-AT2"){
                 peripherals.push(
@@ -419,6 +488,8 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 98.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(98.0/813.0);
+                let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+                MASK_ARR[c] = newMask;
               }
               else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "XL710"){
                 peripherals.push(
@@ -438,6 +509,8 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 99.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(99.0/886.0);
+                let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+                MASK_ARR[c] = newMask;
               }
               else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "XXV710"){
                 peripherals.push(
@@ -457,6 +530,8 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 98.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(98.0/886.0);
+                let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+                MASK_ARR[c] = newMask;
               }
             }
           }
