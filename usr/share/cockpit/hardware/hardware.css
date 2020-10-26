@@ -7,6 +7,7 @@
     background-color: #151515;
     width: 100%;
     padding: 15px;
+    color: #FFFFFF;
     margin: 0;
     overflow: auto;
 }
@@ -50,49 +51,23 @@
     padding: 25px;
 }
 
-/*
-.motherboard_output {
+.motherboard_output img {
+    display: none;
+}
+
+.detail_content {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
     padding: 25px;
-    margin:0 -15px;
 }
-*/
 
-.motherboard_output img {
-    display: none;
-}
 
 .component_output{
     padding:25px;
     width: 200px;
     background-color: #f2f2f2;
-}
-
-.rear_content {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-grow: 0;
-    padding: 25px;
-}
-
-.disks_content {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-grow: 0;
-    padding: 25px;
-}
-
-.power_content {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-grow: 0;
-    padding: 25px;
 }
 
 .nav-tabs, .nav-tabs > li > a {

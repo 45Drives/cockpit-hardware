@@ -6,7 +6,9 @@ var pci_info = null;
 var ram_info = null;
 var sata_info = null;
 var p5_running = null;
-var temp_output = document.getElementById("temp_output");
+var temp_output = document.getElementById("motherboard_app");
+var detail_done = false;
+var network_info = null;
 
 //listener for clicking on the motherboard tab
 function motherboard()
@@ -46,6 +48,25 @@ function motherboard()
 	launchP5JS();
 }
 
+function get_network_info(){
+	var network_promise = cockpit.defer();
+
+	// load the pci information
+	var pci_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/hardware/helper_scripts/network"
+		], 
+		{err: "out"}
+	);
+
+	pci_proc.stream(
+		function(data){
+			network_info = JSON.parse(data);
+			network_promise.resolve();
+		}
+	);
+}
 
 
 function gather_connector_data(){
@@ -171,72 +192,6 @@ function system()
 	);
 
 	proc.stream(
-		/**************************************************************************/
-		/* Example Output: /usr/share/cockpit/hardware/helper_scripts/system      */
-		/**************************************************************************/
-		//{
-		//  "System": [
-		//    {
-		//      "Product": [
-		//        {
-		//          "System Model": "Storinator Hybrid 32 (Turbo)",
-		//          "Chassis Size": "S45",
-		//          "ProductID": "Storinator-H32-S45-Turbo"
-		//        }
-		//      ]
-		//    },
-		//    {
-		//      "Motherboard": [
-		//        {
-		//          "Manufacturer": "Supermicro",
-		//          "Product Name": "X11DPL-i",
-		//          "Serial Number": "WM19AS004505"
-		//        }
-		//      ]
-		//    },
-		//    {
-		//      "CPU": [
-		//        {
-		//          "Socket Designation": "CPU1",
-		//          "Version": "Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-		//          "Max Speed": "4500 MHz"
-		//        },
-		//        {
-		//          "Socket Designation": "CPU2",
-		//          "Version": "Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-		//          "Max Speed": "4500 MHz"
-		//        }
-		//      ]
-		//    },
-		//    {
-		//      "HBA Cards": [
-		//        {
-		//          "Model": "SAS9305-16i",
-		//          "PCI Address": "00:19:00:00"
-		//        },
-		//        {
-		//          "Model": "SAS9305-24i",
-		//          "PCI Address": "00:3b:00:00"
-		//        },
-		//        {
-		//          "Model": "SAS9305-24i",
-		//          "PCI Address": "00:d8:00:00"
-		//        }
-		//      ]
-		//    },
-		//    {
-		//      "IPMI Information": [
-		//        {
-		//          "Product Manufacturer": "45Drives",
-		//          "Product Name": "Storinator",
-		//          "Product Part Number": "S45",
-		//          "Product Serial": "12345-1"
-		//        }
-		//      ]
-		//    }
-		//  ]
-		//}
-
 		function(data)
 		{
 			var product_idx = 0; 
@@ -248,12 +203,13 @@ function system()
 			sys_product_serial.innerHTML = hardware_info["System"][ipmi_idx]["IPMI Information"][0]["Product Serial"];
 			getMoboInfo();
 			gather_connector_data();
+			get_network_info();
 			dfd.resolve();
 		}
 	);
 }
 
-function getMoboInfo(){
+async function getMoboInfo(){
 	var m_output = document.getElementById("motherboard_output");
 	var mobo_img = document.getElementById("mobo_image");
 	var dfd = cockpit.defer();
@@ -284,18 +240,229 @@ function getMoboInfo(){
 //listener for clicking on the system detail tab
 function detail()
 {
-	var test = document.getElementById("detail_output");
-	test.innerHTML = "Detail";
+	var detailOutput = document.getElementById("detail_output");
 	var dfd = cockpit.defer();
-	
-	if(!(mobo_info && pci_info && ram_info && sata_info)){
-		getMoboInfo();
-		gather_connector_data();
+	if(mobo_info && pci_info && ram_info && sata_info && network_info){
+		detailOutput.innerHTML = "";
+		detailOutput.appendChild(BuildDetailTable());
+		detail_done = true;
 	}else{
-		test.innerHTML = "IT WORKS";
+		setTimeout(detail,250);
 	}
-	test.innerHTML = "IT WORKS";
+	dfd.resolve();
 }
+
+
+function BuildDetailTable(){
+	let detailTable = document.createElement("div");
+	
+	let sysTableHeader = document.createElement("h3");
+	sysTableHeader.className = "header-45D";
+	sysTableHeader.innerHTML = "System";
+	let sysTable = buildSystemTable();
+
+	let moboTableHeader = document.createElement("h3");
+	moboTableHeader.innerHTML = "Motherboard";
+	moboTableHeader.className = "header-45D";
+	let moboTable = buildMotherboardTable();
+
+	let cpuTableHeader = document.createElement("h3");
+	cpuTableHeader.innerHTML = "CPU";
+	cpuTableHeader.className = "header-45D";
+	let cpuTable = buildCPUTable();
+	
+	let pciTableHeader = document.createElement("h3");
+	pciTableHeader.innerHTML = "PCI";
+	pciTableHeader.className = "header-45D";
+	let pciTable = buildPCITable();
+
+	let ramTableHeader = document.createElement("h3");
+	ramTableHeader.innerHTML = "RAM";
+	ramTableHeader.className = "header-45D";
+	let ramTable = buildRAMTable();
+
+	let networkTableHeader = document.createElement("h3");
+	networkTableHeader.innerHTML = "Network";
+	networkTableHeader.className = "header-45D";
+	let networkTable = buildNetworkTable();
+
+	detailTable.appendChild(sysTableHeader);
+	detailTable.appendChild(sysTable);
+	detailTable.appendChild(moboTableHeader);
+	detailTable.appendChild(moboTable);
+	detailTable.appendChild(cpuTableHeader);
+	detailTable.appendChild(cpuTable);
+	detailTable.appendChild(pciTableHeader);
+	detailTable.appendChild(pciTable);
+	detailTable.appendChild(ramTableHeader);
+	detailTable.appendChild(ramTable);
+	detailTable.appendChild(networkTableHeader);
+	detailTable.appendChild(networkTable);
+	return detailTable;
+}
+
+function buildNetworkTable(){
+	let networkTable = document.createElement("table");
+	let tr = networkTable.insertRow(0);
+	let headers = ["Connection Name","Connection State","Type","MAC","IPv4","IPv6","PCI Slot","Bus Address"];
+	for(let i = 0; i < headers.length; i++){
+		th = document.createElement("th");
+		th.innerHTML = headers[i];
+		tr.appendChild(th);
+	}
+	for(let i = 0; i < network_info["Network Info"].length; i++){
+		tr = networkTable.insertRow(-1);
+		for(let j = 0; j < headers.length; j++){
+			let cell = tr.insertCell(-1);
+			if(network_info["Network Info"][i].hasOwnProperty(headers[j])){
+				cell.innerHTML = network_info["Network Info"][i][headers[j]];
+			}else{
+				cell.innerHTML = "-";
+			}
+		}
+	}
+	return networkTable;
+}
+
+function buildRAMTable(){
+	let ramTable = document.createElement("table");
+	let tr = ramTable.insertRow(0);
+	let headers = ["Locator","Type","Size","Manufacturer","Serial Number","Temperature"];
+	for(let i = 0; i < headers.length; i++){
+		th = document.createElement("th");
+		th.innerHTML = headers[i];
+		tr.appendChild(th);
+	}
+	for(let i = 0; i < ram_info["Ram Info"].length; i++){
+		tr = ramTable.insertRow(-1);
+		for(let j = 0; j < headers.length; j++){
+			let cell = tr.insertCell(-1);
+			cell.innerHTML = ram_info["Ram Info"][i][headers[j]];
+		}
+	}
+	return ramTable;
+}
+
+function buildPCITable(){
+	let pciTable = document.createElement("table");
+	let th = document.createElement("th");
+	let colCount = 5;
+	let tr = pciTable.insertRow(-1);
+	let headers = ["Slot","Type","Availability","Bus Address","Card Type","Card Model"];
+	for(let i = 0; i < headers.length; i++){
+		th = document.createElement("th");
+		th.innerHTML = headers[i];
+		tr.appendChild(th);
+	}
+
+	for(let i = 0; i < pci_info["PCI Info"].length; i++){
+		tr = pciTable.insertRow(-1);
+		let cell = tr.insertCell(-1);
+		if(pci_info["PCI Info"][i].hasOwnProperty("ID")){
+			cell.innerHTML = "PCI Slot " + pci_info["PCI Info"][i]["ID"];
+		}else{
+			cell.innerHTML = pci_info["PCI Info"][i]["Designation"];
+		}
+		
+		cell = tr.insertCell(-1);
+		cell.innerHTML = pci_info["PCI Info"][i]["Type"];
+		cell = tr.insertCell(-1);
+		cell.innerHTML = pci_info["PCI Info"][i]["Current Usage"];
+		cell = tr.insertCell(-1);
+		cell.innerHTML = pci_info["PCI Info"][i]["Bus Address"];
+		if(pci_info["PCI Info"][i].hasOwnProperty("Card Type")){
+			if(pci_info["PCI Info"][i]["Card Type"] == "Network Card"){
+				//PCI Card is a Network Card
+				cell = tr.insertCell(-1);
+				cell.innerHTML = "Network Card";
+				cell = tr.insertCell(-1);
+				cell.innerHTML = pci_info["PCI Info"][i]["Card Model"];
+			}else{
+				//it has an HBA
+				cell = tr.insertCell(-1);
+				cell.innerHTML = "HBA";
+				cell = tr.insertCell(-1);
+				cell.innerHTML = pci_info["PCI Info"][i]["Card Type"];
+			}
+		}else{
+			//No card type
+			cell = tr.insertCell(-1);
+			cell.innerHTML = "-";
+			cell = tr.insertCell(-1);
+			cell.innerHTML = "-";
+		}
+	}
+	return pciTable;
+}
+
+function buildCPUTable(){
+	let cpuTable = document.createElement("table");
+	let th = document.createElement("th");
+	let colCount = 2;
+	let headers = ["Socket","Model","Temperature"];
+	let tr = cpuTable.insertRow(-1);
+	for(let i = 0; i < headers.length; i++){
+		th = document.createElement("th");
+		th.innerHTML = headers[i];
+		tr.appendChild(th);
+	}
+
+	for(let i = 0; i < mobo_info["Motherboard Info"][1]["CPU"].length; i++){
+		tr = cpuTable.insertRow(-1);
+		let cell = tr.insertCell(-1);
+		cell.innerHTML = mobo_info["Motherboard Info"][1]["CPU"][i]["Socket Designation"];
+		cell = tr.insertCell(-1);
+		cell.innerHTML = mobo_info["Motherboard Info"][1]["CPU"][i]["Version"];
+		cell = tr.insertCell(-1);
+		cell.innerHTML = (
+			mobo_info["Motherboard Info"][2]["Sensor Readings"][0][
+			mobo_info["Motherboard Info"][1]["CPU"][i]["Socket Designation"] + " Temp"
+			]);
+	}
+
+	return cpuTable;
+}
+
+function buildMotherboardTable(){
+	let moboTable = document.createElement("table");
+	let th = document.createElement("th");
+	let tr;
+	let fields = [
+		["Manufacturer",hardware_info["System"][1]["Motherboard"][0]["Manufacturer"]],
+		["Model",hardware_info["System"][1]["Motherboard"][0]["Product Name"]],
+		["Serial",hardware_info["System"][1]["Motherboard"][0]["Serial Number"]]
+	];
+	for(let i = 0; i < fields.length; i++){
+		tr = moboTable.insertRow(-1);
+		for(let j = 0; j < fields[i].length; j++){
+			let cell = tr.insertCell(-1);
+			cell.innerHTML = fields[i][j];
+		}
+	}
+	return moboTable;
+}
+
+function buildSystemTable(){
+	let sysTable = document.createElement("table");
+	let th;
+	let tr;
+
+	let fields = [
+	["Model",hardware_info["System"][0]["Product"][0]["System Model"]],
+	["Serial",hardware_info["System"][4]["IPMI Information"][0]["Product Serial"]],
+	];
+
+	for(let i = 0; i < fields.length; i++){
+		tr = sysTable.insertRow(-1);
+		for(let j = 0; j < fields[i].length; j++){
+			let cell = tr.insertCell(-1);
+			cell.innerHTML = fields[i][j];
+		}
+	}
+	return sysTable;
+}
+
+
 
 function main()
 {
