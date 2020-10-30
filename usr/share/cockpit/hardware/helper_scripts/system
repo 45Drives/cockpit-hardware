@@ -21,7 +21,7 @@ import json
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
 	"Manufacturer":  ["Supermicro"],
-	"Product Name":  ["X11DPL-i"],
+	"Product Name":  ["X11DPL-i","X11SPL-F"],
 	"Serial Number": None
 }
 
@@ -35,7 +35,42 @@ g_dmi_cpu_fields = {
 
 g_ipmitool_fru_fields = {
 	"Product Manufacturer": ["45Drives"],
-	"Product Name": ["Storinator","Destroyinator"],
+	"Product Name": [
+		"Storinator",
+		"Destroyinator",
+		"Storinator-H16-Q30-Enhanced-AMD",	
+		"Storinator-H16-S45-Enhanced-AMD",	
+		"Storinator-H16-XL60-Enhanced-AMD",	
+		"Storinator-H32-Q30-Enhanced-AMD",	
+		"Storinator-H32-S45-Enhanced-AMD",	
+		"Storinator-H32-XL60-Enhanced-AMD",	
+		"Storinator-AV15-Turbo",	
+		"Storinator-Q30-Turbo",	
+		"Storinator-S45-Turbo",		
+		"Storinator-XL60-Turbo",	
+		"Stornado-AV15-Turbo",	
+		"Storinator-H16-Q30-Turbo",	
+		"Storinator-H16-S45-Turbo",	
+		"Storinator-H16-XL60-Turbo",
+		"Storinator-H32-Q30-Turbo",
+		"Storinator-H32-S45-Turbo",	
+		"Storinator-H32-XL60-Turbo",
+		"Storinator-AV15-Enhanced",	
+		"Storinator-Q30-Enhanced",	
+		"Storinator-S45-Enhanced",	
+		"Storinator-XL60-Enhanced",	
+		"Stornado-AV15-Enhanced",	
+		"Storinator-H16-Q30-Enhanced",
+		"Storinator-H16-S45-Enhanced",
+		"Storinator-H16-XL60-Enhanced",
+		"Storinator-H32-Q30-Enhanced",
+		"Storinator-H32-S45-Enhanced",
+		"Storinator-H32-XL60-Enhanced",
+		"Storinator-AV15-Base",	
+		"Storinator-Q30-Base",	
+		"Storinator-S45-Base",
+		"Storinator-OLD",	
+		],
 	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60"],
 	"Product Serial":None
 }
@@ -130,6 +165,7 @@ def get_ipmi_info():
 	return ipmi_json_str
 
 def get_hba_info():
+	hba_found = False
 	try:
 		storcli64_result = subprocess.Popen(
 			["/opt/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
@@ -142,6 +178,7 @@ def get_hba_info():
 			# Model AdapterType VendId DevId SubVendId SubDevId PCIAddress 	
 			regex = re.search("({fld}).*(00:\w\w:\w\w:\w\w)\s+$".format(fld=field),line)
 			if regex != None:
+				hba_found = True
 				hba_json_str += (
 					"{\"Model\":\"" + 
 					regex.group(1) + 
@@ -149,9 +186,12 @@ def get_hba_info():
 					regex.group(2) +
 					"\"},"
 				)
-	hba_json_str = hba_json_str[:-1]
-	hba_json_str += "]}"
-	return hba_json_str
+	if hba_found:
+		hba_json_str = hba_json_str[:-1]
+		hba_json_str += "]}"
+		return hba_json_str
+	else:
+		return "{\"HBA Cards\":[]}"
 
 def get_product_info(mobo,hba,cpu,ipmi):
 	MANUAL_CHECK = True
@@ -291,6 +331,7 @@ def get_product_info(mobo,hba,cpu,ipmi):
 	if ipmi:
 		chassis_size = jipmi["IPMI Information"][0]["Product Part Number"]
 
+
 	product_json_str = None
 	product_key = None
 	if(mobo_model in mobo_to_product_lut.keys()):
@@ -321,11 +362,28 @@ def get_product_info(mobo,hba,cpu,ipmi):
 				#TODO: use rotational to detect if there are more HDDs or SSDs
 				#TODO: call the same function to modify the ipmitool entries
 				return False
-		product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
-							"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
-							"\"ProductID\": \"" + product + 
-							"\"}]}")
-		return product_json_str
+		
+		if product_key != None:
+			# We found a match, assign product 
+			product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
+								"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
+								"\"ProductID\": \"" + product_key + 
+								"\"}]}")
+			return product_json_str
+		elif ipmi:
+			#autodetect couldn't find a match 
+			#last saving grace can be the Product Name from ipmi, which might be the key in the product_lut
+			#if the new version of the serial script is run on the hardware. 
+			if jipmi["IPMI Information"][0]["Product Name"] in product_lut.keys():
+				# the product name as provided from the ipmitool fru command is a key in our product lookup table
+				# This can be used to identify things properly 
+				product_key = jipmi["IPMI Information"][0]["Product Name"]
+				product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
+									"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
+									"\"ProductID\": \"" + product_key + 
+									"\"}]}")
+				return product_json_str
+
 	else:
 		#Motherboard is not supported, assume storinator
 		product_json_str = ("\"Product\":[{\"System Model\": \"" + "Storinator (Legacy)" + "\"," + 

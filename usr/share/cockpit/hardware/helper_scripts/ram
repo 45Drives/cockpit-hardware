@@ -43,7 +43,9 @@ g_ipmitool_sensor_fields = {
 	"DIMMD1 Temp": " (C)",
 	"DIMMD2 Temp": " (C)",
 	"DIMME1 Temp": " (C)",
-	"DIMME2 Temp": " (C)"
+	"DIMME2 Temp": " (C)",
+	"DIMMF1 Temp": " (C)",
+	"DIMMF2 Temp": " (C)"
 }
 
 def ipmitool_sensor():

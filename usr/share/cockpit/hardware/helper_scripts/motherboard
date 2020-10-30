@@ -22,7 +22,7 @@ import json
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
 	"Manufacturer":  ["Supermicro"],
-	"Product Name":  ["X11DPL-i"],
+	"Product Name":  ["X11DPL-i","X11SPL-F"],
 	"Serial Number": None
 }
 
@@ -64,7 +64,9 @@ g_ipmitool_sensor_fields = {
 	"DIMMD1 Temp": " (C)",
 	"DIMMD2 Temp": " (C)",
 	"DIMME1 Temp": " (C)",
-	"DIMME2 Temp": " (C)"
+	"DIMME2 Temp": " (C)",
+	"DIMMF1 Temp": " (C)",
+	"DIMMF2 Temp": " (C)"
 }
 
 ################################################################################
@@ -112,6 +114,8 @@ def get_cpu_info():
 				if g_dmi_cpu_fields[regex.group(1)] != None:
 					if regex.group(2) in g_dmi_cpu_fields[regex.group(1)]:
 						cpu.append((regex.group(1),regex.group(2)))
+					elif field == "Socket Designation" and regex.group(2) == "CPU":
+						cpu.append((regex.group(1),"CPU1"))
 					else:
 						cpu.append((regex.group(1),regex.group(2)+" (Legacy)"))
 				else:
