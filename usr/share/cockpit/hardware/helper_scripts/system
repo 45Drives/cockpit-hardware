@@ -50,7 +50,7 @@ g_storcli64_fields = {
 # Desc: This runs "dmidecode -t 2" and parses the output for specific fields
 #       corresponding to the keys in g_dmi_mobo_fields dictionary.
 #       if dmidecode discovers an unsupported motherboard model, or 
-#		manufacturer, it will append " (unsupported)"  to the end of the 
+#		manufacturer, it will append " (legacy)"  to the end of the 
 #       result.  
 ################################################################################
 def get_motherboard_model():
@@ -68,7 +68,7 @@ def get_motherboard_model():
 					if regex.group(2) in g_dmi_mobo_fields[regex.group(1)]:
 						mobo.append((regex.group(1),regex.group(2)))
 					else:
-						mobo.append((regex.group(1),regex.group(2)+" (unsupported)"))
+						mobo.append((regex.group(1),regex.group(2)+" (Legacy)"))
 				else:
 					mobo.append((regex.group(1),regex.group(2)))
 	mobo_json_str = "{\"Motherboard\":["+json.dumps(dict(mobo))+"]}"
@@ -89,7 +89,7 @@ def get_cpu_info():
 					if regex.group(2) in g_dmi_cpu_fields[regex.group(1)]:
 						cpu.append((regex.group(1),regex.group(2)))
 					else:
-						cpu.append((regex.group(1),regex.group(2)+" (unsupported)"))
+						cpu.append((regex.group(1),regex.group(2)+" (Legacy)"))
 				else:
 					cpu.append((regex.group(1),regex.group(2)))
 
@@ -123,7 +123,7 @@ def get_ipmi_info():
 					if regex.group(2) in g_ipmitool_fru_fields[regex.group(1)]:
 						ipmi.append((regex.group(1),regex.group(2)))
 					else:
-						ipmi.append((regex.group(1),regex.group(2)+" (unknown)"))
+						ipmi.append((regex.group(1),regex.group(2)+" (Legacy)"))
 				else:
 					ipmi.append((regex.group(1),regex.group(2)))
 	ipmi_json_str = "{\"IPMI Information\":["+json.dumps(dict(ipmi))+"]}"
@@ -224,12 +224,13 @@ def get_product_info(mobo,hba,cpu,ipmi):
 		"Storinator-AV15-Base":			["X11SSH-CTF","Intel Xeon E3-1220",1,0,0,"AV15",False,"Storinator (Base)"],
 		"Storinator-Q30-Base":			["X11SSH-CTF","Intel Xeon E3-1220",1,0,2,"Q30",False,"Storinator (Base)"],
 
-		"Storinator-S45-Base":			["X11SSM-F","Intel Xeon E3-1220",1,0,3,"S45",False,"Storinator (Base)"]
+		"Storinator-S45-Base":			["X11SSM-F","Intel Xeon E3-1220",1,0,3,"S45",False,"Storinator (Base)"],
+		"Storinator-OLD":				["X10SRL-F","Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz",1,1,1,"Q30",False,"Storinator Hybrid 16 (Legacy)"]
 	}
 
 	mobo_to_product_lut = {
 		"X11SSH-CTF"	:[
-							"Storinator-H32-XL60-Enhanced",
+							"Storinator-Q30-Base",
 							"Storinator-AV15-Base"
 						],
 		
@@ -292,40 +293,46 @@ def get_product_info(mobo,hba,cpu,ipmi):
 
 	product_json_str = None
 	product_key = None
-
-	for product in mobo_to_product_lut[mobo_model]:
-		if ipmi:
-			if (
+	if(mobo_model in mobo_to_product_lut.keys()):
+		for product in mobo_to_product_lut[mobo_model]:
+			if ipmi:
+				if (
+					product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
+					product_lut[product][product_lut_idx["CHASSIS_SIZE"]] == chassis_size and
+					product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
+					product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
+					product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count
+					):
+					product_key = product
+					break
+			elif (
+				product_lut[product][product_lut_idx["SSD_CHECK"]] == False and
 				product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
-				product_lut[product][product_lut_idx["CHASSIS_SIZE"]] == chassis_size and
 				product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
 				product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
-				product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count
+				product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count 
 				):
-				product_key = product
-				break
-		elif (
-			product_lut[product][product_lut_idx["SSD_CHECK"]] == False and
-			product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
-			product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
-			product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
-			product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count 
-			):
-				#there is a unique pairing of parameters without having 
-				#to check for hdd or ssd count
-				#TODO: write a function that will perform the required modifications using ipmitool 
-				product_key = product
-				break
-		else:
-			#TODO: use rotational to detect if there are more HDDs or SSDs
-			#TODO: call the same function to modify the ipmitool entries
-			return False
-
-	product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
-						"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
-						"\"ProductID\": \"" + product + 
-						"\"}]}")
-	return product_json_str
+					#there is a unique pairing of parameters without having 
+					#to check for hdd or ssd count
+					#TODO: write a function that will perform the required modifications using ipmitool 
+					product_key = product
+					break
+			else:
+				#TODO: use rotational to detect if there are more HDDs or SSDs
+				#TODO: call the same function to modify the ipmitool entries
+				return False
+		product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
+							"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
+							"\"ProductID\": \"" + product + 
+							"\"}]}")
+		return product_json_str
+	else:
+		#Motherboard is not supported, assume storinator
+		product_json_str = ("\"Product\":[{\"System Model\": \"" + "Storinator (Legacy)" + "\"," + 
+							"\"Chassis Size\": \"" + chassis_size + "\"," + 
+							"\"ProductID\": \"" + "Storinator-" + chassis_size + "-Legacy"
+							"\"}]}")
+		return product_json_str
 
 def main():
 	mobo = get_motherboard_model()

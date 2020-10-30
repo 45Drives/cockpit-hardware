@@ -53,7 +53,18 @@ g_ipmitool_sensor_fields = {
 	"P2-DIMMA1 Temp": " (C)",
 	"P2-DIMMB1 Temp": " (C)",
 	"P2-DIMMD1 Temp": " (C)",
-	"P2-DIMME1 Temp": " (C)"
+	"P2-DIMME1 Temp": " (C)",
+	"CPU Temp": " (C)",
+	"DIMMA1 Temp": " (C)",
+	"DIMMA2 Temp": " (C)",
+	"DIMMB1 Temp": " (C)",
+	"DIMMB2 Temp": " (C)",
+	"DIMMC1 Temp": " (C)",
+	"DIMMC2 Temp": " (C)",
+	"DIMMD1 Temp": " (C)",
+	"DIMMD2 Temp": " (C)",
+	"DIMME1 Temp": " (C)",
+	"DIMME2 Temp": " (C)"
 }
 
 ################################################################################
@@ -62,7 +73,7 @@ g_ipmitool_sensor_fields = {
 # Desc: This runs "dmidecode -t 2" and parses the output for specific fields
 #       corresponding to the keys in g_dmi_mobo_fields dictionary.
 #       if dmidecode discovers an unsupported motherboard model, or 
-#		manufacturer, it will append " (unsupported)"  to the end of the 
+#		manufacturer, it will append " (legacy)"  to the end of the 
 #       result.  
 ################################################################################
 def get_motherboard_model():
@@ -80,7 +91,7 @@ def get_motherboard_model():
 					if regex.group(2) in g_dmi_mobo_fields[regex.group(1)]:
 						mobo.append((regex.group(1),regex.group(2)))
 					else:
-						mobo.append((regex.group(1),regex.group(2)+" (unsupported)"))
+						mobo.append((regex.group(1),regex.group(2)+" (Legacy)"))
 				else:
 					mobo.append((regex.group(1),regex.group(2)))
 	mobo_json_str = "{\"Motherboard\":["+json.dumps(dict(mobo))+"]}"
@@ -102,7 +113,7 @@ def get_cpu_info():
 					if regex.group(2) in g_dmi_cpu_fields[regex.group(1)]:
 						cpu.append((regex.group(1),regex.group(2)))
 					else:
-						cpu.append((regex.group(1),regex.group(2)+" (unsupported)"))
+						cpu.append((regex.group(1),regex.group(2)+" (Legacy)"))
 				else:
 					cpu.append((regex.group(1),regex.group(2)))
 
@@ -133,9 +144,16 @@ def get_sensor_readings():
 		for field in g_ipmitool_sensor_fields.keys():
 			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
 			if regex != None:
-				sensor_readings.append(
-				(regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
-				)
+				if regex.group(1) == "CPU Temp":
+					# ipmitool does not use the socket name
+					# we need to manually intervene and store it as
+					# CPU1 Temp
+					sensor_readings.append(
+					("CPU1 Temp",regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
+					)
+				else:
+					# All other readings are fine, use the field as captured.
+					sensor_readings.append((regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
 	sensor_readings_json_str = "{\"Sensor Readings\":["+json.dumps(dict(sensor_readings))+"]}"
 	return sensor_readings_json_str
 

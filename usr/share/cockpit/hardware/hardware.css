@@ -23,12 +23,28 @@
     padding: 15px;
 }
 
+.detail-table-header{
+    background-color: #FFFFFF;
+    width: 100%;
+    color: #981C20;
+    padding: 16px 8px 8px 8px;
+    margin: 0;
+    overflow: auto;
+    text-align: left;
+}
+
+.detail-table-sub-header{
+    background-color: #FFFFFF;
+    color: #000000;
+    text-align: left;
+}
+
 .system_content {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 25px;
+    padding: 16px;
 }
 
 .system_output{
@@ -36,7 +52,7 @@
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 25px;
+    padding: 16px;
 }
 
 .motherboard_content {
@@ -44,11 +60,11 @@
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 25px;
+    padding: 16px;
 }
 
 .motherboard_output {
-    padding: 25px;
+    padding: 16px;
 }
 
 .motherboard_output img {
@@ -61,7 +77,7 @@
     justify-content: flex-start;
     align-items: flex-start;
     flex-grow: 0;
-    padding: 25px;
+    padding: 16px;
 }
 
 
@@ -89,18 +105,12 @@
     border-left-color: rgb(56, 61, 63);
 }
 
-.nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
-    cursor: default;
-    background-color: #F0F0F0;
-    border-bottom-color: transparent;
-}
-
 .tab_content_header{
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 25px;
+    padding: 8px 8px 8px 25px;
 }
 
 table {
@@ -116,6 +126,19 @@ th, td {
 tr:nth-child(even){background-color: #f2f2f2}
 
 th {
-    background-color: rgb(24,26,27);
-    color: white;
+    background-color: #404040;
+    color: #FFFFFF;
+}
+
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
+    color: #981C20;
+    cursor: default;
+    background-color: #FAFAFA;
+    border: 1px solid #ddd;
+        border-bottom-color: #DDDDDD;
+    border-bottom-color: transparent;
+}
+
+.active{
+    --pf-global--active-color--100: #981C20;
 }

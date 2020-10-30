@@ -33,7 +33,17 @@ g_ipmitool_sensor_fields = {
 	"P2-DIMMA1 Temp": " (C)",
 	"P2-DIMMB1 Temp": " (C)",
 	"P2-DIMMD1 Temp": " (C)",
-	"P2-DIMME1 Temp": " (C)"
+	"P2-DIMME1 Temp": " (C)",
+	"DIMMA1 Temp": " (C)",
+	"DIMMA2 Temp": " (C)",
+	"DIMMB1 Temp": " (C)",
+	"DIMMB2 Temp": " (C)",
+	"DIMMC1 Temp": " (C)",
+	"DIMMC2 Temp": " (C)",
+	"DIMMD1 Temp": " (C)",
+	"DIMMD2 Temp": " (C)",
+	"DIMME1 Temp": " (C)",
+	"DIMME2 Temp": " (C)"
 }
 
 def ipmitool_sensor():
@@ -84,7 +94,11 @@ def main():
 		for module in ram:
 			module["Temperature"] = temps[module["Locator"]]
 			if module["Temperature"] == "na (C)":
-				module["Temperature"] = "na"
+				module["Temperature"] = "-"
+			if module["Manufacturer"] == "NO DIMM":
+				module["Manufacturer"] = "-"
+			if module["Serial Number"] == "NO DIMM":
+				module["Serial Number"] = "-"
 	if ram:
 		output_str = "{\"Ram Info\":["
 		for module in ram:

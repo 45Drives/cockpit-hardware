@@ -20,7 +20,7 @@ let peripheralImages = [];
 let peripherals = [];
 
 let pciScale = 0.02;
-let ramScale = 0.024;
+let ramScale = 0.026;
 
 let globalMask;
 let APPLIED_COUNT = 0;
@@ -376,8 +376,8 @@ function getRam(){
             peripherals.push(
               new peripheral(
               "RAM",
-              components[c]["x0"]+components[c]["width"]*0.1,
-              components[c]["y0"]+components[c]["height"]*0.08,
+              components[c]["x0"]+components[c]["width"]*0.08,
+              components[c]["y0"]+components[c]["height"]*0.09,
               components[c]["width"],
               components[c]["height"],
               "#8080FF80",
@@ -599,7 +599,7 @@ function getSATA(){
               components[c]["y0"],
               components[c]["width"],
               components[c]["height"],
-              "#FF80FF80",
+              "#FFFFFF40",
               -1,
               1.0
               )

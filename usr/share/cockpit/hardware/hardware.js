@@ -9,7 +9,8 @@ var p5_running = null;
 var temp_output = document.getElementById("motherboard_app");
 var detail_done = false;
 var network_info = null;
-
+var supported_motherboards = ["X11DPL-i"];
+var mobo_supported = false;
 //listener for clicking on the motherboard tab
 function motherboard()
 {
@@ -127,7 +128,21 @@ function gather_connector_data(){
 
 
 function launchP5JS(){
-	if(mobo_info && mobo_json_path && pci_info && sata_info && !p5_running){
+	if(mobo_info){
+		for(let i = 0; i < supported_motherboards.length; i++){
+			if(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] == supported_motherboards[i]){
+				mobo_supported = true;
+			}
+		}
+		if(!mobo_supported){
+			let APP_OUTPUT = document.getElementById("motherboard_app");
+			APP_OUTPUT.innerHTML = (
+				"Interactive Motherboard Support for " +
+				mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] +
+				" is not available at this time.");
+		}
+	}
+	if(mobo_supported && mobo_info && mobo_json_path && pci_info && sata_info && !p5_running){
 		p5_running = true;
 		var p5js = document.createElement('script');
 		p5js.onload = function() {};
@@ -182,6 +197,11 @@ function system()
 		product_img_lut["Storinator-AV15-Base"] = "img/products/storinatorAV15.jpg";
 		product_img_lut["Storinator-Q30-Base"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-S45-Base"] = "img/products/storinatorS45.jpg";
+		//Placeholder for failed autodetect. 
+		product_img_lut["Storinator-AV15-Legacy"] = "img/products/storinatorAV15.jpg";
+		product_img_lut["Storinator-Q30-Legacy"] = "img/products/storinatorQ30.jpg";
+		product_img_lut["Storinator-S45-Legacy"] = "img/products/storinatorS45.jpg";
+		product_img_lut["Storinator-XL60-Legacy"] = "img/products/storinatorXL60.jpg";
 
 	var proc = cockpit.spawn(
 			[
@@ -257,33 +277,33 @@ function BuildDetailTable(){
 	let detailTable = document.createElement("div");
 	
 	let sysTableHeader = document.createElement("h3");
-	sysTableHeader.className = "header-45D";
+	sysTableHeader.className = "detail-table-header";
 	sysTableHeader.innerHTML = "System";
 	let sysTable = buildSystemTable();
 
 	let moboTableHeader = document.createElement("h3");
 	moboTableHeader.innerHTML = "Motherboard";
-	moboTableHeader.className = "header-45D";
+	moboTableHeader.className = "detail-table-header";
 	let moboTable = buildMotherboardTable();
 
 	let cpuTableHeader = document.createElement("h3");
 	cpuTableHeader.innerHTML = "CPU";
-	cpuTableHeader.className = "header-45D";
+	cpuTableHeader.className = "detail-table-header";
 	let cpuTable = buildCPUTable();
 	
 	let pciTableHeader = document.createElement("h3");
 	pciTableHeader.innerHTML = "PCI";
-	pciTableHeader.className = "header-45D";
+	pciTableHeader.className = "detail-table-header";
 	let pciTable = buildPCITable();
 
 	let ramTableHeader = document.createElement("h3");
 	ramTableHeader.innerHTML = "RAM";
-	ramTableHeader.className = "header-45D";
+	ramTableHeader.className = "detail-table-header";
 	let ramTable = buildRAMTable();
 
 	let networkTableHeader = document.createElement("h3");
 	networkTableHeader.innerHTML = "Network";
-	networkTableHeader.className = "header-45D";
+	networkTableHeader.className = "detail-table-header";
 	let networkTable = buildNetworkTable();
 
 	detailTable.appendChild(sysTableHeader);
@@ -307,6 +327,7 @@ function buildNetworkTable(){
 	let headers = ["Connection Name","Connection State","Type","MAC","IPv4","IPv6","PCI Slot","Bus Address"];
 	for(let i = 0; i < headers.length; i++){
 		th = document.createElement("th");
+		th.className = "detail-table-sub-header";
 		th.innerHTML = headers[i];
 		tr.appendChild(th);
 	}
@@ -330,6 +351,7 @@ function buildRAMTable(){
 	let headers = ["Locator","Type","Size","Manufacturer","Serial Number","Temperature"];
 	for(let i = 0; i < headers.length; i++){
 		th = document.createElement("th");
+		th.className = "detail-table-sub-header";
 		th.innerHTML = headers[i];
 		tr.appendChild(th);
 	}
@@ -351,6 +373,7 @@ function buildPCITable(){
 	let headers = ["Slot","Type","Availability","Bus Address","Card Type","Card Model"];
 	for(let i = 0; i < headers.length; i++){
 		th = document.createElement("th");
+		th.className = "detail-table-sub-header";
 		th.innerHTML = headers[i];
 		tr.appendChild(th);
 	}
@@ -403,6 +426,7 @@ function buildCPUTable(){
 	let tr = cpuTable.insertRow(-1);
 	for(let i = 0; i < headers.length; i++){
 		th = document.createElement("th");
+		th.className = "detail-table-sub-header";
 		th.innerHTML = headers[i];
 		tr.appendChild(th);
 	}
