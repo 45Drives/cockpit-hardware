@@ -58,7 +58,6 @@ def lsblk(device):
 
 def main():
 	sata = ls_by_path()
-	s
 	if sata:
 		for connection in sata:
 			partitions = lsblk(connection["Device"])
