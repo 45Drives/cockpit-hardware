@@ -21,14 +21,21 @@ import json
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
 	"Manufacturer":  ["Supermicro"],
-	"Product Name":  ["X11DPL-i","X11SPL-F"],
+	"Product Name":  [
+		"X11DPL-i",
+		"X11SPL-F",
+		"H11SSL-i"
+		],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
 	"Socket Designation":  ["CPU1","CPU2"],
-	"Version":  ["Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz"],
+	"Version":  [
+		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
+		"AMD EPYC 7281 16-Core Processor"
+		],
 	"Current Speed": None,
 	"Max Speed": None,
 }
@@ -120,13 +127,15 @@ def get_cpu_info():
 		for field in g_dmi_cpu_fields.keys():
 			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
-				if g_dmi_cpu_fields[regex.group(1)] != None:
-					if regex.group(2) in g_dmi_cpu_fields[regex.group(1)]:
-						cpu.append((regex.group(1),regex.group(2)))
+				regex_group1_str = str(regex.group(1)).rstrip()
+				regex_group2_str = str(regex.group(2)).rstrip()
+				if g_dmi_cpu_fields[regex_group1_str] != None:
+					if regex_group2_str in g_dmi_cpu_fields[regex_group1_str]:
+						cpu.append((regex_group1_str,regex_group2_str))
 					else:
-						cpu.append((regex.group(1),regex.group(2)+" (Legacy)"))
+						cpu.append((regex_group1_str,regex_group2_str+" (Legacy)"))
 				else:
-					cpu.append((regex.group(1),regex.group(2)))
+					cpu.append((regex_group1_str,regex_group2_str))
 
 	if len(cpu) == len(g_dmi_cpu_fields):
 		#there is only 1 cpu listed
@@ -230,12 +239,12 @@ def get_product_info(mobo,hba,cpu,ipmi):
 	}
 
 	product_lut = {
-		"Storinator-H16-Q30-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281",1,1,1,"Q30",False,"Storinator Hybrid 16 (AMD)"],
-		"Storinator-H16-S45-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281",1,1,2,"S45",False,"Storinator Hybrid 16 (AMD)"],
-		"Storinator-H16-XL60-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281",1,1,3,"XL60",False,"Storinator Hybrid 16 (AMD)"],
-		"Storinator-H32-Q30-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281",1,2,0,"Q30",False,"Storinator Hybrid 32 (AMD)"],
-		"Storinator-H32-S45-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281",1,2,1,"S45",False,"Storinator Hybrid 32 (AMD)"],
-		"Storinator-H32-XL60-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281",1,2,2,"XL60",False,"Storinator Hybrid 32 (AMD)"],
+		"Storinator-H16-Q30-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281 16-Core Processor",1,1,1,"Q30",False,"Storinator Hybrid 16 (AMD)"],
+		"Storinator-H16-S45-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281 16-Core Processor",1,1,2,"S45",False,"Storinator Hybrid 16 (AMD)"],
+		"Storinator-H16-XL60-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281 16-Core Processor",1,1,3,"XL60",False,"Storinator Hybrid 16 (AMD)"],
+		"Storinator-H32-Q30-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281 16-Core Processor",1,2,0,"Q30",False,"Storinator Hybrid 32 (AMD)"],
+		"Storinator-H32-S45-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281 16-Core Processor",1,2,1,"S45",False,"Storinator Hybrid 32 (AMD)"],
+		"Storinator-H32-XL60-Enhanced-AMD":	["H11SSL-i","AMD EPYC 7281 16-Core Processor",1,2,2,"XL60",False,"Storinator Hybrid 32 (AMD)"],
 
 		"Storinator-AV15-Turbo":		["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,1,"AV15",False,"Storinator (Turbo)"],
 		"Storinator-Q30-Turbo":			["X11DPL-i","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",2,0,2,"Q30",True,"Storinator (Turbo)"],

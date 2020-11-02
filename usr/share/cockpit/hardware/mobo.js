@@ -405,7 +405,6 @@ function getPCI(){
         for(let c = 0; c < components.length; c++){
           if(components[c]["id"] == pci_info["PCI Info"][i]["ID"] && components[c]["type"].search("pci") != -1){
             components[c].popup.content = JSON.stringify(pci_info["PCI Info"][i],null," ").replaceAll("{\n","").replaceAll("\"","").replaceAll("[","").replaceAll("]\n","").replaceAll("}","").replaceAll(",","").replaceAll("    ","  ");
-            components[c].popup.content = components[c].popup.content.slice(0,-2);
             if(pci_info["PCI Info"][i].hasOwnProperty("Card Type")){
               if(pci_info["PCI Info"][i]["Card Type"] == "SAS9305-24i"){
                 peripherals.push(
@@ -425,6 +424,7 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 108.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(108.0/884.0);
+                components[c].popup.content = components[c].popup.content.slice(0,-1);
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }
@@ -446,6 +446,7 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 108.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(108.0/884.0);
+                components[c].popup.content = components[c].popup.content.slice(0,-1);
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }
@@ -467,6 +468,7 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 99.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(99.0/593.0);
+                components[c].popup.content = components[c].popup.content.slice(0,-5);
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }
@@ -488,6 +490,7 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 98.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(98.0/813.0);
+                components[c].popup.content = components[c].popup.content.slice(0,-5);
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }
@@ -509,6 +512,7 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 99.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(99.0/886.0);
+                components[c].popup.content = components[c].popup.content.slice(0,-5);
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }
@@ -530,6 +534,7 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 98.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(98.0/886.0);
+                components[c].popup.content = components[c].popup.content.slice(0,-5);
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }

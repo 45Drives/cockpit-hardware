@@ -9,7 +9,7 @@ var p5_running = null;
 var temp_output = document.getElementById("motherboard_app");
 var detail_done = false;
 var network_info = null;
-var supported_motherboards = ["X11DPL-i","X11SPL-F"];
+var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i"];
 var mobo_supported = false;
 //listener for clicking on the motherboard tab
 function motherboard()
@@ -474,6 +474,7 @@ function buildSystemTable(){
 	let fields = [
 	["Model",hardware_info["System"][0]["Product"][0]["System Model"]],
 	["Serial",hardware_info["System"][4]["IPMI Information"][0]["Product Serial"]],
+	["Chassis Size",hardware_info["System"][0]["Product"][0]["Chassis Size"]]
 	];
 
 	for(let i = 0; i < fields.length; i++){

@@ -30,7 +30,7 @@ def ls_by_path():
 			sata_connections.append(
 					{
 						"Connector":("I-SATA"+regex.group(1)),
-					"Device":regex.group(2)
+						"Device":regex.group(2)
 					}
 				)
 	return sata_connections
@@ -58,7 +58,7 @@ def lsblk(device):
 
 def main():
 	sata = ls_by_path()
-	
+	s
 	if sata:
 		for connection in sata:
 			partitions = lsblk(connection["Device"])

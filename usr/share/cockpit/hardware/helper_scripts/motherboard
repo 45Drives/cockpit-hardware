@@ -22,14 +22,21 @@ import json
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
 	"Manufacturer":  ["Supermicro"],
-	"Product Name":  ["X11DPL-i","X11SPL-F"],
+	"Product Name":  [
+		"X11DPL-i",
+		"X11SPL-F",
+		"H11SSL-i"
+		],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
 	"Socket Designation":  ["CPU1","CPU2"],
-	"Version":  ["Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz"],
+	"Version":  [
+		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
+		"AMD EPYC 7281 16-Core Processor"
+		],
 	"Current Speed": None,
 	"Max Speed": None,
 }
@@ -66,7 +73,9 @@ g_ipmitool_sensor_fields = {
 	"DIMME1 Temp": " (C)",
 	"DIMME2 Temp": " (C)",
 	"DIMMF1 Temp": " (C)",
-	"DIMMF2 Temp": " (C)"
+	"DIMMF2 Temp": " (C)",
+	"DIMMG1 Temp": " (C)",
+	"DIMMH1 Temp": " (C)"
 }
 
 ################################################################################
@@ -111,15 +120,17 @@ def get_cpu_info():
 		for field in g_dmi_cpu_fields.keys():
 			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
-				if g_dmi_cpu_fields[regex.group(1)] != None:
-					if regex.group(2) in g_dmi_cpu_fields[regex.group(1)]:
-						cpu.append((regex.group(1),regex.group(2)))
-					elif field == "Socket Designation" and regex.group(2) == "CPU":
-						cpu.append((regex.group(1),"CPU1"))
+				regex_group1_str = str(regex.group(1)).rstrip()
+				regex_group2_str = str(regex.group(2)).rstrip()
+				if g_dmi_cpu_fields[regex_group1_str] != None:
+					if regex_group2_str in g_dmi_cpu_fields[regex_group1_str]:
+						cpu.append((regex_group1_str,regex_group2_str))
+					elif field == "Socket Designation" and regex_group2_str == "CPU":
+						cpu.append((regex_group1_str,"CPU1"))
 					else:
-						cpu.append((regex.group(1),regex.group(2)+" (Legacy)"))
+						cpu.append((regex_group1_str,regex_group2_str+" (Legacy)"))
 				else:
-					cpu.append((regex.group(1),regex.group(2)))
+					cpu.append((regex_group1_str,regex_group2_str))
 
 	if len(cpu) == len(g_dmi_cpu_fields):
 		#there is only 1 cpu listed
