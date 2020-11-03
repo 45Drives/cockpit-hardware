@@ -150,20 +150,10 @@
     "diam": 497.9477884276624
   },
   {
-    "type": "I-SATA0",
-    "id": 0,
-    "shape": "rect",
-    "x0": 4,
-    "y0": 612,
-    "width": 20,
-    "height": 50,
-    "diam": 107.70329614269008
-  },
-  {
     "type": "I-SATA1",
     "id": 1,
     "shape": "rect",
-    "x0": 27,
+    "x0": 4,
     "y0": 612,
     "width": 20,
     "height": 50,
@@ -173,18 +163,18 @@
     "type": "I-SATA2",
     "id": 2,
     "shape": "rect",
-    "x0": 3,
-    "y0": 568,
-    "width": 49,
-    "height": 19,
-    "diam": 105.1094667477673
+    "x0": 27,
+    "y0": 612,
+    "width": 20,
+    "height": 50,
+    "diam": 107.70329614269008
   },
   {
     "type": "I-SATA3",
     "id": 3,
     "shape": "rect",
     "x0": 3,
-    "y0": 547,
+    "y0": 568,
     "width": 49,
     "height": 19,
     "diam": 105.1094667477673
@@ -193,17 +183,17 @@
     "type": "I-SATA4",
     "id": 4,
     "shape": "rect",
-    "x0": 61,
-    "y0": 646,
-    "width": 22,
-    "height": 50,
-    "diam": 109.2520022699813
+    "x0": 3,
+    "y0": 547,
+    "width": 49,
+    "height": 19,
+    "diam": 105.1094667477673
   },
   {
     "type": "I-SATA5",
     "id": 5,
     "shape": "rect",
-    "x0": 84,
+    "x0": 61,
     "y0": 646,
     "width": 22,
     "height": 50,
@@ -213,7 +203,7 @@
     "type": "I-SATA6",
     "id": 6,
     "shape": "rect",
-    "x0": 107,
+    "x0": 84,
     "y0": 646,
     "width": 22,
     "height": 50,
@@ -222,6 +212,16 @@
   {
     "type": "I-SATA7",
     "id": 7,
+    "shape": "rect",
+    "x0": 107,
+    "y0": 646,
+    "width": 22,
+    "height": 50,
+    "diam": 109.2520022699813
+  },
+  {
+    "type": "I-SATA8",
+    "id": 8,
     "shape": "rect",
     "x0": 130,
     "y0": 646,

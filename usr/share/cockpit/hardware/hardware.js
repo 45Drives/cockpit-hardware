@@ -393,20 +393,11 @@ function buildPCITable(){
 		cell.innerHTML = pci_info["PCI Info"][i]["Current Usage"];
 		cell = tr.insertCell(-1);
 		cell.innerHTML = pci_info["PCI Info"][i]["Bus Address"];
-		if(pci_info["PCI Info"][i].hasOwnProperty("Card Type")){
-			if(pci_info["PCI Info"][i]["Card Type"] == "Network Card"){
-				//PCI Card is a Network Card
-				cell = tr.insertCell(-1);
-				cell.innerHTML = "Network Card";
-				cell = tr.insertCell(-1);
-				cell.innerHTML = pci_info["PCI Info"][i]["Card Model"];
-			}else{
-				//it has an HBA
-				cell = tr.insertCell(-1);
-				cell.innerHTML = "HBA";
+		if(pci_info["PCI Info"][i].hasOwnProperty("Card Type") && pci_info["PCI Info"][i].hasOwnProperty("Card Model")){
 				cell = tr.insertCell(-1);
 				cell.innerHTML = pci_info["PCI Info"][i]["Card Type"];
-			}
+				cell = tr.insertCell(-1);
+				cell.innerHTML = pci_info["PCI Info"][i]["Card Model"];
 		}else{
 			//No card type
 			cell = tr.insertCell(-1);

@@ -25,7 +25,8 @@ g_dmi_mobo_fields = {
 	"Product Name":  [
 		"X11DPL-i",
 		"X11SPL-F",
-		"H11SSL-i"
+		"H11SSL-i",
+		"X11SSH-CTF"
 		],
 	"Serial Number": None
 }
@@ -35,7 +36,8 @@ g_dmi_cpu_fields = {
 	"Socket Designation":  ["CPU1","CPU2"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-		"AMD EPYC 7281 16-Core Processor"
+		"AMD EPYC 7281 16-Core Processor",
+		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz"
 		],
 	"Current Speed": None,
 	"Max Speed": None,

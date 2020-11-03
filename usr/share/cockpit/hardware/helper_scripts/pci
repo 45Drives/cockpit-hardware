@@ -39,6 +39,11 @@ g_network_card_models = [
 	"82599ES"
 ]
 
+g_sata_controllers = [
+	"ASM1062"
+]
+
+
 def dmidecode():
 	try:
 		dmi_result = subprocess.Popen(
@@ -116,10 +121,30 @@ def getNetworkCardModel(busAddress):
 
 	return "unknown"
 
+def sata():
+	try:
+		lspci_result = subprocess.Popen(
+			["lspci"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		return False
+
+	sata = []
+	sata_dict = {}
+	for line in lspci_result:
+		for field in g_sata_controllers:
+			regex = re.search("^(\S+).*({fld}).*$".format(fld=field),line)
+			if regex != None:
+				sata_dict["Card Type"] = "Serial ATA Controller"
+				sata_dict["Card Model"] = regex.group(2)
+				sata_dict["Bus Address"] = "0000:" + regex.group(1)
+				sata.append(sata_dict.copy())		
+	return sata
+
 def main():
 	pci_slots = dmidecode()
 	hba_cards = storcli()
 	network_cards = network()
+	sata_cards = sata()
 
 	# Look for hba cards and pci slots with matching bus addresses.
 	# and add a "Card Type" field to the list of pci slot dictionaries
@@ -127,7 +152,8 @@ def main():
 		for hba in hba_cards:
 			for slot in pci_slots:
 				if(hba["Bus Address"] == slot["Bus Address"]):
-					slot["Card Type"] = hba["Model"]
+					slot["Card Type"] = "HBA"
+					slot["Card Model"] = hba["Model"]
 	
 	# for each pci slot with an ID that corresponds to 
 	# the "PCI Slot" field from the 
@@ -143,6 +169,17 @@ def main():
 					if "Connections" not in slot.keys():
 						slot["Connections"] = []
 					slot["Connections"].append(card)
+
+	# for each pci slot, see if there are any sata_cards with
+	# matching bus addresses. if so, append the following fields
+	# to indicate the card type and model
+	if pci_slots and sata_cards:
+		for slot in pci_slots:
+			for card in sata_cards:
+				if(card["Bus Address"] == slot["Bus Address"]):
+					slot["Card Type"] = card["Card Type"]
+					slot["Card Model"] = card["Card Model"]
+					# TODO: Get the partition information for any connected drives.
 
 	# Create .json formatted output string
 	output_str = "{ \"PCI Info\":["

@@ -24,7 +24,8 @@ g_dmi_mobo_fields = {
 	"Product Name":  [
 		"X11DPL-i",
 		"X11SPL-F",
-		"H11SSL-i"
+		"H11SSL-i",
+		"X11SSH-CTF"
 		],
 	"Serial Number": None
 }
@@ -34,7 +35,8 @@ g_dmi_cpu_fields = {
 	"Socket Designation":  ["CPU1","CPU2"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-		"AMD EPYC 7281 16-Core Processor"
+		"AMD EPYC 7281 16-Core Processor",
+		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -270,10 +272,10 @@ def get_product_info(mobo,hba,cpu,ipmi):
 		"Storinator-H32-S45-Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,1,"S45",False,"Storinator Hybrid 32 (Enhanced)"],
 		"Storinator-H32-XL60-Enhanced":	["X11SPL-F","Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",1,2,2,"XL60",False,"Storinator Hybrid 32 (Enhanced)"],
 
-		"Storinator-AV15-Base":			["X11SSH-CTF","Intel Xeon E3-1220",1,0,0,"AV15",False,"Storinator (Base)"],
-		"Storinator-Q30-Base":			["X11SSH-CTF","Intel Xeon E3-1220",1,0,2,"Q30",False,"Storinator (Base)"],
+		"Storinator-AV15-Base":			["X11SSH-CTF","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,0,"AV15",False,"Storinator (Base)"],
+		"Storinator-Q30-Base":			["X11SSH-CTF","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,2,"Q30",False,"Storinator (Base)"],
 
-		"Storinator-S45-Base":			["X11SSM-F","Intel Xeon E3-1220",1,0,3,"S45",False,"Storinator (Base)"],
+		"Storinator-S45-Base":			["X11SSM-F","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,3,"S45",False,"Storinator (Base)"],
 		"Storinator-OLD":				["X10SRL-F","Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz",1,1,1,"Q30",False,"Storinator Hybrid 16 (Legacy)"]
 	}
 
