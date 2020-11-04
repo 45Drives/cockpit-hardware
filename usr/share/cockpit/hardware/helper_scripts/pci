@@ -137,8 +137,49 @@ def sata():
 				sata_dict["Card Type"] = "Serial ATA Controller"
 				sata_dict["Card Model"] = regex.group(2)
 				sata_dict["Bus Address"] = "0000:" + regex.group(1)
-				sata.append(sata_dict.copy())		
+				sata.append(sata_dict.copy())	
+
+	# search through the sata list and append any partition information found. 
+	try:
+		ls_result = subprocess.Popen(
+			["ls","-l","/dev/disk/by-path"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		return False
+
+	drives = []
+	
+	for card in sata:
+		for line in ls_result:
+			drive_dict = {}
+			regex = re.search("pci-({ba})-ata-(\d)\s->\s\W+(.*)".format(ba=card["Bus Address"]),line)
+			if regex != None:
+				drive_dict["Device"] = regex.group(3)
+				drive_dict["Path"] = "pci-" + regex.group(1) + "-ata-" + regex.group(2)
+				drive_dict["Partitions"] = lsblk(drive_dict["Device"])
+				drives.append(drive_dict.copy())
+		card["Connections"] = drives.copy()
 	return sata
+
+def lsblk(device):
+	try:
+		lsblk_result = subprocess.Popen(
+			["lsblk","-l","/dev/"+device],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+
+	partitions = []
+	for line in lsblk_result:
+		regex = re.search("^(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s+(\S+)(.*)$",line)
+		if regex != None and regex.group(1) != "NAME":
+			partitions.append(
+					{
+						"Name":regex.group(1),
+						"Size":regex.group(2),
+						"Type":regex.group(3),
+						"Mount Point":regex.group(4).lstrip()
+					}
+				)
+	return partitions
 
 def main():
 	pci_slots = dmidecode()
@@ -179,6 +220,9 @@ def main():
 				if(card["Bus Address"] == slot["Bus Address"]):
 					slot["Card Type"] = card["Card Type"]
 					slot["Card Model"] = card["Card Model"]
+					if "Connections" not in slot.keys():
+						slot["Connections"] = []
+					slot["Connections"] = card["Connections"]
 					# TODO: Get the partition information for any connected drives.
 
 	# Create .json formatted output string

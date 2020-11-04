@@ -556,7 +556,36 @@ function getPCI(){
                 components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
                 components[c]["width"] = 97.0*components[c]["width"]*pciScale;
                 components[c]["height"] = components[c]["width"]/(97.0/365.0);
-                components[c].popup.content = components[c].popup.content.slice(0,-1);
+                let contentStr = "";
+                contentStr += "Designation: " + pci_info["PCI Info"][i]["Designation"] + "\n";
+                contentStr += "Type: " + pci_info["PCI Info"][i]["Type"] + "\n";
+                contentStr += "Current Usage: " + pci_info["PCI Info"][i]["Current Usage"] + "\n";
+                contentStr += "ID: " + pci_info["PCI Info"][i]["ID"] + "\n";
+                contentStr += "Bus Address: " + pci_info["PCI Info"][i]["Bus Address"] + "\n";
+                contentStr += "Card Type: " + pci_info["PCI Info"][i]["Card Type"] + "\n";
+                contentStr += "Card Model: " + pci_info["PCI Info"][i]["Card Model"] + "\n";
+                if(pci_info["PCI Info"][i].hasOwnProperty("Connections")){
+                  let padding = 11;
+                  contentStr += "Connections: \n"
+                  for(let con = 0; con < pci_info["PCI Info"][i]["Connections"].length; con++){
+                    contentStr += "\tDevice: " + pci_info["PCI Info"][i]["Connections"][con]["Device"] + "\n";
+                    contentStr += "\tPath: " + pci_info["PCI Info"][i]["Connections"][con]["Path"] + "\n";
+                    contentStr += "\tPartition Information:\n";
+                    contentStr += (
+                      "\t\t| " + "Name".padEnd(padding," ") + 
+                      "Size".padEnd(padding," ") + 
+                      "Type".padEnd(padding," ") + 
+                      "Mount Point".padEnd(padding," ") + " |\n"
+                      );
+                    for(let p = 0; p < pci_info["PCI Info"][i]["Connections"][con]["Partitions"].length; p++){
+                      contentStr += "\t\t| " + pci_info["PCI Info"][i]["Connections"][con]["Partitions"][p]["Name"].padEnd(padding," ");
+                      contentStr += pci_info["PCI Info"][i]["Connections"][con]["Partitions"][p]["Size"].padEnd(padding," ");
+                      contentStr += pci_info["PCI Info"][i]["Connections"][con]["Partitions"][p]["Type"].padEnd(padding," ");
+                      contentStr += pci_info["PCI Info"][i]["Connections"][con]["Partitions"][p]["Mount Point"].padEnd(padding," ") + " |\n";
+                    }
+                  }
+                }
+                components[c].popup.content = contentStr.slice(0,-1);;
                 let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
                 MASK_ARR[c] = newMask;
               }

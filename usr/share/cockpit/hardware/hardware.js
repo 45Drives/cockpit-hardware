@@ -9,7 +9,7 @@ var p5_running = null;
 var temp_output = document.getElementById("motherboard_app");
 var detail_done = false;
 var network_info = null;
-var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i"];
+var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF"];
 var mobo_supported = false;
 //listener for clicking on the motherboard tab
 function motherboard()

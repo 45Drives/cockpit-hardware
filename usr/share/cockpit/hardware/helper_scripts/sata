@@ -16,7 +16,23 @@ import subprocess
 import re
 import json
 
-def ls_by_path():
+
+# This contains the expected path(s), for 
+# sata connectors on supported motherboards
+g_motherboard_sata_addresses = {
+	"X11SSH-CTF":[
+		("pci-0000:00:17.0-ata-1","I-SATA0"),
+		("pci-0000:00:17.0-ata-2","I-SATA1"),
+		("pci-0000:00:17.0-ata-3","I-SATA2"),
+		("pci-0000:00:17.0-ata-4","I-SATA3"),
+		("pci-0000:00:17.0-ata-5","I-SATA4"),
+		("pci-0000:00:17.0-ata-6","I-SATA5"),
+		("pci-0000:00:17.0-ata-7","I-SATA6"),
+		("pci-0000:00:17.0-ata-8","I-SATA7"),
+	]
+}
+
+def ls_by_path(motherboard):
 	try:
 		ls_result = subprocess.Popen(
 			["ls","-l","/dev/disk/by-path"],stdout=subprocess.PIPE, universal_newlines=True).stdout
@@ -24,16 +40,32 @@ def ls_by_path():
 		return False
 
 	sata_connections = []
-	for line in ls_result:
-		regex = re.search("ata-(\d)\s->\s\W+(.*)",line)
-		if regex != None:
-			sata_connections.append(
-					{
-						"Connector":("I-SATA"+regex.group(1)),
-						"Device":regex.group(2)
-					}
-				)
-	return sata_connections
+	if(motherboard in g_motherboard_sata_addresses.keys()):
+		for path in g_motherboard_sata_addresses[motherboard]:
+			for line in ls_result:
+				regex = re.search("{pth}\s->\s\W+(.*)".format(pth=path[0]),line)
+				if regex != None:
+					sata_connections.append(
+						{
+							"Path": str(path[0])[:-6],
+							"Connector":str(path[1]),
+							"Device":regex.group(1)
+						}
+					)
+		return sata_connections
+	
+	else:
+		for line in ls_result:
+			regex = re.search("(\S+)-ata-(\d)\s->\s\W+(.*)",line)
+			if regex != None:
+				sata_connections.append(
+						{
+							"Path": regex.group(1),
+							"Connector":("I-SATA"+regex.group(2)),
+							"Device":regex.group(3)
+						}
+					)
+		return sata_connections
 
 def lsblk(device):
 	try:
@@ -56,8 +88,25 @@ def lsblk(device):
 				)
 	return partitions
 
+
+def get_motherboard_model():
+	mobo_model = ""
+	try:
+		dmi_result = subprocess.Popen(["dmidecode","-t","2"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: dmidecode is not installed")
+		return False
+	for line in dmi_result:
+		for field in g_motherboard_sata_addresses.keys():
+			regex = re.search("^\sProduct Name:\s+({fld})".format(fld=field),line)
+			if regex != None:
+				mobo_model = field
+				break
+	return mobo_model
+
 def main():
-	sata = ls_by_path()
+	motherboard = get_motherboard_model()
+	sata = ls_by_path(motherboard)
 	if sata:
 		for connection in sata:
 			partitions = lsblk(connection["Device"])
@@ -70,7 +119,9 @@ def main():
 		output_str = "{\"SATA Info\":["
 		for connection in sata:
 			output_str += json.dumps(connection) + ","
-	output_str = output_str[:-1] + "]}"
+		output_str = output_str[:-1] + "]}"
+	else:
+		output_str = "{\"SATA Info\":[]}"
 
 	# print output string to stdout
 	print(json.dumps(json.loads(output_str),indent=4))
