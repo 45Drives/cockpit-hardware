@@ -360,8 +360,6 @@ function getRam(){
     for(let i = 0; i < ram_info["Ram Info"].length; i++){
       for(let c = 0; c < components.length; c++){
         if(ram_info["Ram Info"][i]["Locator"] == components[c]["type"]){
-          components[c].popup.content = JSON.stringify(ram_info["Ram Info"][i],null,"\t");
-          
           var content_str = "";
           content_str += "Connector: " + ram_info["Ram Info"][i]["Locator"] + "\n";
           content_str += "Capacity: " + ram_info["Ram Info"][i]["Size"] + "\n";

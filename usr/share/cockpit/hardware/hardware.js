@@ -5,11 +5,11 @@ var mobo_json_path = null;
 var pci_info = null;
 var ram_info = null;
 var sata_info = null;
-var p5_running = null;
+var p5_running = false;
 var temp_output = document.getElementById("motherboard_app");
 var detail_done = false;
 var network_info = null;
-var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF"];
+var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F"];
 var mobo_supported = false;
 //listener for clicking on the motherboard tab
 function motherboard()
@@ -142,7 +142,7 @@ function launchP5JS(){
 				" is not available at this time.");
 		}
 	}
-	if(mobo_supported && mobo_info && mobo_json_path && pci_info && sata_info && !p5_running){
+	if(mobo_supported && mobo_info && mobo_json_path && pci_info && sata_info && ram_info && !p5_running){
 		p5_running = true;
 		var p5js = document.createElement('script');
 		p5js.onload = function() {};
@@ -160,7 +160,6 @@ function launchP5JS(){
 
 function system()
 {
-	var dfd = cockpit.defer();
 	var sys_img = document.getElementById("system_image");
 	var sys_model = document.getElementById("sys_model");
 	var sys_chassis_size = document.getElementById("sys_chassis_size");
@@ -202,31 +201,33 @@ function system()
 		product_img_lut["Storinator-Q30-Legacy"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-S45-Legacy"] = "img/products/storinatorS45.jpg";
 		product_img_lut["Storinator-XL60-Legacy"] = "img/products/storinatorXL60.jpg";
+	if(!hardware_info){
+		var dfd = cockpit.defer();
+		var proc = cockpit.spawn(
+				[
+					"/usr/bin/pkexec",
+					"/usr/share/cockpit/hardware/helper_scripts/system"
+				], 
+				{err: "out"}
+		);
 
-	var proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/system"
-			], 
-			{err: "out"}
-	);
-
-	proc.stream(
-		function(data)
-		{
-			var product_idx = 0; 
-			var ipmi_idx = 4;
-			hardware_info = JSON.parse(data);
-			sys_img.src = product_img_lut[String(hardware_info["System"][product_idx]["Product"][0]["ProductID"])];
-			sys_model.innerHTML = hardware_info["System"][product_idx]["Product"][0]["System Model"];
-			sys_chassis_size.innerHTML = hardware_info["System"][product_idx]["Product"][0]["Chassis Size"];
-			sys_product_serial.innerHTML = hardware_info["System"][ipmi_idx]["IPMI Information"][0]["Product Serial"];
-			getMoboInfo();
-			gather_connector_data();
-			get_network_info();
-			dfd.resolve();
-		}
-	);
+		proc.stream(
+			function(data)
+			{
+				var product_idx = 0; 
+				var ipmi_idx = 4;
+				hardware_info = JSON.parse(data);
+				sys_img.src = product_img_lut[String(hardware_info["System"][product_idx]["Product"][0]["ProductID"])];
+				sys_model.innerHTML = hardware_info["System"][product_idx]["Product"][0]["System Model"];
+				sys_chassis_size.innerHTML = hardware_info["System"][product_idx]["Product"][0]["Chassis Size"];
+				sys_product_serial.innerHTML = hardware_info["System"][ipmi_idx]["IPMI Information"][0]["Product Serial"];
+				getMoboInfo();
+				gather_connector_data();
+				get_network_info();
+				dfd.resolve();
+			}
+		);
+	}
 }
 
 async function getMoboInfo(){
@@ -262,11 +263,12 @@ function detail()
 {
 	var detailOutput = document.getElementById("detail_output");
 	var dfd = cockpit.defer();
-	if(mobo_info && pci_info && ram_info && sata_info && network_info){
+	if(mobo_info && pci_info && ram_info && sata_info && network_info && !detail_done){
 		detailOutput.innerHTML = "";
 		detailOutput.appendChild(BuildDetailTable());
 		detail_done = true;
 	}else{
+		dfd.resolve();
 		setTimeout(detail,250);
 	}
 	dfd.resolve();

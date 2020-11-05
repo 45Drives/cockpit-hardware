@@ -21,14 +21,34 @@ import json
 # sata connectors on supported motherboards
 g_motherboard_sata_addresses = {
 	"X11SSH-CTF":[
-		("pci-0000:00:17.0-ata-1","I-SATA0"),
-		("pci-0000:00:17.0-ata-2","I-SATA1"),
-		("pci-0000:00:17.0-ata-3","I-SATA2"),
-		("pci-0000:00:17.0-ata-4","I-SATA3"),
-		("pci-0000:00:17.0-ata-5","I-SATA4"),
-		("pci-0000:00:17.0-ata-6","I-SATA5"),
-		("pci-0000:00:17.0-ata-7","I-SATA6"),
-		("pci-0000:00:17.0-ata-8","I-SATA7"),
+		["pci-0000:00:17.0-ata-1","I-SATA0"],
+		["pci-0000:00:17.0-ata-2","I-SATA1"],
+		["pci-0000:00:17.0-ata-3","I-SATA2"],
+		["pci-0000:00:17.0-ata-4","I-SATA3"],
+		["pci-0000:00:17.0-ata-5","I-SATA4"],
+		["pci-0000:00:17.0-ata-6","I-SATA5"],
+		["pci-0000:00:17.0-ata-7","I-SATA6"],
+		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+	"X11SSM-F":[
+		["pci-0000:00:17.0-ata-1","I-SATA0"],
+		["pci-0000:00:17.0-ata-2","I-SATA1"],
+		["pci-0000:00:17.0-ata-3","I-SATA2"],
+		["pci-0000:00:17.0-ata-4","I-SATA3"],
+		["pci-0000:00:17.0-ata-5","I-SATA4"],
+		["pci-0000:00:17.0-ata-6","I-SATA5"],
+		["pci-0000:00:17.0-ata-7","I-SATA6"],
+		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+	"H11SSL-i":[
+		["pci-0000:43:00.2-ata-1","I-SATA0"],
+		["pci-0000:43:00.2-ata-2","I-SATA1"],
+		["pci-0000:43:00.2-ata-3","I-SATA2"],
+		["pci-0000:43:00.2-ata-4","I-SATA3"],
+		["pci-0000:43:00.2-ata-5","I-SATA4"],
+		["pci-0000:43:00.2-ata-6","I-SATA5"],
+		["pci-0000:43:00.2-ata-7","I-SATA6"],
+		["pci-0000:43:00.2-ata-8","I-SATA7"]
 	]
 }
 
@@ -41,19 +61,19 @@ def ls_by_path(motherboard):
 
 	sata_connections = []
 	if(motherboard in g_motherboard_sata_addresses.keys()):
-		for path in g_motherboard_sata_addresses[motherboard]:
-			for line in ls_result:
+		paths = g_motherboard_sata_addresses[motherboard]	
+		for line in ls_result:
+			for path in paths:
 				regex = re.search("{pth}\s->\s\W+(.*)".format(pth=path[0]),line)
 				if regex != None:
 					sata_connections.append(
 						{
-							"Path": str(path[0])[:-6],
-							"Connector":str(path[1]),
+							"Path": path[0],
+							"Connector": path[1],
 							"Device":regex.group(1)
 						}
 					)
 		return sata_connections
-	
 	else:
 		for line in ls_result:
 			regex = re.search("(\S+)-ata-(\d)\s->\s\W+(.*)",line)

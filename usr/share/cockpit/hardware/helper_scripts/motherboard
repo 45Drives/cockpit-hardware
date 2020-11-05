@@ -26,7 +26,8 @@ g_dmi_mobo_fields = {
 		"X11DPL-i",
 		"X11SPL-F",
 		"H11SSL-i",
-		"X11SSH-CTF"
+		"X11SSH-CTF",
+		"X11SSM-F"
 		],
 	"Serial Number": None
 }

@@ -25,7 +25,8 @@ g_dmi_mobo_fields = {
 		"X11DPL-i",
 		"X11SPL-F",
 		"H11SSL-i",
-		"X11SSH-CTF"
+		"X11SSH-CTF",
+		"X11SSM-F"
 		],
 	"Serial Number": None
 }
@@ -77,8 +78,7 @@ g_ipmitool_fru_fields = {
 		"Storinator-H32-XL60-Enhanced",
 		"Storinator-AV15-Base",	
 		"Storinator-Q30-Base",	
-		"Storinator-S45-Base",
-		"Storinator-OLD",	
+		"Storinator-S45-Base"	
 		],
 	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60"],
 	"Product Serial":None
@@ -275,8 +275,7 @@ def get_product_info(mobo,hba,cpu,ipmi):
 		"Storinator-AV15-Base":			["X11SSH-CTF","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,0,"AV15",False,"Storinator (Base)"],
 		"Storinator-Q30-Base":			["X11SSH-CTF","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,2,"Q30",False,"Storinator (Base)"],
 
-		"Storinator-S45-Base":			["X11SSM-F","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,3,"S45",False,"Storinator (Base)"],
-		"Storinator-OLD":				["X10SRL-F","Intel(R) Xeon(R) CPU E5-2620 v4 @ 2.10GHz",1,1,1,"Q30",False,"Storinator Hybrid 16 (Legacy)"]
+		"Storinator-S45-Base":			["X11SSM-F","Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",1,0,3,"S45",False,"Storinator (Base)"]
 	}
 
 	mobo_to_product_lut = {
