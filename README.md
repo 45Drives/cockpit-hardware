@@ -7,8 +7,8 @@ A cockpit module for 45Drives storage servers.
 ## Features (Version 1.0.0)
 ### System Information
 <p align="center">
-  <img src="https://github.com//45Drives/cockpit-hardware/documentation/system_overview.png">
-  <img src="https://github.com//45Drives/cockpit-hardware/documentation/system_detail.png">
+  <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_overview.png">
+  <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_detail.png">
 </p>
 Lists information about your 45Drives Storinator product including:
 
@@ -23,7 +23,7 @@ Lists information about your 45Drives Storinator product including:
 Shows the physical layout and placement of all PCI cards, Memory modules and SATA connections. 
 
 <p align="center">
-  <img src="https://github.com//45Drives/cockpit-hardware/documentation/interactive_motherboard.png">
+  <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/interactive_motherboard.png">
 </p>
 
 Currently supports the following motherboard models:
