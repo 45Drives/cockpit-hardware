@@ -11,12 +11,13 @@ A cockpit module for 45Drives storage servers.
   <img src="https://github.com//45Drives/cockpit-hardware/documentation/system_detail.png">
 </p>
 Lists information about your 45Drives Storinator product including:
-- System Information (model, serial and chassis data)
-- Motherboard (manufacturer, model and serial numbers)
-- CPU (Model and temperature)
-- PCI Devices (Speeds, slot numbers, bus addresses, installed cards, and models)
-- Memory (Location, Memory Type, Size, Manufacturer, serial and temperature readings)
-- Network Information (Connection Names, States, MAC & IP Addresses, and PCI information if detected)
+
+* System Information (model, serial and chassis data)
+* Motherboard (manufacturer, model and serial numbers)
+* CPU (Model and temperature)
+* PCI Devices (Speeds, slot numbers, bus addresses, installed cards, and models)
+* Memory (Location, Memory Type, Size, Manufacturer, serial and temperature readings)
+* Network Information (Connection Names, States, MAC & IP Addresses, and PCI information if detected)
 
 ### Interactive Motherboard Application
 Shows the physical layout and placement of all PCI cards, Memory modules and SATA connections. 
@@ -26,11 +27,11 @@ Shows the physical layout and placement of all PCI cards, Memory modules and SAT
 </p>
 
 Currently supports the following motherboard models:
-- X11DPL-i
-- X11SPL-F
-- H11SSL-i
-- X11SSH-CTF
-- X11SSM-F
+* X11DPL-i
+* X11SPL-F
+* H11SSL-i
+* X11SSH-CTF
+* X11SSM-F
 
 ## Installation
 ### RPM Package:
