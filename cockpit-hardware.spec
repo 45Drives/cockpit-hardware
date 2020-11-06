@@ -49,3 +49,4 @@ rm -rf %{buildroot}
 
 %changelog
 * Fri Nov 06 2020 Mark Hooper <mhooper@45drives.com> 1.0.0
+- First build of 1.0.0
