@@ -18,6 +18,10 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 Requires: cockpit
 Requires: cockpit-ws
 Requires: cockpit-bridge
+Requires: dmidecode
+Requires: ipmitool
+Requires: python3
+
 
 %description
 A cockpit package for 45Drives Storinator Products.
