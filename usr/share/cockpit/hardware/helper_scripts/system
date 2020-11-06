@@ -225,9 +225,6 @@ def get_product_info(mobo,hba,cpu,ipmi):
 	#        to querey the connected drives to determine if we have more SSDs or HDDs
 	#        to address the discrepancy 
 
-	#TODO: PEFORM THE (dmidecode -t 2) AND (dmidecode -t 1) ON THE FOLLOWING MOTHERBOARDS
-	#      AND UPDATE THIS TABLE!:
-	#			H11SSL-i, X11SPL-F, X11SSH-CTF, X11SSM-F
 
 	product_lut_idx = {
 		"MOBO_MODEL":	0,
