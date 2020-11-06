@@ -6,10 +6,8 @@ A cockpit module for 45Drives storage servers.
 
 ## Features (Version 1.0.0)
 ### System Information
-<p align="center">
-  <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_overview.png">
-  <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_detail.png">
-</p>
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_overview.png">
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_detail.png">
 Lists information about your 45Drives Storinator product including:
 
 * System Information (model, serial and chassis data)
@@ -22,9 +20,7 @@ Lists information about your 45Drives Storinator product including:
 ### Interactive Motherboard Application
 Shows the physical layout and placement of all PCI cards, Memory modules and SATA connections. 
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/interactive_motherboard.png">
-</p>
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/interactive_motherboard.png">
 
 Currently supports the following motherboard models:
 * X11DPL-i
@@ -59,6 +55,4 @@ Example:
 http://192.168.13.37:9090
 ```
 Then enter your login credentials (you must have admin rights to use cockpit-hardware)
-<p align="center">
-  <img src="https://github.com//45Drives/cockpit-hardware/documentation/login.png">
-</p>
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/login.png">
