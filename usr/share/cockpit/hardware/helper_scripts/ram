@@ -28,12 +28,20 @@ g_dmi_fields = [
 g_ipmitool_sensor_fields = {
 	"P1-DIMMA1 Temp": " (C)",
 	"P1-DIMMB1 Temp": " (C)",
+	"P1-DIMMC1 Temp": " (C)",
 	"P1-DIMMD1 Temp": " (C)",
 	"P1-DIMME1 Temp": " (C)",
+	"P1-DIMMF1 Temp": " (C)",
+	"P1-DIMMG1 Temp": " (C)",
+	"P1-DIMMH1 Temp": " (C)",
 	"P2-DIMMA1 Temp": " (C)",
 	"P2-DIMMB1 Temp": " (C)",
+	"P2-DIMMC1 Temp": " (C)",
 	"P2-DIMMD1 Temp": " (C)",
 	"P2-DIMME1 Temp": " (C)",
+	"P2-DIMMF1 Temp": " (C)",
+	"P2-DIMMG1 Temp": " (C)",
+	"P2-DIMMH1 Temp": " (C)",
 	"DIMMA1 Temp": " (C)",
 	"DIMMA2 Temp": " (C)",
 	"DIMMB1 Temp": " (C)",
@@ -47,7 +55,9 @@ g_ipmitool_sensor_fields = {
 	"DIMMF1 Temp": " (C)",
 	"DIMMF2 Temp": " (C)",
 	"DIMMG1 Temp": " (C)",
-	"DIMMH1 Temp": " (C)"
+	"DIMMG2 Temp": " (C)",
+	"DIMMH1 Temp": " (C)",
+	"DIMMH2 Temp": " (C)"
 }
 
 def ipmitool_sensor():
@@ -96,13 +106,14 @@ def main():
 	temps = ipmitool_sensor()
 	if ram and temps:
 		for module in ram:
-			module["Temperature"] = temps[module["Locator"]]
-			if module["Temperature"] == "na (C)":
-				module["Temperature"] = "-"
-			if module["Manufacturer"] == "NO DIMM":
-				module["Manufacturer"] = "-"
-			if module["Serial Number"] == "NO DIMM":
-				module["Serial Number"] = "-"
+			if module["Locator"] in temps.keys():
+				module["Temperature"] = temps[module["Locator"]]
+				if module["Temperature"] == "na (C)":
+					module["Temperature"] = "-"
+				if module["Manufacturer"] == "NO DIMM":
+					module["Manufacturer"] = "-"
+				if module["Serial Number"] == "NO DIMM":
+					module["Serial Number"] = "-"
 	if ram:
 		output_str = "{\"Ram Info\":["
 		for module in ram:
