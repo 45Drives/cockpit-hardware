@@ -31,11 +31,11 @@ A cockpit package for 45Drives Storinator Products.
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/cockpit/hardware/
-mkdir -p %{buildroot}/opt/tools
+mkdir -p %{buildroot}/opt/tools/
 
 # in builddir
-cp -a /usr/share/cockpit/hardware/ %{buildroot}/usr/share/cockpit/
-cp -a /opt/tools/ %{buildroot}/opt/tools/
+cp -a usr/share/cockpit/hardware/ %{buildroot}/usr/share/cockpit/
+cp -a opt/tools/ %{buildroot}/opt/tools/
 
 %clean
 rm -rf %{buildroot}
