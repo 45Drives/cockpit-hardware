@@ -35,7 +35,7 @@ mkdir -p %{buildroot}/opt/tools/
 
 # in builddir
 cp -a usr/share/cockpit/hardware/ %{buildroot}/usr/share/cockpit/
-cp -a opt/tools/ %{buildroot}/opt/tools/
+cp -a opt/tools/ %{buildroot}/opt/
 
 %clean
 rm -rf %{buildroot}
