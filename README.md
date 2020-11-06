@@ -51,7 +51,7 @@ note, you need to install the cockpit package and the [45Drives tools](https://g
 
 ```
 
-##Useage
+## Usage
 Enter the ip address of your storage server into a web browser using port 9090.
 Example:
 ```
