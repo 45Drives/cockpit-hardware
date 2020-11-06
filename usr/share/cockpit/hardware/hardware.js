@@ -11,12 +11,14 @@ var detail_done = false;
 var network_info = null;
 var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F"];
 var mobo_supported = false;
+var root_check = null;
 //listener for clicking on the motherboard tab
 function motherboard()
 {
 	var dfd = cockpit.defer();
+	if(!p5_running){temp_output.innerHTML = "Loading... Please Wait.";}
 	if(!mobo_info){
-		temp_output = "Loading... Please Wait.";
+		temp_output.innerHTML = "Loading... Please Wait.";
 		var m_output = document.getElementById("motherboard_output");
 		var mobo_img = document.getElementById("mobo_image");
 			
@@ -484,10 +486,28 @@ function buildSystemTable(){
 
 function main()
 {
-	if(!hardware_info){ system();}
-	document.getElementById("system_tab_link").addEventListener("click", system);
-	document.getElementById("motherboard_tab_link").addEventListener("click", motherboard);
-	document.getElementById("detail_tab_link").addEventListener("click",detail);
+	root_check = cockpit.permission({ admin: true });
+	root_check.addEventListener(
+		"changed", 
+		function() {
+			if(root_check.allowed){
+				//user is an administrator, start the module as normal
+				if(!hardware_info){ system();}
+				document.getElementById("system_tab_link").addEventListener("click", system);
+				document.getElementById("motherboard_tab_link").addEventListener("click", motherboard);
+				document.getElementById("detail_tab_link").addEventListener("click",detail);
+			}else{
+				//user is not an administrator, inform them of this by
+				//displaying a message on each tab page. 
+				let sys = document.getElementById("system_output");
+				let det = document.getElementById("detail_output");
+				let mo = document.getElementById("motherboard_output");
+				sys.innerHTML = "You must be an administrator to use this feature.";
+				det.innerHTML = "You must be an administrator to use this feature.";
+				mo.innerHTML = "You must be an administrator to use this feature.";
+			}
+	 	}
+	)
 }
 
 main();

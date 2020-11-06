@@ -48,10 +48,11 @@
 }
 
 .system_output{
-    display: flex;
+    /*display: flex;
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
+    */
     padding: 16px;
 }
 
@@ -80,6 +81,9 @@
     padding: 16px;
 }
 
+.detail_output{
+    padding:16px;
+}
 
 .component_output{
     padding:25px;
