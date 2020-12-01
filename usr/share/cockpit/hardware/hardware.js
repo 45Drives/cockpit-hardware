@@ -177,7 +177,7 @@ function system()
 		product_img_lut["Storinator-Q30-Turbo"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-S45-Turbo"] = "img/products/storinatorS45.jpg";
 		product_img_lut["Storinator-XL60-Turbo"] = "img/products/storinatorXL60.jpg";
-		product_img_lut["Stornado-AV15-Turbo"] = "img/products/sornadoAV15.jpg";
+		product_img_lut["Stornado-AV15-Turbo"] = "img/products/stornadoAV15.jpg";
 		product_img_lut["Storinator-H16-Q30-Turbo"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-H16-S45-Turbo"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-H16-XL60-Turbo"] = "img/products/storinatorXL60.jpg";
@@ -188,7 +188,7 @@ function system()
 		product_img_lut["Storinator-Q30-Enhanced"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-S45-Enhanced"] = "img/products/storinatorS45.jpg";
 		product_img_lut["Storinator-XL60-Enhanced"] = "img/products/storinatorXL60.jpg";
-		product_img_lut["Stornado-AV15-Enhanced"] = "img/products/sornadoAV15.jpg";
+		product_img_lut["Stornado-AV15-Enhanced"] = "img/products/stornadoAV15.jpg";
 		product_img_lut["Storinator-H16-Q30-Enhanced"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-H16-S45-Enhanced"] = "img/products/storinatorS45.jpg";
 		product_img_lut["Storinator-H16-XL60-Enhanced"] = "img/products/storinatorXL60.jpg";
