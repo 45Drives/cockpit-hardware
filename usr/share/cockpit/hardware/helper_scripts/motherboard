@@ -38,7 +38,8 @@ g_dmi_cpu_fields = {
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
-		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz"
+		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
+		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -87,7 +88,7 @@ g_ipmitool_sensor_fields = {
 # Desc: This runs "dmidecode -t 2" and parses the output for specific fields
 #       corresponding to the keys in g_dmi_mobo_fields dictionary.
 #       if dmidecode discovers an unsupported motherboard model, or 
-#		manufacturer, it will append " (legacy)"  to the end of the 
+#		manufacturer, it will append " (Generic)"  to the end of the 
 #       result.  
 ################################################################################
 def get_motherboard_model():
@@ -105,7 +106,7 @@ def get_motherboard_model():
 					if regex.group(2) in g_dmi_mobo_fields[regex.group(1)]:
 						mobo.append((regex.group(1),regex.group(2)))
 					else:
-						mobo.append((regex.group(1),regex.group(2)+" (Legacy)"))
+						mobo.append((regex.group(1),regex.group(2)+" (Generic)"))
 				else:
 					mobo.append((regex.group(1),regex.group(2)))
 	mobo_json_str = "{\"Motherboard\":["+json.dumps(dict(mobo))+"]}"
@@ -131,7 +132,7 @@ def get_cpu_info():
 					elif field == "Socket Designation" and regex_group2_str == "CPU":
 						cpu.append((regex_group1_str,"CPU1"))
 					else:
-						cpu.append((regex_group1_str,regex_group2_str+" (Legacy)"))
+						cpu.append((regex_group1_str,regex_group2_str+" (Generic)"))
 				else:
 					cpu.append((regex_group1_str,regex_group2_str))
 

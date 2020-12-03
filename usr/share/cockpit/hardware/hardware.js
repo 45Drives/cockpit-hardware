@@ -199,10 +199,10 @@ function system()
 		product_img_lut["Storinator-Q30-Base"] = "img/products/storinatorQ30.jpg";
 		product_img_lut["Storinator-S45-Base"] = "img/products/storinatorS45.jpg";
 		//Placeholder for failed autodetect. 
-		product_img_lut["Storinator-AV15-Legacy"] = "img/products/storinatorAV15.jpg";
-		product_img_lut["Storinator-Q30-Legacy"] = "img/products/storinatorQ30.jpg";
-		product_img_lut["Storinator-S45-Legacy"] = "img/products/storinatorS45.jpg";
-		product_img_lut["Storinator-XL60-Legacy"] = "img/products/storinatorXL60.jpg";
+		product_img_lut["Storinator-AV15-Generic"] = "img/products/storinatorAV15.jpg";
+		product_img_lut["Storinator-Q30-Generic"] = "img/products/storinatorQ30.jpg";
+		product_img_lut["Storinator-S45-Generic"] = "img/products/storinatorS45.jpg";
+		product_img_lut["Storinator-XL60-Generic"] = "img/products/storinatorXL60.jpg";
 	if(!hardware_info){
 		var dfd = cockpit.defer();
 		var proc = cockpit.spawn(
