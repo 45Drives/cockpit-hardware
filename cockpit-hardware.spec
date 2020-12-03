@@ -3,7 +3,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:		cockpit-hardware
-Version:	1.0.0
+Version:	1.0.1
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
@@ -52,5 +52,9 @@ rm -rf %{buildroot}
 /opt/tools/storcli64
 
 %changelog
+* Thurs Dec 03 2020 Mark Hooper <mhooper@45drives.com> 1.0.1
+- Added support for Intel 4210 CPUs
+- Replaced "Legacy" with "Generic" Labels for unidentifiable systems.
+- Removed unused scripts from /usr/share/cockpit/hardware/helper_scripts
 * Fri Nov 06 2020 Mark Hooper <mhooper@45drives.com> 1.0.0
 - First build of 1.0.0
