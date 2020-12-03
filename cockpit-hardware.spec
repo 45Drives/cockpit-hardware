@@ -52,7 +52,7 @@ rm -rf %{buildroot}
 /opt/tools/storcli64
 
 %changelog
-* Thurs Dec 03 2020 Mark Hooper <mhooper@45drives.com> 1.0.1
+* Thu Dec 03 2020 Mark Hooper <mhooper@45drives.com> 1.0.1
 - Added support for Intel 4210 CPUs
 - Replaced "Legacy" with "Generic" Labels for unidentifiable systems.
 - Removed unused scripts from /usr/share/cockpit/hardware/helper_scripts
