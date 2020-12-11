@@ -3,8 +3,9 @@ A cockpit module for 45Drives storage servers.
 
 ## Supported OS
 - CentOS 8.X
+- CentOS 7.X
 
-## Features (Version 1.0.0)
+## Features (Version 1.0.1)
 ### System Information
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_overview.png">
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_detail.png">
@@ -31,10 +32,19 @@ Currently supports the following motherboard models:
 
 ## Installation
 ### RPM Package:
-Download the latest release from the releases page.
+#### CentOS 8:
+Download the latest release from the releases page (cockpit-hardware-1.0.1-1.el8.x86_64.rpm).
 ```
 [root@server ~]# systemctl stop cockpit.socket
-[root@server ~]# dnf install /path/to/downloaded/package/cockpit-hardware-1.0.0-1.el8.x86_64.rpm
+[root@server ~]# dnf install /path/to/downloaded/package/cockpit-hardware-1.0.1-1.el8.x86_64.rpm
+[root@server ~]# systemctl start --now cockpit.socket
+```
+
+#### CentOS 7:
+Download the latest release from the releases page (cockpit-hardware-1.0.1-1.el7.x86_64.rpm).
+```
+[root@server ~]# systemctl stop cockpit.socket
+[root@server ~]# yum install /path/to/downloaded/package/cockpit-hardware-1.0.1-1.el7.x86_64.rpm
 [root@server ~]# systemctl start --now cockpit.socket
 ```
 ### From Github Repository:
