@@ -3,7 +3,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:		cockpit-hardware
-Version:	1.0.1
+Version:	1.0.2
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
@@ -21,6 +21,7 @@ Requires: cockpit-bridge
 Requires: dmidecode
 Requires: ipmitool
 Requires: python3
+Requires: lshw
 
 
 %description
@@ -52,6 +53,8 @@ rm -rf %{buildroot}
 /opt/tools/storcli64
 
 %changelog
+* Wed Jan 06 2021 Mark Hooper <mhooper@45drives.com> 1.0.2
+- Added lshw dependency.
 * Thu Dec 03 2020 Mark Hooper <mhooper@45drives.com> 1.0.1
 - Added support for Intel 4210 CPUs
 - Replaced "Legacy" with "Generic" Labels for unidentifiable systems.
