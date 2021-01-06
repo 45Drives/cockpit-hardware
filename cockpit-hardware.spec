@@ -22,6 +22,7 @@ Requires: dmidecode
 Requires: ipmitool
 Requires: python3
 Requires: lshw
+Requires: 45drives-tools
 
 
 %description
