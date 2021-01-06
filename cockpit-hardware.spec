@@ -56,6 +56,7 @@ rm -rf %{buildroot}
 %changelog
 * Wed Jan 06 2021 Mark Hooper <mhooper@45drives.com> 1.0.2
 - Added lshw dependency.
+- Added 45drives-tools dependency
 * Thu Dec 03 2020 Mark Hooper <mhooper@45drives.com> 1.0.1
 - Added support for Intel 4210 CPUs
 - Replaced "Legacy" with "Generic" Labels for unidentifiable systems.
