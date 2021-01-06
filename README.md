@@ -38,6 +38,8 @@ Download the latest release from the releases page (cockpit-hardware-1.0.1-1.el8
 [root@server ~]# systemctl stop cockpit.socket
 [root@server ~]# dnf install /path/to/downloaded/package/cockpit-hardware-1.0.1-1.el8.x86_64.rpm
 [root@server ~]# systemctl start --now cockpit.socket
+[root@server ~]# firewall-cmd --permanent --zone=public --add-service=cockpit
+[root@server ~]# firewall-cmd --reload
 ```
 
 #### CentOS 7:
@@ -46,6 +48,8 @@ Download the latest release from the releases page (cockpit-hardware-1.0.1-1.el7
 [root@server ~]# systemctl stop cockpit.socket
 [root@server ~]# yum install /path/to/downloaded/package/cockpit-hardware-1.0.1-1.el7.x86_64.rpm
 [root@server ~]# systemctl start --now cockpit.socket
+[root@server ~]# firewall-cmd --permanent --zone=public --add-service=cockpit
+[root@server ~]# firewall-cmd --reload
 ```
 ### From Github Repository:
 note, you need to install the cockpit package and the [45Drives tools](https://github.com/45Drives/tools) package. 
