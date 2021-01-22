@@ -2,8 +2,8 @@
 %define          debug_package %{nil}
 %define        __os_install_post %{_dbpath}/brp-compress
 
-Name:		cockpit-hardware
-Version:	1.0.2
+Name:		45drives-cockpit-hardware
+Version:	1.0.3
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
@@ -22,7 +22,7 @@ Requires: dmidecode
 Requires: ipmitool
 Requires: python3
 Requires: lshw
-Requires: 45drives-tools
+Requires: 45drives-tools >= 1.7.5
 
 
 %description
@@ -37,11 +37,9 @@ A cockpit package for 45Drives Storinator Products.
 %install
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/cockpit/hardware/
-mkdir -p %{buildroot}/opt/tools/
 
 # in builddir
 cp -a usr/share/cockpit/hardware/ %{buildroot}/usr/share/cockpit/
-cp -a opt/tools/ %{buildroot}/opt/
 
 %clean
 rm -rf %{buildroot}
@@ -50,10 +48,12 @@ rm -rf %{buildroot}
 %dir /usr/share/cockpit/hardware
 %defattr(-,root,root,-)
 /usr/share/cockpit/hardware/*
-%dir /opt/tools
-/opt/tools/storcli64
 
 %changelog
+* Fri Jan 22 2021 Mark Hooper <mhooper@45drives.com> 1.0.3-1
+- removed the /opt/tools directory and all of its contents. (handled by dependency 45drives-tools)
+- updated dependency minimum version to 1.7.5 for 45drives-tools
+- changed name of package to 45drives-cockpit-hardware from cockpit-hardware
 * Wed Jan 06 2021 Mark Hooper <mhooper@45drives.com> 1.0.2
 - Added lshw dependency.
 - Added 45drives-tools dependency
