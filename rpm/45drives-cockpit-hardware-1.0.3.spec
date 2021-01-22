@@ -36,10 +36,10 @@ A cockpit package for 45Drives Storinator Products.
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/share/cockpit/hardware/
+mkdir -p %{buildroot}
 
 # in builddir
-cp -a usr/share/cockpit/hardware/ %{buildroot}/usr/share/cockpit/
+cp -a usr/ %{buildroot}
 
 %clean
 rm -rf %{buildroot}
