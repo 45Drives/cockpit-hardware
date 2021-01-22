@@ -15,7 +15,7 @@ cd 45drives-temp
 mkdir rpmbuild rpmbuild/RPMS rpmbuild/SOURCES rpmbuild/SPECS rpmbuild/SRPMS
 git clone --branch 1.0.3 https://github.com/45Drives/cockpit-hardware.git
 mkdir 45drives-cockpit-hardware-1.0.3
-cp -r tools/src/fakeroot/usr 45drives-cockpit-hardware-1.0.3/usr
+cp -r cockpit-hardware/src/fakeroot/usr 45drives-cockpit-hardware-1.0.3/usr
 tar -zcvf 45drives-cockpit-hardware-1.0.3.tar.gz 45drives-cockpit-hardware-1.0.3/
 rm -rf 45drives-cockpit-hardware-1.0.3
 mv 45drives-cockpit-hardware-1.0.3.tar.gz rpmbuild/SOURCES/45drives-cockpit-hardware-1.0.3.tar.gz
