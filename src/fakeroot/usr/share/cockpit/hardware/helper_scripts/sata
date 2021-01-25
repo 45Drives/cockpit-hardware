@@ -51,14 +51,14 @@ g_motherboard_sata_addresses = {
 		["pci-0000:43:00.2-ata-8","I-SATA7"]
 	],
 	"X11SPL-F":[
-		["pci-0000:00:17.0-ata-1","I-SATA0"],
-		["pci-0000:00:17.0-ata-2","I-SATA1"],
-		["pci-0000:00:17.0-ata-3","I-SATA2"],
-		["pci-0000:00:17.0-ata-4","I-SATA3"],
-		["pci-0000:00:17.0-ata-5","I-SATA4"],
-		["pci-0000:00:17.0-ata-6","I-SATA5"],
-		["pci-0000:00:17.0-ata-7","I-SATA6"],
-		["pci-0000:00:17.0-ata-8","I-SATA7"]
+		["pci-0000:00:17.0-ata-1.0","I-SATA0"],
+		["pci-0000:00:17.0-ata-2.0","I-SATA1"],
+		["pci-0000:00:17.0-ata-3.0","I-SATA2"],
+		["pci-0000:00:17.0-ata-4.0","I-SATA3"],
+		["pci-0000:00:17.0-ata-5.0","I-SATA4"],
+		["pci-0000:00:17.0-ata-6.0","I-SATA5"],
+		["pci-0000:00:17.0-ata-7.0","I-SATA6"],
+		["pci-0000:00:17.0-ata-8.0","I-SATA7"]
 	]
 }
 
