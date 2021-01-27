@@ -4,7 +4,7 @@ A cockpit module for 45Drives storage servers.
 ## Supported OS
 - CentOS 8.X
 - CentOS 7.X
-- Ubuntu 20.04.1 LTS (Focal Fossa)
+- Ubuntu 20.04.1 LTS (Focal Fossa) (Requires Version >= 1.0.3)
 
 ## Features (Version 1.0.3)
 ### System Information
