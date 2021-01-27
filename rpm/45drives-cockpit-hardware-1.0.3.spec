@@ -54,7 +54,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Wed Jan 27 2021 Mark Hooper <mhooper@45drives.com> 1.0.3-2
-- ensured that provides, obsoletes and conflicts.
+- ensured that provides, obsoletes and conflicts for old package cockpit-hardware are in spec file.
 * Fri Jan 22 2021 Mark Hooper <mhooper@45drives.com> 1.0.3-1
 - removed the /opt/tools directory and all of its contents. (handled by dependency 45drives-tools)
 - updated dependency minimum version to 1.7.5 for 45drives-tools
