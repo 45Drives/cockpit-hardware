@@ -1,0 +1,418 @@
+#!/usr/bin/env python3
+################################################################################
+# system:
+# 	used to return information about the system in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+import re
+import subprocess
+import os
+import sys
+import json
+
+# supported motherboard manufacturers and models can be adjusted here
+g_dmi_mobo_fields = {
+	"Manufacturer":  ["Supermicro"],
+	"Product Name":  [
+		"X11DPL-i",
+		"X11SPL-F",
+		"H11SSL-i",
+		"X11SSH-CTF",
+		"X11SSM-F"
+		],
+	"Serial Number": None
+}
+
+#supported CPU types
+g_dmi_cpu_fields = {
+	"Socket Designation":  ["CPU1","CPU2"],
+	"Version":  [
+		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
+		"AMD EPYC 7281 16-Core Processor",
+		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
+		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz"
+		],
+	"Current Speed": None,
+	"Max Speed": None,
+}
+
+g_ipmitool_fru_fields = {
+	"Product Manufacturer": ["45Drives"],
+	"Product Name": [
+		"Storinator",
+		"Destroyinator",
+		"Storinator-H16-Q30-Enhanced-AMD",	
+		"Storinator-H16-S45-Enhanced-AMD",	
+		"Storinator-H16-XL60-Enhanced-AMD",	
+		"Storinator-H32-Q30-Enhanced-AMD",	
+		"Storinator-H32-S45-Enhanced-AMD",	
+		"Storinator-H32-XL60-Enhanced-AMD",	
+		"Storinator-AV15-Turbo",	
+		"Storinator-Q30-Turbo",	
+		"Storinator-S45-Turbo",		
+		"Storinator-XL60-Turbo",	
+		"Stornado-AV15-Turbo",	
+		"Storinator-H16-Q30-Turbo",	
+		"Storinator-H16-S45-Turbo",	
+		"Storinator-H16-XL60-Turbo",
+		"Storinator-H32-Q30-Turbo",
+		"Storinator-H32-S45-Turbo",	
+		"Storinator-H32-XL60-Turbo",
+		"Storinator-AV15-Enhanced",	
+		"Storinator-Q30-Enhanced",	
+		"Storinator-S45-Enhanced",	
+		"Storinator-XL60-Enhanced",	
+		"Stornado-AV15-Enhanced",	
+		"Storinator-H16-Q30-Enhanced",
+		"Storinator-H16-S45-Enhanced",
+		"Storinator-H16-XL60-Enhanced",
+		"Storinator-H32-Q30-Enhanced",
+		"Storinator-H32-S45-Enhanced",
+		"Storinator-H32-XL60-Enhanced",
+		"Storinator-AV15-Base",	
+		"Storinator-Q30-Base",	
+		"Storinator-S45-Base"	
+		],
+	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60"],
+	"Product Serial":None
+}
+
+g_storcli64_fields = {
+	"SAS9305-16i":None,
+	"SAS9305-24i":None
+}
+################################################################################
+# Name: get_motherboard_model
+# Args: None
+# Desc: This runs "dmidecode -t 2" and parses the output for specific fields
+#       corresponding to the keys in g_dmi_mobo_fields dictionary.
+#       if dmidecode discovers an unsupported motherboard model, or 
+#		manufacturer, it will append " (Generic)"  to the end of the 
+#       result.  
+################################################################################
+def get_motherboard_model():
+	mobo = []
+	try:
+		dmi_result = subprocess.Popen(["dmidecode","-t","2"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: dmidecode is not installed")
+		return False
+	for line in dmi_result:
+		for field in g_dmi_mobo_fields.keys():
+			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
+			if regex != None:
+				if g_dmi_mobo_fields[regex.group(1)] != None:
+					if regex.group(2) in g_dmi_mobo_fields[regex.group(1)]:
+						mobo.append((regex.group(1),regex.group(2)))
+					else:
+						mobo.append((regex.group(1),regex.group(2)+" (Generic)"))
+				else:
+					mobo.append((regex.group(1),regex.group(2)))
+	mobo_json_str = "{\"Motherboard\":["+json.dumps(dict(mobo))+"]}"
+	return mobo_json_str
+
+def get_cpu_info():
+	cpu = []
+	try:
+		dmi_result = subprocess.Popen(["dmidecode","-t","4"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: dmidecode is not installed")
+		return False
+	for line in dmi_result:
+		for field in g_dmi_cpu_fields.keys():
+			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
+			if regex != None:
+				regex_group1_str = str(regex.group(1)).rstrip()
+				regex_group2_str = str(regex.group(2)).rstrip()
+				if g_dmi_cpu_fields[regex_group1_str] != None:
+					if regex_group2_str in g_dmi_cpu_fields[regex_group1_str]:
+						cpu.append((regex_group1_str,regex_group2_str))
+					else:
+						cpu.append((regex_group1_str,regex_group2_str+" (Generic)"))
+				else:
+					cpu.append((regex_group1_str,regex_group2_str))
+
+	if len(cpu) == len(g_dmi_cpu_fields):
+		#there is only 1 cpu listed
+		cpu_json_str = "{\"CPU\":["+json.dumps(dict(cpu))+"]}"
+	else:
+		#system has 2 CPUs, but duplicate keys if used as dict
+		cpu_json_str = (
+			"{\"CPU\":[" +
+			json.dumps(dict(cpu[0:(len(g_dmi_cpu_fields)-1)])) + 
+			"," +
+			json.dumps(dict(cpu[len(g_dmi_cpu_fields):-1])) +
+			"]}"
+		)
+	return cpu_json_str
+
+def get_ipmi_info():
+	try:
+		ipmitool_fru_result = subprocess.Popen(
+			["ipmitool","fru"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: ipmitool is not installed")
+		return False
+	ipmi = []
+	for line in ipmitool_fru_result:
+		for field in g_ipmitool_fru_fields.keys():
+			regex = re.search("^\s({fld})\s+:\s+(.*)".format(fld=field),line)
+			if regex != None:
+				if g_ipmitool_fru_fields[regex.group(1)] != None:
+					if regex.group(2) in g_ipmitool_fru_fields[regex.group(1)]:
+						ipmi.append((regex.group(1),regex.group(2)))
+					else:
+						ipmi.append((regex.group(1),regex.group(2)+" (Generic)"))
+				else:
+					ipmi.append((regex.group(1),regex.group(2)))
+	ipmi_json_str = "{\"IPMI Information\":["+json.dumps(dict(ipmi))+"]}"
+	return ipmi_json_str
+
+def get_hba_info():
+	hba_found = False
+	try:
+		storcli64_result = subprocess.Popen(
+			["/opt/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
+	except:
+		return False
+	hba_json_str = "{\"HBA Cards\":["
+	card_count = 0
+	for line in storcli64_result.stdout:
+		for field in g_storcli64_fields.keys():
+			# Model AdapterType VendId DevId SubVendId SubDevId PCIAddress 	
+			regex = re.search("({fld}).*(00:\w\w:\w\w:\w\w)\s+$".format(fld=field),line)
+			if regex != None:
+				hba_found = True
+				hba_json_str += (
+					"{\"Model\":\"" + 
+					regex.group(1) + 
+					"\",\"PCI Address\":\"" + 
+					regex.group(2) +
+					"\"},"
+				)
+	if hba_found:
+		hba_json_str = hba_json_str[:-1]
+		hba_json_str += "]}"
+		return hba_json_str
+	else:
+		return "{\"HBA Cards\":[]}"
+
+def get_product_info(mobo,hba,cpu,ipmi):
+	MANUAL_CHECK = True
+	if mobo and hba and cpu:
+		jmobo = json.loads(mobo)
+		jhba = json.loads(hba)
+		jcpu = json.loads(cpu)
+	else:
+		return False
+
+	if ipmi:
+		jipmi = json.loads(ipmi)
+		MANUAL_CHECK = False
+
+	# A Look up table for determining the product.
+	# List entries correspond as follows
+	# [Motherboard Model, CPU, CPU Count, 24-i count, 16-i count, chassis size, SSD Check Flag]
+	# Note!! SSD Check flag assumes that we are unable to reliably determine
+	#        chassis size. So this flag will be used to determine if we need
+	#        to querey the connected drives to determine if we have more SSDs or HDDs
+	#        to address the discrepancy 
+
+
+	product_lut_idx = {
+		"MOBO_MODEL":	0,
+		"CPU_COUNT":	1,
+		"24I_COUNT":	2,
+		"16I_COUNT":	3,
+		"CHASSIS_SIZE": 4,
+		"SSD_CHECK":	5,
+		"SYS_MODEL_STR":6	
+	}
+
+	product_lut = {
+		"Storinator-H16-Q30-Enhanced-AMD":	["H11SSL-i",1,1,1,"Q30",False,"Storinator Hybrid 16 (AMD)"],
+		"Storinator-H16-S45-Enhanced-AMD":	["H11SSL-i",1,1,2,"S45",False,"Storinator Hybrid 16 (AMD)"],
+		"Storinator-H16-XL60-Enhanced-AMD":	["H11SSL-i",1,1,3,"XL60",False,"Storinator Hybrid 16 (AMD)"],
+		"Storinator-H32-Q30-Enhanced-AMD":	["H11SSL-i",1,2,0,"Q30",False,"Storinator Hybrid 32 (AMD)"],
+		"Storinator-H32-S45-Enhanced-AMD":	["H11SSL-i",1,2,1,"S45",False,"Storinator Hybrid 32 (AMD)"],
+		"Storinator-H32-XL60-Enhanced-AMD":	["H11SSL-i",1,2,2,"XL60",False,"Storinator Hybrid 32 (AMD)"],
+
+		"Storinator-AV15-Turbo":		["X11DPL-i",2,0,1,"AV15",False,"Storinator (Turbo)"],
+		"Storinator-Q30-Turbo":			["X11DPL-i",2,0,2,"Q30",True,"Storinator (Turbo)"],
+		"Storinator-S45-Turbo":			["X11DPL-i",2,0,3,"S45",False,"Storinator (Turbo)"],
+		"Storinator-XL60-Turbo":		["X11DPL-i",2,0,4,"XL60",False,"Storinator (Turbo)"],
+		"Stornado-AV15-Turbo":			["X11DPL-i",2,0,2,"AV15",True,"Stornado (Turbo)"],
+		"Storinator-H16-Q30-Turbo":		["X11DPL-i",2,1,1,"Q30",False,"Storinator Hybrid 16 (Turbo)"],
+		"Storinator-H16-S45-Turbo":		["X11DPL-i",2,1,2,"S45",False,"Storinator Hybrid 16 (Turbo)"],
+		"Storinator-H16-XL60-Turbo":	["X11DPL-i",2,1,3,"XL60",False,"Storinator Hybrid 16 (Turbo)"],
+		"Storinator-H32-Q30-Turbo":		["X11DPL-i",2,2,0,"Q30",False,"Storinator Hybrid 32 (Turbo)"],
+		"Storinator-H32-S45-Turbo":		["X11DPL-i",2,2,1,"S45",False,"Storinator Hybrid 32 (Turbo)"],
+		"Storinator-H32-XL60-Turbo":	["X11DPL-i",2,2,2,"XL60",False,"Storinator Hybrid 32 (Turbo)"],
+
+		"Storinator-AV15-Enhanced":		["X11SPL-F",1,0,1,"AV15",False,"Storinator (Enhanced)"],
+		"Storinator-Q30-Enhanced":		["X11SPL-F",1,0,2,"Q30",False,"Storinator (Enhanced)"],
+		"Storinator-S45-Enhanced":		["X11SPL-F",1,0,3,"S45",False,"Storinator (Enhanced)"],
+		"Storinator-XL60-Enhanced":		["X11SPL-F",1,0,4,"XL60",False,"Storinator (Enhanced)"],
+		"Stornado-AV15-Enhanced":		["X11SPL-F",1,0,2,"AV15",False,"Stornado (Enhanced)"],
+		"Storinator-H16-Q30-Enhanced":	["X11SPL-F",1,1,1,"Q30",False,"Storinator Hybrid 16 (Enhanced)"],
+		"Storinator-H16-S45-Enhanced":	["X11SPL-F",1,1,2,"S45",False,"Storinator Hybrid 16 (Enhanced)"],
+		"Storinator-H16-XL60-Enhanced":	["X11SPL-F",1,1,3,"XL60",False,"Storinator Hybrid 16 (Enhanced)"],
+		"Storinator-H32-Q30-Enhanced":	["X11SPL-F",1,2,0,"Q30",False,"Storinator Hybrid 32 (Enhanced)"],
+		"Storinator-H32-S45-Enhanced":	["X11SPL-F",1,2,1,"S45",False,"Storinator Hybrid 32 (Enhanced)"],
+		"Storinator-H32-XL60-Enhanced":	["X11SPL-F",1,2,2,"XL60",False,"Storinator Hybrid 32 (Enhanced)"],
+
+		"Storinator-AV15-Base":			["X11SSH-CTF",1,0,0,"AV15",False,"Storinator (Base)"],
+		"Storinator-Q30-Base":			["X11SSH-CTF",1,0,2,"Q30",False,"Storinator (Base)"],
+
+		"Storinator-S45-Base":			["X11SSM-F",1,0,3,"S45",False,"Storinator (Base)"]
+	}
+
+	mobo_to_product_lut = {
+		"X11SSH-CTF"	:[
+							"Storinator-Q30-Base",
+							"Storinator-AV15-Base"
+						],
+		
+		"X11SPL-F"		:[
+							"Storinator-AV15-Enhanced",
+							"Storinator-Q30-Enhanced",
+							"Storinator-S45-Enhanced",
+							"Storinator-XL60-Enhanced",
+							"Stornado-AV15-Enhanced",
+							"Storinator-H16-Q30-Enhanced",					
+							"Storinator-H16-S45-Enhanced",
+							"Storinator-H16-XL60-Enhanced",
+							"Storinator-H32-Q30-Enhanced",
+							"Storinator-H32-S45-Enhanced",
+							"Storinator-H32-XL60-Enhanced"	
+						],
+		
+		"X11DPL-i"		:[
+							"Storinator-AV15-Turbo",
+							"Storinator-Q30-Turbo",	
+							"Storinator-S45-Turbo",		
+							"Storinator-XL60-Turbo",	
+							"Stornado-AV15-Turbo",	
+							"Storinator-H16-Q30-Turbo",	
+							"Storinator-H16-S45-Turbo",	
+							"Storinator-H16-XL60-Turbo",
+							"Storinator-H32-Q30-Turbo",	
+							"Storinator-H32-S45-Turbo",	
+							"Storinator-H32-XL60-Turbo"
+						],
+		
+		"X11SSM-F"		:[
+							"Storinator-S45-Base"
+						],
+
+		"H11SSL-i"		:[
+							"Storinator-H16-Q30-Enhanced-AMD",
+							"Storinator-H16-S45-Enhanced-AMD",	
+							"Storinator-H16-XL60-Enhanced-AMD",
+							"Storinator-H32-Q30-Enhanced-AMD",	
+							"Storinator-H32-S45-Enhanced-AMD",	
+							"Storinator-H32-XL60-Enhanced-AMD"
+						]
+	}
+
+	cpu_count = len(jcpu["CPU"])
+	mobo_model = jmobo["Motherboard"][0]["Product Name"]
+	chassis_size = "N/A"
+	hba_24i_count = 0
+	hba_16i_count = 0
+
+	for hba in jhba["HBA Cards"]:
+		if hba["Model"] == "SAS9305-16i":
+			hba_16i_count += 1
+		elif hba["Model"] == "SAS9305-24i":
+			hba_24i_count += 1
+
+	if ipmi:
+		chassis_size = jipmi["IPMI Information"][0]["Product Part Number"]
+
+
+	product_json_str = None
+	product_key = None
+	if(mobo_model in mobo_to_product_lut.keys()):
+		for product in mobo_to_product_lut[mobo_model]:
+			if ipmi:
+				if (
+					product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
+					product_lut[product][product_lut_idx["CHASSIS_SIZE"]] == chassis_size and
+					product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
+					product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
+					product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count
+					):
+					product_key = product
+					break
+			elif (
+				product_lut[product][product_lut_idx["SSD_CHECK"]] == False and
+				product_lut[product][product_lut_idx["MOBO_MODEL"]] == mobo_model and
+				product_lut[product][product_lut_idx["CPU_COUNT"]] == cpu_count and
+				product_lut[product][product_lut_idx["24I_COUNT"]] == hba_24i_count and
+				product_lut[product][product_lut_idx["16I_COUNT"]] == hba_16i_count 
+				):
+					#there is a unique pairing of parameters without having 
+					#to check for hdd or ssd count
+					#TODO: write a function that will perform the required modifications using ipmitool 
+					product_key = product
+					break
+			else:
+				#TODO: use rotational to detect if there are more HDDs or SSDs
+				#TODO: call the same function to modify the ipmitool entries
+				return False
+		
+		if product_key != None:
+			# We found a match, assign product 
+			product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
+								"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
+								"\"ProductID\": \"" + product_key + 
+								"\"}]}")
+			return product_json_str
+		elif ipmi:
+			#autodetect couldn't find a match 
+			#last saving grace can be the Product Name from ipmi, which might be the key in the product_lut
+			#if the new version of the serial script is run on the hardware. 
+			if jipmi["IPMI Information"][0]["Product Name"] in product_lut.keys():
+				# the product name as provided from the ipmitool fru command is a key in our product lookup table
+				# This can be used to identify things properly 
+				product_key = jipmi["IPMI Information"][0]["Product Name"]
+				product_json_str = ("\"Product\":[{\"System Model\": \"" + product_lut[product_key][product_lut_idx["SYS_MODEL_STR"]] + "\"," + 
+									"\"Chassis Size\": \"" + product_lut[product_key][product_lut_idx["CHASSIS_SIZE"]] + "\"," + 
+									"\"ProductID\": \"" + product_key + 
+									"\"}]}")
+				return product_json_str
+
+	else:
+		#Motherboard is not supported, assume storinator
+		product_json_str = ("\"Product\":[{\"System Model\": \"" + "Storinator (Generic)" + "\"," + 
+							"\"Chassis Size\": \"" + chassis_size + "\"," + 
+							"\"ProductID\": \"" + "Storinator-" + chassis_size + "-Generic"
+							"\"}]}")
+		return product_json_str
+
+def main():
+	mobo = get_motherboard_model()
+	cpu = get_cpu_info()
+	ipmi = get_ipmi_info()
+	hba = get_hba_info()
+	product = get_product_info(mobo,hba,cpu,ipmi)
+	
+	if mobo and cpu and ipmi and hba and product:
+		print("{\"System\":[{",product,",")
+		print(mobo,",")
+		print(cpu,",")
+		print(hba,",")
+		print(ipmi,"]}")
+		
+
+if __name__ == "__main__":
+    main()
