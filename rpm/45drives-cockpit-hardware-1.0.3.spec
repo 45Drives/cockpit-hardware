@@ -4,7 +4,7 @@
 
 Name:		45drives-cockpit-hardware
 Version:	1.0.3
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
 Group:		Development/Tools
@@ -24,6 +24,9 @@ Requires: python3
 Requires: lshw
 Requires: 45drives-tools >= 1.7.5
 
+Obsoletes: cockpit-hardware
+Provides: cockpit-hardware
+Conflicts: cockpit-hardware
 
 %description
 A cockpit package for 45Drives Storinator Products.
@@ -50,6 +53,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/hardware/*
 
 %changelog
+* Wed Jan 27 2021 Mark Hooper <mhooper@45drives.com> 1.0.3-2
+- ensured that provides, obsoletes and conflicts for old package cockpit-hardware are in spec file.
 * Fri Jan 22 2021 Mark Hooper <mhooper@45drives.com> 1.0.3-1
 - removed the /opt/tools directory and all of its contents. (handled by dependency 45drives-tools)
 - updated dependency minimum version to 1.7.5 for 45drives-tools
