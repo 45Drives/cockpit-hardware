@@ -24,6 +24,9 @@ Requires: python3
 Requires: lshw
 Requires: 45drives-tools >= 1.7.5
 
+Obsoletes: cockpit-hardware
+Provides: cockpit-hardware
+Conflicts: cockpit-hardware
 
 %description
 A cockpit package for 45Drives Storinator Products.
