@@ -70,7 +70,7 @@ def dmidecode():
 def storcli():
 	try:
 		storcli64_result = subprocess.Popen(
-			["/opt/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
+			["/opt/45drives/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
 	except:
 		return False
 	hba_cards = []
