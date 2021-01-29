@@ -147,15 +147,18 @@ function launchP5JS(){
 	if(mobo_supported && mobo_info && mobo_json_path && pci_info && sata_info && ram_info && !p5_running){
 		p5_running = true;
 		var p5js = document.createElement('script');
-		p5js.onload = function() {};
 		p5js.src = "p5.js";
+		p5js.onload = function() {
+			var sketch = document.createElement('script');
+			sketch.onload = function() {};
+			sketch.src = "sketch.js";
+			document.getElementsByTagName('head')[0].appendChild(sketch);
+			temp_output.innerHTML = "";
+			document.getElementById("disk_app").innerHTML = "";
+
+		};
+		
 		document.getElementsByTagName('head')[0].appendChild(p5js);
-	
-		var sketch = document.createElement('script');
-		sketch.onload = function() {};
-		sketch.src = "mobo.js";
-		document.getElementsByTagName('head')[0].appendChild(sketch);
-		temp_output.innerHTML = "";
 	}
 }
 

@@ -1,3 +1,5 @@
+//mobo app
+
 let mobo_image;
 let background_img;
 let bg_loaded = false;
@@ -25,6 +27,7 @@ let ramScale = 0.026;
 let globalMask;
 let APPLIED_COUNT = 0;
 
+var mobo_app = function( m ) {
 // steps:
 // - load the background image
 // - load the .json file
@@ -33,7 +36,7 @@ let APPLIED_COUNT = 0;
 // - draw populated slots
 
 
-function createComponentMasks(a){
+m.createComponentMasks = function(a){
 	var dfd = cockpit.defer();
 	var img_path = (
 		"img/motherboard/" + 
@@ -41,9 +44,9 @@ function createComponentMasks(a){
 		"/" + mobo_json[a]["type"] + 
 		String(mobo_json[a]["id"]) + ".png"
 	);
-	MASK_ARR.push(loadImage(img_path));
+	MASK_ARR.push(m.loadImage(img_path));
 	dfd.resolve();
-}
+};
 
 class component{
 	constructor(x0,y0,width,height,id,type,popup){
@@ -68,85 +71,85 @@ class popup_window{
 		this.y0 = y0;
 	}
 	show(){
-		push();
-		fill(this.fill);
-		stroke(this.border);
-		rect(this.x0,this.y0,this.width,this.height,10,10);
-		stroke(0);
-		strokeWeight(1);
-		textSize(14);
-		fill(0);
-		textFont("Courier New");
-		text(this.content,this.x0+9,this.y0+20);
-		pop();
+		m.push();
+		m.fill(this.fill);
+		m.stroke(this.border);
+		m.rect(this.x0,this.y0,this.width,this.height,10,10);
+		m.stroke(0);
+		m.strokeWeight(1);
+		m.textSize(14);
+		m.fill(0);
+		m.textFont("Courier New");
+		m.text(this.content,this.x0+9,this.y0+20);
+		m.pop();
 	}
 }
 
-function verifyAssetsLoaded(){
+m.verifyAssetsLoaded = function(){
 	let ret_val = true;
 	if(!background_img){
 		ret_val = false;
 	}
 	return ret_val;
-}
+};
 
-function setup() {
-	let cnv = createCanvas(1024,1024);
-	cnv.parent("motherboard_app");
-	cnv.mouseMoved(mouseActivity);
+m.setup = function(){
+	let cnv = m.createCanvas(1024,1024);
+	//cnv.parent("motherboard_app");
+	cnv.mouseMoved(m.mouseActivity);
 	mobo_image = document.getElementById("mobo_image");
-}
+};
 
-function draw(){
+m.draw = function (){
 	if(READY){
-		background(255);
-		image(background_img,0,0);
+		m.background(255);
+		m.image(background_img,0,0);
 		for(let i = 0; i < peripherals.length; i++){
 			peripherals[i].show();
 		}
 		if(POPUP_ACTIVE){
-			push();
-			image(MASK_ARR[POPUP_IDX],0,0);
-			pop();
+			m.push();
+			m.image(MASK_ARR[POPUP_IDX],0,0);
+			m.pop();
 			components[POPUP_IDX].popup.show();
 		}
 	}
 	else if(STATE == 0){
-		background(255);
-		textFont("Courier New");
-		text("Loading Motherboard Info ... Please Wait.",40,40);
-		loadAssets();
+		m.background(255);
+		m.textFont("Courier New");
+		m.text("Loading Motherboard Info ... Please Wait.",40,40);
+		m.loadAssets();
 		STATE = 1;
 	}
 	else if(STATE == 1){
-		background(255);
-		textFont("Courier New");
-		text("Loading Motherboard Assets ... Please Wait.",40,40);
-		if(verifyAssetsLoaded()){
+		m.background(255);
+		m.textFont("Courier New");
+		m.text("Loading Motherboard Assets ... Please Wait.",40,40);
+		if(m.verifyAssetsLoaded()){
 			STATE = 2;
 		}
 	}
 	else if(STATE == 2){
-		background(255);
-		textFont("Courier New");
-		text("Generating Masks ... Please Wait.",40,40);
+		m.background(255);
+		m.textFont("Courier New");
+		m.text("Generating Masks ... Please Wait.",40,40);
 		if(components.length > 0){
-			createComponentMasks(MASK_COUNT);
+			m.createComponentMasks(MASK_COUNT);
 			MASK_COUNT++;
 			let myStr = "Mask: " + String(MASK_COUNT) + " of " + String(components.length);
-			textFont("Courier New");
-			text(myStr,40,70);
+			m.textFont("Courier New");
+			m.text(myStr,40,70);
 		}
 		if(MASK_ARR.length == components.length && MASK_ARR.length != 0){
 			STATE = 3;
-			background(255);
-			textFont("Courier New");
-			text("Creating graphics for supported PCI cards ... Please Wait.",40,40);
+			m.background(255);
+			m.textFont("Courier New");
+			m.text("Creating graphics for supported PCI cards ... Please Wait.",40,40);
 		}
 	}
 	else if(STATE == 3){
-		populateSlots();
-		setGlobalMask();
+		m.populateSlots();
+		m.setGlobalMask();
 		STATE = 4;
 	}else if(STATE == 4){
 		if(APPLIED_COUNT < components.length){
@@ -158,11 +161,11 @@ function draw(){
 	}
 }
 
-function setGlobalMask(){
+m.setGlobalMask = function(){
 	var dfd = cockpit.defer();
 	let inset = 30;
 	let yTrim = 30;
-	globalMask = generateMask(background_img.width,background_img.height,inset,inset+yTrim,background_img.width-(2*inset),background_img.height-((2*inset)+yTrim),true);
+	globalMask = m.generateMask(background_img.width,background_img.height,inset,inset+yTrim,background_img.width-(2*inset),background_img.height-((2*inset)+yTrim),true);
 	dfd.resolve();
 }
 
@@ -179,31 +182,31 @@ class peripheral{
 		this.wScale = wScale;
 	}
 	show(){
-		push();
+		m.push();
 		if(this.img_idx != -1){
 			let aspectRatio = peripheralImages[this.img_idx].width/peripheralImages[this.img_idx].height;
 			let newWidth = peripheralImages[this.img_idx].width*this.wScale;
 			let newHeight = newWidth/aspectRatio;
-			image(peripheralImages[this.img_idx],this.x0,this.y0,newWidth,newHeight);
+			m.image(peripheralImages[this.img_idx],this.x0,this.y0,newWidth,newHeight);
 		}else{
-			fill(this.fill);
-			noStroke();
-			rect(this.x0,this.y0,this.width,this.height);
+			m.fill(this.fill);
+			m.noStroke();
+			m.rect(this.x0,this.y0,this.width,this.height);
 		}
-		pop();
+		m.pop();
 	}
 }
 
-function populateSlots(){
-	getRam();
-	getPCI();
-	getCPU();
-	getSATA();
-	resizePopups();
-}
+m.populateSlots = function(){
+	m.getRam();
+	m.getPCI();
+	m.getCPU();
+	m.getSATA();
+	m.resizePopups();
+};
 
-function generateMask(w,h,x0,y0,x1,y1,invert=false){
-	let mask = createImage(w,h);
+m.generateMask = function(w,h,x0,y0,x1,y1,invert=false){
+	let mask = m.createImage(w,h);
 	let padding = 50;
 	mask.loadPixels();
 	for(let i = 0; i < w; i++){
@@ -212,9 +215,9 @@ function generateMask(w,h,x0,y0,x1,y1,invert=false){
 				(j > y0) && (j < y0 + y1)){
 				// inside footprint of component.
 					if(invert){
-						mask.set(i, j, color(0, 0, 0, 255));
+						mask.set(i, j, m.color(0, 0, 0, 255));
 					}else{
-						mask.set(i, j, color(0, 0, 0, 0));
+						mask.set(i, j, m.color(0, 0, 0, 0));
 					}
 			}
 			else if((i > x0 - padding) && (i < x0 -padding + x1 + 2*padding) &&
@@ -233,26 +236,26 @@ function generateMask(w,h,x0,y0,x1,y1,invert=false){
 					//top left
 					x = x0 - i;
 					y = y0 - j;
-					r = sqrt(x*x + y*y);
-					r_map = map(r,0,padding,0,128,true);
+					r = m.sqrt(x*x + y*y);
+					r_map = m.map(r,0,padding,0,128,true);
 					if(invert){
-						r_map = map(r,0,padding,0,255,true);
-						mask.set(i,j,color(0,0,0,127+(128-r_map)));
+						r_map = m.map(r,0,padding,0,255,true);
+						mask.set(i,j,m.color(0,0,0,127+(128-r_map)));
 					}else{
-						mask.set(i,j,color(0,0,0,r_map));  
+						mask.set(i,j,m.color(0,0,0,r_map));  
 					}
 					corner = true;
 				}else if(i > x0 + x1 && j < y0 ){
 					//top right
 					x = x0 + x1 - i;
 					y = y0 - j;
-					r = int(sqrt(x*x + y*y));
-					r_map = map(r,0,padding,0,128,true);
+					r = m.int(m.sqrt(x*x + y*y));
+					r_map = m.map(r,0,padding,0,128,true);
 					if(invert){
-						r_map = map(r,0,padding,0,255,true);
-						mask.set(i,j,color(0,0,0,127+(128-r_map)));
+						r_map = m.map(r,0,padding,0,255,true);
+						mask.set(i,j,m.color(0,0,0,127+(128-r_map)));
 					}else{
-						mask.set(i,j,color(0,0,0,r_map));  
+						mask.set(i,j,m.color(0,0,0,r_map));  
 					}
 					
 					corner = true;
@@ -261,13 +264,13 @@ function generateMask(w,h,x0,y0,x1,y1,invert=false){
 					//bottom left
 					x = x0 - i;
 					y = y0 + y1 - j;
-					r = int(sqrt(x*x + y*y));
-					r_map = map(r,0,padding,0,128,true);
+					r = m.int(m.sqrt(x*x + y*y));
+					r_map = m.map(r,0,padding,0,128,true);
 					if(invert){
-						r_map = map(r,0,padding,0,255,true);
-						mask.set(i,j,color(0,0,0,127+(128-r_map)));
+						r_map = m.map(r,0,padding,0,255,true);
+						mask.set(i,j,m.color(0,0,0,127+(128-r_map)));
 					}else{
-						mask.set(i,j,color(0,0,0,r_map));  
+						mask.set(i,j,m.color(0,0,0,r_map));  
 					}
 					
 					corner = true;
@@ -276,13 +279,13 @@ function generateMask(w,h,x0,y0,x1,y1,invert=false){
 					//bottom right
 					x = x0 + x1 - i;
 					y = y0 + y1 - j;
-					r = int(sqrt(x*x + y*y));
-					r_map = map(r,0,padding,0,128,true);
+					r = m.int(m.sqrt(x*x + y*y));
+					r_map = m.map(r,0,padding,0,128,true);
 					if(invert){
-						r_map = map(r,0,padding,0,255,true);
-						mask.set(i,j,color(0,0,0,127+(128-r_map)));
+						r_map = m.map(r,0,padding,0,255,true);
+						mask.set(i,j,m.color(0,0,0,127+(128-r_map)));
 					}else{
-						mask.set(i,j,color(0,0,0,r_map));  
+						mask.set(i,j,m.color(0,0,0,r_map));  
 					}
 					
 					corner = true;
@@ -300,22 +303,22 @@ function generateMask(w,h,x0,y0,x1,y1,invert=false){
 					else{
 						falloff_y = j - (y0 + y1);
 					}
-					x_map = map(falloff_x,0,padding,0,128);
-					y_map = map(falloff_y,0,padding,0,128);
+					x_map = m.map(falloff_x,0,padding,0,128);
+					y_map = m.map(falloff_y,0,padding,0,128);
 					if(x_map > y_map){
 						if(invert){
-							x_map = map(falloff_x,0,padding,0,255);
-							mask.set(i,j,color(0,0,0,127+(128-x_map)));
+							x_map = m.map(falloff_x,0,padding,0,255);
+							mask.set(i,j,m.color(0,0,0,127+(128-x_map)));
 						}else{
-							mask.set(i,j,color(0,0,0,x_map));  
+							mask.set(i,j,m.color(0,0,0,x_map));  
 						}
 					}
 					else{
 						if(invert){
-							y_map = map(falloff_y,0,padding,0,255);
-							mask.set(i,j,color(0,0,0,127+(128-y_map)));
+							y_map = m.map(falloff_y,0,padding,0,255);
+							mask.set(i,j,m.color(0,0,0,127+(128-y_map)));
 						}else{
-							mask.set(i,j,color(0,0,0,y_map));  
+							mask.set(i,j,m.color(0,0,0,y_map));  
 						}
 						
 					}
@@ -324,19 +327,19 @@ function generateMask(w,h,x0,y0,x1,y1,invert=false){
 			else{
 				//outside box
 				if(invert){
-					mask.set(i, j, color(0, 0, 0, 0));
+					mask.set(i, j, m.color(0, 0, 0, 0));
 				}else{
-					mask.set(i, j, color(0, 0, 0, 128));  
+					mask.set(i, j, m.color(0, 0, 0, 128));  
 				}
 			}
 		}
 	}
 	mask.updatePixels();
 	return mask;
-}
+};
 
 
-function resizePopups(){
+m.resizePopups = function(){
 	var dfd = cockpit.defer();
 	for(let i = 0; i < components.length; i++){
 		var lines = components[i].popup.content.split(/\r\n|\r|\n/);
@@ -352,9 +355,9 @@ function resizePopups(){
 		components[i].popup.width = 9*max_chars + 10;
 	}
 	dfd.resolve();
-}
+};
 
-function getRam(){
+m.getRam= function(){
 	var dfd = cockpit.defer();
 	if(ram_info){
 		for(let i = 0; i < ram_info["Ram Info"].length; i++){
@@ -383,16 +386,16 @@ function getRam(){
 							components[c]["width"]*ramScale,
 							)
 						);
-						peripheralImages.push(loadImage("img/motherboard/ram.png"));
+						peripheralImages.push(m.loadImage("img/motherboard/ram.png"));
 					}
 				}
 			}
 		}
 	}
 	dfd.resolve();
-}
+};
 
-function getPCI(){
+m.getPCI = function(){
 	var dfd = cockpit.defer();
 	let VERTOFFSET = 5.37;
 	let VERTSCALE = 19.0;
@@ -417,13 +420,13 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/24i.png"));
+								peripheralImages.push(m.loadImage("img/motherboard/24i.png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 108.0*components[c]["width"]*pciScale;
 								components[c]["height"] = components[c]["width"]/(108.0/884.0);
 								components[c].popup.content = components[c].popup.content.slice(0,-1);
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 							else if(pci_info["PCI Info"][i]["Card Type"] == "HBA" && pci_info["PCI Info"][i]["Card Model"] == "SAS9305-16i"){
@@ -439,13 +442,13 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/16i.png"));
+								peripheralImages.push(m.loadImage("img/motherboard/16i.png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 108.0*components[c]["width"]*pciScale;
 								components[c]["height"] = components[c]["width"]/(108.0/884.0);
 								components[c].popup.content = components[c].popup.content.slice(0,-1);
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 							else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "82599ES"){
@@ -461,13 +464,13 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+								peripheralImages.push(m.loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 99.0*components[c]["width"]*pciScale;
 								components[c]["height"] = components[c]["width"]/(99.0/593.0);
 								components[c].popup.content = components[c].popup.content.slice(0,-5);
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 							else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "X540-AT2"){
@@ -483,13 +486,13 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+								peripheralImages.push(m.loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 98.0*components[c]["width"]*pciScale;
 								components[c]["height"] = components[c]["width"]/(98.0/813.0);
 								components[c].popup.content = components[c].popup.content.slice(0,-5);
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 							else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "XL710"){
@@ -505,13 +508,13 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+								peripheralImages.push(m.loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 99.0*components[c]["width"]*pciScale;
 								components[c]["height"] = components[c]["width"]/(99.0/886.0);
 								components[c].popup.content = components[c].popup.content.slice(0,-5);
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 							else if(pci_info["PCI Info"][i]["Card Type"] == "Network Card" && pci_info["PCI Info"][i]["Card Model"] == "XXV710"){
@@ -527,13 +530,13 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+								peripheralImages.push(m.loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 98.0*components[c]["width"]*pciScale;
 								components[c]["height"] = components[c]["width"]/(98.0/886.0);
 								components[c].popup.content = components[c].popup.content.slice(0,-5);
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 							else if(pci_info["PCI Info"][i]["Card Type"] == "Serial ATA Controller" && pci_info["PCI Info"][i]["Card Model"] == "ASM1062"){
@@ -549,7 +552,7 @@ function getPCI(){
 										components[c]["width"]*pciScale
 										)
 									);
-								peripheralImages.push(loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
+								peripheralImages.push(m.loadImage("img/motherboard/" + pci_info["PCI Info"][i]["Card Model"] + ".png"));
 								components[c]["x0"] = components[c]["x0"]-(components[c]["width"]*WIDTHOFFSET);
 								components[c]["y0"] = components[c]["y0"]-(components[c]["width"]*VERTOFFSET);
 								components[c]["width"] = 97.0*components[c]["width"]*pciScale;
@@ -584,7 +587,7 @@ function getPCI(){
 									}
 								}
 								components[c].popup.content = contentStr.slice(0,-1);;
-								let newMask = generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
+								let newMask = m.generateMask(background_img.width,background_img.height,components[c]["x0"],components[c]["y0"],components[c]["width"],components[c]["height"]);
 								MASK_ARR[c] = newMask;
 							}
 						}
@@ -595,9 +598,9 @@ function getPCI(){
 
 	}
 	dfd.resolve();
-}
+};
 
-function getCPU(){
+m.getCPU = function(){
 	let contentStr;
 	for(let i = 0; i < components.length; i++){
 		if(components[i].type == "cpu" && components[i].id == 1){
@@ -619,9 +622,9 @@ function getCPU(){
 			components[i].popup.content = components[i].popup.content.slice(0,-1);
 		}
 	}
-}
+};
 
-function getSATA(){
+m.getSATA = function(){
 	var dfd = cockpit.defer();
 	if(sata_info){
 		//sata info is a global variable in hardware.js
@@ -664,17 +667,17 @@ function getSATA(){
 		}
 	}
 	dfd.resolve();
-}
+};
 
-function loadAssets(){
+m.loadAssets = function(){
 	mobo_image = document.getElementById("mobo_image");
 	if(mobo_image.src){
-		background_img = loadImage(mobo_image.src);
-		jsonLoadMotherboard(mobo_json_path);
+		background_img = m.loadImage(mobo_image.src);
+		m.jsonLoadMotherboard(mobo_json_path);
 	}
-}
+};
 
-function jsonLoadMotherboard(fname){
+m.jsonLoadMotherboard = function(fname){
 	var dfd = cockpit.defer();
 	var proc = cockpit.spawn(
 			[
@@ -707,42 +710,67 @@ function jsonLoadMotherboard(fname){
 			dfd.resolve();
 		}
 	);
-}
+};
 
-function mouseActivity(){
-	if(READY){
-		POPUP_ACTIVE = false;
-		for(let i = 0; i < components.length; i++){
-			if((mouseX > components[i].x0) && (mouseX < components[i].x0 + components[i].width) &&
-				(mouseY > components[i].y0) && (mouseY < components[i].y0 + components[i].height)){
-				//cursor is within the boundaries of a component.
-				POPUP_ACTIVE = true;
-				POPUP_IDX = i;
-				if((components[i].x0 + components[i].width + 20 + components[i].popup.width) < width){
-					//popup window can fit if placed near the top right of the component and 
-					//still fit on screen.
-					components[i].popup.x0 = components[i].x0 + components[i].width + 20;
+	m.mouseActivity = function(){
+		if(READY){
+			POPUP_ACTIVE = false;
+			for(let i = 0; i < components.length; i++){
+				if((m.mouseX > components[i].x0) && (m.mouseX < components[i].x0 + components[i].width) &&
+					(m.mouseY > components[i].y0) && (m.mouseY < components[i].y0 + components[i].height)){
+					//cursor is within the boundaries of a component.
+					POPUP_ACTIVE = true;
+					POPUP_IDX = i;
+					if((components[i].x0 + components[i].width + 20 + components[i].popup.width) < m.width){
+						//popup window can fit if placed near the top right of the component and 
+						//still fit on screen.
+						components[i].popup.x0 = components[i].x0 + components[i].width + 20;
+					}
+					else if((components[i].x0 - 20 -components[i].popup.width)>20){
+						//popup window can be placed near the upper left region of the component footprint
+						components[i].popup.x0 = components[i].x0 - 20 - components[i].popup.width;
+					}else{
+						//popup window is very wide, we need to place it above the component,
+						//starting from the left and sliding it toward the right
+						//until it fits on the canvas.
+						components[i].popup.x0 = ((components[i].x0 - 20 -components[i].popup.width)*-1)+20;
+						 
+					}
+					if((components[i].y0 - 20 ) > 0 ){
+					components[i].popup.y0 = components[i].y0 - 20;
+					}
+					else{
+						components[i].popup.y0 = 0;
+					}
+					break;
 				}
-				else if((components[i].x0 - 20 -components[i].popup.width)>20){
-					//popup window can be placed near the upper left region of the component footprint
-					components[i].popup.x0 = components[i].x0 - 20 - components[i].popup.width;
-				}else{
-					//popup window is very wide, we need to place it above the component,
-					//starting from the left and sliding it toward the right
-					//until it fits on the canvas.
-					components[i].popup.x0 = ((components[i].x0 - 20 -components[i].popup.width)*-1)+20;
-					 
-				}
-				if((components[i].y0 - 20 ) > 0 ){
-				components[i].popup.y0 = components[i].y0 - 20;
-				}
-				else{
-					components[i].popup.y0 = 0;
-				}
-				break;
 			}
 		}
-	}
-}
+	};
+};
 
-cockpit.transport.wait(function() { });
+
+var moboP5 = new p5(mobo_app, 'motherboard_app');
+
+
+//disk app
+var disk_app = function( d ) {
+	var x = 100.0; 
+	var y = 100; 
+	var speed = 2.5; 
+	d.setup = function() {
+		d.createCanvas(400, 200);
+	};
+
+	d.draw = function() {
+		d.background(100);
+		d.fill(1);
+		x += speed; 
+		if(x > d.width){
+			x = 0; 
+		}
+		d.ellipse(x,y,50,50);
+
+	};
+};
+var diskP5 = new p5(disk_app, 'disk_app');
