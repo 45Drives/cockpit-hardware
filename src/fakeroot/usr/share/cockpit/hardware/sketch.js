@@ -755,11 +755,8 @@ var moboP5 = new p5(mobo_app, 'motherboard_app');
 
 //disk app
 var disk_app = function( d ) {
-	var x = 100.0; 
-	var y = 100; 
-	var speed = 2.5; 
 	d.setup = function() {
-		d.createCanvas(400, 200);
+		d.createCanvas(768, 1024);
 	};
 
 	d.draw = function() {

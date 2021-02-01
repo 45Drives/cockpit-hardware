@@ -6,7 +6,8 @@ var pci_info = null;
 var ram_info = null;
 var sata_info = null;
 var p5_running = false;
-var temp_output = document.getElementById("motherboard_app");
+var mobo_app_output = document.getElementById("motherboard_app");
+var disks_app_output = document.getElementById("disk_app");
 var detail_done = false;
 var network_info = null;
 var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F"];
@@ -16,9 +17,13 @@ var root_check = null;
 function motherboard()
 {
 	var dfd = cockpit.defer();
-	if(!p5_running){temp_output.innerHTML = "Loading... Please Wait.";}
+	if(!p5_running){
+		mobo_app_output.innerHTML = "Loading... Please Wait.";
+		disks_app_output.innerHTML = "Loading... Please Wait.";
+	}
 	if(!mobo_info){
-		temp_output.innerHTML = "Loading... Please Wait.";
+		mobo_app_output.innerHTML = "Loading... Please Wait.";
+		disks_app_output.innerHTML = "Loading... Please Wait.";
 		var m_output = document.getElementById("motherboard_output");
 		var mobo_img = document.getElementById("mobo_image");
 			
@@ -137,8 +142,7 @@ function launchP5JS(){
 			}
 		}
 		if(!mobo_supported){
-			let APP_OUTPUT = document.getElementById("motherboard_app");
-			APP_OUTPUT.innerHTML = (
+			mobo_app_output.innerHTML = (
 				"Interactive Motherboard Support for " +
 				mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] +
 				" is not available at this time.");
@@ -153,9 +157,8 @@ function launchP5JS(){
 			sketch.onload = function() {};
 			sketch.src = "sketch.js";
 			document.getElementsByTagName('head')[0].appendChild(sketch);
-			temp_output.innerHTML = "";
-			document.getElementById("disk_app").innerHTML = "";
-
+			mobo_app_output.innerHTML = "";
+			disks_app_output.innerHTML = "";
 		};
 		
 		document.getElementsByTagName('head')[0].appendChild(p5js);
@@ -505,9 +508,11 @@ function main()
 				let sys = document.getElementById("system_output");
 				let det = document.getElementById("detail_output");
 				let mo = document.getElementById("motherboard_output");
+				let dsk = document.getElementById("disks_output");
 				sys.innerHTML = "You must be an administrator to use this feature.";
 				det.innerHTML = "You must be an administrator to use this feature.";
 				mo.innerHTML = "You must be an administrator to use this feature.";
+				dsk.innerHTML = "You must be an administrator to use this feature.";
 			}
 	 	}
 	)
