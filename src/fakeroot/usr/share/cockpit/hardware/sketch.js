@@ -755,19 +755,30 @@ var moboP5 = new p5(mobo_app, 'motherboard_app');
 
 //disk app
 var disk_app = function( d ) {
+	let chassis_img;
+	let row_hdd_img;
+	let row_ssd_img;
+	let row_h16_img;
+	let front_plate_img;
+	d.preload = function(){
+		chassis_img = d.loadImage("img/disk/resized/50/CHASSIS.png");
+		row_hdd_img = d.loadImage("img/disk/resized/50/ROW_HDD.png");
+		row_ssd_img = d.loadImage("img/disk/resized/50/ROW_SSD.png");
+		row_h16_img = d.loadImage("img/disk/resized/50/ROW_H16.png");
+		front_plate_img = d.loadImage("img/disk/resized/50/FRONT_PLATE.png");
+	}
 	d.setup = function() {
 		d.createCanvas(768, 1024);
+
 	};
 
 	d.draw = function() {
-		d.background(100);
-		d.fill(1);
-		x += speed; 
-		if(x > d.width){
-			x = 0; 
-		}
-		d.ellipse(x,y,50,50);
-
+		d.background(255);
+		d.image(chassis_img,0,20);
+		d.image(row_ssd_img,0,19+chassis_img.height);
+		d.image(row_hdd_img,0,18+chassis_img.height + row_ssd_img.height);
+		d.image(row_hdd_img,0,17+chassis_img.height + row_ssd_img.height + row_hdd_img.height);
+		d.image(front_plate_img,0,16+chassis_img.height + row_ssd_img.height + row_hdd_img.height + row_hdd_img.height);
 	};
 };
 var diskP5 = new p5(disk_app, 'disk_app');
