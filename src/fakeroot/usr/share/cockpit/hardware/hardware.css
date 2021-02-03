@@ -4,23 +4,24 @@
 }
 
 .header-45D {
+    display: flex;
     background-color: #151515;
+    align-items: center; 
     width: 100%;
-    padding: 15px;
-    color: #FFFFFF;
-    margin: 0;
-    overflow: auto;
 }
 
 .header-45D img {
-    width: 250px;
+    width: 200px;
     height: auto;
     float: left;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    padding-left: 8px;
+    padding-right: 5px;
 }
 
-.header-45D h1 {
+.header-45D h2 {
     color: #FFFFFF;
-    padding: 15px;
 }
 
 .detail-table-header{
@@ -44,16 +45,11 @@
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 16px;
+    padding: 8px;
 }
 
 .system_output{
-    /*display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-grow: 0;
-    */
-    padding: 16px;
+    padding: 8px;
 }
 
 .motherboard_content {
@@ -61,11 +57,16 @@
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 16px;
+    padding: 8px;
 }
 
 .motherboard_output {
-    padding: 16px;
+    padding: 8px;
+}
+
+.disk_output {
+    padding-top: 16px;
+    padding-left: 8px;
 }
 
 .motherboard_output img {
@@ -78,11 +79,11 @@
     justify-content: flex-start;
     align-items: flex-start;
     flex-grow: 0;
-    padding: 16px;
+    padding: 8px;
 }
 
 .detail_output{
-    padding:16px;
+    padding: 8px;
 }
 
 .component_output{
@@ -91,7 +92,20 @@
     background-color: #f2f2f2;
 }
 
-.nav-tabs, .nav-tabs > li > a {
+.nav-tabs{
+    color: rgb(200,200,200);
+    background-color: rgb(24,26,27);
+    border-top-color: rgb(56, 61, 63);
+    border-right-color: rgb(56, 61, 63);
+    border-bottom-color: rgb(48, 52, 54);
+    border-left-color: rgb(56, 61, 63);
+}
+
+.nav-tabs > li > a {
+    padding-top: 4px;
+    padding-right: 16px;
+    padding-bottom: 4px;
+    padding-left: 16px;
     color: rgb(200,200,200);
     background-color: rgb(24,26,27);
     border-top-color: rgb(56, 61, 63);
@@ -114,7 +128,6 @@
     flex-direction: row;
     justify-content: flex-start;
     flex-grow: 0;
-    padding: 8px 8px 8px 25px;
 }
 
 table {
@@ -135,6 +148,7 @@ th {
 }
 
 .nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
+    /*padding: 1px 1px 1px 1px;*/
     color: #981C20;
     cursor: default;
     background-color: #FAFAFA;

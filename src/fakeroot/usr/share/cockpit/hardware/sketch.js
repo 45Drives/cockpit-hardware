@@ -750,7 +750,7 @@ m.jsonLoadMotherboard = function(fname){
 };
 
 
-var moboP5 = new p5(mobo_app, 'motherboard_app');
+//var moboP5 = new p5(mobo_app, 'motherboard_app');
 
 
 //disk app
@@ -760,25 +760,149 @@ var disk_app = function( d ) {
 	let row_ssd_img;
 	let row_h16_img;
 	let front_plate_img;
-	d.preload = function(){
-		chassis_img = d.loadImage("img/disk/resized/50/CHASSIS.png");
-		row_hdd_img = d.loadImage("img/disk/resized/50/ROW_HDD.png");
-		row_ssd_img = d.loadImage("img/disk/resized/50/ROW_SSD.png");
-		row_h16_img = d.loadImage("img/disk/resized/50/ROW_H16.png");
-		front_plate_img = d.loadImage("img/disk/resized/50/FRONT_PLATE.png");
-	}
-	d.setup = function() {
-		d.createCanvas(768, 1024);
+	let server_info;
+	let server_img_arr = [];
+	let row_img_arr = [];
 
+	const ROW_HDD = 0;
+	const ROW_SSD = 1;
+	const ROW_H16 = 2;
+
+	let json_row_ssd;
+	let json_row_arr = [];
+
+	d.preload = function(){
+		chassis_img = d.loadImage("img/disk/CHASSIS.png");
+		row_hdd_img = d.loadImage("img/disk/ROW_HDD.png");
+		row_ssd_img = d.loadImage("img/disk/ROW_SSD.png");
+		row_h16_img = d.loadImage("img/disk/ROW_H16.png");
+		front_plate_img = d.loadImage("img/disk/FRONT_PLATE.png");
+		ssd_micron_img = d.loadImage("img/disk/SSD_seagate.png");
+		get_server_info();
+		d.jsonLoadRowSSD();
+	}
+
+	function sleep(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	function get_server_info(){
+		//var server_info_promise = cockpit.defer();
+		// get the server_info.json file
+		var server_info_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/server_info"
+			], 
+			{err: "out"}
+		);
+		server_info_proc.stream(
+				function(data){
+					server_info = JSON.parse(data);
+					//server_info_promise.resolve();
+				}
+			);
+	}
+
+	d.jsonLoadRowSSD = function(){
+	//var dfd = cockpit.defer();
+	var proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/dump_json",
+				"/img/disk/ROW_SSD.json"
+			], 
+			{err: "out"}
+	);
+	proc.stream(
+		function(data){
+				json_row_ssd = JSON.parse(data);
+			}
+		);
+	};
+
+
+	d.setup = async function() {
+		d.createCanvas(600, 900);
+
+		while(!row_hdd_img ||!row_ssd_img || !row_h16_img || !chassis_img || !front_plate_img){await sleep(300)}
+		//put the p5 images for each row in the row img array
+		row_img_arr.push(row_hdd_img);
+		row_img_arr.push(row_ssd_img);
+		row_img_arr.push(row_h16_img);
+		
+		//put the chassis image at the start of the server_img_arr
+		//we will draw from top to bottom. the chassis is always at the top.
+		server_img_arr.push(chassis_img);
+
+		//ensure that the server_info.json file and all ROW_*.json files have been parsed for us. 
+		while(!server_info || !json_row_ssd){await sleep(300)}
+		if(server_info.hasOwnProperty("error_msg")){
+			//we were unable to get the server_info.json file
+			//TODO: PUT ERROR MESSAGE OUT TO THE USER
+			console.log(server_info);
+		}
+
+		else if(server_info.hasOwnProperty("Alias Style") && server_info.hasOwnProperty("Chassis Size")){
+			//We can draw the background rows based on the alias style and chassis size
+			let ALIAS_TEMPLATE = {
+				"H16":{
+					"Q30":[ROW_H16,ROW_HDD],
+					"S45":[ROW_H16,ROW_HDD,ROW_HDD],
+					"XL60":[ROW_H16,ROW_HDD,ROW_HDD,ROW_HDD]
+				},
+				"H32":{
+					"Q30":[ROW_SSD,ROW_HDD],
+					"S45":[ROW_SSD,ROW_HDD,ROW_HDD],
+					"XL60":[ROW_SSD,ROW_HDD,ROW_HDD,ROW_HDD]
+				},
+				"STORINATOR":{
+					"AV15":[ROW_HDD],
+					"Q30":[ROW_HDD,ROW_HDD],
+					"S45":[ROW_HDD,ROW_HDD,ROW_HDD],
+					"XL60":[ROW_HDD,ROW_HDD,ROW_HDD]	
+				},
+				"STORNADO":{
+					"AV15":[ROW_SSD]
+				},
+				"AV15-BASE":{
+					"AV15":[ROW_HDD]
+				}
+			}
+
+			//TEMPORARY..
+			console.log(ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]])
+			console.log(json_row_ssd)
+
+			//push the relevant row image into the server_img_arr based on the index stored in the 
+			//relevant ALIAS_TEMPLATE array.
+			for(let i = 0; i < ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]].length; i++){
+				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i]])
+			}
+
+			//Lastly, push the front plate image into the server_img_arr. Now we have the 
+			//images stored in the order we need to draw them (from top to bottom), in the
+			//server_img_arr. We can 
+			server_img_arr.push(front_plate_img)
+
+		}
 	};
 
 	d.draw = function() {
 		d.background(255);
-		d.image(chassis_img,0,20);
-		d.image(row_ssd_img,0,19+chassis_img.height);
-		d.image(row_hdd_img,0,18+chassis_img.height + row_ssd_img.height);
-		d.image(row_hdd_img,0,17+chassis_img.height + row_ssd_img.height + row_hdd_img.height);
-		d.image(front_plate_img,0,16+chassis_img.height + row_ssd_img.height + row_hdd_img.height + row_hdd_img.height);
+
+		// draw the server to the screen, using the images stored in
+		// the server_img_arr.
+		let server_y_offset = 0;
+		for(let i = 0; i < server_img_arr.length; i++){
+			d.image(server_img_arr[i],0,server_y_offset);
+			server_y_offset += server_img_arr[i].height-1;
+		}
+		for(let i=0; i<json_row_ssd["ROW_SSD"].length; i++){
+			let rect_x = json_row_ssd["ROW_SSD"][i].x;
+			let rect_y = (json_row_ssd["ROW_SSD"][i].y) + server_img_arr[0].height;
+			d.image(ssd_micron_img,rect_x,rect_y);
+		}
 	};
 };
 var diskP5 = new p5(disk_app, 'disk_app');
