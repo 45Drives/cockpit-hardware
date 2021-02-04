@@ -37,7 +37,7 @@ var mobo_app = function( m ) {
 
 
 m.createComponentMasks = function(a){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	var img_path = (
 		"img/motherboard/" + 
 		String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + 
@@ -45,7 +45,7 @@ m.createComponentMasks = function(a){
 		String(mobo_json[a]["id"]) + ".png"
 	);
 	MASK_ARR.push(m.loadImage(img_path));
-	dfd.resolve();
+	//dfd.resolve();
 };
 
 class component{
@@ -98,6 +98,7 @@ m.setup = function(){
 	//cnv.parent("motherboard_app");
 	cnv.mouseMoved(m.mouseActivity);
 	mobo_image = document.getElementById("mobo_image");
+	m.frameRate(20);
 };
 
 m.draw = function (){
@@ -162,11 +163,11 @@ m.draw = function (){
 }
 
 m.setGlobalMask = function(){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	let inset = 30;
 	let yTrim = 30;
 	globalMask = m.generateMask(background_img.width,background_img.height,inset,inset+yTrim,background_img.width-(2*inset),background_img.height-((2*inset)+yTrim),true);
-	dfd.resolve();
+	//dfd.resolve();
 }
 
 
@@ -340,7 +341,7 @@ m.generateMask = function(w,h,x0,y0,x1,y1,invert=false){
 
 
 m.resizePopups = function(){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	for(let i = 0; i < components.length; i++){
 		var lines = components[i].popup.content.split(/\r\n|\r|\n/);
 		var linecount = components[i].popup.content.split(/\r\n|\r|\n/).length;
@@ -354,11 +355,11 @@ m.resizePopups = function(){
 		}
 		components[i].popup.width = 9*max_chars + 10;
 	}
-	dfd.resolve();
+	//dfd.resolve();
 };
 
 m.getRam= function(){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	if(ram_info){
 		for(let i = 0; i < ram_info["Ram Info"].length; i++){
 			for(let c = 0; c < components.length; c++){
@@ -392,11 +393,11 @@ m.getRam= function(){
 			}
 		}
 	}
-	dfd.resolve();
+	//dfd.resolve();
 };
 
 m.getPCI = function(){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	let VERTOFFSET = 5.37;
 	let VERTSCALE = 19.0;
 	let WIDTHOFFSET = 1.24;
@@ -597,7 +598,7 @@ m.getPCI = function(){
 		}
 
 	}
-	dfd.resolve();
+	//dfd.resolve();
 };
 
 m.getCPU = function(){
@@ -625,7 +626,7 @@ m.getCPU = function(){
 };
 
 m.getSATA = function(){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	if(sata_info){
 		//sata info is a global variable in hardware.js
 		for(let i = 0; i < sata_info["SATA Info"].length; i++){
@@ -666,7 +667,7 @@ m.getSATA = function(){
 			}
 		}
 	}
-	dfd.resolve();
+	//dfd.resolve();
 };
 
 m.loadAssets = function(){
@@ -678,7 +679,7 @@ m.loadAssets = function(){
 };
 
 m.jsonLoadMotherboard = function(fname){
-	var dfd = cockpit.defer();
+	//var dfd = cockpit.defer();
 	var proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -707,7 +708,7 @@ m.jsonLoadMotherboard = function(fname){
 					);
 				}
 			}
-			dfd.resolve();
+			//dfd.resolve();
 		}
 	);
 };
@@ -749,10 +750,6 @@ m.jsonLoadMotherboard = function(fname){
 	};
 };
 
-
-//var moboP5 = new p5(mobo_app, 'motherboard_app');
-
-
 //disk app
 var disk_app = function( d ) {
 	let chassis_img;
@@ -764,12 +761,187 @@ var disk_app = function( d ) {
 	let server_img_arr = [];
 	let row_img_arr = [];
 
+	let server_rows = [];
 	const ROW_HDD = 0;
 	const ROW_SSD = 1;
 	const ROW_H16 = 2;
 
-	let json_row_ssd;
+	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16"];
+
+	let json_row;
 	let json_row_arr = [];
+	let json_lsdev;
+
+	let ALIAS_TEMPLATE = {
+		"H16":{
+			"Q30":[ROW_H16,ROW_HDD],
+			"S45":[ROW_H16,ROW_HDD,ROW_HDD],
+			"XL60":[ROW_H16,ROW_HDD,ROW_HDD,ROW_HDD]
+		},
+		"H32":{
+			"Q30":[ROW_SSD,ROW_HDD],
+			"S45":[ROW_SSD,ROW_HDD,ROW_HDD],
+			"XL60":[ROW_SSD,ROW_HDD,ROW_HDD,ROW_HDD]
+		},
+		"STORINATOR":{
+			"AV15":[ROW_HDD],
+			"Q30":[ROW_HDD,ROW_HDD],
+			"S45":[ROW_HDD,ROW_HDD,ROW_HDD],
+			"XL60":[ROW_HDD,ROW_HDD,ROW_HDD]	
+		},
+		"STORNADO":{
+			"AV15":[ROW_SSD]
+		},
+		"AV15-BASE":{
+			"AV15":[ROW_HDD]
+		}
+	}
+
+	let LABEL_TEMPLATE = {
+		"H16":{
+			"Q30":[
+				[
+					"2-23","2-22","2-21","2-20","2-19","2-18","2-17",
+					"2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9",
+					"2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"
+				],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			],
+			"S45":[
+				[
+					"3-23","3-22","3-21","3-20","3-19","3-18","3-17",
+					"3-16","3-15","3-14","3-13","3-12","3-11","3-10","3-9",
+					"3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"
+				],
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			],
+			"XL60":[
+				[
+					"4-23","4-22","4-21","4-20","4-19","4-18","4-17",
+					"4-16","4-15","4-14","4-13","4-12","4-11","4-10","4-9",
+					"4-8","4-7","4-6","4-5","4-4","4-3","4-2","4-1"
+				],
+				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			]
+		},
+		"H32":{
+			"Q30":[
+				[
+					"2-24","2-23","2-22","2-21","2-20","2-19","2-18","2-17",
+					"2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9",
+					"2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
+					"1-23","1-22","1-21","1-20","1-19","1-18","1-17","1-16"
+				],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			],
+			"S45":[
+				[
+					"3-24","3-23","3-22","3-21","3-20","3-19","3-18","3-17",
+					"3-16","3-15","3-14","3-13","3-12","3-11","3-10","3-9",
+					"3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1",
+					"2-23","2-22","2-21","2-20","2-19","2-18","2-17","2-16"
+				],
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			],
+			"XL60":[
+				[
+					"4-24","4-23","4-22","4-21","4-20","4-19","4-18","4-17",
+					"4-16","4-15","4-14","4-13","4-12","4-11","4-10","4-9",
+					"4-8","4-7","4-6","4-5","4-4","4-3","4-2","4-1",
+					"3-23","3-22","3-21","3-20","3-19","3-18","3-17","3-16"
+				],
+				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			]
+		},
+		"STORINATOR":{
+			"AV15":[
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+				],
+			"Q30":[
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+				],
+			"S45":[
+				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			],
+			"XL60":[
+				["4-15","4-14","4-13","4-12","4-11","4-10","4-9","4-8","4-7","4-6","4-5","4-4","4-3","4-2","4-1"],
+				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
+				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			]	
+		},
+		"STORNADO":{
+			"AV15":[
+				["2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
+				"1-16","1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			]
+		},
+		"AV15-BASE":{
+			"AV15":[
+				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			]
+		}
+	}
+
+	class ServerRow{
+		constructor(row_type,y_offset,row_index,alias_style,chassis,json_values,lsdev_values){
+			this.row_type = row_type;
+			this.y_offset = y_offset;
+			this.row_index = row_index;
+			this.label_values = LABEL_TEMPLATE[alias_style][chassis][row_index];
+			this.json_values = json_values;
+			this.occupied = [];
+			for(let i = 0; i < json_values.length && i < lsdev_values.length; i++){
+				this.occupied.push(lsdev_values[i]["occupied"])
+			}
+		}
+		show(){
+			for(let i = 0; i < this.json_values.length; i++){
+				if(this.json_values[i].HDD){
+					if(this.occupied[i]){
+						d.image(
+							hdd_seagate_img,
+							this.json_values[i].x,
+							this.json_values[i].y + this.y_offset
+						);
+					}
+					d.push();
+					d.fill(255);
+					d.textSize(11);
+					d.textAlign(d.CENTER);
+					d.text(this.label_values[i],this.json_values[i].x + 16, this.json_values[i].y + this.y_offset -10);
+					d.pop();
+				}
+				else if(!this.json_values[i].HDD){
+					if(this.occupied[i]){
+						d.image(
+							ssd_micron_img,
+							this.json_values[i].x,
+							this.json_values[i].y + this.y_offset
+							);
+					}
+					d.push();
+					d.fill(255);
+					d.textSize(11);
+					d.translate(this.json_values[i].x, this.json_values[i].y + this.y_offset);
+					d.rotate(d.radians(90));
+					let offset = 0;
+					if (this.row_type == ROW_SSD){d.text(this.label_values[i],-45,-1);}
+					else{d.text(this.label_values[i],-38,-1);}
+					d.pop();
+				}
+			}
+		}
+	}
 
 	d.preload = function(){
 		chassis_img = d.loadImage("img/disk/CHASSIS.png");
@@ -777,13 +949,38 @@ var disk_app = function( d ) {
 		row_ssd_img = d.loadImage("img/disk/ROW_SSD.png");
 		row_h16_img = d.loadImage("img/disk/ROW_H16.png");
 		front_plate_img = d.loadImage("img/disk/FRONT_PLATE.png");
-		ssd_micron_img = d.loadImage("img/disk/SSD_seagate.png");
+		ssd_micron_img = d.loadImage("img/disk/SSD_micron.png");
+		hdd_seagate_img = d.loadImage("img/disk/HDD_seagate.png");
 		get_server_info();
-		d.jsonLoadRowSSD();
+		get_drive_info();
+		d.jsonLoadRowPositions();
 	}
 
 	function sleep(ms) {
 		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	function get_drive_info(){
+		var drive_info_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/opt/45drives/tools/lsdev",
+				"-j"
+			], 
+			{err: "out"}
+		);
+		drive_info_proc.done(
+				function(data){
+					json_lsdev = JSON.parse(data);
+					json_lsdev["rows"].reverse();
+					for(let i = 0; i < json_lsdev["rows"].length; i++){
+						json_lsdev["rows"][i].reverse();
+					}
+					//var lsdev_output = document.createElement("P");
+					//lsdev_output.innerHTML = data;
+					//document.getElementById("disk_info_box").appendChild(lsdev_output);
+				}
+			);
 	}
 
 	function get_server_info(){
@@ -804,26 +1001,25 @@ var disk_app = function( d ) {
 			);
 	}
 
-	d.jsonLoadRowSSD = function(){
-	//var dfd = cockpit.defer();
+	d.jsonLoadRowPositions = function(){
 	var proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
 				"/usr/share/cockpit/hardware/helper_scripts/dump_json",
-				"/img/disk/ROW_SSD.json"
+				"/img/disk/ROW.json"
 			], 
 			{err: "out"}
 	);
 	proc.stream(
 		function(data){
-				json_row_ssd = JSON.parse(data);
+				json_row = JSON.parse(data);
 			}
 		);
 	};
 
-
 	d.setup = async function() {
 		d.createCanvas(600, 900);
+		d.frameRate(10);
 
 		while(!row_hdd_img ||!row_ssd_img || !row_h16_img || !chassis_img || !front_plate_img){await sleep(300)}
 		//put the p5 images for each row in the row img array
@@ -835,8 +1031,8 @@ var disk_app = function( d ) {
 		//we will draw from top to bottom. the chassis is always at the top.
 		server_img_arr.push(chassis_img);
 
-		//ensure that the server_info.json file and all ROW_*.json files have been parsed for us. 
-		while(!server_info || !json_row_ssd){await sleep(300)}
+		//ensure that the server_info.json file and ROW.json files have been parsed for us.
+		while(!server_info || !json_row || !json_lsdev){await sleep(300)}
 		if(server_info.hasOwnProperty("error_msg")){
 			//we were unable to get the server_info.json file
 			//TODO: PUT ERROR MESSAGE OUT TO THE USER
@@ -845,39 +1041,41 @@ var disk_app = function( d ) {
 
 		else if(server_info.hasOwnProperty("Alias Style") && server_info.hasOwnProperty("Chassis Size")){
 			//We can draw the background rows based on the alias style and chassis size
-			let ALIAS_TEMPLATE = {
-				"H16":{
-					"Q30":[ROW_H16,ROW_HDD],
-					"S45":[ROW_H16,ROW_HDD,ROW_HDD],
-					"XL60":[ROW_H16,ROW_HDD,ROW_HDD,ROW_HDD]
-				},
-				"H32":{
-					"Q30":[ROW_SSD,ROW_HDD],
-					"S45":[ROW_SSD,ROW_HDD,ROW_HDD],
-					"XL60":[ROW_SSD,ROW_HDD,ROW_HDD,ROW_HDD]
-				},
-				"STORINATOR":{
-					"AV15":[ROW_HDD],
-					"Q30":[ROW_HDD,ROW_HDD],
-					"S45":[ROW_HDD,ROW_HDD,ROW_HDD],
-					"XL60":[ROW_HDD,ROW_HDD,ROW_HDD]	
-				},
-				"STORNADO":{
-					"AV15":[ROW_SSD]
-				},
-				"AV15-BASE":{
-					"AV15":[ROW_HDD]
-				}
-			}
-
-			//TEMPORARY..
-			console.log(ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]])
-			console.log(json_row_ssd)
 
 			//push the relevant row image into the server_img_arr based on the index stored in the 
-			//relevant ALIAS_TEMPLATE array.
+			//relevant ALIAS_TEMPLATE array. And create the row objects required and store them in 
+			//the server_rows array.
 			for(let i = 0; i < ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]].length; i++){
-				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i]])
+
+				//calculate the y offset for the next row.
+				let y_off = 0;
+				for(let j = 0; j < server_img_arr.length; j++){
+					y_off += server_img_arr[j].height;
+				}
+
+				//add the relevant row image to the server_imf arr
+				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i]]);
+
+				console.log(json_lsdev["rows"]);
+
+				//let lsdev_row_copy = json_lsdev["rows"][i];
+				//lsdev_row_copy.reverse();
+				//create a new ServerRow Object.
+				server_rows.push(
+					new ServerRow(
+						ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i],
+						y_off,
+						i,
+						server_info["Alias Style"],
+						server_info["Chassis Size"],
+						json_row[
+							ROW_JSON_KEYS[
+								ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i]
+							]
+						],
+						json_lsdev["rows"][i]
+					)
+				);
 			}
 
 			//Lastly, push the front plate image into the server_img_arr. Now we have the 
@@ -898,11 +1096,33 @@ var disk_app = function( d ) {
 			d.image(server_img_arr[i],0,server_y_offset);
 			server_y_offset += server_img_arr[i].height-1;
 		}
-		for(let i=0; i<json_row_ssd["ROW_SSD"].length; i++){
-			let rect_x = json_row_ssd["ROW_SSD"][i].x;
-			let rect_y = (json_row_ssd["ROW_SSD"][i].y) + server_img_arr[0].height;
-			d.image(ssd_micron_img,rect_x,rect_y);
+		for(let i = 0; i < server_rows.length; i++){
+			server_rows[i].show();
 		}
 	};
 };
-var diskP5 = new p5(disk_app, 'disk_app');
+
+
+
+var moboP5;
+var diskP5;
+
+function resourceSleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function startDiskApp(){
+	while(!document.getElementById("disk_app")){await resourceSleep(300);}
+	document.getElementById("disk_app").innerHTML = "";
+	diskP5 = new p5(disk_app, 'disk_app');
+}
+
+async function startMoboApp(){
+	while(!document.getElementById("motherboard_app")){	await resourceSleep(300);}
+	var timeout = 0;
+	while(document.getElementById("motherboard_app").innerHTML != "" || timeout > 20){await resourceSleep(500); timeout++;}
+	if(mobo_supported){	moboP5 = new p5(mobo_app, 'motherboard_app');}
+}
+
+startDiskApp();
+startMoboApp();

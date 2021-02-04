@@ -65,6 +65,9 @@
 }
 
 .disk_output {
+    display: flex;
+    flex-direction:row;
+    justify-content: flex-start;
     padding-top: 16px;
     padding-left: 8px;
 }

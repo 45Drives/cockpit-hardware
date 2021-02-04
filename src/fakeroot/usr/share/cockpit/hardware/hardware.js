@@ -6,8 +6,8 @@ var pci_info = null;
 var ram_info = null;
 var sata_info = null;
 var p5_running = false;
-var mobo_app_output = document.getElementById("motherboard_app");
-var disks_app_output = document.getElementById("disk_app");
+//var mobo_app_output = document.getElementById("motherboard_app");
+//var disks_app_output = document.getElementById("disk_app");
 var detail_done = false;
 var network_info = null;
 var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F"];
@@ -18,12 +18,12 @@ function motherboard()
 {
 	var dfd = cockpit.defer();
 	if(!p5_running){
-		mobo_app_output.innerHTML = "Loading... Please Wait.";
-		disks_app_output.innerHTML = "Loading... Please Wait.";
+		//mobo_app_output.innerHTML = "Loading... Please Wait.";
+		//disks_app_output.innerHTML = "Loading... Please Wait.";
 	}
 	if(!mobo_info){
-		mobo_app_output.innerHTML = "Loading... Please Wait.";
-		disks_app_output.innerHTML = "Loading... Please Wait.";
+		//mobo_app_output.innerHTML = "Loading... Please Wait.";
+		//disks_app_output.innerHTML = "Loading... Please Wait.";
 		var m_output = document.getElementById("motherboard_output");
 		var mobo_img = document.getElementById("mobo_image");
 			
@@ -78,59 +78,64 @@ function get_network_info(){
 
 
 function gather_connector_data(){
-	var pci_promise = cockpit.defer();
-	var ram_promise = cockpit.defer();
-	var sata_promise = cockpit.defer();
-
-	// load the pci information
-	var pci_proc = cockpit.spawn(
+	if(!pci_info){
+		var pci_promise = cockpit.defer();
+			// load the pci information
+		var pci_proc = cockpit.spawn(
 		[
 			"/usr/bin/pkexec",
 			"/usr/share/cockpit/hardware/helper_scripts/pci"
 		], 
 		{err: "out"}
-	);
+		);
 
-	pci_proc.stream(
-		function(data){
-			pci_info = JSON.parse(data);
-			launchP5JS();
-			pci_promise.resolve();
-		}
-	);
+		pci_proc.stream(
+			function(data){
+				pci_info = JSON.parse(data);
+				launchP5JS();
+				pci_promise.resolve();
+			}
+		);
+	}
 
-	//load the ram information
-	var ram_proc = cockpit.spawn(
-		[
-			"/usr/bin/pkexec",
-			"/usr/share/cockpit/hardware/helper_scripts/ram"
-		], 
-		{err: "out"}
-	);
-	ram_proc.stream(
-		function(data){
-			ram_info = JSON.parse(data);
-			launchP5JS();
-			ram_promise.resolve();
-		}
-	);
+	if(!ram_info){
+		var ram_promise = cockpit.defer();
+		//load the ram information
+		var ram_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/ram"
+			], 
+			{err: "out"}
+		);
+		ram_proc.stream(
+			function(data){
+				ram_info = JSON.parse(data);
+				launchP5JS();
+				ram_promise.resolve();
+			}
+		);
+	}
+	
+	if(!sata_info){
+		var sata_promise = cockpit.defer();
+		//load the sata information
+		var sata_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/hardware/helper_scripts/sata"
+			], 
+			{err: "out"}
+		);
 
-	//load the sata information
-	var sata_proc = cockpit.spawn(
-		[
-			"/usr/bin/pkexec",
-			"/usr/share/cockpit/hardware/helper_scripts/sata"
-		], 
-		{err: "out"}
-	);
-
-	sata_proc.stream(
-		function(data){
-			sata_info = JSON.parse(data);
-			launchP5JS();
-			sata_promise.resolve();
-		}
-	);
+		sata_proc.stream(
+			function(data){
+				sata_info = JSON.parse(data);
+				launchP5JS();
+				sata_promise.resolve();
+			}
+		);
+	}
 }
 
 
@@ -142,7 +147,7 @@ function launchP5JS(){
 			}
 		}
 		if(!mobo_supported){
-			mobo_app_output.innerHTML = (
+			document.getElementById("motherboard_output").innerHTML = (
 				"Interactive Motherboard Support for " +
 				mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] +
 				" is not available at this time.");
@@ -150,18 +155,16 @@ function launchP5JS(){
 	}
 	if(mobo_supported && mobo_info && mobo_json_path && pci_info && sata_info && ram_info && !p5_running){
 		p5_running = true;
-		var p5js = document.createElement('script');
-		p5js.src = "p5.js";
-		p5js.onload = function() {
-			var sketch = document.createElement('script');
-			sketch.onload = function() {};
-			sketch.src = "sketch.js";
-			document.getElementsByTagName('head')[0].appendChild(sketch);
-			mobo_app_output.innerHTML = "";
-			disks_app_output.innerHTML = "";
-		};
-		
-		document.getElementsByTagName('head')[0].appendChild(p5js);
+		//var p5js = document.createElement('script');
+		//p5js.src = "p5.js";
+		//p5js.onload = function() {
+		//	var sketch = document.createElement('script');
+		//	sketch.onload = function() {};
+		//	sketch.src = "sketch.js";
+		//	document.getElementsByTagName('head')[0].appendChild(sketch);
+			document.getElementById("motherboard_app").innerHTML = "";
+		//};
+		//document.getElementsByTagName('head')[0].appendChild(p5js);
 	}
 }
 
@@ -502,6 +505,7 @@ function main()
 				document.getElementById("system_tab_link").addEventListener("click", system);
 				document.getElementById("motherboard_tab_link").addEventListener("click", motherboard);
 				document.getElementById("detail_tab_link").addEventListener("click",detail);
+				document.getElementById("disk_tab_link").addEventListener("click",motherboard);
 			}else{
 				//user is not an administrator, inform them of this by
 				//displaying a message on each tab page. 
