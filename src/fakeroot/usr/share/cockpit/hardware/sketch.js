@@ -752,25 +752,45 @@ m.jsonLoadMotherboard = function(fname){
 
 //disk app
 var disk_app = function( d ) {
+
+	//row images
 	let chassis_img;
 	let row_hdd_img;
 	let row_ssd_img;
 	let row_h16_img;
 	let front_plate_img;
-	let server_info;
+
+	//drive images
+	let ssd_micron_img;
+	let ssd_seagate_img;
+	let ssd_generic_img;
+	let hdd_seagate_img;
+	let hdd_seagate_18t_img;
+	let hdd_generic_img;
+	let caddy_micron_img;
+	let caddy_seagate_img;
+	let caddy_generic_img;
+
+	//json files
+	let json_server_info;
+	let json_row;
+	let json_row_arr = [];
+	let json_lsdev;
+
+	//image arrays
 	let server_img_arr = [];
 	let row_img_arr = [];
 
+	//ServerRow Object arrays
 	let server_rows = [];
+
+	//Lookup Table variables
 	const ROW_HDD = 0;
 	const ROW_SSD = 1;
 	const ROW_H16 = 2;
 
 	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16"];
 
-	let json_row;
-	let json_row_arr = [];
-	let json_lsdev;
 
 	let ALIAS_TEMPLATE = {
 		"H16":{
@@ -893,27 +913,77 @@ var disk_app = function( d ) {
 	}
 
 	class ServerRow{
-		constructor(row_type,y_offset,row_index,alias_style,chassis,json_values,lsdev_values){
+		constructor(row_type,y_offset,row_index,alias_style,chassis,json_values,lsdev_values,x0,y0,w,h){
 			this.row_type = row_type;
 			this.y_offset = y_offset;
 			this.row_index = row_index;
 			this.label_values = LABEL_TEMPLATE[alias_style][chassis][row_index];
 			this.json_values = json_values;
 			this.occupied = [];
+			this.drive_img_arr = [];
+			this.lsdev_values = lsdev_values;
+			this.x0 = x0;
+			this.y0 = y0;
+			this.w = w;
+			this.h = h;
+			let drive_img = null;
 			for(let i = 0; i < json_values.length && i < lsdev_values.length; i++){
 				this.occupied.push(lsdev_values[i]["occupied"])
+				drive_img = null;
+				if(this.json_values[i].HDD){
+					// HDD Sized slot
+					if(this.occupied[i]){
+						// There is a drive in this slot
+						if(this.lsdev_values[i]["rotation-rate"] != 0){
+							//hard drive in slot
+							if(this.lsdev_values[i]["model-name"].search("ST18000") != -1){
+								drive_img = hdd_seagate_18t_img;
+							}
+							else if(this.lsdev_values[i]["model-family"].search("Seagate Enterprise") != -1){
+								drive_img = hdd_seagate_img;
+							}
+							else{
+								drive_img = hdd_generic_img;
+							}
+						}
+						else{
+							//ssd in slot
+							if(this.lsdev_values[i]["model-family"].search("Seagate Nytro") != -1){
+								drive_img = caddy_seagate_img;
+							}
+							else if(this.lsdev_values[i]["model-family"].search("Micron 5100 Pro") != -1){
+								drive_img = caddy_micron_img;
+							}
+							else{
+								drive_img = caddy_generic_img;
+							}
+						}
+					}
+				}
+				else if(!this.json_values[i].HDD){
+					//SSD sized slot
+					if(this.occupied[i]){
+						// There is a drive in this slot
+						if(this.lsdev_values[i]["model-family"].search("Seagate Nytro") != -1){
+							drive_img = ssd_seagate_img;
+						}
+						else if(this.lsdev_values[i]["model-family"].search("Micron 5100 Pro") != -1){
+							drive_img = ssd_micron_img;
+						}
+						else{
+							drive_img = ssd_generic_img;
+						}
+					}
+				}
+				//push the required drive image onto the drive image array.
+				this.drive_img_arr.push(drive_img);
 			}
 		}
+
 		show(){
 			for(let i = 0; i < this.json_values.length; i++){
 				if(this.json_values[i].HDD){
-					if(this.occupied[i]){
-						d.image(
-							hdd_seagate_img,
-							this.json_values[i].x,
-							this.json_values[i].y + this.y_offset
-						);
-					}
+					// HDD Sized slot
 					d.push();
 					d.fill(255);
 					d.textSize(11);
@@ -921,14 +991,8 @@ var disk_app = function( d ) {
 					d.text(this.label_values[i],this.json_values[i].x + 16, this.json_values[i].y + this.y_offset -10);
 					d.pop();
 				}
-				else if(!this.json_values[i].HDD){
-					if(this.occupied[i]){
-						d.image(
-							ssd_micron_img,
-							this.json_values[i].x,
-							this.json_values[i].y + this.y_offset
-							);
-					}
+				else{
+					//SSD sized slot
 					d.push();
 					d.fill(255);
 					d.textSize(11);
@@ -939,18 +1003,60 @@ var disk_app = function( d ) {
 					else{d.text(this.label_values[i],-38,-1);}
 					d.pop();
 				}
+
+				if(this.occupied[i] && this.drive_img_arr[i] != null){
+					// There is a drive in this slot, draw the image to the screen.
+					d.image(
+						this.drive_img_arr[i],
+						this.json_values[i].x,
+						this.json_values[i].y + this.y_offset
+					);
+				}
+			}
+		}
+		updateDiskInfo(drive_idx){
+			let values = document.getElementsByClassName("value");
+			let value;
+			for(value of values) {
+				let val = this.lsdev_values[drive_idx][value.id];
+				if(val.length == 0) {
+					value.innerHTML = "?";
+				}else{
+					value.innerHTML = val;
+				}
+			}
+			var health = document.getElementById("health");
+			if(health.innerHTML == "OK") {
+				health.style.color = "#19911d";
+			}else if(health.innerHTML == "POOR") {
+				health.style.color = "#e39500";
+			}else{
+				health.style.color = "";
 			}
 		}
 	}
 
 	d.preload = function(){
+		// row images
 		chassis_img = d.loadImage("img/disk/CHASSIS.png");
 		row_hdd_img = d.loadImage("img/disk/ROW_HDD.png");
 		row_ssd_img = d.loadImage("img/disk/ROW_SSD.png");
 		row_h16_img = d.loadImage("img/disk/ROW_H16.png");
 		front_plate_img = d.loadImage("img/disk/FRONT_PLATE.png");
+		
+		//drive images
 		ssd_micron_img = d.loadImage("img/disk/SSD_micron.png");
+		ssd_seagate_img = d.loadImage("img/disk/SSD_seagate.png");
+		ssd_generic_img = d.loadImage("img/disk/SSD_generic.png");
+
 		hdd_seagate_img = d.loadImage("img/disk/HDD_seagate.png");
+		hdd_seagate_18t_img = d.loadImage("img/disk/HDD_seagate_18T.png");
+		hdd_generic_img = d.loadImage("img/disk/HDD_generic.png");
+
+		caddy_micron_img = d.loadImage("img/disk/CADDY_micron.png");
+		caddy_seagate_img = d.loadImage("img/disk/CADDY_seagate.png");
+		caddy_generic_img = d.loadImage("img/disk/CADDY_generic.png");
+
 		get_server_info();
 		get_drive_info();
 		d.jsonLoadRowPositions();
@@ -976,6 +1082,12 @@ var disk_app = function( d ) {
 					for(let i = 0; i < json_lsdev["rows"].length; i++){
 						json_lsdev["rows"][i].reverse();
 					}
+					let controller = document.getElementById("controller");
+					let driver_vers = document.getElementById("driver-vers");
+					if(controller && driver_vers){
+						controller.innerHTML = json_lsdev["meta"]["disk-controller"];
+						driver_vers.innerHTML = json_lsdev["meta"]["driver-version"];
+					}
 					//var lsdev_output = document.createElement("P");
 					//lsdev_output.innerHTML = data;
 					//document.getElementById("disk_info_box").appendChild(lsdev_output);
@@ -995,7 +1107,7 @@ var disk_app = function( d ) {
 		);
 		server_info_proc.stream(
 				function(data){
-					server_info = JSON.parse(data);
+					json_server_info = JSON.parse(data);
 					//server_info_promise.resolve();
 				}
 			);
@@ -1017,11 +1129,40 @@ var disk_app = function( d ) {
 		);
 	};
 
-	d.setup = async function() {
-		d.createCanvas(600, 900);
-		d.frameRate(10);
+	function assetsLoaded(){
+		return (
+			chassis_img &&
+			row_hdd_img &&
+			row_ssd_img &&
+			row_h16_img &&
+			front_plate_img &&
+			ssd_micron_img &&
+			ssd_seagate_img &&
+			ssd_generic_img &&
+			hdd_seagate_img &&
+			hdd_seagate_18t_img &&
+			hdd_generic_img &&
+			caddy_micron_img &&
+			caddy_seagate_img &&
+			caddy_generic_img
+		);
+	}
 
-		while(!row_hdd_img ||!row_ssd_img || !row_h16_img || !chassis_img || !front_plate_img){await sleep(300)}
+	function jsonLoaded(){
+		return (
+			json_server_info &&
+			json_row &&
+			json_lsdev
+		);
+	}
+
+	d.setup = async function() {
+		dcnv = d.createCanvas(570, 900);
+		dcnv.mousePressed(d.mouseWasClicked);
+		//dcnv.addEventListener("click",d.mouseWasClicked);
+		d.frameRate(30);
+
+		while(!assetsLoaded()){await sleep(300)}
 		//put the p5 images for each row in the row img array
 		row_img_arr.push(row_hdd_img);
 		row_img_arr.push(row_ssd_img);
@@ -1031,21 +1172,22 @@ var disk_app = function( d ) {
 		//we will draw from top to bottom. the chassis is always at the top.
 		server_img_arr.push(chassis_img);
 
-		//ensure that the server_info.json file and ROW.json files have been parsed for us.
-		while(!server_info || !json_row || !json_lsdev){await sleep(300)}
-		if(server_info.hasOwnProperty("error_msg")){
+		//ensure that the /etc/45drives/server_info/server_info.json file 
+		//and /usr/share/cockpit/hardware/img/disk/ROW.json files have been parsed for us.
+		while(!jsonLoaded()){await sleep(300)}
+		if(json_server_info.hasOwnProperty("error_msg")){
 			//we were unable to get the server_info.json file
 			//TODO: PUT ERROR MESSAGE OUT TO THE USER
-			console.log(server_info);
+			console.log(json_server_info);
 		}
 
-		else if(server_info.hasOwnProperty("Alias Style") && server_info.hasOwnProperty("Chassis Size")){
+		else if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
 			//We can draw the background rows based on the alias style and chassis size
 
 			//push the relevant row image into the server_img_arr based on the index stored in the 
 			//relevant ALIAS_TEMPLATE array. And create the row objects required and store them in 
 			//the server_rows array.
-			for(let i = 0; i < ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]].length; i++){
+			for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
 
 				//calculate the y offset for the next row.
 				let y_off = 0;
@@ -1054,7 +1196,7 @@ var disk_app = function( d ) {
 				}
 
 				//add the relevant row image to the server_imf arr
-				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i]]);
+				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
 
 				console.log(json_lsdev["rows"]);
 
@@ -1063,17 +1205,22 @@ var disk_app = function( d ) {
 				//create a new ServerRow Object.
 				server_rows.push(
 					new ServerRow(
-						ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i],
+						ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
 						y_off,
 						i,
-						server_info["Alias Style"],
-						server_info["Chassis Size"],
+						json_server_info["Alias Style"],
+						json_server_info["Chassis Size"],
 						json_row[
 							ROW_JSON_KEYS[
-								ALIAS_TEMPLATE[server_info["Alias Style"]][server_info["Chassis Size"]][i]
+								ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
 							]
 						],
-						json_lsdev["rows"][i]
+						json_lsdev["rows"][i],
+						0,
+						y_off,
+						row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
+						row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
+
 					)
 				);
 			}
@@ -1085,6 +1232,12 @@ var disk_app = function( d ) {
 
 		}
 	};
+
+	let drive_rect_x = 0;
+	let drive_rect_y = 0;
+	let drive_rect_w = 0;
+	let drive_rect_h = 0;
+	let draw_drive_rect = false;
 
 	d.draw = function() {
 		d.background(255);
@@ -1099,6 +1252,45 @@ var disk_app = function( d ) {
 		for(let i = 0; i < server_rows.length; i++){
 			server_rows[i].show();
 		}
+		if(draw_drive_rect){
+			d.push();
+			d.fill(255,255,255,50);
+			d.stroke(206, 242, 212);
+			d.strokeWeight(2);
+			d.rect(drive_rect_x,drive_rect_y,drive_rect_w,drive_rect_h);
+			d.pop();
+		}
+	};
+
+	d.mouseWasClicked = function(){
+		for(let i = 0; i < server_rows.length; i++){
+			if(d.mouseX > server_rows[i].x0 && d.mouseX < server_rows[i].x0 + server_rows[i].w &&
+				d.mouseY > server_rows[i].y0 && d.mouseY < server_rows[i].y0 + server_rows[i].h){
+				// the mouse click was inside this particular row.
+				for(let j = 0; j < server_rows[i].occupied.length; j++){
+					if(server_rows[i].occupied[j] == true && server_rows[i].drive_img_arr[j] != null){
+						//there is a drive here, see if it was the drive 
+						//that was clicked on.
+						if(d.mouseX > server_rows[i].x0 + server_rows[i].json_values[j].x && 
+							d.mouseX < server_rows[i].x0 + server_rows[i].json_values[j].x + server_rows[i].drive_img_arr[j].width &&
+							d.mouseY > server_rows[i].y0 + server_rows[i].json_values[j].y && 
+							d.mouseY < server_rows[i].y0 + server_rows[i].json_values[j].y + server_rows[i].drive_img_arr[j].height){
+							// This was the drive that was clicked on. 
+							// update the drive info.
+							server_rows[i].updateDiskInfo(j);
+							drive_rect_x = server_rows[i].x0 + server_rows[i].json_values[j].x;
+							drive_rect_y = server_rows[i].y0 + server_rows[i].json_values[j].y;
+							drive_rect_w = server_rows[i].drive_img_arr[j].width;
+							drive_rect_h = server_rows[i].drive_img_arr[j].height;
+							draw_drive_rect = true;
+							break;
+						}
+					}
+				}
+				break;
+			}
+		}
+		return false;
 	};
 };
 
@@ -1106,6 +1298,7 @@ var disk_app = function( d ) {
 
 var moboP5;
 var diskP5;
+let dcnv;
 
 function resourceSleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));

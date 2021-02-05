@@ -163,3 +163,51 @@ th {
 .active{
     --pf-global--active-color--100: #981C20;
 }
+
+
+#info-window {
+    display: flex;
+    flex-direction: column;
+}
+
+.key-value-wrapper {
+    font-family: monospace;
+    font-size: large;
+    display: flex;
+    flex-direction: row;
+}
+
+.keys {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+}
+
+.keys .key {
+    white-space: nowrap;
+    margin-right: 1em;
+    font-weight: bold;
+}
+
+.values .value {
+    white-space: nowrap;
+}
+
+.disk-heading-row{
+    display: flex;
+    flex-direction: row;
+}
+
+.disk-heading-row > h3 {
+    font-family: monospace;
+    font-size: large;
+    font-weight: bold;
+    margin-right: 1em;
+}
+
+.disk-heading-row > h4 {
+    font-family: monospace;
+    font-size: large;
+}
+
