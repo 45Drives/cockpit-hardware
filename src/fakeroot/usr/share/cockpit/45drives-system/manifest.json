@@ -1,0 +1,10 @@
+{
+    "version": 0,
+
+    "tools": {
+        "45drives-system": {
+            "label": "System",
+            "path": "45drives-system.html"
+        }
+    }
+}
