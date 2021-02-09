@@ -23,9 +23,11 @@
 		<div class="45drives_system_content" id="45drives_system_content">
 			
 			<div class="info_box" id="system_info_box">
-				<div class="info_box_header">System</div>
+				<div class="info_box_header">
+					System
+				</div>
 				<div class="info_box_content_row">
-					<div class="info_box_content_col">
+					<div class="info_box_content_col" id="sys_table">
 						<div class="info_box_row_h">
 							<div class="info_box_label_h">Model</div>
 							<div class="info_box_field_h" id="sys_model">
@@ -44,13 +46,10 @@
 								<div class="loader"></div>
 							</div>
 						</div>
-					</div>
-					<div class="sys_img" id="sys_img"></div>
+			<!--<div class="info_box" id="motherboard_info_box">-->
+				<div class="info_box_header">
+					Motherboard
 				</div>
-			</div>
-			
-			<div class="info_box" id="motherboard_info_box">
-				<div class="info_box_header">Motherboard</div>
 				<div class="info_box_content_col">
 					<div class="info_box_row_h">
 						<div class="info_box_label_h">Manufacturer</div>
@@ -68,31 +67,65 @@
 							<div class="loader"></div></div>
 						</div>
 				</div>
+			<!--</div>-->
+					</div>
+					<div class="sys_img" id="sys_img_div"></div>
+				</div>
 			</div>
 			
+			
 			<div class="info_box" id="cpu_info_box">
-				<div class="info_box_header">CPU</div>
+				<div class="info_box_content_row">
+					<div class="info_box_header">
+						CPU
+					</div>
+					<div class="info_box_refresh_icon">
+						<i class="fa fa-refresh fa-clickable" id="cpu_refresh"></i>
+					</div>
+				</div>
 				<div class="info_box_content_col" id="cpu_content">
 					<div class="loader"></div></div>
 				</div>
 			
 			<div class="info_box" id="pci_info_box">
-				<div class="info_box_header">PCI</div>
+					<div class="info_box_content_row">
+					<div class="info_box_header">
+						PCI
+					</div>
+					<div class="info_box_refresh_icon">
+						<i class="fa fa-refresh fa-clickable" id="pci_refresh"></i>
+					</div>
+				</div>
 				<div class="info_box_content_col" id="pci_content">
 					<div class="loader"></div></div>
 			</div>
 			
 			<div class="info_box" id="ram_info_box">
-				<div class="info_box_header">RAM</div>
+				<div class="info_box_content_row">
+					<div class="info_box_header">
+						RAM
+					</div>
+					<div class="info_box_refresh_icon">
+						<i class="fa fa-refresh fa-clickable" id="ram_refresh"></i>
+					</div>
+				</div>
 				<div class="info_box_content_col" id="ram_content">
 					<div class="loader"></div></div>
 			</div>
 			
 			<div class="info_box" id="network_info_box">
-				<div class="info_box_header">Network</div>
+					<div class="info_box_content_row">
+					<div class="info_box_header">
+						Network
+					</div>
+					<div class="info_box_refresh_icon">
+						<i class="fa fa-refresh fa-clickable" id="network_refresh"></i>
+					</div>
+				</div>
 				<div class="info_box_content_col" id="network_content">
 					<div class="loader"></div></div>
 			</div>
+			
 		</div>
 	</div>
 </body>

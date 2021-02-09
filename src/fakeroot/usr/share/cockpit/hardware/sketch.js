@@ -1238,20 +1238,27 @@ var disk_app = function( d ) {
 	let drive_rect_w = 0;
 	let drive_rect_h = 0;
 	let draw_drive_rect = false;
+	let loaded = false;
 
 	d.draw = function() {
 		d.background(255);
 
 		// draw the server to the screen, using the images stored in
 		// the server_img_arr.
-		let server_y_offset = 0;
-		for(let i = 0; i < server_img_arr.length; i++){
-			d.image(server_img_arr[i],0,server_y_offset);
-			server_y_offset += server_img_arr[i].height-1;
+		if(loaded){
+			let server_y_offset = 0;
+			for(let i = 0; i < server_img_arr.length; i++){
+				d.image(server_img_arr[i],0,server_y_offset);
+				server_y_offset += server_img_arr[i].height-1;
+			}
+			for(let i = 0; i < server_rows.length; i++){
+				server_rows[i].show();
+			}
 		}
-		for(let i = 0; i < server_rows.length; i++){
-			server_rows[i].show();
+		else if (server_img_arr.length > 2){
+			loaded = true;
 		}
+
 		if(draw_drive_rect){
 			d.push();
 			d.fill(255,255,255,50);

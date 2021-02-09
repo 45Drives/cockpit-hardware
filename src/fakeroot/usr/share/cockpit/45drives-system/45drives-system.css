@@ -1,6 +1,10 @@
+body {
+    padding-bottom: 20px;
+}
+
 .system_container {
     margin: 0;
-    padding: 0;
+    padding-bottom: 200px;
 }
 
 .header-45D {
@@ -25,11 +29,17 @@
 }
 
 .sys_img {
-    width: 30%;
     margin-left: auto;
     margin-right: auto;
-    align-self: all;
+    width: 35%;
+    align-self: center;
 }
+
+/*
+.sys_img > img {
+    height: 250px;
+}
+*/
 
 .info_box {
     padding-top: 10px;
@@ -38,19 +48,31 @@
     padding-right: 10px;
     display: flex;
     flex-direction: column;
-    width: 80%;
+    width: 90%;
 }
 
 .info_box_header {
     font-size: large;
     font-weight: bold;
     text-align: left;
-    padding: 0.5em 1em;
-    max-width: 100%;
+    padding: 1em 1em;
+    width: 100%;
     color: #981C20;
     overflow: auto;
     border-bottom: 1px solid;
 }
+
+.info_box_refresh_icon {
+    font-size: large;
+    font-weight: bold;
+    text-align: right;
+    padding: 1em 1em;
+    color: #981C20;
+    overflow: auto;
+    border-bottom: 1px solid;
+    margin-left:auto;
+}
+
 /**/
 .info_box_content_col {
     padding-top: 0.5em;
@@ -58,9 +80,26 @@
     overflow: auto;
 }
 
-.info_box_content_row {
+/*for the model, chassis size and serial table*/
+#sys_table.info_box_content_col {
     padding-top: 0.5em;
     max-width: 100%;
+    overflow: auto;
+    align-self: center;
+}
+
+.fa-refresh {
+    align-self: flex-end;
+}
+
+.fa-clickable {
+    cursor:pointer;
+    outline:none;
+}
+
+.info_box_content_row {
+    padding-top: 0.5em;
+    width: 100%;
     overflow: auto;
     display:flex;
     flex-direction: row;
@@ -86,7 +125,7 @@
 
 .info_box_table {
     overflow: auto;
-    width: 100%;
+    /*width: 100%;*/
     background:
         linear-gradient(to right, white 30%, rgba(255,255,255,0)),
         linear-gradient(to right, rgba(255,255,255,0), white 70%) 0 100%,
@@ -108,7 +147,7 @@
 }
 
 .info_box_table_element > th {
-    background-color: #cbcbcb;
+    background-color: #ededed;
     color: #1d1e2c;
     white-space: nowrap;
     /*width:100%;*/

@@ -1,10 +1,11 @@
 {
     "version": 0,
 
-    "tools": {
+    "menu": {
         "45drives-system": {
             "label": "System",
-            "path": "45drives-system.html"
+            "path": "45drives-system.html",
+        	"order": -1
         }
     }
 }
