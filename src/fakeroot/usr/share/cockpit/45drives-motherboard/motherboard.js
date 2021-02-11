@@ -27,6 +27,17 @@ let ramScale = 0.026;
 let globalMask;
 let APPLIED_COUNT = 0;
 
+var hardware_info = null;
+var mobo_info = null;
+var mobo_json_path = null;
+var pci_info = null;
+var ram_info = null;
+var sata_info = null;
+var network_info = null;
+var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F"];
+var mobo_supported = false;
+var root_check = null;
+
 var mobo_app = function( m ) {
 // steps:
 // - load the background image
@@ -683,7 +694,7 @@ m.jsonLoadMotherboard = function(fname){
 	var proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/dump_json",
+				"/usr/share/cockpit/45drives-motherboard/helper_scripts/dump_json",
 				fname 
 			], 
 			{err: "out"}
@@ -750,579 +761,197 @@ m.jsonLoadMotherboard = function(fname){
 	};
 };
 
-//disk app
-var disk_app = function( d ) {
-
-	//row images
-	let chassis_img;
-	let row_hdd_img;
-	let row_ssd_img;
-	let row_h16_img;
-	let front_plate_img;
-
-	//drive images
-	let ssd_micron_img;
-	let ssd_seagate_img;
-	let ssd_generic_img;
-	let hdd_seagate_img;
-	let hdd_seagate_18t_img;
-	let hdd_generic_img;
-	let caddy_micron_img;
-	let caddy_seagate_img;
-	let caddy_generic_img;
-
-	//json files
-	let json_server_info;
-	let json_row;
-	let json_row_arr = [];
-	let json_lsdev;
-
-	//image arrays
-	let server_img_arr = [];
-	let row_img_arr = [];
-
-	//ServerRow Object arrays
-	let server_rows = [];
-
-	//Lookup Table variables
-	const ROW_HDD = 0;
-	const ROW_SSD = 1;
-	const ROW_H16 = 2;
-
-	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16"];
-
-
-	let ALIAS_TEMPLATE = {
-		"H16":{
-			"Q30":[ROW_H16,ROW_HDD],
-			"S45":[ROW_H16,ROW_HDD,ROW_HDD],
-			"XL60":[ROW_H16,ROW_HDD,ROW_HDD,ROW_HDD]
-		},
-		"H32":{
-			"Q30":[ROW_SSD,ROW_HDD],
-			"S45":[ROW_SSD,ROW_HDD,ROW_HDD],
-			"XL60":[ROW_SSD,ROW_HDD,ROW_HDD,ROW_HDD]
-		},
-		"STORINATOR":{
-			"AV15":[ROW_HDD],
-			"Q30":[ROW_HDD,ROW_HDD],
-			"S45":[ROW_HDD,ROW_HDD,ROW_HDD],
-			"XL60":[ROW_HDD,ROW_HDD,ROW_HDD]	
-		},
-		"STORNADO":{
-			"AV15":[ROW_SSD]
-		},
-		"AV15-BASE":{
-			"AV15":[ROW_HDD]
-		}
-	}
-
-	let LABEL_TEMPLATE = {
-		"H16":{
-			"Q30":[
-				[
-					"2-23","2-22","2-21","2-20","2-19","2-18","2-17",
-					"2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9",
-					"2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"
-				],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			],
-			"S45":[
-				[
-					"3-23","3-22","3-21","3-20","3-19","3-18","3-17",
-					"3-16","3-15","3-14","3-13","3-12","3-11","3-10","3-9",
-					"3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"
-				],
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			],
-			"XL60":[
-				[
-					"4-23","4-22","4-21","4-20","4-19","4-18","4-17",
-					"4-16","4-15","4-14","4-13","4-12","4-11","4-10","4-9",
-					"4-8","4-7","4-6","4-5","4-4","4-3","4-2","4-1"
-				],
-				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			]
-		},
-		"H32":{
-			"Q30":[
-				[
-					"2-24","2-23","2-22","2-21","2-20","2-19","2-18","2-17",
-					"2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9",
-					"2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
-					"1-23","1-22","1-21","1-20","1-19","1-18","1-17","1-16"
-				],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			],
-			"S45":[
-				[
-					"3-24","3-23","3-22","3-21","3-20","3-19","3-18","3-17",
-					"3-16","3-15","3-14","3-13","3-12","3-11","3-10","3-9",
-					"3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1",
-					"2-23","2-22","2-21","2-20","2-19","2-18","2-17","2-16"
-				],
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			],
-			"XL60":[
-				[
-					"4-24","4-23","4-22","4-21","4-20","4-19","4-18","4-17",
-					"4-16","4-15","4-14","4-13","4-12","4-11","4-10","4-9",
-					"4-8","4-7","4-6","4-5","4-4","4-3","4-2","4-1",
-					"3-23","3-22","3-21","3-20","3-19","3-18","3-17","3-16"
-				],
-				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			]
-		},
-		"STORINATOR":{
-			"AV15":[
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-				],
-			"Q30":[
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-				],
-			"S45":[
-				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			],
-			"XL60":[
-				["4-15","4-14","4-13","4-12","4-11","4-10","4-9","4-8","4-7","4-6","4-5","4-4","4-3","4-2","4-1"],
-				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
-				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			]	
-		},
-		"STORNADO":{
-			"AV15":[
-				["2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
-				"1-16","1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			]
-		},
-		"AV15-BASE":{
-			"AV15":[
-				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			]
-		}
-	}
-
-	class ServerRow{
-		constructor(row_type,y_offset,row_index,alias_style,chassis,json_values,lsdev_values,x0,y0,w,h){
-			this.row_type = row_type;
-			this.y_offset = y_offset;
-			this.row_index = row_index;
-			this.label_values = LABEL_TEMPLATE[alias_style][chassis][row_index];
-			this.json_values = json_values;
-			this.occupied = [];
-			this.drive_img_arr = [];
-			this.lsdev_values = lsdev_values;
-			this.x0 = x0;
-			this.y0 = y0;
-			this.w = w;
-			this.h = h;
-			let drive_img = null;
-			for(let i = 0; i < json_values.length && i < lsdev_values.length; i++){
-				this.occupied.push(lsdev_values[i]["occupied"])
-				drive_img = null;
-				if(this.json_values[i].HDD){
-					// HDD Sized slot
-					if(this.occupied[i]){
-						// There is a drive in this slot
-						if(this.lsdev_values[i]["rotation-rate"] != 0){
-							//hard drive in slot
-							if(this.lsdev_values[i]["model-name"].search("ST18000") != -1){
-								drive_img = hdd_seagate_18t_img;
-							}
-							else if(this.lsdev_values[i]["model-family"].search("Seagate Enterprise") != -1){
-								drive_img = hdd_seagate_img;
-							}
-							else{
-								drive_img = hdd_generic_img;
-							}
-						}
-						else{
-							//ssd in slot
-							if(this.lsdev_values[i]["model-family"].search("Seagate Nytro") != -1){
-								drive_img = caddy_seagate_img;
-							}
-							else if(this.lsdev_values[i]["model-family"].search("Micron 5100 Pro") != -1){
-								drive_img = caddy_micron_img;
-							}
-							else{
-								drive_img = caddy_generic_img;
-							}
-						}
-					}
-				}
-				else if(!this.json_values[i].HDD){
-					//SSD sized slot
-					if(this.occupied[i]){
-						// There is a drive in this slot
-						if(this.lsdev_values[i]["model-family"].search("Seagate Nytro") != -1){
-							drive_img = ssd_seagate_img;
-						}
-						else if(this.lsdev_values[i]["model-family"].search("Micron 5100 Pro") != -1){
-							drive_img = ssd_micron_img;
-						}
-						else{
-							drive_img = ssd_generic_img;
-						}
-					}
-				}
-				//push the required drive image onto the drive image array.
-				this.drive_img_arr.push(drive_img);
-			}
-		}
-
-		show(){
-			for(let i = 0; i < this.json_values.length; i++){
-				if(this.json_values[i].HDD){
-					// HDD Sized slot
-					d.push();
-					d.fill(255);
-					d.textSize(11);
-					d.textAlign(d.CENTER);
-					d.text(this.label_values[i],this.json_values[i].x + 16, this.json_values[i].y + this.y_offset -10);
-					d.pop();
-				}
-				else{
-					//SSD sized slot
-					d.push();
-					d.fill(255);
-					d.textSize(11);
-					d.translate(this.json_values[i].x, this.json_values[i].y + this.y_offset);
-					d.rotate(d.radians(90));
-					let offset = 0;
-					if (this.row_type == ROW_SSD){d.text(this.label_values[i],-45,-1);}
-					else{d.text(this.label_values[i],-38,-1);}
-					d.pop();
-				}
-
-				if(this.occupied[i] && this.drive_img_arr[i] != null){
-					// There is a drive in this slot, draw the image to the screen.
-					d.image(
-						this.drive_img_arr[i],
-						this.json_values[i].x,
-						this.json_values[i].y + this.y_offset
-					);
-				}
-			}
-		}
-		updateDiskInfo(drive_idx){
-			let values = document.getElementsByClassName("value");
-			let value;
-			for(value of values) {
-				let val = this.lsdev_values[drive_idx][value.id];
-				if(val.length == 0) {
-					value.innerHTML = "?";
-				}else{
-					value.innerHTML = val;
-				}
-			}
-			var health = document.getElementById("health");
-			if(health.innerHTML == "OK") {
-				health.style.color = "#19911d";
-			}else if(health.innerHTML == "POOR") {
-				health.style.color = "#e39500";
-			}else{
-				health.style.color = "";
-			}
-		}
-	}
-
-	d.preload = function(){
-		// row images
-		chassis_img = d.loadImage("img/disk/CHASSIS.png");
-		row_hdd_img = d.loadImage("img/disk/ROW_HDD.png");
-		row_ssd_img = d.loadImage("img/disk/ROW_SSD.png");
-		row_h16_img = d.loadImage("img/disk/ROW_H16.png");
-		front_plate_img = d.loadImage("img/disk/FRONT_PLATE.png");
-		
-		//drive images
-		ssd_micron_img = d.loadImage("img/disk/SSD_micron.png");
-		ssd_seagate_img = d.loadImage("img/disk/SSD_seagate.png");
-		ssd_generic_img = d.loadImage("img/disk/SSD_generic.png");
-
-		hdd_seagate_img = d.loadImage("img/disk/HDD_seagate.png");
-		hdd_seagate_18t_img = d.loadImage("img/disk/HDD_seagate_18T.png");
-		hdd_generic_img = d.loadImage("img/disk/HDD_generic.png");
-
-		caddy_micron_img = d.loadImage("img/disk/CADDY_micron.png");
-		caddy_seagate_img = d.loadImage("img/disk/CADDY_seagate.png");
-		caddy_generic_img = d.loadImage("img/disk/CADDY_generic.png");
-
-		get_server_info();
-		get_drive_info();
-		d.jsonLoadRowPositions();
-	}
-
-	function sleep(ms) {
-		return new Promise(resolve => setTimeout(resolve, ms));
-	}
-
-	function get_drive_info(){
-		var drive_info_proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/opt/45drives/tools/lsdev",
-				"-j"
-			], 
-			{err: "out"}
-		);
-		drive_info_proc.done(
-				function(data){
-					json_lsdev = JSON.parse(data);
-					json_lsdev["rows"].reverse();
-					for(let i = 0; i < json_lsdev["rows"].length; i++){
-						json_lsdev["rows"][i].reverse();
-					}
-					let controller = document.getElementById("controller");
-					let driver_vers = document.getElementById("driver-vers");
-					if(controller && driver_vers){
-						controller.innerHTML = json_lsdev["meta"]["disk-controller"];
-						driver_vers.innerHTML = json_lsdev["meta"]["driver-version"];
-					}
-					//var lsdev_output = document.createElement("P");
-					//lsdev_output.innerHTML = data;
-					//document.getElementById("disk_info_box").appendChild(lsdev_output);
-				}
-			);
-	}
-
-	function get_server_info(){
-		//var server_info_promise = cockpit.defer();
-		// get the server_info.json file
-		var server_info_proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/server_info"
-			], 
-			{err: "out"}
-		);
-		server_info_proc.stream(
-				function(data){
-					json_server_info = JSON.parse(data);
-					//server_info_promise.resolve();
-				}
-			);
-	}
-
-	d.jsonLoadRowPositions = function(){
-	var proc = cockpit.spawn(
-			[
-				"/usr/bin/pkexec",
-				"/usr/share/cockpit/hardware/helper_scripts/dump_json",
-				"/img/disk/ROW.json"
-			], 
-			{err: "out"}
-	);
-	proc.stream(
-		function(data){
-				json_row = JSON.parse(data);
-			}
-		);
-	};
-
-	function assetsLoaded(){
-		return (
-			chassis_img &&
-			row_hdd_img &&
-			row_ssd_img &&
-			row_h16_img &&
-			front_plate_img &&
-			ssd_micron_img &&
-			ssd_seagate_img &&
-			ssd_generic_img &&
-			hdd_seagate_img &&
-			hdd_seagate_18t_img &&
-			hdd_generic_img &&
-			caddy_micron_img &&
-			caddy_seagate_img &&
-			caddy_generic_img
-		);
-	}
-
-	function jsonLoaded(){
-		return (
-			json_server_info &&
-			json_row &&
-			json_lsdev
-		);
-	}
-
-	d.setup = async function() {
-		dcnv = d.createCanvas(570, 900);
-		dcnv.mousePressed(d.mouseWasClicked);
-		//dcnv.addEventListener("click",d.mouseWasClicked);
-		d.frameRate(30);
-
-		while(!assetsLoaded()){await sleep(300)}
-		//put the p5 images for each row in the row img array
-		row_img_arr.push(row_hdd_img);
-		row_img_arr.push(row_ssd_img);
-		row_img_arr.push(row_h16_img);
-		
-		//put the chassis image at the start of the server_img_arr
-		//we will draw from top to bottom. the chassis is always at the top.
-		server_img_arr.push(chassis_img);
-
-		//ensure that the /etc/45drives/server_info/server_info.json file 
-		//and /usr/share/cockpit/hardware/img/disk/ROW.json files have been parsed for us.
-		while(!jsonLoaded()){await sleep(300)}
-		if(json_server_info.hasOwnProperty("error_msg")){
-			//we were unable to get the server_info.json file
-			//TODO: PUT ERROR MESSAGE OUT TO THE USER
-			console.log(json_server_info);
-		}
-
-		else if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
-			//We can draw the background rows based on the alias style and chassis size
-
-			//push the relevant row image into the server_img_arr based on the index stored in the 
-			//relevant ALIAS_TEMPLATE array. And create the row objects required and store them in 
-			//the server_rows array.
-			for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
-
-				//calculate the y offset for the next row.
-				let y_off = 0;
-				for(let j = 0; j < server_img_arr.length; j++){
-					y_off += server_img_arr[j].height;
-				}
-
-				//add the relevant row image to the server_imf arr
-				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
-
-				console.log(json_lsdev["rows"]);
-
-				//let lsdev_row_copy = json_lsdev["rows"][i];
-				//lsdev_row_copy.reverse();
-				//create a new ServerRow Object.
-				server_rows.push(
-					new ServerRow(
-						ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
-						y_off,
-						i,
-						json_server_info["Alias Style"],
-						json_server_info["Chassis Size"],
-						json_row[
-							ROW_JSON_KEYS[
-								ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
-							]
-						],
-						json_lsdev["rows"][i],
-						0,
-						y_off,
-						row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
-						row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
-
-					)
-				);
-			}
-
-			//Lastly, push the front plate image into the server_img_arr. Now we have the 
-			//images stored in the order we need to draw them (from top to bottom), in the
-			//server_img_arr. We can 
-			server_img_arr.push(front_plate_img)
-
-		}
-	};
-
-	let drive_rect_x = 0;
-	let drive_rect_y = 0;
-	let drive_rect_w = 0;
-	let drive_rect_h = 0;
-	let draw_drive_rect = false;
-	let loaded = false;
-
-	d.draw = function() {
-		d.background(255);
-
-		// draw the server to the screen, using the images stored in
-		// the server_img_arr.
-		if(loaded){
-			let server_y_offset = 0;
-			for(let i = 0; i < server_img_arr.length; i++){
-				d.image(server_img_arr[i],0,server_y_offset);
-				server_y_offset += server_img_arr[i].height-1;
-			}
-			for(let i = 0; i < server_rows.length; i++){
-				server_rows[i].show();
-			}
-		}
-		else if (server_img_arr.length > 2){
-			loaded = true;
-		}
-
-		if(draw_drive_rect){
-			d.push();
-			d.fill(255,255,255,50);
-			d.stroke(206, 242, 212);
-			d.strokeWeight(2);
-			d.rect(drive_rect_x,drive_rect_y,drive_rect_w,drive_rect_h);
-			d.pop();
-		}
-	};
-
-	d.mouseWasClicked = function(){
-		for(let i = 0; i < server_rows.length; i++){
-			if(d.mouseX > server_rows[i].x0 && d.mouseX < server_rows[i].x0 + server_rows[i].w &&
-				d.mouseY > server_rows[i].y0 && d.mouseY < server_rows[i].y0 + server_rows[i].h){
-				// the mouse click was inside this particular row.
-				for(let j = 0; j < server_rows[i].occupied.length; j++){
-					if(server_rows[i].occupied[j] == true && server_rows[i].drive_img_arr[j] != null){
-						//there is a drive here, see if it was the drive 
-						//that was clicked on.
-						if(d.mouseX > server_rows[i].x0 + server_rows[i].json_values[j].x && 
-							d.mouseX < server_rows[i].x0 + server_rows[i].json_values[j].x + server_rows[i].drive_img_arr[j].width &&
-							d.mouseY > server_rows[i].y0 + server_rows[i].json_values[j].y && 
-							d.mouseY < server_rows[i].y0 + server_rows[i].json_values[j].y + server_rows[i].drive_img_arr[j].height){
-							// This was the drive that was clicked on. 
-							// update the drive info.
-							server_rows[i].updateDiskInfo(j);
-							drive_rect_x = server_rows[i].x0 + server_rows[i].json_values[j].x;
-							drive_rect_y = server_rows[i].y0 + server_rows[i].json_values[j].y;
-							drive_rect_w = server_rows[i].drive_img_arr[j].width;
-							drive_rect_h = server_rows[i].drive_img_arr[j].height;
-							draw_drive_rect = true;
-							break;
-						}
-					}
-				}
-				break;
-			}
-		}
-		return false;
-	};
-};
-
-
-
 var moboP5;
-var diskP5;
-let dcnv;
 
 function resourceSleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function startDiskApp(){
-	while(!document.getElementById("disk_app")){await resourceSleep(300);}
-	document.getElementById("disk_app").innerHTML = "";
-	diskP5 = new p5(disk_app, 'disk_app');
+async function motherboard_script(){
+	//var dfd = cockpit.defer();
+	while(!document.getElementById("motherboard_output") || !document.getElementById("mobo_image") || !document.getElementById("motherboard_msg_state")){await resourceSleep(300);}
+	var m_output = document.getElementById("motherboard_output");
+	var mobo_img = document.getElementById("mobo_image");
+	var motherboard_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/45drives-motherboard/helper_scripts/motherboard"
+			], 
+			{err: "out"}
+	);
+	motherboard_proc.stream(
+		function(data)
+		{
+			mobo_info = JSON.parse(data);
+			console.log("mobo_info");
+			console.log(mobo_info);
+			mobo_img.src = ("img/motherboard/" + 
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".png");
+			mobo_img.setAttribute("style","display:none;");
+				mobo_json_path = ("img/motherboard/" + 
+					String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
+					String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json");
+				document.getElementById("motherboard_msg_state").innerHTML = "&#10003;";
+			//dfd.resolve();
+		}
+	);
+}
+
+async function pci_script(){
+	//var pci_promise = cockpit.defer();
+	// load the pci information
+	while(!document.getElementById("pci_msg_state")){await resourceSleep(300);}
+	//document.getElementById("pci_msg_state").innerHTML = "(Loading)";
+	var pci_proc = cockpit.spawn(
+	[
+		"/usr/bin/pkexec",
+		"/usr/share/cockpit/45drives-motherboard/helper_scripts/pci"
+	], 
+	{err: "out"}
+	);
+
+	pci_proc.stream(
+		function(data){
+			pci_info = JSON.parse(data);
+			console.log("pci_info");
+			console.log(pci_info);
+			document.getElementById("pci_msg_state").innerHTML = "&#10003;";
+			//pci_promise.resolve();
+		}
+	);
+}
+
+async function sata_script(){
+	//var sata_promise = cockpit.defer();
+	//load the sata information
+	while(!document.getElementById("sata_msg_state")){await resourceSleep(300);}
+	//document.getElementById("sata_msg_state").innerHTML = "(Loading)";
+	var sata_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/45drives-motherboard/helper_scripts/sata"
+		], 
+		{err: "out"}
+	);
+
+	sata_proc.stream(
+		function(data){
+			sata_info = JSON.parse(data);
+			console.log("sata_info");
+			console.log(sata_info);
+			document.getElementById("sata_msg_state").innerHTML = "&#10003;";
+			//sata_promise.resolve();
+		}
+	);
+}
+
+async function ram_script(){
+	//var ram_promise = cockpit.defer();
+	//load the ram information
+	while(!document.getElementById("ram_msg_state")){await resourceSleep(300);}
+	//document.getElementById("ram_msg_state").innerHTML = "(Loading)";
+	var ram_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/45drives-motherboard/helper_scripts/ram"
+		], 
+		{err: "out"}
+	);
+	ram_proc.stream(
+		function(data){
+			ram_info = JSON.parse(data);
+			console.log("ram_info");
+			console.log(ram_info);
+			document.getElementById("ram_msg_state").innerHTML = "&#10003;";
+			//ram_promise.resolve();
+		}
+	);
+}
+
+async function network_script(){
+	//var network_promise = cockpit.defer();
+	while(!document.getElementById("network_msg_state")){await resourceSleep(300);}
+	//document.getElementById("network_msg_state").innerHTML = "(Loading)";
+	// load the pci information
+	var network_proc = cockpit.spawn(
+		[
+			"/usr/bin/pkexec",
+			"/usr/share/cockpit/45drives-motherboard/helper_scripts/network"
+		], 
+		{err: "out"}
+	);
+
+	network_proc.stream(
+		function(data){
+			network_info = JSON.parse(data);
+			console.log("network_info");
+			console.log(network_info);
+			document.getElementById("network_msg_state").innerHTML = "&#10003;";
+			//network_promise.resolve();
+		}
+	);
+}
+
+function runServerSideScripts(){
+	root_check = cockpit.permission({ admin: true });
+	root_check.addEventListener(
+		"changed", 
+		function() {
+			if(root_check.allowed){
+				//user is an administrator, start the module as normal
+				//system_script();
+				motherboard_script();
+				pci_script();
+				ram_script();
+				sata_script();
+				network_script();
+			}else{
+				//user is not an administrator, inform them of this by
+				//displaying a message on each tab page. 
+				let mo = document.getElementById("motherboard_output");
+				mo.innerHTML = "You must be an administrator to use this feature.";
+			}
+	 	}
+	)
 }
 
 async function startMoboApp(){
 	while(!document.getElementById("motherboard_app")){	await resourceSleep(300);}
 	var timeout = 0;
-	while(document.getElementById("motherboard_app").innerHTML != "" || timeout > 20){await resourceSleep(500); timeout++;}
-	if(mobo_supported){	moboP5 = new p5(mobo_app, 'motherboard_app');}
+	runServerSideScripts();
+	while((!mobo_info || !mobo_json_path || !pci_info || !sata_info || !ram_info) || timeout > 20){await resourceSleep(500); timeout++;}
+	while(
+		document.getElementById("motherboard_msg_state").innerHTML != "✓" &&
+		document.getElementById("pci_msg_state").innerHTML != "✓" &&
+		document.getElementById("sata_msg_state").innerHTML != "✓" &&
+		document.getElementById("ram_msg_state").innerHTML != "✓" &&
+		document.getElementById("network_msg_state").innerHTML != "✓"
+		){await resourceSleep(500);}
+	console.log("Motherboard scripts completed.");
+	if(mobo_info){
+		for(let i = 0; i < supported_motherboards.length; i++){
+			if(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] == supported_motherboards[i]){
+				mobo_supported = true;
+				document.getElementById("loading_messages").classList.add("hidden");
+				moboP5 = new p5(mobo_app, 'motherboard_app');
+			}
+		}
+		if(!mobo_supported){
+			document.getElementById("motherboard_output").innerHTML = (
+				"Interactive Motherboard Support for " +
+				mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] +
+				" is not available at this time.");
+		}
+	}
+	//else{
+	//	document.getElementById("motherboard_output").innerHTML = (
+	//		"Unable to obtain the required server information to start interactive motherboard application"
+	//		);
+	//}
 }
 
-startDiskApp();
+//document.addEventListener("DOMContentLoaded", (event) => {
+//	startMoboApp();
+//});
 startMoboApp();

@@ -1,0 +1,5 @@
+45drives-cockpit-hardware (1.2.0-1) focal; urgency=medium
+
+  * 45drives-cockpit-hardware initial build for Ubuntu 20.04.1 LTS Focal Fossa
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 10 Feb 2021 10:36:32 +0000

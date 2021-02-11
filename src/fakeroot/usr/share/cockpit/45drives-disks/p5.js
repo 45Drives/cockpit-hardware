@@ -50906,7 +50906,7 @@
             this._setFill(constants._DEFAULT_FILL);
             this._setStroke(constants._DEFAULT_STROKE);
             this.drawingContext.lineCap = constants.ROUND;
-            this.drawingContext.font = 'normal 12px sans-serif';
+            this.drawingContext.font = 'monospace';
           };
 
           _main.default.Renderer2D.prototype.resize = function(w, h) {

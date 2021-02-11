@@ -211,3 +211,57 @@ th {
     font-size: large;
 }
 
+.hidden {
+    display:none;
+}
+
+.loader_small {
+    margin-right: 1em;
+    margin-left: 1em;
+    border: 3px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 3px solid #981C20;
+    width: 20px;
+    height: 20px;
+    -webkit-animation: spin 2s linear infinite; /* Safari */
+    animation: spin 2s linear infinite;
+}
+
+.loading_message_box{
+    display: flex;
+    flex-direction: column;
+}
+
+.loading_message_box > h3{
+    color:#981C20;
+}
+
+.loading_msg{
+    width:40%;
+    display:flex;
+    flex-direction:row;
+    align-items: center;
+    font-weight: bold;
+    margin-right: 1em;
+    margin-left:1em;
+
+}
+
+.loading_msg_label{
+    font-weight: bold;
+    margin-right: 1em;
+    margin-left:1em;
+}
+
+
+
+/* Safari */
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

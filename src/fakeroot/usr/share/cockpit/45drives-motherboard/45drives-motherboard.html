@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>45Drives Motherboard</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="../base1/patternfly.css" type="text/css" rel="stylesheet">
+    <link href="45drives-motherboard.css" type="text/css" rel="stylesheet">
+    <script src="../base1/jquery.js"></script>
+    <script src="../base1/cockpit.js"></script>
+    <script src="../manifests.js"></script>
+    <script src="../*/po.js"></script>
+    <script defer src="p5.js"></script>
+    <script defer src="motherboard.js"></script>
+</head>
+<body>
+    <div class="hardware_container">
+        <div class="header-45D">
+            <img src="img/45-brand-dark_v2.png">
+            <h2>Motherboard</h2>
+        </div>
+                <div class="motherboard_content">
+                    <div class=motherboard_output id="motherboard_output">
+                        <div class="loading_message_box" id="loading_messages">
+                            <h2> Gathering Server Information </h2>
+                            <div class="loading_msg">
+                                <div class="loading_msg_label" id="motherboard_msg">Motherboard </div>
+                                <div class="loading_msg" id="motherboard_msg_state">
+                                    <div class="loader_small"></div>
+                                </div>
+                            </div>
+                            <div class="loading_msg">
+                                <div class="loading_msg_label" id="pci_msg">PCI</div>
+                                <div class="loading_msg" id="pci_msg_state">
+                                    <div class="loader_small"></div>
+                                </div>
+                            </div>
+                            <div class="loading_msg">
+                                <div class="loading_msg_label" id="ram_msg">RAM</div>
+                                <div class="loading_msg" id="ram_msg_state">
+                                    <div class="loader_small"></div>
+                                </div>
+                            </div>
+                            <div class="loading_msg">
+                                <div class="loading_msg_label" id="sata_msg">SATA</div>
+                                <div class="loading_msg" id="sata_msg_state">
+                                    <div class="loader_small"></div>
+                                </div>
+                            </div>
+                            <div class="loading_msg">
+                                <div class="loading_msg_label" id="network_msg">Network</div>
+                                <div class="loading_msg" id="network_msg_state"><div class="loader_small"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="motherboard_app"></div>
+                        <img class="mobo_image hidden" id="mobo_image" src="data:,">
+                    </div>
+                </div>
+
+
+        </div>
+    </div>
+</body>
+</html>

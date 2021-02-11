@@ -58,7 +58,7 @@ function motherboard()
 
 function get_network_info(){
 	var network_promise = cockpit.defer();
-
+	document.getElementById("STATUS_MESSAGE").innerHTML = "NETWORK SCRIPT";
 	// load the pci information
 	var pci_proc = cockpit.spawn(
 		[
@@ -81,6 +81,7 @@ function gather_connector_data(){
 	if(!pci_info){
 		var pci_promise = cockpit.defer();
 			// load the pci information
+		document.getElementById("STATUS_MESSAGE").innerHTML = "PCI SCRIPT";
 		var pci_proc = cockpit.spawn(
 		[
 			"/usr/bin/pkexec",
@@ -101,6 +102,7 @@ function gather_connector_data(){
 	if(!ram_info){
 		var ram_promise = cockpit.defer();
 		//load the ram information
+		document.getElementById("STATUS_MESSAGE").innerHTML = "RAM SCRIPT";
 		var ram_proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -120,6 +122,7 @@ function gather_connector_data(){
 	if(!sata_info){
 		var sata_promise = cockpit.defer();
 		//load the sata information
+		document.getElementById("STATUS_MESSAGE").innerHTML = "SATA SCRIPT";
 		var sata_proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -155,6 +158,7 @@ function launchP5JS(){
 	}
 	if(mobo_supported && mobo_info && mobo_json_path && pci_info && sata_info && ram_info && !p5_running){
 		p5_running = true;
+		document.getElementById("STATUS_MESSAGE").innerHTML = "P5 SCRIPT";
 		//var p5js = document.createElement('script');
 		//p5js.src = "p5.js";
 		//p5js.onload = function() {
@@ -214,6 +218,7 @@ function system()
 		product_img_lut["Storinator-XL60-Generic"] = "img/products/storinatorXL60.jpg";
 	if(!hardware_info){
 		var dfd = cockpit.defer();
+		document.getElementById("STATUS_MESSAGE").innerHTML = "SYSTEM SCRIPT";
 		var proc = cockpit.spawn(
 				[
 					"/usr/bin/pkexec",
@@ -245,7 +250,7 @@ async function getMoboInfo(){
 	var m_output = document.getElementById("motherboard_output");
 	var mobo_img = document.getElementById("mobo_image");
 	var dfd = cockpit.defer();
-		
+	document.getElementById("STATUS_MESSAGE").innerHTML = "MOTHERBOARD SCRIPT";
 	var motherboard_proc = cockpit.spawn(
 			[
 				"/usr/bin/pkexec",
@@ -501,10 +506,13 @@ function main()
 		function() {
 			if(root_check.allowed){
 				//user is an administrator, start the module as normal
-				if(!hardware_info){ system();}
+				if(!hardware_info){ 
+					document.getElementById("STATUS_MESSAGE").innerHTML = "GATHERING_SYSTEM_DATA";
+					system();
+				}
 				document.getElementById("system_tab_link").addEventListener("click", system);
 				document.getElementById("motherboard_tab_link").addEventListener("click", motherboard);
-				document.getElementById("detail_tab_link").addEventListener("click",detail);
+				//document.getElementById("detail_tab_link").addEventListener("click",detail);
 				document.getElementById("disk_tab_link").addEventListener("click",motherboard);
 			}else{
 				//user is not an administrator, inform them of this by

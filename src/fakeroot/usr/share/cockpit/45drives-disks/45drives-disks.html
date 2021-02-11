@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>45Drives Disks</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href="../base1/patternfly.css" type="text/css" rel="stylesheet">
+    <link href="45drives-disks.css" type="text/css" rel="stylesheet">
+    <script src="../base1/cockpit.js"></script>
+    <script src="../manifests.js"></script>
+    <script src="../*/po.js"></script>
+    <script defer src="p5.js"></script>
+    <script defer src="disks.js"></script>
+</head>
+<body>
+    <div class="hardware_container">
+        <div class="header-45D">
+            <img src="img/45-brand-dark_v2.png">
+            <h2>Disks</h2>
+        </div>
+        <div class="disk_content">
+            <div id="disk_output" class="disk_output">
+                <div id="disk_app">
+                    
+                </div>
+                <div id="disk_info_box">
+                    <div id="info-window" class="panel panel-default">
+                        <div class="panel-heading">
+                            <h2 class="panel-title">Disk Information</h2>
+                            <div class="disk-heading">
+                                <div class="disk-heading-row">
+                                    <h3>Disk Controllers:   </h3>
+                                    <h4 id="controller">
+                                        <div class="loader_small" id="disk_loader_icon"></div>
+                                    </h4>
+                                </div>
+                                <div class="disk-heading-row">
+                                    <h3>Driver Version:   </h3>
+                                    <h4 id="driver-vers">
+                                        <div class="loader_small" id="disk_loader_icon"></div>
+                                    </h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-body key-value-wrapper" id="disk_fields_loading_content">
+                            <div class="loader" id="disk_fields_loader_icon"></div>
+                        </div>
+                        <div class="panel-body key-value-wrapper hidden" id="disk_fields">
+                                    <div class="keys">
+                                        <div class="key">Bay ID:                 </div>
+                                        <div class="key">Device Path:            </div>
+                                        <div class="key">Capacity:               </div>
+                                        <div class="key">Partitions:             </div>
+                                        <div class="key">Health:                 </div>
+                                        <div class="key">Temperature:            </div>
+                                        <div class="key">Power on Time:          </div>
+                                        <div class="key">Model Family:           </div>
+                                        <div class="key">Model Name:             </div>
+                                        <div class="key">Serial Number:          </div>
+                                        <div class="key">Firmware Version:       </div>
+                                        <div class="key">Rotation Rate:          </div>
+                                        <div class="key">Start Stop Count:       </div>
+                                        <div class="key">Power Cycle Count:      </div>
+                                        <div class="key">Current Pending Sector: </div>
+                                        <div class="key">Offline Uncorrectable:  </div>
+                                    </div>
+                                    <div class="values">
+                                        <div class="value" id="bay-id">?</div>
+                                        <div class="value" id="dev">?</div>
+                                        <div class="value" id="capacity">?</div>
+                                        <div class="value" id="partitions">?</div>
+                                        <div class="value" id="health">?</div>
+                                        <div class="value temperature" id="temp-c">?</div>
+                                        <div class="value" id="power-on-time">?</div>
+                                        <div class="value" id="model-family">?</div>
+                                        <div class="value" id="model-name">?</div>
+                                        <div class="value" id="serial">?</div>
+                                        <div class="value" id="firm-ver">?</div>
+                                        <div class="value" id="rotation-rate">?</div>
+                                        <div class="value" id="start-stop-count">?</div>
+                                        <div class="value" id="power-cycle-count">?</div>
+                                        <div class="value" id="current-pending-sector">?</div>
+                                        <div class="value" id="offline-uncorrectable">?</div>
+                                    </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
