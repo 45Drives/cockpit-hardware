@@ -26,6 +26,7 @@ var disk_app = function( d ) {
 	let json_row;
 	let json_row_arr = [];
 	let json_lsdev;
+	let json_zfs;
 
 	//image arrays
 	let server_img_arr = [];
@@ -289,6 +290,8 @@ var disk_app = function( d ) {
 		}
 	}
 
+
+
 	d.preload = function(){
 		// row images
 		chassis_img = d.loadImage("img/disk/CHASSIS.png");
@@ -314,6 +317,7 @@ var disk_app = function( d ) {
 
 		get_server_info();
 		get_drive_info();
+		get_zfs_info();
 		d.jsonLoadRowPositions();
 	}
 
@@ -369,6 +373,29 @@ var disk_app = function( d ) {
 			);
 	}
 
+	function get_zfs_info(){
+		var drive_info_proc = cockpit.spawn(
+			[
+				"/usr/bin/pkexec",
+				"/usr/share/cockpit/45drives-disks/helper_scripts/zfs_info"
+			], 
+			{err: "out"}
+		);
+		drive_info_proc.done(
+				function(data){
+					json_zfs = JSON.parse(data);
+					if(json_zfs.hasOwnProperty("zfs_installed")){
+						if(json_zfs["zfs_installed"]){
+							//server has zfs installed on it. show zfs-info-window
+							document.getElementById("zfs-info-window").classList.remove("hidden");
+						} 
+					}
+					console.log("JSON_ZFS");
+					console.log(json_zfs);
+				}
+			);
+	}
+
 	d.jsonLoadRowPositions = function(){
 	var proc = cockpit.spawn(
 			[
@@ -410,7 +437,8 @@ var disk_app = function( d ) {
 		return (
 			json_server_info &&
 			json_row &&
-			json_lsdev
+			json_lsdev &&
+			json_zfs
 		);
 	}
 

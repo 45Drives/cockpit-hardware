@@ -40,30 +40,6 @@
     text-align: left;
 }
 
-.system_content {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-grow: 0;
-    padding: 8px;
-}
-
-.system_output{
-    padding: 8px;
-}
-
-.motherboard_content {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    flex-grow: 0;
-    padding: 8px;
-}
-
-.motherboard_output {
-    padding: 8px;
-}
-
 .disk_output {
     display: flex;
     flex-direction:row;
@@ -72,14 +48,21 @@
     padding-left: 8px;
 }
 
-#info-window {
+#disk-info-window {
     display: flex;
     flex-direction: column;
+    margin-bottom: auto;
+}
+
+#zfs-info-window {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: auto;
 }
 
 .key-value-wrapper {
     font-family: monospace;
-    font-size: large;
+    font-size: medium;
     display: flex;
     flex-direction: row;
 }
@@ -106,11 +89,18 @@
     flex-direction: row;
 }
 
+.zfs-label {
+    white-space: nowrap;
+    margin-right: 1em;
+    font-weight: bold;
+}
+
 .disk-heading-row > h3 {
     font-family: monospace;
     font-size: large;
     font-weight: bold;
     margin-right: 1em;
+    white-space: pre;
 }
 
 .disk-heading-row > h4 {
