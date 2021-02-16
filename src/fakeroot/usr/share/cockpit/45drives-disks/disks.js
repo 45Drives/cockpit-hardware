@@ -268,16 +268,33 @@ var disk_app = function( d ) {
 		async updateDiskInfo(drive_idx){
 			document.getElementById("disk_fields").classList.remove("hidden");
 			document.getElementById("disk_fields_loading_content").classList.add("hidden");
-			let values = document.getElementsByClassName("value");
-			let value;
-			for(value of values) {
-				let val = this.lsdev_values[drive_idx][value.id];
-				if(val.length == 0) {
-					value.innerHTML = "?";
-				}else{
-					value.innerHTML = val;
-				}
-			}
+			document.getElementById("zfs_fields_loading_content").classList.add("hidden");
+			document.getElementById("bay-id").innerHTML = this.lsdev_values[drive_idx]["bay-id"];
+			document.getElementById("dev").innerHTML = this.lsdev_values[drive_idx]["dev"];
+			document.getElementById("capacity").innerHTML = this.lsdev_values[drive_idx]["capacity"];
+			document.getElementById("partitions").innerHTML = this.lsdev_values[drive_idx]["partitions"];
+			document.getElementById("health").innerHTML = this.lsdev_values[drive_idx]["health"];
+			document.getElementById("temp-c").innerHTML = this.lsdev_values[drive_idx]["temp-c"];
+			document.getElementById("power-on-time").innerHTML = this.lsdev_values[drive_idx]["power-on-time"];
+			document.getElementById("model-family").innerHTML = this.lsdev_values[drive_idx]["model-family"];
+			document.getElementById("model-name").innerHTML = this.lsdev_values[drive_idx]["model-name"];
+			document.getElementById("serial").innerHTML = this.lsdev_values[drive_idx]["serial"];
+			document.getElementById("firm-ver").innerHTML = this.lsdev_values[drive_idx]["firm-ver"];
+			document.getElementById("rotation-rate").innerHTML = this.lsdev_values[drive_idx]["rotation-rate"];
+			document.getElementById("start-stop-count").innerHTML = this.lsdev_values[drive_idx]["start-stop-count"];
+			document.getElementById("power-cycle-count").innerHTML = this.lsdev_values[drive_idx]["power-cycle-count"];
+			document.getElementById("current-pending-sector").innerHTML = this.lsdev_values[drive_idx]["current-pending-sector"];
+			document.getElementById("offline-uncorrectable").innerHTML = this.lsdev_values[drive_idx]["offline-uncorrectable"];
+			//let values = document.getElementsByClassName("value");
+			//let value;
+			//for(value of values) {
+			//	let val = this.lsdev_values[drive_idx][value.id];
+			//	if(val.length == 0) {
+			//		value.innerHTML = "?";
+			//	}else{
+			//		value.innerHTML = val;
+			//	}
+			//}
 			var health = document.getElementById("health");
 			if(health.innerHTML == "OK") {
 				health.style.color = "#19911d";
@@ -286,7 +303,39 @@ var disk_app = function( d ) {
 			}else{
 				health.style.color = "";
 			}
-		
+
+			if(json_zfs["zfs_installed"]){
+				if(json_zfs.hasOwnProperty("zfs_disks")){
+					if(json_zfs["zfs_disks"].hasOwnProperty(this.lsdev_values[drive_idx]["bay-id"])){
+						document.getElementById("zfs-data").classList.remove("hidden");
+						document.getElementById("zpool_name").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_name"];
+						document.getElementById("zpool_used").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_used"];
+						document.getElementById("zpool_avail").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_avail"];
+						document.getElementById("zpool_mountpoint").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_mountpoint"];
+						document.getElementById("zpool_state").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_state"];
+						document.getElementById("vdev_raid_level").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_raid_level"];
+						//document.getElementById("vdev_alloc").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_alloc"];
+						//document.getElementById("vdev_free").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_free"];
+						//document.getElementById("vdev_read_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_read_ops"];
+						//document.getElementById("vdev_write_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_write_ops"];
+						//document.getElementById("vdev_read_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_read_bw"];
+						//document.getElementById("vdev_write_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_write_bw"];
+						//document.getElementById("alloc").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["alloc"];
+						//document.getElementById("free").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["free"];
+						document.getElementById("read_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["read_ops"];
+						document.getElementById("write_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["write_ops"];
+						document.getElementById("read_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["read_bw"];
+						document.getElementById("write_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["write_bw"];
+						let state = document.getElementById("zpool_state");
+						if (state.innerHTML == "ONLINE"){
+							state.style.color = "#19911d";
+						}else{
+							// zpool is not online, make it red.
+							state.style.color = "#e39500";
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -542,6 +591,7 @@ var disk_app = function( d ) {
 		else if (server_img_arr.length > 2){
 			loaded = true;
 			document.getElementById("disk_fields_loading_content").innerHTML = "Click on a disk to display more information.";
+			document.getElementById("zfs_fields_loading_content").innerHTML = "Click on a disk to display more information.";
 		}else{
 			d.push();
 			loading_rotation += 0.1;

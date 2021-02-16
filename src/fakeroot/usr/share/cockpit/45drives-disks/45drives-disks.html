@@ -47,69 +47,150 @@
                         </div>
                         <div class="panel-body key-value-wrapper hidden" id="disk_fields">
                             <div class="keys">
-                                <div class="key">Bay ID:                 </div>
-                                <div class="key">Device Path:            </div>
-                                <div class="key">Capacity:               </div>
-                                <div class="key">Partitions:             </div>
-                                <div class="key">Health:                 </div>
-                                <div class="key">Temperature:            </div>
-                                <div class="key">Power on Time:          </div>
-                                <div class="key">Model Family:           </div>
-                                <div class="key">Model Name:             </div>
-                                <div class="key">Serial Number:          </div>
-                                <div class="key">Firmware Version:       </div>
-                                <div class="key">Rotation Rate:          </div>
-                                <div class="key">Start Stop Count:       </div>
-                                <div class="key">Power Cycle Count:      </div>
-                                <div class="key">Current Pending Sector: </div>
-                                <div class="key">Offline Uncorrectable:  </div>
-                            </div>
-                            <div class="values">
-                                <div class="value" id="bay-id">?</div>
-                                <div class="value" id="dev">?</div>
-                                <div class="value" id="capacity">?</div>
-                                <div class="value" id="partitions">?</div>
-                                <div class="value" id="health">?</div>
-                                <div class="value temperature" id="temp-c">?</div>
-                                <div class="value" id="power-on-time">?</div>
-                                <div class="value" id="model-family">?</div>
-                                <div class="value" id="model-name">?</div>
-                                <div class="value" id="serial">?</div>
-                                <div class="value" id="firm-ver">?</div>
-                                <div class="value" id="rotation-rate">?</div>
-                                <div class="value" id="start-stop-count">?</div>
-                                <div class="value" id="power-cycle-count">?</div>
-                                <div class="value" id="current-pending-sector">?</div>
+                                <div class="disk-entry">
+                                    <div class="key">Bay ID:                 </div>
+                                    <div class="value" id="bay-id">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Device Path:            </div>
+                                    <div class="value" id="dev">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Capacity:               </div>
+                                    <div class="value" id="capacity">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Partitions:             </div>
+                                    <div class="value" id="partitions">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Health:                 </div>
+                                    <div class="value" id="health">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Temperature:            </div>
+                                    <div class="value temperature" id="temp-c">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Power on Time:          </div>
+                                    <div class="value" id="power-on-time">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Model Family:           </div>
+                                    <div class="value" id="model-family">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Model Name:             </div>
+                                    <div class="value" id="model-name">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Serial Number:          </div>
+                                    <div class="value" id="serial">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Firmware Version:       </div>
+                                    <div class="value" id="firm-ver">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Rotation Rate:          </div>
+                                    <div class="value" id="rotation-rate">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Start Stop Count:       </div>
+                                    <div class="value" id="start-stop-count">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Power Cycle Count:      </div>
+                                    <div class="value" id="power-cycle-count">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Current Pending Sector: </div>
+                                    <div class="value" id="current-pending-sector">?</div>
+                                </div>
+                                <div class="disk-entry">
+                                    <div class="key">Offline Uncorrectable:  </div>
                                 <div class="value" id="offline-uncorrectable">?</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="zfs-info-window" class="panel panel-default hidden">
+                        <div class="panel-heading">
+                            <h2 class="panel-title">ZFS Information</h2>
+                                <div class="disk-heading">
+                                </div>
+                        </div>
+                        <div class="panel-body zfs-content" id="zfs_fields_loading_content">
+                            <div class="loader" id="disk_fields_loader_icon"></div>
+                        </div>
+                        <div class="panel-body zfs-content hidden" id="zfs-data">
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Zpool Name:</div>
+                                <div class="zfs-value" id="zpool_name"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">State (zpool):</div>
+                                <div class="zfs-value" id="zpool_state"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Mount Point (zpool):</div>
+                                <div class="zfs-value" id="zpool_mountpoint"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Used Storage (zpool):</div>
+                                <div class="zfs-value" id="zpool_used"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Available Storage (zpool):</div>
+                                <div class="zfs-value" id="zpool_avail"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Raid Level:</div>
+                                <div class="zfs-value" id="vdev_raid_level"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label hidden">Vdev Free:</div>
+                                <div class="zfs-value" id="vdev_free"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label hidden">Vdev Allocated:</div>
+                                <div class="zfs-value" id="vdev_alloc"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label hidden">Vdev Read OPs (since boot):</div>
+                                <div class="zfs-value" id="vdev_read_ops"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label hidden">Vdev Write OPs (since boot):</div>
+                                <div class="zfs-value" id="vdev_write_ops"></div>
+                            </div>
+                            <div class="zfs-entry hidden">
+                                <div class="zfs-label">Vdev Read BW (since boot B/s):</div>
+                                <div class="zfs-value" id="vdev_read_bw"></div>
+                            </div>
+                            <div class="zfs-entry hidden">
+                                <div class="zfs-label">Vdev Write BW (B/s):</div>
+                                <div class="zfs-value" id="vdev_write_bw"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Disk Read OPs (since boot):</div>
+                                <div class="zfs-value" id="read_ops"></div>
+                            </div>
+                            <div class="zfs-entry">
+                                <div class="zfs-label">Disk Write OPs (since boot):</div>
+                                <div class="zfs-value" id="write_ops"></div>
+                            </div>
+                            <div class="zfs-entry hidden">
+                                <div class="zfs-label">Disk Read BW (since boot B/s):</div>
+                                <div class="zfs-value" id="read_bw"></div>
+                            </div>
+                            <div class="zfs-entry hidden">
+                                <div class="zfs-label">Disk Write BW (since boot B/s):</div>
+                                <div class="zfs-value" id="write_bw"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div id="zfs-info-window" class="panel panel-default hidden">
-                    <div class="panel-heading">
-                        <h2 class="panel-title">ZFS Information</h2>
-                            <div class="disk-heading">
-                                <div class="disk-heading-row">
-                                    <h3>Bay ID:      </h3>
-                                    <h4 id="zfs-bay-id">
-                                    </h4>
-                                </div>
-                                <div class="disk-heading-row">
-                                    <h3>Device Path: </h3>
-                                    <h4 id="zfs-device-path">
-                                    </h4>
-                                </div>
-                            </div>
-                    </div>
-                    <div class="panel-body key-value-wrapper">
-                        <div class="zfs-entry">
-                            <div class="zfs-label">Z Pool:</div>
-                            <div class="zfs-value" id="zpool"></div>
-                        </div>
-                    </div>
-                </div>
-            
             </div>
         </div>
     </div>

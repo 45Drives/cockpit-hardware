@@ -95,6 +95,28 @@
     font-weight: bold;
 }
 
+.disk-entry{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.zfs-entry{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.zfs-content{
+    font-family: monospace;
+    font-size: medium;
+    display: flex;
+    flex-direction: column;
+}
+
+
 .disk-heading-row > h3 {
     font-family: monospace;
     font-size: large;
