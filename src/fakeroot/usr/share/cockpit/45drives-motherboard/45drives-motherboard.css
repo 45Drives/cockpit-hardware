@@ -11,7 +11,7 @@
 }
 
 .header-45D img {
-    width: 200px;
+    width: 450px;
     height: auto;
     float: left;
     padding-top: 8px;
@@ -20,8 +20,12 @@
     padding-right: 5px;
 }
 
-.header-45D h2 {
+.header-45D > h2 {
     color: #FFFFFF;
+    font-family:"RedHatText","Overpass",overpass,helvetica,arial,sans-serif;
+    font-size: 28px;
+    font-weight: 400;
+    align-self: center;
 }
 
 .detail-table-header{

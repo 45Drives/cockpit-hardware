@@ -269,32 +269,22 @@ var disk_app = function( d ) {
 			document.getElementById("disk_fields").classList.remove("hidden");
 			document.getElementById("disk_fields_loading_content").classList.add("hidden");
 			document.getElementById("zfs_fields_loading_content").classList.add("hidden");
-			document.getElementById("bay-id").innerHTML = this.lsdev_values[drive_idx]["bay-id"];
-			document.getElementById("dev").innerHTML = this.lsdev_values[drive_idx]["dev"];
-			document.getElementById("capacity").innerHTML = this.lsdev_values[drive_idx]["capacity"];
-			document.getElementById("partitions").innerHTML = this.lsdev_values[drive_idx]["partitions"];
-			document.getElementById("health").innerHTML = this.lsdev_values[drive_idx]["health"];
-			document.getElementById("temp-c").innerHTML = this.lsdev_values[drive_idx]["temp-c"];
-			document.getElementById("power-on-time").innerHTML = this.lsdev_values[drive_idx]["power-on-time"];
-			document.getElementById("model-family").innerHTML = this.lsdev_values[drive_idx]["model-family"];
-			document.getElementById("model-name").innerHTML = this.lsdev_values[drive_idx]["model-name"];
-			document.getElementById("serial").innerHTML = this.lsdev_values[drive_idx]["serial"];
-			document.getElementById("firm-ver").innerHTML = this.lsdev_values[drive_idx]["firm-ver"];
+			document.getElementById("bay-id").innerHTML = (this.lsdev_values[drive_idx]["bay-id"] != "" ? this.lsdev_values[drive_idx]["bay-id"] : "(unavailable)");
+			document.getElementById("dev").innerHTML = (this.lsdev_values[drive_idx]["dev"] != "" ? this.lsdev_values[drive_idx]["dev"] : "(unavailable)");
+			document.getElementById("capacity").innerHTML = (this.lsdev_values[drive_idx]["capacity"] != "" ? this.lsdev_values[drive_idx]["capacity"] : "(unavailable)");
+			document.getElementById("partitions").innerHTML = (this.lsdev_values[drive_idx]["partitions"] != "" ? this.lsdev_values[drive_idx]["partitions"] : "None");
+			document.getElementById("health").innerHTML = (this.lsdev_values[drive_idx]["health"] != "" ? this.lsdev_values[drive_idx]["health"] : "(unavailable)");
+			document.getElementById("temp-c").innerHTML = ((this.lsdev_values[drive_idx]["temp-c"] != "?" && this.lsdev_values[drive_idx]["temp-c"] != "") ? this.lsdev_values[drive_idx]["temp-c"] : "(unavailable)");
+			document.getElementById("power-on-time").innerHTML = (this.lsdev_values[drive_idx]["power-on-time"] != "" ? this.lsdev_values[drive_idx]["power-on-time"] : "(unavailable)");
+			document.getElementById("model-family").innerHTML = (this.lsdev_values[drive_idx]["model-family"] != "?" ? this.lsdev_values[drive_idx]["model-family"] : "(unavailable)");
+			document.getElementById("model-name").innerHTML = (this.lsdev_values[drive_idx]["model-name"] != "" ? this.lsdev_values[drive_idx]["model-name"] : "(unavailable)");
+			document.getElementById("serial").innerHTML = (this.lsdev_values[drive_idx]["serial"] != "" ? this.lsdev_values[drive_idx]["serial"] : "(unavailable)");
+			document.getElementById("firm-ver").innerHTML = ((this.lsdev_values[drive_idx]["firm-ver"] != "?" && this.lsdev_values[drive_idx]["firm-ver"] != "") ? this.lsdev_values[drive_idx]["firm-ver"] : "(unavailable)"); 
 			document.getElementById("rotation-rate").innerHTML = this.lsdev_values[drive_idx]["rotation-rate"];
-			document.getElementById("start-stop-count").innerHTML = this.lsdev_values[drive_idx]["start-stop-count"];
-			document.getElementById("power-cycle-count").innerHTML = this.lsdev_values[drive_idx]["power-cycle-count"];
-			document.getElementById("current-pending-sector").innerHTML = this.lsdev_values[drive_idx]["current-pending-sector"];
-			document.getElementById("offline-uncorrectable").innerHTML = this.lsdev_values[drive_idx]["offline-uncorrectable"];
-			//let values = document.getElementsByClassName("value");
-			//let value;
-			//for(value of values) {
-			//	let val = this.lsdev_values[drive_idx][value.id];
-			//	if(val.length == 0) {
-			//		value.innerHTML = "?";
-			//	}else{
-			//		value.innerHTML = val;
-			//	}
-			//}
+			document.getElementById("start-stop-count").innerHTML = ((this.lsdev_values[drive_idx]["start-stop-count"] != "?" && this.lsdev_values[drive_idx]["start-stop-count"] != "") ? this.lsdev_values[drive_idx]["start-stop-count"] : "(unavailable)");
+			document.getElementById("power-cycle-count").innerHTML = ((this.lsdev_values[drive_idx]["power-cycle-count"] != "?" && this.lsdev_values[drive_idx]["power-cycle-count"] != "") ? this.lsdev_values[drive_idx]["power-cycle-count"] : "(unavailable)");
+			document.getElementById("current-pending-sector").innerHTML = ((this.lsdev_values[drive_idx]["current-pending-sector"] != "?" && this.lsdev_values[drive_idx]["current-pending-sector"] != "") ? this.lsdev_values[drive_idx]["current-pending-sector"] : "(unavailable)");
+			document.getElementById("offline-uncorrectable").innerHTML = ((this.lsdev_values[drive_idx]["offline-uncorrectable"] != "?" && this.lsdev_values[drive_idx]["offline-uncorrectable"] != "") ? this.lsdev_values[drive_idx]["offline-uncorrectable"] : "(unavailable)");
 			var health = document.getElementById("health");
 			if(health.innerHTML == "OK") {
 				health.style.color = "#19911d";
@@ -308,20 +298,13 @@ var disk_app = function( d ) {
 				if(json_zfs.hasOwnProperty("zfs_disks")){
 					if(json_zfs["zfs_disks"].hasOwnProperty(this.lsdev_values[drive_idx]["bay-id"])){
 						document.getElementById("zfs-data").classList.remove("hidden");
+						document.getElementById("zfs_fields_loading_content").classList.add("hidden");
 						document.getElementById("zpool_name").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_name"];
 						document.getElementById("zpool_used").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_used"];
 						document.getElementById("zpool_avail").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_avail"];
 						document.getElementById("zpool_mountpoint").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_mountpoint"];
 						document.getElementById("zpool_state").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["zpool_state"];
 						document.getElementById("vdev_raid_level").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_raid_level"];
-						//document.getElementById("vdev_alloc").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_alloc"];
-						//document.getElementById("vdev_free").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_free"];
-						//document.getElementById("vdev_read_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_read_ops"];
-						//document.getElementById("vdev_write_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_write_ops"];
-						//document.getElementById("vdev_read_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_read_bw"];
-						//document.getElementById("vdev_write_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["vdev_write_bw"];
-						//document.getElementById("alloc").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["alloc"];
-						//document.getElementById("free").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["free"];
 						document.getElementById("read_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["read_ops"];
 						document.getElementById("write_ops").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["write_ops"];
 						document.getElementById("read_bw").innerHTML=json_zfs["zfs_disks"][this.lsdev_values[drive_idx]["bay-id"]]["read_bw"];
@@ -333,6 +316,12 @@ var disk_app = function( d ) {
 							// zpool is not online, make it red.
 							state.style.color = "#e39500";
 						}
+					}
+					else{
+						let msg = document.getElementById("zfs_fields_loading_content");
+						msg.innerHTML = "Selected Disk (" + this.lsdev_values[drive_idx]["bay-id"] +") is not a member of a zfs pool";
+						msg.classList.remove("hidden");
+						document.getElementById("zfs-data").classList.add("hidden");
 					}
 				}
 			}
@@ -596,10 +585,12 @@ var disk_app = function( d ) {
 			d.push();
 			loading_rotation += 0.1;
 			d.translate(d.width / 2, d.height / 4);
-			d.textAlign(d.CENTER);
-			d.textFont(monospace_font);
-			d.textSize(16);
-			d.text("Loading Please Wait",0,-100);
+			try{
+				d.textAlign(d.CENTER);
+				d.textFont(monospace_font);
+				d.textSize(16);
+				d.text("Loading Please Wait",0,-100);
+			}catch(err) {}
 			d.rotate(loading_rotation);
 			d.noStroke();
 			d.fill("#f3f3f3");

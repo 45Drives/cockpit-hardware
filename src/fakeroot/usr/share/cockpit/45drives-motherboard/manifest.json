@@ -3,7 +3,7 @@
 
     "menu": {
         "45drives-motherboard": {
-            "label": "Motherboard",
+            "label": "45Drives Motherboard",
             "path": "45drives-motherboard.html",
             "order": 1
         }

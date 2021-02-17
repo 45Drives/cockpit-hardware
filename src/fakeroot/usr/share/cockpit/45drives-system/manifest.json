@@ -3,7 +3,7 @@
 
     "menu": {
         "45drives-system": {
-            "label": "System",
+            "label": "45Drives System",
             "path": "45drives-system.html",
         	"order": -1
         }

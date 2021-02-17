@@ -88,10 +88,10 @@ class popup_window{
 		m.rect(this.x0,this.y0,this.width,this.height,10,10);
 		m.stroke(0);
 		m.strokeWeight(1);
-		m.textSize(14);
+		try{m.textSize(14);}catch(err) {}
 		m.fill(0);
-		m.textFont("Courier New");
-		m.text(this.content,this.x0+9,this.y0+20);
+		try{try{m.textFont("Courier New");}catch(err) {}}catch(err){}
+		try{m.text(this.content,this.x0+9,this.y0+20);}catch(err){}
 		m.pop();
 	}
 }
@@ -128,35 +128,35 @@ m.draw = function (){
 	}
 	else if(STATE == 0){
 		m.background(255);
-		m.textFont("Courier New");
-		m.text("Loading Motherboard Info ... Please Wait.",40,40);
+		try{m.textFont("Courier New");}catch(err){}
+		try{m.text("Loading Motherboard Info ... Please Wait.",40,40);}catch(err){}
 		m.loadAssets();
 		STATE = 1;
 	}
 	else if(STATE == 1){
 		m.background(255);
-		m.textFont("Courier New");
-		m.text("Loading Motherboard Assets ... Please Wait.",40,40);
+		try{m.textFont("Courier New");}catch(err){}
+		try{m.text("Loading Motherboard Assets ... Please Wait.",40,40);}catch(err){}
 		if(m.verifyAssetsLoaded()){
 			STATE = 2;
 		}
 	}
 	else if(STATE == 2){
 		m.background(255);
-		m.textFont("Courier New");
-		m.text("Generating Masks ... Please Wait.",40,40);
+		try{m.textFont("Courier New");}catch(err){}
+		try{m.text("Generating Masks ... Please Wait.",40,40);}catch(err){}
 		if(components.length > 0){
 			m.createComponentMasks(MASK_COUNT);
 			MASK_COUNT++;
 			let myStr = "Mask: " + String(MASK_COUNT) + " of " + String(components.length);
-			m.textFont("Courier New");
-			m.text(myStr,40,70);
+			try{m.textFont("Courier New");}catch(err){}
+			try{m.text(myStr,40,70);}catch(err){}
 		}
 		if(MASK_ARR.length == components.length && MASK_ARR.length != 0){
 			STATE = 3;
 			m.background(255);
-			m.textFont("Courier New");
-			m.text("Creating graphics for supported PCI cards ... Please Wait.",40,40);
+			try{m.textFont("Courier New");}catch(err){}
+			try{m.text("Creating graphics for supported PCI cards ... Please Wait.",40,40);}catch(err){}
 		}
 	}
 	else if(STATE == 3){

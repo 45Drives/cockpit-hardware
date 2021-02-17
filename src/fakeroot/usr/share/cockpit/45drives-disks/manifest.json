@@ -3,7 +3,7 @@
 
     "menu": {
         "45drives-disks": {
-            "label": "Disks",
+            "label": "45Drives Disks",
             "path": "45drives-disks.html",
             "order": 0
         }

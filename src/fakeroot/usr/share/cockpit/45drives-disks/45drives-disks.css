@@ -11,7 +11,7 @@
 }
 
 .header-45D img {
-    width: 200px;
+    width: 450px;
     height: auto;
     float: left;
     padding-top: 8px;
@@ -20,8 +20,13 @@
     padding-right: 5px;
 }
 
-.header-45D h2 {
+
+.header-45D > h2 {
     color: #FFFFFF;
+    font-family:"RedHatText","Overpass",overpass,helvetica,arial,sans-serif;
+    font-size: 28px;
+    font-weight: 400;
+    align-self: center;
 }
 
 .detail-table-header{
@@ -38,6 +43,12 @@
     background-color: #FFFFFF;
     color: #000000;
     text-align: left;
+}
+
+.panel-title {
+    margin-top: 0;
+    margin-bottom:0;
+    font-size: 18px;
 }
 
 .disk_output {
@@ -78,9 +89,14 @@
     white-space: nowrap;
     margin-right: 1em;
     font-weight: bold;
+    white-space: pre;
 }
 
 .values .value {
+    white-space: nowrap;
+}
+
+.zfs-value {
     white-space: nowrap;
 }
 
@@ -93,6 +109,7 @@
     white-space: nowrap;
     margin-right: 1em;
     font-weight: bold;
+    white-space: pre;
 }
 
 .disk-entry{
@@ -123,11 +140,15 @@
     font-weight: bold;
     margin-right: 1em;
     white-space: pre;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .disk-heading-row > h4 {
     font-family: monospace;
     font-size: large;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .loader {

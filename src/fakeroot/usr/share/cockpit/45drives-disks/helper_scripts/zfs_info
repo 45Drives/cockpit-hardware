@@ -12,7 +12,7 @@ json_zfs = {
 def get_zpool_data():
 	try:
 		zfs_list_result = subprocess.Popen(
-			["zfs","list"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+			["zfs","list"],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,universal_newlines=True).stdout
 	except:
 		return False
 

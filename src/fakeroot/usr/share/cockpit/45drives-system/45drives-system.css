@@ -10,12 +10,13 @@ body {
 .header-45D {
     display: flex;
     background-color: #151515;
-    align-items: center; 
     width: 100%;
+    flex-direction: row;
+    align-items: center;
 }
 
 .header-45D img {
-    width: 200px;
+    width: 450px;
     height: auto;
     float: left;
     padding-top: 8px;
@@ -24,8 +25,12 @@ body {
     padding-right: 5px;
 }
 
-.header-45D h2 {
+.header-45D > h2 {
     color: #FFFFFF;
+    font-family:"RedHatText","Overpass",overpass,helvetica,arial,sans-serif;
+    font-size: 28px;
+    font-weight: 400;
+    align-self: center;
 }
 
 .sys_img {
@@ -35,11 +40,12 @@ body {
     align-self: center;
 }
 
-/*
+
 .sys_img > img {
-    height: 250px;
+    max-width: 80%;
+    max-height:80%;
 }
-*/
+
 
 .info_box {
     padding-top: 10px;
@@ -86,6 +92,7 @@ body {
     max-width: 100%;
     overflow: auto;
     align-self: center;
+    margin-left: 1em;
 }
 
 .fa-refresh {
@@ -125,7 +132,6 @@ body {
 
 .info_box_table {
     overflow: auto;
-    /*width: 100%;*/
     background:
         linear-gradient(to right, white 30%, rgba(255,255,255,0)),
         linear-gradient(to right, rgba(255,255,255,0), white 70%) 0 100%,
