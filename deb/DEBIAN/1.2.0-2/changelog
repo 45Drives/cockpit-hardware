@@ -1,0 +1,5 @@
+45drives-cockpit-hardware (1.2.0-1) focal; urgency=medium
+
+  * fixed path error in pci helper scripts for 45drives-motherboard and 45drives-system.
+
+ -- Mark Hooper <mhooper@45drives.com>  Thu, 18 Feb 2021 12:35:32 +0000

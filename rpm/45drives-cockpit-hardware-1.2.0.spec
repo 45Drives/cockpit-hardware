@@ -4,7 +4,7 @@
 
 Name:		45drives-cockpit-hardware
 Version:	1.2.0
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
 Group:		Development/Tools
@@ -57,6 +57,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/45drives-motherboard/*
 
 %changelog
+* Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.0-2
+- Fixed path error in pci helper scripts for 45drives-motherboard and 45drives-system.
 * Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.0-1
 - Created three seperate modules for cockpit, 45drives-disks, 45drives-system and 45drives-motherboard.
 * Thu Jan 28 2021 Mark Hooper <mhooper@45drives.com> 1.1.0-1

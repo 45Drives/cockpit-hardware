@@ -90,7 +90,7 @@ def storcli():
 def network():
 	try:
 		network_result = subprocess.Popen(
-			["/usr/share/cockpit/hardware/helper_scripts/network"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+			["/usr/share/cockpit/45drives-system/helper_scripts/network"],stdout=subprocess.PIPE,universal_newlines=True).stdout
 	except:
 		return False
 	
@@ -198,7 +198,7 @@ def main():
 	
 	# for each pci slot with an ID that corresponds to 
 	# the "PCI Slot" field from the 
-	# /usr/share/cockpit/hardware/helper_scripts/network script's
+	# /usr/share/cockpit/45drives-system/helper_scripts/network script's
 	# .json formatted output. Append this network connection 
 	# to a list of connections for that specific PCI slot
 	if pci_slots and network_cards:
