@@ -1,4 +1,4 @@
-45drives-cockpit-hardware (1.2.0-1) focal; urgency=medium
+45drives-cockpit-hardware (1.2.0-2) focal; urgency=medium
 
   * fixed path error in pci helper scripts for 45drives-motherboard and 45drives-system.
 
