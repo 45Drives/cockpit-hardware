@@ -3,7 +3,7 @@ Version: 1.2.0-1
 Section: utils
 Priority: optional
 Architecture: amd64
-Depends: cockpit, cockpit-ws, cockpit-bridge, dmidecode, ipmitool, python3, lshw, 45drives-tools (>= 1.8.0)
+Depends: cockpit, cockpit-ws, cockpit-bridge, dmidecode, ipmitool, python3, lshw, 45drives-tools (>= 1.8.1)
 Maintainer: Mark Hooper <mhooper@45drives.com>
 Description: A cockpit module for 45drives storage server products.
  Displays information about your 45drives storage server hardware via cockpit.
