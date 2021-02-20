@@ -1,6 +1,0 @@
-systemctl stop cockpit.socket
-rm -rf /usr/share/cockpit/45drives-disks
-rm -rf /usr/share/cockpit/45drives-system
-rm -rf /usr/share/cockpit/45drives-motherboard
-rm -rf /usr/share/cockpit/hardware
-systemctl start --now cockpit.socket

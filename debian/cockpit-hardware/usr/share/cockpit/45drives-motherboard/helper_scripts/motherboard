@@ -1,0 +1,191 @@
+#!/usr/bin/env python3
+################################################################################
+# motherboard:
+# 	used to return information about the motherboard in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+
+import re
+import subprocess
+import os
+import sys
+import json
+
+# supported motherboard manufacturers and models can be adjusted here
+g_dmi_mobo_fields = {
+	"Manufacturer":  ["Supermicro"],
+	"Product Name":  [
+		"X11DPL-i",
+		"X11SPL-F",
+		"H11SSL-i",
+		"X11SSH-CTF",
+		"X11SSM-F"
+		],
+	"Serial Number": None
+}
+
+#supported CPU types
+g_dmi_cpu_fields = {
+	"Socket Designation":  ["CPU1","CPU2"],
+	"Version":  [
+		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
+		"AMD EPYC 7281 16-Core Processor",
+		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
+		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz"
+		],
+	"Current Speed": None,
+	"Max Speed": None,
+}
+
+g_ipmitool_sensor_fields = {
+	"CPU1 Temp": "(C)",
+	"CPU2 Temp": "(C)",
+	"PW Consumption": "(W)",
+	"FAN1": "(RPM)",
+	"FAN2": "(RPM)",
+	"FAN3": "(RPM)",
+	"FAN4": "(RPM)",
+	"FAN5": "(RPM)",
+	"FAN6": "(RPM)",
+	"FANA": "(RPM)",
+	"FANB": "(RPM)",
+	"P1-DIMMA1 Temp": " (C)",
+	"P1-DIMMB1 Temp": " (C)",
+	"P1-DIMMD1 Temp": " (C)",
+	"P1-DIMME1 Temp": " (C)",
+	"P2-DIMMA1 Temp": " (C)",
+	"P2-DIMMB1 Temp": " (C)",
+	"P2-DIMMD1 Temp": " (C)",
+	"P2-DIMME1 Temp": " (C)",
+	"CPU Temp": " (C)",
+	"DIMMA1 Temp": " (C)",
+	"DIMMA2 Temp": " (C)",
+	"DIMMB1 Temp": " (C)",
+	"DIMMB2 Temp": " (C)",
+	"DIMMC1 Temp": " (C)",
+	"DIMMC2 Temp": " (C)",
+	"DIMMD1 Temp": " (C)",
+	"DIMMD2 Temp": " (C)",
+	"DIMME1 Temp": " (C)",
+	"DIMME2 Temp": " (C)",
+	"DIMMF1 Temp": " (C)",
+	"DIMMF2 Temp": " (C)",
+	"DIMMG1 Temp": " (C)",
+	"DIMMH1 Temp": " (C)"
+}
+
+################################################################################
+# Name: get_motherboard_model
+# Args: None
+# Desc: This runs "dmidecode -t 2" and parses the output for specific fields
+#       corresponding to the keys in g_dmi_mobo_fields dictionary.
+#       if dmidecode discovers an unsupported motherboard model, or 
+#		manufacturer, it will append " (Generic)"  to the end of the 
+#       result.  
+################################################################################
+def get_motherboard_model():
+	mobo = []
+	try:
+		dmi_result = subprocess.Popen(["dmidecode","-t","2"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: dmidecode is not installed")
+		return False
+	for line in dmi_result:
+		for field in g_dmi_mobo_fields.keys():
+			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
+			if regex != None:
+				if g_dmi_mobo_fields[regex.group(1)] != None:
+					if regex.group(2) in g_dmi_mobo_fields[regex.group(1)]:
+						mobo.append((regex.group(1),regex.group(2)))
+					else:
+						mobo.append((regex.group(1),regex.group(2)+" (Generic)"))
+				else:
+					mobo.append((regex.group(1),regex.group(2)))
+	mobo_json_str = "{\"Motherboard\":["+json.dumps(dict(mobo))+"]}"
+	return mobo_json_str
+
+
+def get_cpu_info():
+	cpu = []
+	try:
+		dmi_result = subprocess.Popen(["dmidecode","-t","4"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: dmidecode is not installed")
+		return False
+	for line in dmi_result:
+		for field in g_dmi_cpu_fields.keys():
+			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
+			if regex != None:
+				regex_group1_str = str(regex.group(1)).rstrip()
+				regex_group2_str = str(regex.group(2)).rstrip()
+				if g_dmi_cpu_fields[regex_group1_str] != None:
+					if regex_group2_str in g_dmi_cpu_fields[regex_group1_str]:
+						cpu.append((regex_group1_str,regex_group2_str))
+					elif field == "Socket Designation" and regex_group2_str == "CPU":
+						cpu.append((regex_group1_str,"CPU1"))
+					else:
+						cpu.append((regex_group1_str,regex_group2_str+" (Generic)"))
+				else:
+					cpu.append((regex_group1_str,regex_group2_str))
+
+	if len(cpu) == len(g_dmi_cpu_fields):
+		#there is only 1 cpu listed
+		cpu_json_str = "{\"CPU\":["+json.dumps(dict(cpu))+"]}"
+	else:
+		#system has 2 CPUs, but duplicate keys if used as dict
+		cpu_json_str = (
+			"{\"CPU\":[" +
+			json.dumps(dict(cpu[0:(len(g_dmi_cpu_fields)-1)])) + 
+			"," +
+			json.dumps(dict(cpu[len(g_dmi_cpu_fields):-1])) +
+			"]}"
+		)
+	return cpu_json_str
+
+def get_sensor_readings():
+	try:
+		ipmitool_sensor_result = subprocess.Popen(
+			["ipmitool","sensor"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: ipmitool is not installed")
+		return False
+
+	sensor_readings = []
+	for line in ipmitool_sensor_result:
+		for field in g_ipmitool_sensor_fields.keys():
+			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
+			if regex != None:
+				if regex.group(1) == "CPU Temp":
+					# ipmitool does not use the socket name
+					# we need to manually intervene and store it as
+					# CPU1 Temp
+					sensor_readings.append(
+					("CPU1 Temp",regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
+					)
+				else:
+					# All other readings are fine, use the field as captured.
+					sensor_readings.append((regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
+	sensor_readings_json_str = "{\"Sensor Readings\":["+json.dumps(dict(sensor_readings))+"]}"
+	return sensor_readings_json_str
+
+
+def main():
+	mobo = get_motherboard_model()
+	cpu = get_cpu_info()
+	sensor_readings = get_sensor_readings()
+	
+	if mobo and cpu and sensor_readings:
+		print("{\"Motherboard Info\":[",mobo,",")
+		print(cpu,",")
+		print(sensor_readings,"]}")
+
+if __name__ == "__main__":
+    main()

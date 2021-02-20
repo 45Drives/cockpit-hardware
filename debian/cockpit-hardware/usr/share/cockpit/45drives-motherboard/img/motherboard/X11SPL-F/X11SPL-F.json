@@ -1,0 +1,242 @@
+[
+  {
+    "type": "cpu",
+    "id": 1,
+    "shape": "rect",
+    "x0": 507,
+    "y0": 240,
+    "width": 210,
+    "height": 224,
+    "diam": 614.0879415849166
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 1,
+    "shape": "rect",
+    "x0": 46,
+    "y0": 134,
+    "width": 23,
+    "height": 152,
+    "diam": 307.1677066359678
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 2,
+    "shape": "rect",
+    "x0": 99,
+    "y0": 132,
+    "width": 23,
+    "height": 152,
+    "diam": 307.1677066359678
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 3,
+    "shape": "rect",
+    "x0": 154,
+    "y0": 134,
+    "width": 23,
+    "height": 152,
+    "diam": 307.1677066359678
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 5,
+    "shape": "rect",
+    "x0": 264,
+    "y0": 133,
+    "width": 23,
+    "height": 152,
+    "diam": 307.1677066359678
+  },
+  {
+    "type": "pci_8x_black",
+    "id": 7,
+    "shape": "rect",
+    "x0": 372,
+    "y0": 133,
+    "width": 23,
+    "height": 152,
+    "diam": 307.1677066359678
+  },
+  {
+    "type": "pci_16x_black",
+    "id": 4,
+    "shape": "rect",
+    "x0": 209,
+    "y0": 133,
+    "width": 23,
+    "height": 241,
+    "diam": 484.19004533344133
+  },
+  {
+    "type": "pci_16x_black",
+    "id": 6,
+    "shape": "rect",
+    "x0": 321,
+    "y0": 134,
+    "width": 23,
+    "height": 241,
+    "diam": 484.19004533344133
+  },
+  {
+    "type": "I-SATA0",
+    "id": 0,
+    "shape": "rect",
+    "x0": 59,
+    "y0": 505,
+    "width": 20,
+    "height": 48,
+    "diam": 104
+  },
+  {
+    "type": "I-SATA1",
+    "id": 1,
+    "shape": "rect",
+    "x0": 58,
+    "y0": 606,
+    "width": 20,
+    "height": 48,
+    "diam": 104
+  },
+  {
+    "type": "I-SATA2",
+    "id": 2,
+    "shape": "rect",
+    "x0": 3,
+    "y0": 524,
+    "width": 48,
+    "height": 19,
+    "diam": 103.24727599312246
+  },
+  {
+    "type": "I-SATA3",
+    "id": 3,
+    "shape": "rect",
+    "x0": 3,
+    "y0": 544,
+    "width": 48,
+    "height": 19,
+    "diam": 103.24727599312246
+  },
+  {
+    "type": "I-SATA4",
+    "id": 4,
+    "shape": "rect",
+    "x0": 3,
+    "y0": 565,
+    "width": 48,
+    "height": 19,
+    "diam": 103.24727599312246
+  },
+  {
+    "type": "I-SATA5",
+    "id": 5,
+    "shape": "rect",
+    "x0": 3,
+    "y0": 585,
+    "width": 48,
+    "height": 19,
+    "diam": 103.24727599312246
+  },
+  {
+    "type": "I-SATA6",
+    "id": 6,
+    "shape": "rect",
+    "x0": 3,
+    "y0": 606,
+    "width": 48,
+    "height": 19,
+    "diam": 103.24727599312246
+  },
+  {
+    "type": "I-SATA7",
+    "id": 7,
+    "shape": "rect",
+    "x0": 2,
+    "y0": 626,
+    "width": 48,
+    "height": 19,
+    "diam": 103.24727599312246
+  },
+  {
+    "type": "DIMMA2",
+    "id": 0,
+    "shape": "rect",
+    "x0": 473,
+    "y0": 113,
+    "width": 19,
+    "height": 386,
+    "diam": 772.9346673555275
+  },
+  {
+    "type": "DIMMD2",
+    "id": 1,
+    "shape": "rect",
+    "x0": 728,
+    "y0": 116,
+    "width": 19,
+    "height": 386,
+    "diam": 772.9346673555275
+  },
+  {
+    "type": "DIMMA1",
+    "id": 1,
+    "shape": "rect",
+    "x0": 448,
+    "y0": 113,
+    "width": 20,
+    "height": 386,
+    "diam": 773.0355748605623
+  },
+  {
+    "type": "DIMMB1",
+    "id": 2,
+    "shape": "rect",
+    "x0": 424,
+    "y0": 113,
+    "width": 20,
+    "height": 386,
+    "diam": 773.0355748605623
+  },
+  {
+    "type": "DIMMC1",
+    "id": 3,
+    "shape": "rect",
+    "x0": 401,
+    "y0": 113,
+    "width": 20,
+    "height": 386,
+    "diam": 773.0355748605623
+  },
+  {
+    "type": "DIMMD1",
+    "id": 4,
+    "shape": "rect",
+    "x0": 752,
+    "y0": 116,
+    "width": 20,
+    "height": 386,
+    "diam": 773.0355748605623
+  },
+  {
+    "type": "DIMME1",
+    "id": 5,
+    "shape": "rect",
+    "x0": 776,
+    "y0": 129,
+    "width": 20,
+    "height": 386,
+    "diam": 773.0355748605623
+  },
+  {
+    "type": "DIMMF1",
+    "id": 6,
+    "shape": "rect",
+    "x0": 799,
+    "y0": 129,
+    "width": 20,
+    "height": 386,
+    "diam": 773.0355748605623
+  }
+]

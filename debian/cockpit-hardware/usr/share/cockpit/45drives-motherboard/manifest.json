@@ -1,0 +1,11 @@
+{
+    "version": 0,
+
+    "menu": {
+        "45drives-motherboard": {
+            "label": "45Drives Motherboard",
+            "path": "45drives-motherboard.html",
+            "order": 1
+        }
+    }
+}
