@@ -1,0 +1,7 @@
+# deb packaging
+debian/cockpit-45drives-hardware
+debian/cockpit-45drives-hardware.substvars
+debian/cockpit-45drives-hardware.postrm.debhelper
+debian/debhelper-build-stamp
+debian/files
+debian/.debhelper

@@ -1,3 +1,17 @@
+cockpit-45drives-hardware (1.2.1focal-1) focal; urgency=medium
+
+  * New package name
+
+ -- 45Drives <bkelly@45drives.com>  Tue, 23 Feb 2021 15:21:42 +0000
+
+cockpit-hardware (1.2.1focal-1) focal; urgency=high
+
+  * reworked deb build process
+  * fixed zfs list command for datasets
+  * adjusted order of modules in cockpit menu bar
+
+ -- 45Drives <bkelly@45drives.com>  Tue, 23 Feb 2021 14:54:23 +0000
+
 cockpit-hardware (1.2.0focal-2) focal; urgency=medium
 
   * Rework deb packaging process
