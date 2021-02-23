@@ -9,14 +9,16 @@ case $con in
         ;;
 esac
 
-read -p "Which Version? (eg 1.2.1)" ver
+read -p "Which Version? (eg 1.2.1): " ver
 
 mkdir 45drives-temp
 cd 45drives-temp
 mkdir rpmbuild rpmbuild/RPMS rpmbuild/SOURCES rpmbuild/SPECS rpmbuild/SRPMS
-git clone https://github.com/45Drives/cockpit-hardware.git
-git checkout tags/$ver -b dev
+git clone --branch dev https://github.com/45Drives/cockpit-hardware.git
+cd cockpit-hardware
+git checkout tags/$ver
 checkout=$?
+cd ..
 if [ $checkout != 0 ]; then
 	echo "version does not exist. Try a different version."
 	cd ..
