@@ -337,6 +337,10 @@ var disk_app = function( d ) {
 		row_ssd_img = d.loadImage("img/disk/ROW_SSD.png");
 		row_h16_img = d.loadImage("img/disk/ROW_H16.png");
 		front_plate_img = d.loadImage("img/disk/FRONT_PLATE.png");
+
+		// c8 & mi4 images
+		c8_chassis_img = d.loadImage("img/disk/C8_CHASSIS.png");
+		mi4_chassis_img = d.loadImage("img/disk/MI4_CHASSIS.png");
 		
 		//drive images
 		ssd_micron_img = d.loadImage("img/disk/SSD_micron.png");
@@ -467,7 +471,9 @@ var disk_app = function( d ) {
 			hdd_generic_img &&
 			caddy_micron_img &&
 			caddy_seagate_img &&
-			caddy_generic_img
+			caddy_generic_img &&
+			c8_chassis_img &&
+			mi4_chassis_img
 		);
 	}
 
@@ -486,14 +492,6 @@ var disk_app = function( d ) {
 		d.frameRate(30);
 
 		while(!assetsLoaded()){await sleep(300)}
-		//put the p5 images for each row in the row img array
-		row_img_arr.push(row_hdd_img);
-		row_img_arr.push(row_ssd_img);
-		row_img_arr.push(row_h16_img);
-		
-		//put the chassis image at the start of the server_img_arr
-		//we will draw from top to bottom. the chassis is always at the top.
-		server_img_arr.push(chassis_img);
 
 		//ensure that the /etc/45drives/server_info/server_info.json file 
 		//and /usr/share/cockpit/hardware/img/disk/ROW.json files have been parsed for us.
@@ -507,49 +505,67 @@ var disk_app = function( d ) {
 		else if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
 			//We can draw the background rows based on the alias style and chassis size
 
-			//push the relevant row image into the server_img_arr based on the index stored in the 
-			//relevant ALIAS_TEMPLATE array. And create the row objects required and store them in 
-			//the server_rows array.
-			for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
+			if(json_server_info["Chassis Size"] != "C8" && json_server_info["Chassis Size"] != "MI4"){
+				// We have a top down server view to display.
 
-				//calculate the y offset for the next row.
-				let y_off = 0;
-				for(let j = 0; j < server_img_arr.length; j++){
-					y_off += server_img_arr[j].height;
+				//put the p5 images for each row in the row img array
+				row_img_arr.push(row_hdd_img);
+				row_img_arr.push(row_ssd_img);
+				row_img_arr.push(row_h16_img);
+
+				//put the chassis image at the start of the server_img_arr
+				//we will draw from top to bottom. the chassis is always at the top.
+				server_img_arr.push(chassis_img);
+
+				//push the relevant row image into the server_img_arr based on the index stored in the 
+				//relevant ALIAS_TEMPLATE array. And create the row objects required and store them in 
+				//the server_rows array.
+				for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
+
+					//calculate the y offset for the next row.
+					let y_off = 0;
+					for(let j = 0; j < server_img_arr.length; j++){
+						y_off += server_img_arr[j].height;
+					}
+
+					//add the relevant row image to the server_imf arr
+					server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
+
+					console.log(server_img_arr.length);
+					console.log(server_rows);
+					//create a new ServerRow Object.
+					server_rows.push(
+						new ServerRow(
+							ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
+							y_off,
+							i,
+							json_server_info["Alias Style"],
+							json_server_info["Chassis Size"],
+							json_row[
+								ROW_JSON_KEYS[
+									ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
+								]
+							],
+							json_lsdev["rows"][i],
+							0,
+							y_off,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
+						)
+					);
 				}
 
-				//add the relevant row image to the server_imf arr
-				server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
-
-				console.log(server_img_arr.length);
-				console.log(server_rows);
-				//create a new ServerRow Object.
-				server_rows.push(
-					new ServerRow(
-						ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
-						y_off,
-						i,
-						json_server_info["Alias Style"],
-						json_server_info["Chassis Size"],
-						json_row[
-							ROW_JSON_KEYS[
-								ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
-							]
-						],
-						json_lsdev["rows"][i],
-						0,
-						y_off,
-						row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
-						row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
-
-					)
-				);
+				//Lastly, push the front plate image into the server_img_arr. Now we have the 
+				//images stored in the order we need to draw them (from top to bottom), in the
+				//server_img_arr. We can 
+				server_img_arr.push(front_plate_img);
 			}
-
-			//Lastly, push the front plate image into the server_img_arr. Now we have the 
-			//images stored in the order we need to draw them (from top to bottom), in the
-			//server_img_arr. We can 
-			server_img_arr.push(front_plate_img)
+			else if(json_server_info["Chassis Size"] == "C8"){
+				console.log("Server Type: " + json_server_info["Model"]);
+			}
+			else if(json_server_info["Chassis Size"] == "MI4"){
+				console.log("Server Type: " + json_server_info["Model"]);
+			}
 
 		}
 	};
