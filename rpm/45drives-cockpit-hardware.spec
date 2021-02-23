@@ -2,15 +2,15 @@
 %define          debug_package %{nil}
 %define        __os_install_post %{_dbpath}/brp-compress
 
-Name:		45drives-cockpit-hardware
-Version:	1.1.0
+Name:		cockpit-45drives-hardware
+Version:	1.2.1
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
 Group:		Development/Tools
 License:	GPL
 URL:		https://github.com/45Drives/cockpit-hardware
-Source0:	%{name}-%{version}.tar.gz
+Source0:	%{name}.tar.gz
 
 BuildArch:	x86_64
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
@@ -22,7 +22,12 @@ Requires: dmidecode
 Requires: ipmitool
 Requires: python3
 Requires: lshw
-Requires: 45drives-tools >= 1.8.0
+Requires: 45drives-tools >= 1.8.1
+
+
+Obsoletes: 45drives-cockpit-hardware
+Provides: 45drives-cockpit-hardware
+Conflicts: 45drives-cockpit-hardware
 
 Obsoletes: cockpit-hardware
 Provides: cockpit-hardware
@@ -48,11 +53,22 @@ cp -a usr/ %{buildroot}
 rm -rf %{buildroot}
 
 %files
-%dir /usr/share/cockpit/hardware
+%dir /usr/share/cockpit/45drives-system
+%dir /usr/share/cockpit/45drives-disks
+%dir /usr/share/cockpit/45drives-motherboard
 %defattr(-,root,root,-)
-/usr/share/cockpit/hardware/*
+/usr/share/cockpit/45drives-system/*
+/usr/share/cockpit/45drives-disks/*
+/usr/share/cockpit/45drives-motherboard/*
 
 %changelog
+* Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.1-1
+- renamed package from 45drives-cockpit-hardware to cockpit-45drives-hardware.
+- updated spec file to nto require the version to be in the path.
+* Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.0-2
+- Fixed path error in pci helper scripts for 45drives-motherboard and 45drives-system.
+* Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.0-1
+- Created three seperate modules for cockpit, 45drives-disks, 45drives-system and 45drives-motherboard.
 * Thu Jan 28 2021 Mark Hooper <mhooper@45drives.com> 1.1.0-1
 - updated this package to require 45drives-tools >= 1.8.0
 - This will be the foundation for 45drives-cockpit-hardware going forward.

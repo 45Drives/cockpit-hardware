@@ -9,21 +9,21 @@ case $con in
         ;;
 esac
 
-
 mkdir 45drives-temp
 cd 45drives-temp
 mkdir rpmbuild rpmbuild/RPMS rpmbuild/SOURCES rpmbuild/SPECS rpmbuild/SRPMS
 git clone --branch master https://github.com/45Drives/cockpit-hardware.git
-mkdir cockpit-45drives-hardware-1.2.1
-cp -r cockpit-hardware/src/fakeroot/usr cockpit-45drives-hardware-1.2.1/usr
-tar -zcvf cockpit-45drives-hardware-1.2.1.tar.gz cockpit-45drives-hardware-1.2.1/
-rm -rf cockpit-45drives-hardware-1.2.1
-mv cockpit-45drives-hardware-1.2.1.tar.gz rpmbuild/SOURCES/cockpit-45drives-hardware-1.2.1.tar.gz
-mv cockpit-hardware/rpm/cockpit-45drives-hardware-1.2.1.spec rpmbuild/SPECS/cockpit-45drives-hardware-1.2.1.spec
+mkdir cockpit-45drives-hardware
+cp -r cockpit-hardware/src/fakeroot/usr cockpit-45drives-hardware/usr
+tar -zcvf cockpit-45drives-hardware.tar.gz cockpit-45drives-hardware/
+rm -rf cockpit-45drives-hardware
+mv cockpit-45drives-hardware.tar.gz rpmbuild/SOURCES/cockpit-45drives-hardware.tar.gz
+mv cockpit-hardware/rpm/cockpit-45drives-hardware.spec rpmbuild/SPECS/cockpit-45drives-hardware.spec
 rm -rf cockpit-hardware
 rm -rf ~/rpmbuild
 cd ..
 cp -r 45drives-temp/rpmbuild ~/rpmbuild
 rm -rf 45drives-temp
 cd ~/rpmbuild
-rpmbuild -ba SPECS/cockpit-45drives-hardware-1.2.1.spec
+vim SPECS/cockpit-45drives-hardware.spec
+rpmbuild -ba SPECS/cockpit-45drives-hardware.spec
