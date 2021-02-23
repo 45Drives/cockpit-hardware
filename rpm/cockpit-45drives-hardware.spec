@@ -13,7 +13,7 @@ URL:		https://github.com/45Drives/cockpit-hardware
 Source0:	%{name}.tar.gz
 
 BuildArch:	x86_64
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
+BuildRoot:	%{_tmppath}/%{name}-root
 
 Requires: cockpit
 Requires: cockpit-ws
