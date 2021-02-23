@@ -9,21 +9,31 @@ case $con in
         ;;
 esac
 
+read -p "Which Version? (eg 1.2.1)" ver
+
 mkdir 45drives-temp
 cd 45drives-temp
 mkdir rpmbuild rpmbuild/RPMS rpmbuild/SOURCES rpmbuild/SPECS rpmbuild/SRPMS
-git clone --branch master https://github.com/45Drives/cockpit-hardware.git
-mkdir cockpit-45drives-hardware
-cp -r cockpit-hardware/src/fakeroot/usr cockpit-45drives-hardware/usr
-tar -zcvf cockpit-45drives-hardware.tar.gz cockpit-45drives-hardware/
-rm -rf cockpit-45drives-hardware
-mv cockpit-45drives-hardware.tar.gz rpmbuild/SOURCES/cockpit-45drives-hardware.tar.gz
-mv cockpit-hardware/rpm/cockpit-45drives-hardware.spec rpmbuild/SPECS/cockpit-45drives-hardware.spec
+git clone https://github.com/45Drives/cockpit-hardware.git
+git checkout tags/$ver -b dev
+checkout=$?
+if [ $checkout != 0 ]; then
+	echo "version does not exist. Try a different version."
+	cd ..
+	rm -rf 45drives-temp
+	exit 1
+fi
+mkdir cockpit-45drives-hardware-$ver
+cp -r cockpit-hardware/src/fakeroot/usr cockpit-45drives-hardware-$ver/usr
+tar -zcvf cockpit-45drives-hardware-$ver.tar.gz cockpit-45drives-hardware-$ver/
+rm -rf cockpit-45drives-hardware-$ver
+mv cockpit-45drives-hardware-$ver.tar.gz rpmbuild/SOURCES/cockpit-45drives-hardware-$ver.tar.gz
+mv cockpit-hardware/rpm/cockpit-45drives-hardware.spec rpmbuild/SPECS/cockpit-45drives-hardware-$ver.spec
 rm -rf cockpit-hardware
 rm -rf ~/rpmbuild
 cd ..
 cp -r 45drives-temp/rpmbuild ~/rpmbuild
 rm -rf 45drives-temp
 cd ~/rpmbuild
-vim SPECS/cockpit-45drives-hardware.spec
-rpmbuild -ba SPECS/cockpit-45drives-hardware.spec
+vim SPECS/cockpit-45drives-hardware-$ver.spec
+rpmbuild -ba SPECS/cockpit-45drives-hardware-$ver.spec

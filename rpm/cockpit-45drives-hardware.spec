@@ -10,10 +10,10 @@ Summary:	A cockpit package for 45Drives Storinator Products.
 Group:		Development/Tools
 License:	GPL
 URL:		https://github.com/45Drives/cockpit-hardware
-Source0:	%{name}.tar.gz
+Source0:	%{name}-%{version}.tar.gz
 
 BuildArch:	x86_64
-BuildRoot:	%{_tmppath}/%{name}-root
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root
 
 Requires: cockpit
 Requires: cockpit-ws
@@ -62,7 +62,7 @@ rm -rf %{buildroot}
 /usr/share/cockpit/45drives-motherboard/*
 
 %changelog
-* Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.1-1
+* Tue Feb 23 2021 Mark Hooper <mhooper@45drives.com> 1.2.1-1
 - renamed package from 45drives-cockpit-hardware to cockpit-45drives-hardware.
 - updated spec file to nto require the version to be in the path.
 * Thu Feb 18 2021 Mark Hooper <mhooper@45drives.com> 1.2.0-2
