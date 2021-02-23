@@ -1,0 +1,11 @@
+{
+    "version": 0,
+
+    "menu": {
+        "45drives-disks": {
+            "label": "45Drives Disks",
+            "path": "45drives-disks.html",
+            "order": 0
+        }
+    }
+}

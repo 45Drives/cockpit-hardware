@@ -1,0 +1,154 @@
+#!/usr/bin/env python3
+import os
+import sys
+import subprocess
+import re
+import json
+
+json_zfs = {
+	"zfs_installed": False
+}
+
+def get_zpool_data():
+	try:
+		zfs_list_result = subprocess.Popen(
+			["zfs","list"],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,universal_newlines=True).stdout
+	except:
+		return False
+
+	zpools = []
+	for line in zfs_list_result:
+		regex = re.search("^(\S+)\s+(\S+)\s+(\S+)\s+\S+\s+(\S+).*$",line)
+		if regex != None and regex.group(1) != "NAME" and not("/" in regex.group(1)):
+			zpools.append(
+					{
+						"name":regex.group(1),
+						"used":regex.group(2),
+						"avail":regex.group(3),
+						"mountpoint":regex.group(4)
+					}
+				)
+	return zpools
+
+def get_zpool_status():
+	for pool in json_zfs["zpools"]:
+		try:
+			zpool_status_result = subprocess.Popen(
+				["zpool","status",pool["name"]],stdout=subprocess.PIPE, universal_newlines=True).stdout
+		except:
+			return False
+	# EXAMPLE COMMAND: zpool status tank1
+	#  pool: tank1
+	# state: ONLINE
+	#  scan: none requested
+	#config:
+	#
+	#        NAME        STATE     READ WRITE CKSUM
+	#        tank1       ONLINE       0     0     0
+	#          raidz1-0  ONLINE       0     0     0
+	#            1-15    ONLINE       0     0     0
+	#            1-14    ONLINE       0     0     0
+	#            1-12    ONLINE       0     0     0
+	#
+	#errors: No known data errors
+	
+		for line in zpool_status_result:
+			regex_state = re.search("state:\s+(\S+)",line)
+			if regex_state != None:
+				pool["state"] = regex_state.group(1)
+				break;
+
+	# EXAMPLE COMMAND: zpool iostat -v tank1
+	#              capacity     operations     bandwidth 
+	#pool        alloc   free   read  write   read  write
+	#----------  -----  -----  -----  -----  -----  -----
+	#tank1       1.31M  21.8T      0      0     12     39
+	#  raidz1    1.31M  21.8T      0      0     12     39
+	#    1-15        -      -      0      0      4     13
+	#    1-14        -      -      0      0      4     12
+	#    1-12        -      -      0      0      4     12
+	#----------  -----  -----  -----  -----  -----  -----
+
+
+	for pool in json_zfs["zpools"]:
+		try:
+			zpool_iostat_result = subprocess.Popen(
+				["zpool","iostat","-v",pool["name"]],stdout=subprocess.PIPE, universal_newlines=True).stdout.readlines()
+		except:
+			return False
+
+		vdev_count = 0
+		pool["vdevs"] = [] # create an empty array to store vdevs and their child disks in. 
+		zpool_iostat_result = zpool_iostat_result[4:] # trim the garbage
+		for line in zpool_iostat_result:
+			regex_vdev = re.search("^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+			regex_disk = re.search("^    (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+			if regex_vdev != None:
+				pool["vdevs"].append({})
+				pool["vdevs"][-1]["raid_level"] = regex_vdev.group(1)
+				pool["vdevs"][-1]["alloc"] = regex_vdev.group(2)
+				pool["vdevs"][-1]["free"] = regex_vdev.group(3)
+				pool["vdevs"][-1]["read_ops"] = regex_vdev.group(4)
+				pool["vdevs"][-1]["write_ops"] = regex_vdev.group(5)
+				pool["vdevs"][-1]["read_bw"] = regex_vdev.group(6)
+				pool["vdevs"][-1]["write_bw"] = regex_vdev.group(7)
+				pool["vdevs"][-1]["disks"] = []
+			if regex_disk != None:
+				pool["vdevs"][-1]["disks"].append({})
+				pool["vdevs"][-1]["disks"][-1]["name"] = regex_disk.group(1)
+				pool["vdevs"][-1]["disks"][-1]["alloc"] = regex_disk.group(2)
+				pool["vdevs"][-1]["disks"][-1]["free"] = regex_disk.group(3)
+				pool["vdevs"][-1]["disks"][-1]["read_ops"] = regex_disk.group(4)
+				pool["vdevs"][-1]["disks"][-1]["write_ops"] = regex_disk.group(5)
+				pool["vdevs"][-1]["disks"][-1]["read_bw"] = regex_disk.group(6)
+				pool["vdevs"][-1]["disks"][-1]["write_bw"] = regex_disk.group(7)
+
+
+def check_zfs():
+	try:
+		command_result = subprocess.run(["command -v zfs"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,shell=True).returncode
+	except:
+		return False
+	return (command_result == 0)
+
+def create_disk_entries():
+	disk_entries = {}
+	for pool in json_zfs["zpools"]:
+		for vdev in pool["vdevs"]:
+			for disk in vdev["disks"]:
+				disk_entries[disk["name"]] = {}
+				disk_entries[disk["name"]]["zpool_name"] = pool["name"]
+				disk_entries[disk["name"]]["zpool_used"] = pool["used"]
+				disk_entries[disk["name"]]["zpool_avail"] = pool["avail"]
+				disk_entries[disk["name"]]["zpool_mountpoint"] = pool["mountpoint"]
+				disk_entries[disk["name"]]["zpool_state"] = pool["state"]
+				disk_entries[disk["name"]]["vdev_raid_level"] = vdev["raid_level"]
+				disk_entries[disk["name"]]["vdev_alloc"] = vdev["alloc"]
+				disk_entries[disk["name"]]["vdev_free"] = vdev["free"]
+				disk_entries[disk["name"]]["vdev_read_ops"] = vdev["read_ops"]
+				disk_entries[disk["name"]]["vdev_write_ops"] = vdev["write_ops"]
+				disk_entries[disk["name"]]["vdev_read_bw"] = vdev["read_bw"]
+				disk_entries[disk["name"]]["vdev_write_bw"] = vdev["write_bw"]
+				disk_entries[disk["name"]]["name"] = disk["name"]
+				disk_entries[disk["name"]]["alloc"] = disk["alloc"]
+				disk_entries[disk["name"]]["free"] = disk["free"]
+				disk_entries[disk["name"]]["read_ops"] = disk["read_ops"]
+				disk_entries[disk["name"]]["write_ops"] = disk["write_ops"]
+				disk_entries[disk["name"]]["read_bw"] = disk["read_bw"]
+				disk_entries[disk["name"]]["write_bw"] = disk["write_bw"]
+	json_zfs["zfs_disks"] = disk_entries
+
+
+
+
+def main():
+	if check_zfs():
+		json_zfs["zfs_installed"] = True
+		json_zfs["zpools"] = get_zpool_data()
+		get_zpool_status()
+		create_disk_entries()
+
+	print(json.dumps(json_zfs,indent=4))
+
+if __name__ == "__main__":
+    main()
