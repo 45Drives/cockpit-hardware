@@ -37,6 +37,9 @@ var product_img_lut = {};
 	product_img_lut["Storinator-AV15-Base"] = "img/products/storinatorAV15.jpg";
 	product_img_lut["Storinator-Q30-Base"] = "img/products/storinatorQ30.jpg";
 	product_img_lut["Storinator-S45-Base"] = "img/products/storinatorS45.jpg";
+	product_img_lut["Storinator-C8-Base"] = "img/products/storinatorC8.jpg";
+	product_img_lut["Storinator-C8-Enhanced"] = "img/products/storinatorC8.jpg";
+	product_img_lut["Storinator-C8-Turbo"] = "img/products/storinatorC8.jpg";
 	//Placeholder for failed autodetect. 
 	product_img_lut["Storinator-AV15-Generic"] = "img/products/storinatorAV15.jpg";
 	product_img_lut["Storinator-Q30-Generic"] = "img/products/storinatorQ30.jpg";
