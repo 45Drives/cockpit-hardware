@@ -20,6 +20,7 @@ var disk_app = function( d ) {
 	let caddy_micron_img;
 	let caddy_seagate_img;
 	let caddy_generic_img;
+	let caddy_c8_mi4_img;
 
 	//json files
 	let json_server_info;
@@ -39,8 +40,10 @@ var disk_app = function( d ) {
 	const ROW_HDD = 0;
 	const ROW_SSD = 1;
 	const ROW_H16 = 2;
+	const ROW_C8 = 3;
+	const ROW_MI4 = 4;
 
-	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16"];
+	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16","ROW_C8","ROW_MI4"];
 
 	let ALIAS_TEMPLATE = {
 		"H16":{
@@ -57,7 +60,9 @@ var disk_app = function( d ) {
 			"AV15":[ROW_HDD],
 			"Q30":[ROW_HDD,ROW_HDD],
 			"S45":[ROW_HDD,ROW_HDD,ROW_HDD],
-			"XL60":[ROW_HDD,ROW_HDD,ROW_HDD]	
+			"XL60":[ROW_HDD,ROW_HDD,ROW_HDD,ROW_HDD],
+			"C8":[ROW_C8],
+			"MI4":[ROW_MI4]
 		},
 		"STORNADO":{
 			"AV15":[ROW_SSD]
@@ -132,11 +137,11 @@ var disk_app = function( d ) {
 		"STORINATOR":{
 			"AV15":[
 				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-				],
+			],
 			"Q30":[
 				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
 				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-				],
+			],
 			"S45":[
 				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
 				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
@@ -147,7 +152,13 @@ var disk_app = function( d ) {
 				["3-15","3-14","3-13","3-12","3-11","3-10","3-9","3-8","3-7","3-6","3-5","3-4","3-3","3-2","3-1"],
 				["2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1"],
 				["1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
-			]	
+			],
+			"C8":[
+				["1-1","1-2","1-3","1-4","2-1","2-2","2-3","2-4"],
+			],
+			"MI4":[
+				["1-1","1-2","1-3","1-4"]
+			]
 		},
 		"STORNADO":{
 			"AV15":[
@@ -210,7 +221,7 @@ var disk_app = function( d ) {
 						}
 					}
 				}
-				else if(!this.json_values[i].HDD){
+				else if(this.json_values[i].SSD){
 					//SSD sized slot
 					if(this.occupied[i]){
 						// There is a drive in this slot
@@ -224,6 +235,9 @@ var disk_app = function( d ) {
 							drive_img = ssd_generic_img;
 						}
 					}
+				}
+				else if(this.json_values[i].CADDY){
+					drive_img = caddy_c8_mi4_img;
 				}
 				//push the required drive image onto the drive image array.
 				this.drive_img_arr.push(drive_img);
@@ -241,7 +255,7 @@ var disk_app = function( d ) {
 					d.text(this.label_values[i],this.json_values[i].x + 16, this.json_values[i].y + this.y_offset -10);
 					d.pop();
 				}
-				else{
+				else if(this.json_values[i].SSD){
 					//SSD sized slot
 					d.push();
 					d.fill(255);
@@ -354,6 +368,8 @@ var disk_app = function( d ) {
 		caddy_micron_img = d.loadImage("img/disk/CADDY_micron.png");
 		caddy_seagate_img = d.loadImage("img/disk/CADDY_seagate.png");
 		caddy_generic_img = d.loadImage("img/disk/CADDY_generic.png");
+
+		caddy_c8_mi4_img = d.loadImage("img/disk/CADDY_c8_mi4.png");
 
 		monospace_font = d.loadFont("fonts/RobotoMono-Regular.ttf");
 
@@ -493,6 +509,13 @@ var disk_app = function( d ) {
 
 		while(!assetsLoaded()){await sleep(300)}
 
+		//put the p5 images for each row in the row img array
+		row_img_arr.push(row_hdd_img);
+		row_img_arr.push(row_ssd_img);
+		row_img_arr.push(row_h16_img);
+		row_img_arr.push(c8_chassis_img);
+		row_img_arr.push(mi4_chassis_img);
+
 		//ensure that the /etc/45drives/server_info/server_info.json file 
 		//and /usr/share/cockpit/hardware/img/disk/ROW.json files have been parsed for us.
 		while(!jsonLoaded()){await sleep(300)}
@@ -505,13 +528,8 @@ var disk_app = function( d ) {
 		else if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
 			//We can draw the background rows based on the alias style and chassis size
 
-			if(json_server_info["Chassis Size"] != "C8" && json_server_info["Chassis Size"] != "MI4"){
+			if(json_server_info["Chassis Size"] != "MI4" && json_server_info["Chassis Size"] != "C8"){
 				// We have a top down server view to display.
-
-				//put the p5 images for each row in the row img array
-				row_img_arr.push(row_hdd_img);
-				row_img_arr.push(row_ssd_img);
-				row_img_arr.push(row_h16_img);
 
 				//put the chassis image at the start of the server_img_arr
 				//we will draw from top to bottom. the chassis is always at the top.
@@ -561,7 +579,64 @@ var disk_app = function( d ) {
 				server_img_arr.push(front_plate_img);
 			}
 			else if(json_server_info["Chassis Size"] == "C8"){
-				console.log("Server Type: " + json_server_info["Model"]);
+				//adjust the page layout to accomodate the different form factor
+				//of the server.
+				d.resizeCanvas(1141,221);
+				let disk_content_div = document.getElementById("disk_output");
+				disk_content_div.style.flexDirection = "column";
+				let disk_info_box_div = document.getElementById("disk_info_box");
+				disk_info_box.style.display = "flex";
+				disk_info_box.style.width = "1141px";
+				let disk_info_window = document.getElementById("disk-info-window");
+				disk_info_window.style.flexGrow = 1;
+				let zfs_info_window = document.getElementById("zfs-info-window");
+				zfs_info_window.style.flexGrow = 1;
+				zfs_info_window.style.marginBottom = "inherit";
+
+				//Flip json back around for this server.
+				//The order is 1-1, 1-2, 1-3, 1-4, 2-1, 2-2, 2-3, 2-4
+				json_lsdev["rows"].reverse();
+				for(let i = 0; i < json_lsdev["rows"].length; i++){
+					json_lsdev["rows"][i].reverse();
+				}
+				
+				let json_lsdev_second_row = json_lsdev["rows"].pop();
+				let second_row_length = json_lsdev_second_row.length;
+				for(let i = 0; i < second_row_length; i++){
+					json_lsdev["rows"][0].push(json_lsdev_second_row.shift());
+				}
+
+				//create the c8 server row objects.
+				for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
+
+					//add the relevant row image to the server_img arr
+					server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
+
+					console.log(server_img_arr.length);
+					console.log(server_rows);
+					//create a new ServerRow Object.
+					server_rows.push(
+						new ServerRow(
+							ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
+							0,
+							i,
+							json_server_info["Alias Style"],
+							json_server_info["Chassis Size"],
+							json_row[
+								ROW_JSON_KEYS[
+									ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
+								]
+							],
+							json_lsdev["rows"][i],
+							0,
+							0,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
+						)
+					);
+				}
+				// this is a flag for draw to ket it know that it can start drawing the server. 
+				alt_server = true;
 			}
 			else if(json_server_info["Chassis Size"] == "MI4"){
 				console.log("Server Type: " + json_server_info["Model"]);
@@ -577,6 +652,7 @@ var disk_app = function( d ) {
 	let draw_drive_rect = false;
 	let loaded = false;
 	let loading_rotation = 0;
+	let alt_server = false;
 
 	d.draw = function() {
 		d.background(255);
@@ -593,7 +669,7 @@ var disk_app = function( d ) {
 				server_rows[i].show();
 			}
 		}
-		else if (server_img_arr.length > 2){
+		else if (server_img_arr.length > 2 || alt_server){
 			loaded = true;
 			document.getElementById("disk_fields_loading_content").innerHTML = "Click on a disk to display more information.";
 			document.getElementById("zfs_fields_loading_content").innerHTML = "Click on a disk to display more information.";
