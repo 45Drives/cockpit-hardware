@@ -43,6 +43,19 @@ var disk_app = function( d ) {
 	const ROW_C8 = 3;
 	const ROW_MI4 = 4;
 
+	//draw variables
+	let drive_rect_x = 0;
+	let drive_rect_y = 0;
+	let drive_rect_w = 0;
+	let drive_rect_h = 0;
+	let draw_drive_rect = false;
+	let loaded = false;
+	let loading_rotation = 0;
+	let alt_server = false;
+	let error_state = false;
+	let error_msg = "";
+	let error_shown = false;
+
 	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16","ROW_C8","ROW_MI4"];
 
 	let ALIAS_TEMPLATE = {
@@ -237,6 +250,7 @@ var disk_app = function( d ) {
 					}
 				}
 				else if(this.json_values[i].CADDY){
+					//this slot is a caddy slot, (C8 or MI4 servers)
 					drive_img = caddy_c8_mi4_img;
 				}
 				//push the required drive image onto the drive image array.
@@ -342,8 +356,6 @@ var disk_app = function( d ) {
 		}
 	}
 
-
-
 	d.preload = function(){
 		// row images
 		chassis_img = d.loadImage("img/disk/CHASSIS.png");
@@ -408,7 +420,45 @@ var disk_app = function( d ) {
 					console.log("JSON_LSDEV");
 					console.log(json_lsdev);
 				}
-			);
+		);
+
+		drive_info_proc.fail(
+			function(ex,data){
+				let disk_info_box = document.getElementById("disk_info_box");
+				if(disk_info_box){disk_info_box.classList.add("hidden")};
+				if (confirm("Disks requires a valid drive map.\n Would you like to run dmap?")) {
+						var dmap_proc = cockpit.spawn(
+							[
+								"/usr/bin/pkexec",
+								"/opt/45drives/tools/dmap"
+							], 
+							{err: "out"}
+						);
+						dmap_proc.done(
+							function(data){
+								alert("dmap completed successfully.");
+								error_state = false;
+								let disk_info_box_post = document.getElementById("disk_info_box");
+								if(disk_info_box_post){disk_info_box_post.classList.remove("hidden")};
+								json_server_info = null;
+								get_drive_info();
+								get_server_info();
+
+							}
+						);
+						dmap_proc.fail(
+							function(ex,data){
+								alert("ERROR: dmap failed!\n" + data)
+								error_state = true;
+								error_msg = "ERROR: dmap was unsuccessful.";
+							}
+						);
+				}else{
+					error_state = true;
+					error_msg = "Error Running lsdev: \n\nlsdev message: " + data;
+				}
+			}
+		);
 	}
 
 	function get_server_info(){
@@ -426,7 +476,10 @@ var disk_app = function( d ) {
 					json_server_info = JSON.parse(data);
 					console.log("JSON_SERVER_INFO");
 					console.log(json_server_info);
-					//server_info_promise.resolve();
+					if(json_server_info.hasOwnProperty("error_msg")){
+						alert("Error: " + json_server_info["error_msg"]);
+						json_server_info = null;
+					}
 				}
 			);
 	}
@@ -502,6 +555,23 @@ var disk_app = function( d ) {
 		);
 	}
 
+	function showError(){
+		if (!error_shown){
+			let disk_info_box_post = document.getElementById("disk_info_box");
+			if(disk_info_box_post){disk_info_box_post.classList.add("hidden")};
+		}
+			d.push();
+			d.stroke(200,30,30);
+			d.fill(200,30,30);
+			try{
+				d.textAlign(d.LEFT);
+				d.textFont(monospace_font);
+				d.textSize(14);
+				d.text(error_msg,50,50);
+			}catch(err) {}
+			d.pop();
+	}
+
 	d.setup = async function() {
 		dcnv = d.createCanvas(570, 900);
 		dcnv.mousePressed(d.mouseWasClicked);
@@ -519,13 +589,7 @@ var disk_app = function( d ) {
 		//ensure that the /etc/45drives/server_info/server_info.json file 
 		//and /usr/share/cockpit/hardware/img/disk/ROW.json files have been parsed for us.
 		while(!jsonLoaded()){await sleep(300)}
-		if(json_server_info.hasOwnProperty("error_msg")){
-			//we were unable to get the server_info.json file
-			//TODO: PUT ERROR MESSAGE OUT TO THE USER
-			console.log(json_server_info);
-		}
-
-		else if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
+		if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
 			//We can draw the background rows based on the alias style and chassis size
 
 			if(json_server_info["Chassis Size"] != "MI4" && json_server_info["Chassis Size"] != "C8"){
@@ -581,7 +645,7 @@ var disk_app = function( d ) {
 			else if(json_server_info["Chassis Size"] == "C8"){
 				//adjust the page layout to accomodate the different form factor
 				//of the server.
-				d.resizeCanvas(1141,221);
+				d.resizeCanvas(c8_chassis_img.width,c8_chassis_img.height);
 				let disk_content_div = document.getElementById("disk_output");
 				disk_content_div.style.flexDirection = "column";
 				let disk_info_box_div = document.getElementById("disk_info_box");
@@ -639,20 +703,64 @@ var disk_app = function( d ) {
 				alt_server = true;
 			}
 			else if(json_server_info["Chassis Size"] == "MI4"){
-				console.log("Server Type: " + json_server_info["Model"]);
-			}
+				//adjust the page layout to accomodate the different form factor
+				//of the server.
+				d.resizeCanvas(mi4_chassis_img.width,mi4_chassis_img.height);
+				let disk_content_div = document.getElementById("disk_output");
+				disk_content_div.style.flexDirection = "column";
+				let disk_info_box_div = document.getElementById("disk_info_box");
+				disk_info_box.style.display = "flex";
+				disk_info_box.style.width = "1141px";
+				let disk_info_window = document.getElementById("disk-info-window");
+				disk_info_window.style.flexGrow = 1;
+				let zfs_info_window = document.getElementById("zfs-info-window");
+				zfs_info_window.style.flexGrow = 1;
+				zfs_info_window.style.marginBottom = "inherit";
 
+				//Flip json back around for this server.
+				//The order is 1-1, 1-2, 1-3, 1-4
+				json_lsdev["rows"].reverse();
+				for(let i = 0; i < json_lsdev["rows"].length; i++){
+					json_lsdev["rows"][i].reverse();
+				}
+				//create the c8 server row objects.
+				for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
+
+					//add the relevant row image to the server_img arr
+					server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
+
+					console.log(server_img_arr.length);
+					console.log(server_rows);
+					//create a new ServerRow Object.
+					server_rows.push(
+						new ServerRow(
+							ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
+							0,
+							i,
+							json_server_info["Alias Style"],
+							json_server_info["Chassis Size"],
+							json_row[
+								ROW_JSON_KEYS[
+									ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
+								]
+							],
+							json_lsdev["rows"][i],
+							0,
+							0,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
+						)
+					);
+				}
+				// this is a flag for draw to ket it know that it can start drawing the server. 
+				alt_server = true;
+			}
+		}
+		else{
+			alert("Unrecognized hardware configuration detected. \nDisks module needs recognizable 45drives hardware to operate properly");
+			error_state = true;
 		}
 	};
-
-	let drive_rect_x = 0;
-	let drive_rect_y = 0;
-	let drive_rect_w = 0;
-	let drive_rect_h = 0;
-	let draw_drive_rect = false;
-	let loaded = false;
-	let loading_rotation = 0;
-	let alt_server = false;
 
 	d.draw = function() {
 		d.background(255);
@@ -673,7 +781,11 @@ var disk_app = function( d ) {
 			loaded = true;
 			document.getElementById("disk_fields_loading_content").innerHTML = "Click on a disk to display more information.";
 			document.getElementById("zfs_fields_loading_content").innerHTML = "Click on a disk to display more information.";
-		}else{
+		}
+		else if (error_state){
+			showError();
+		}
+		else{
 			d.push();
 			loading_rotation += 0.1;
 			d.translate(d.width / 2, d.height / 4);

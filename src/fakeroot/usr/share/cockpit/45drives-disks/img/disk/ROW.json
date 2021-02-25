@@ -552,5 +552,35 @@
 			"SSD":false,
 			"CADDY":true
 		}
+	],
+	"ROW_MI4":[
+		{
+			"x":51,
+			"y":56,
+			"HDD":false,
+			"SSD":false,
+			"CADDY":true
+		},
+		{
+			"x":312,
+			"y":56,
+			"HDD":false,
+			"SSD":false,
+			"CADDY":true
+		},
+		{
+			"x":573,
+			"y":56,
+			"HDD":false,
+			"SSD":false,
+			"CADDY":true
+		},
+		{
+			"x":834,
+			"y":56,
+			"HDD":false,
+			"SSD":false,
+			"CADDY":true
+		}
 	]
 }
