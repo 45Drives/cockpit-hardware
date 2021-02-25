@@ -1,4 +1,4 @@
-cockpit-45drives-hardware (1.3.0focal-1) focal; urgency=medium
+cockpit-45drives-hardware (1.3.0-1) focal; urgency=medium
 
   * added support for Mi4 and C8 Server Models.
   * dmap can be run from cockpit to produce server_info.json and /etc/vdev_id.conf if missing.
