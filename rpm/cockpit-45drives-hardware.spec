@@ -3,7 +3,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:		cockpit-45drives-hardware
-Version:	1.2.1
+Version:	1.3.0
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
@@ -22,7 +22,7 @@ Requires: dmidecode
 Requires: ipmitool
 Requires: python3
 Requires: lshw
-Requires: 45drives-tools >= 1.8.1
+Requires: 45drives-tools >= 1.8.3
 
 
 Obsoletes: 45drives-cockpit-hardware
@@ -62,6 +62,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/45drives-motherboard/*
 
 %changelog
+* Thu Feb 25 2021 Mark Hooper <mhooper@45drives.com> 1.3.0-1
+- Added support for C8 and Mi4 Server Models.
 * Tue Feb 23 2021 Mark Hooper <mhooper@45drives.com> 1.2.1-1
 - renamed package from 45drives-cockpit-hardware to cockpit-45drives-hardware.
 - updated spec file to nto require the version to be in the path.

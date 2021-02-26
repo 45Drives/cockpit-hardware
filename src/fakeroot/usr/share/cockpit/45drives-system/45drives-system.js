@@ -37,6 +37,12 @@ var product_img_lut = {};
 	product_img_lut["Storinator-AV15-Base"] = "img/products/storinatorAV15.jpg";
 	product_img_lut["Storinator-Q30-Base"] = "img/products/storinatorQ30.jpg";
 	product_img_lut["Storinator-S45-Base"] = "img/products/storinatorS45.jpg";
+	product_img_lut["Storinator-C8-Base"] = "img/products/storinatorC8.jpg";
+	product_img_lut["Storinator-C8-Enhanced"] = "img/products/storinatorC8.jpg";
+	product_img_lut["Storinator-C8-Turbo"] = "img/products/storinatorC8.jpg";
+	product_img_lut["Storinator-MI4-Base"] = "img/products/storinatorMI4.jpg";
+	product_img_lut["Storinator-MI4-Enhanced"] = "img/products/storinatorMI4.jpg";
+	product_img_lut["Storinator-MI4-Turbo"] = "img/products/storinatorMI4.jpg";
 	//Placeholder for failed autodetect. 
 	product_img_lut["Storinator-AV15-Generic"] = "img/products/storinatorAV15.jpg";
 	product_img_lut["Storinator-Q30-Generic"] = "img/products/storinatorQ30.jpg";
@@ -351,16 +357,42 @@ function get_server_info(){
 		], 
 		{err: "out"}
 	);
-	server_info_proc.stream(
+	server_info_proc.done(
 			function(data){
 				sys_info = JSON.parse(data);
 				if(sys_info.hasOwnProperty("error_msg")){
-				//we were unable to get the server_info.json file
-				//inform the user that they need to run dmap. 
+					//we were unable to get the server_info.json file
+					//inform the user that they need to run dmap. 
 					server_info_promise.resolve();
 					sys_info = null;
-					sys_manual_scan();
-				}else{
+					if (confirm("/etc/45drives/server_info/server_info.json not found.\nThis file can be created by dmap.\n Would you like to run dmap?")) {
+						var dmap_proc = cockpit.spawn(
+							[
+								"/usr/bin/pkexec",
+								"/opt/45drives/tools/dmap"
+							], 
+							{err: "out"}
+						);
+						dmap_proc.done(
+							function(data){
+								server_info_promise.resolve();
+								get_server_info();
+							}
+						);
+						dmap_proc.fail(
+							function(ex,data){
+								alert("ERROR: dmap failed!\n" + data);
+								server_info_promise.resolve();
+								sys_manual_scan();
+							}
+						);
+					}
+					else{
+						server_info_promise.resolve(); 
+						sys_manual_scan();
+					}
+				}
+				else{
 					//we got the information successfully. 
 					sys_info = JSON.parse(data);
 					let sys_img = document.createElement("IMG");
