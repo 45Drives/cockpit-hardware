@@ -2,14 +2,12 @@
 A cockpit module for 45Drives storage servers.
 
 ## Supported OS
-- CentOS 8.X
 - CentOS 7.X
-- Ubuntu 20.04.1 LTS (Focal Fossa) (Requires Version >= 1.0.3)
+- Ubuntu 20.04.1 LTS (Focal Fossa) (Requires Version >= 1.3.0)
 
-## Features (Version 1.0.3)
-### System Information
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_overview.png">
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/system_detail.png">
+## Features (Version 1.3.0)
+### System
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-system.png">  
 Lists information about your 45Drives Storinator product including:
 
 * System Information (model, serial and chassis data)
@@ -19,10 +17,22 @@ Lists information about your 45Drives Storinator product including:
 * Memory (Location, Memory Type, Size, Manufacturer, serial and temperature readings)
 * Network Information (Connection Names, States, MAC & IP Addresses, and PCI information if detected)
 
-### Interactive Motherboard Application
+### Disks
+Displays disks as they appear physically on your 45Drives Storage Server.
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-disks.png">  
+
+This can show you useful device information including:
+* Device Path
+* Capacity
+* Smartctl information (health, temperature, power on time, etc).
+* and more
+
+If ZFS is installed, you can also see additional information.
+
+### Motherboard Viewer
 Shows the physical layout and placement of all PCI cards, Memory modules and SATA connections. 
 
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/interactive_motherboard.png">
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-motherboard.png">
 
 Currently supports the following motherboard models:
 * X11DPL-i
@@ -31,43 +41,79 @@ Currently supports the following motherboard models:
 * X11SSH-CTF
 * X11SSM-F
 
-## Installation
-note, you will need to install the latest [45Drives-tools](https://github.com/45Drives/tools) package.
-### RPM Package:
-#### CentOS 7:
-Download the latest .rpm from the [releases page](https://github.com/45Drives/cockpit-hardware/releases).
+
+# Installation
+
+## CentOS 7
+
+### Add the 45drives-centos.repo
 ```
-[root@server ~]# systemctl stop cockpit.socket
-[root@server ~]# yum install /path/to/downloaded/RPM/package/
-[root@server ~]# systemctl start --now cockpit.socket
+cd /etc/yum.repos.d
+curl -LO http://images.45drives.com/repo/centos/45drives-centos.repo 
+yum clean all
 ```
 
-You may need to set a firewall exception for cockpit in order to access the webpage.
+### 45drives-centos.repo
 ```
-[root@server ~]# firewall-cmd --permanent --zone=public --add-service=cockpit
-[root@server ~]# firewall-cmd --reload
+[45drives_stable]
+baseurl = http://images.45drives.com/repo/centos/el$releasever/stable
+enabled = 1
+gpgcheck = 1
+repo_gpgcheck = 1
+gpgkey = http://images.45drives.com/repo/keys/rpmpubkey.asc
+name = 45Drives Stable Packages
+priority = 1
+
+[45drives_testing]
+baseurl = http://images.45drives.com/repo/centos/el$releasever/testing
+enabled = 0
+gpgcheck = 1
+repo_gpgcheck = 1
+gpgkey = http://images.45drives.com/repo/keys/rpmpubkey.asc
+name = 45Drives Testing Packages
+priority = 1
+
 ```
 
-#### CentOS 8:
-Download the latest .rpm from the [releases page](https://github.com/45Drives/cockpit-hardware/releases).
+### Enable the 45drives_testing repo (*optional*)
+The **latest versions** of our packages are available in our **45drives_testing** repo.  
+By default, the 45drives_testing packages are **not** enabled.  
+
+You can enable them by editing ```/etc/yum.repos.d/45drives-centos.repo``` with a text editor (nano, vim, etc ).  
+Simply change ```enabled = 0``` to ```enabled = 1```.  
+
+### Install Package
+With the 45drives Repo enabled, you can now install using yum from your terminal.
 ```
-[root@server ~]# systemctl stop cockpit.socket
-[root@server ~]# dnf install /path/to/downloaded/RPM/package/
-[root@server ~]# systemctl start --now cockpit.socket
-```
-You may need to set a firewall exception for cockpit in order to access the webpage.
-```
-[root@server ~]# firewall-cmd --permanent --zone=public --add-service=cockpit
-[root@server ~]# firewall-cmd --reload
+yum install cockpit-45drives-hardware
 ```
 
-### .deb Package:
-#### Ubuntu:
-Download the latest .deb package from the [releases page](https://github.com/45Drives/cockpit-hardware/releases).
+## Ubuntu 20
+
+### Add the 45drives.list
 ```
-[admin@server ~]# sudo systemctl stop cockpit.socket
-[admin@server ~]# sudo apt install /path/to/downloaded/DEB/package/
-[admin@server ~]# sudo systemctl start --now cockpit.socket
+cd /etc/apt/sources.list.d
+sudo curl -LO http://images.45drives.com/repo/debian/45drives.list
+sudo apt update
+```
+
+### 45drives.list
+```
+deb http://images.45drives.com/repo/debian focal main
+#deb http://images.45drives.com/repo/debian focal-testing main
+
+```
+
+### Enable the 45drives_testing packages (*optional*)
+The **latest versions** of our packages are available in our **45drives_testing** repo.  
+By default, the 45drives_testing packages are **not** enabled.  
+
+You can enable them by editing ```/etc/apt/sources.list.d/45drives.list``` with a text editor (nano, vim, etc ).  
+You can uncomment (delete the **#** character) the second line.
+
+### Install Package
+```
+sudo apt install cockpit-45drives-hardware
 ```
 
 ## Usage
@@ -77,4 +123,4 @@ Example:
 http://192.168.13.37:9090
 ```
 Then enter your login credentials (you must have admin rights to use cockpit-hardware)
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/login.png">
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/houston.png">
