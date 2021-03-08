@@ -9,6 +9,6 @@ Homepage: https://github.com/45Drives/cockpit-hardware
 
 Package: cockpit-45drives-hardware
 Architecture: amd64
-Depends: cockpit, cockpit-ws, cockpit-bridge, dmidecode, ipmitool, python3, lshw, 45drives-tools (>= 1.8.0)
+Depends: cockpit, cockpit-ws, cockpit-bridge, dmidecode, ipmitool, python3, lshw, 45drives-tools (>= 1.8.6)
 Description: A cockpit module for 45drives storage server products.
  Displays information about your 45drives storage server hardware via cockpit.
