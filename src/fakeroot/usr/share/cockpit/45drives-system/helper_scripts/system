@@ -70,7 +70,12 @@ g_ipmitool_fru_fields = {
 		"Storinator-Q30-Enhanced",	
 		"Storinator-S45-Enhanced",	
 		"Storinator-XL60-Enhanced",	
-		"Stornado-AV15-Enhanced",	
+		"Stornado-AV15-Enhanced",
+		"Storinator-AV15-Enhanced-AMD",	
+		"Storinator-Q30-Enhanced-AMD",	
+		"Storinator-S45-Enhanced-AMD",	
+		"Storinator-XL60-Enhanced-AMD",	
+		"Stornado-AV15-Enhanced-AMD",
 		"Storinator-H16-Q30-Enhanced",
 		"Storinator-H16-S45-Enhanced",
 		"Storinator-H16-XL60-Enhanced",
@@ -244,6 +249,11 @@ def get_product_info(mobo,hba,cpu,ipmi):
 		"Storinator-H32-Q30-Enhanced-AMD":	["H11SSL-i",1,2,0,"Q30",False,"Storinator Hybrid 32 (AMD)"],
 		"Storinator-H32-S45-Enhanced-AMD":	["H11SSL-i",1,2,1,"S45",False,"Storinator Hybrid 32 (AMD)"],
 		"Storinator-H32-XL60-Enhanced-AMD":	["H11SSL-i",1,2,2,"XL60",False,"Storinator Hybrid 32 (AMD)"],
+		"Storinator-AV15-Enhanced-AMD":		["H11SSL-i",1,0,1,"AV15",False,"Storinator (AMD)"],
+		"Storinator-Q30-Enhanced-AMD":		["H11SSL-i",1,0,2,"Q30",False,"Storinator (AMD)"],
+		"Storinator-S45-Enhanced-AMD":		["H11SSL-i",1,0,3,"S45",False,"Storinator (AMD)"],
+		"Storinator-XL60-Enhanced-AMD":		["H11SSL-i",1,0,4,"XL60",False,"Storinator (AMD)"],
+		"Stornado-AV15-Enhanced-AMD":		["H11SSL-i",1,0,2,"AV15",False,"Stornado (AMD)"],
 
 		"Storinator-AV15-Turbo":		["X11DPL-i",2,0,1,"AV15",False,"Storinator (Turbo)"],
 		"Storinator-Q30-Turbo":			["X11DPL-i",2,0,2,"Q30",True,"Storinator (Turbo)"],
@@ -319,7 +329,12 @@ def get_product_info(mobo,hba,cpu,ipmi):
 							"Storinator-H16-XL60-Enhanced-AMD",
 							"Storinator-H32-Q30-Enhanced-AMD",	
 							"Storinator-H32-S45-Enhanced-AMD",	
-							"Storinator-H32-XL60-Enhanced-AMD"
+							"Storinator-H32-XL60-Enhanced-AMD",
+							"Storinator-AV15-Enhanced-AMD",
+							"Storinator-Q30-Enhanced-AMD",
+							"Storinator-S45-Enhanced-AMD",
+							"Storinator-XL60-Enhanced-AMD",
+							"Stornado-AV15-Enhanced-AMD"
 						]
 	}
 

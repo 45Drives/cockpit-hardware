@@ -1,3 +1,10 @@
+# ignore the __pycache__ folder
+**/__pycache__
+
+.kdev4/
+*.kdev4
+*.kate-swp
+
 # deb packaging
 debian/cockpit-45drives-hardware
 debian/cockpit-45drives-hardware.substvars
@@ -5,3 +12,6 @@ debian/cockpit-45drives-hardware.postrm.debhelper
 debian/debhelper-build-stamp
 debian/files
 debian/.debhelper
+
+# docker builds
+dist

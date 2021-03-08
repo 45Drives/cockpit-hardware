@@ -28,6 +28,11 @@ var product_img_lut = {};
 	product_img_lut["Storinator-S45-Enhanced"] = "img/products/storinatorS45.jpg";
 	product_img_lut["Storinator-XL60-Enhanced"] = "img/products/storinatorXL60.jpg";
 	product_img_lut["Stornado-AV15-Enhanced"] = "img/products/stornadoAV15.jpg";
+	product_img_lut["Storinator-AV15-Enhanced-AMD"] = "img/products/storinatorAV15.jpg";
+	product_img_lut["Storinator-Q30-Enhanced-AMD"] = "img/products/storinatorQ30.jpg";
+	product_img_lut["Storinator-S45-Enhanced-AMD"] = "img/products/storinatorS45.jpg";
+	product_img_lut["Storinator-XL60-Enhanced-AMD"] = "img/products/storinatorXL60.jpg";
+	product_img_lut["Stornado-AV15-Enhanced-AMD"] = "img/products/stornadoAV15.jpg";
 	product_img_lut["Storinator-H16-Q30-Enhanced"] = "img/products/storinatorQ30.jpg";
 	product_img_lut["Storinator-H16-S45-Enhanced"] = "img/products/storinatorS45.jpg";
 	product_img_lut["Storinator-H16-XL60-Enhanced"] = "img/products/storinatorXL60.jpg";
@@ -39,9 +44,11 @@ var product_img_lut = {};
 	product_img_lut["Storinator-S45-Base"] = "img/products/storinatorS45.jpg";
 	product_img_lut["Storinator-C8-Base"] = "img/products/storinatorC8.jpg";
 	product_img_lut["Storinator-C8-Enhanced"] = "img/products/storinatorC8.jpg";
+	product_img_lut["Storinator-C8-Enhanced-AMD"] = "img/products/storinatorC8.jpg";
 	product_img_lut["Storinator-C8-Turbo"] = "img/products/storinatorC8.jpg";
 	product_img_lut["Storinator-MI4-Base"] = "img/products/storinatorMI4.jpg";
 	product_img_lut["Storinator-MI4-Enhanced"] = "img/products/storinatorMI4.jpg";
+	product_img_lut["Storinator-MI4-Enhanced-AMD"] = "img/products/storinatorMI4.jpg";
 	product_img_lut["Storinator-MI4-Turbo"] = "img/products/storinatorMI4.jpg";
 	//Placeholder for failed autodetect. 
 	product_img_lut["Storinator-AV15-Generic"] = "img/products/storinatorAV15.jpg";
@@ -57,7 +64,7 @@ function sys_manual_scan(){
 				[
 					"/usr/bin/pkexec",
 					"/usr/share/cockpit/45drives-system/helper_scripts/system"
-				], 
+				],
 				{err: "out"}
 		);
 
