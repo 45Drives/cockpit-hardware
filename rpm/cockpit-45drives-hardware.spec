@@ -3,8 +3,8 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:		cockpit-45drives-hardware
-Version:	1.3.1
-Release:	2%{?dist}
+Version:	1.3.2
+Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
 Group:		Development/Tools
@@ -62,9 +62,11 @@ rm -rf %{buildroot}
 /usr/share/cockpit/45drives-motherboard/*
 
 %changelog
-* Thu Feb 25 2021 Mark Hooper <mhooper@45drives.com> 1.3.1-2
+* Tue Mar 09 2021 Mark Hooper <mhooper@45drives.com> 1.3.2-1
+- All modules can now be used by users with sudo privelages.
+* Mon Mar 08 2021 Mark Hooper <mhooper@45drives.com> 1.3.1-2
 - Updated requirements for 45drives-tools version from >= 1.8.5 to >= 1.8.6.
-* Thu Feb 25 2021 Mark Hooper <mhooper@45drives.com> 1.3.1-1
+* Mon Mar 08 2021 Mark Hooper <mhooper@45drives.com> 1.3.1-1
 - Packaging of cockpit-45drives-hardware now handled using docker.
 - Added support for all Enhanced models with AMD processors.
 * Thu Feb 25 2021 Mark Hooper <mhooper@45drives.com> 1.3.0-1
