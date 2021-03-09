@@ -28,6 +28,14 @@
     align-self: center;
 }
 
+.content_block_msg {
+    text-align: center;
+    font-size: large;
+    color: #981C20;
+    font-family:"RedHatText","Overpass",overpass,helvetica,arial,sans-serif;
+    padding-top: 5em;
+}
+
 .detail-table-header{
     background-color: #FFFFFF;
     width: 100%;
@@ -56,7 +64,7 @@
     padding: 8px;
 }
 
-.motherboard_content {
+.motherboard_container {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;

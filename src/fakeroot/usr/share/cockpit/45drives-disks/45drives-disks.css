@@ -20,6 +20,13 @@
     padding-right: 5px;
 }
 
+.content_block_msg {
+    text-align: center;
+    font-size: large;
+    color: #981C20;
+    font-family:"RedHatText","Overpass",overpass,helvetica,arial,sans-serif;
+    padding-top: 5em;
+}
 
 .header-45D > h2 {
     color: #FFFFFF;

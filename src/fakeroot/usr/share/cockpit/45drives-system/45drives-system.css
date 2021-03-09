@@ -95,6 +95,14 @@ body {
     margin-left: 1em;
 }
 
+.content_block_msg {
+    text-align: center;
+    font-size: large;
+    color: #981C20;
+    font-family:"RedHatText","Overpass",overpass,helvetica,arial,sans-serif;
+    padding-top: 5em;
+}
+
 .fa-refresh {
     align-self: flex-end;
 }

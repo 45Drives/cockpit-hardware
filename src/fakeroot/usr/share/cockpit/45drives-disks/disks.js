@@ -398,11 +398,10 @@ var disk_app = function( d ) {
 	function get_drive_info(){
 		var drive_info_proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/opt/45drives/tools/lsdev",
 				"-j"
 			], 
-			{err: "out"}
+			{err: "out", superuser: "require"}
 		);
 		drive_info_proc.done(
 				function(data){
@@ -429,10 +428,9 @@ var disk_app = function( d ) {
 				if (confirm("Disks requires a valid drive map.\n Would you like to run dmap?")) {
 						var dmap_proc = cockpit.spawn(
 							[
-								"/usr/bin/pkexec",
 								"/opt/45drives/tools/dmap"
 							], 
-							{err: "out"}
+							{err: "out", superuser: "require"}
 						);
 						dmap_proc.done(
 							function(data){
@@ -462,14 +460,12 @@ var disk_app = function( d ) {
 	}
 
 	function get_server_info(){
-		//var server_info_promise = cockpit.defer();
 		// get the server_info.json file
 		var server_info_proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/usr/share/cockpit/45drives-disks/helper_scripts/server_info"
 			], 
-			{err: "out"}
+			{err: "out", superuser: "require"}
 		);
 		server_info_proc.stream(
 				function(data){
@@ -487,10 +483,9 @@ var disk_app = function( d ) {
 	function get_zfs_info(){
 		var drive_info_proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/usr/share/cockpit/45drives-disks/helper_scripts/zfs_info"
 			], 
-			{err: "out"}
+			{err: "out", superuser: "require"}
 		);
 		drive_info_proc.done(
 				function(data){
@@ -510,11 +505,10 @@ var disk_app = function( d ) {
 	d.jsonLoadRowPositions = function(){
 	var proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/usr/share/cockpit/45drives-disks/helper_scripts/dump_json",
 				"/img/disk/ROW.json"
 			], 
-			{err: "out"}
+			{err: "out", superuser: "require"}
 	);
 	proc.stream(
 		function(data){
@@ -858,8 +852,26 @@ function resourceSleep(ms) {
 
 async function startDiskApp(){
 	while(!document.getElementById("disk_app")){await resourceSleep(300);}
-	document.getElementById("disk_app").innerHTML = "";
-	diskP5 = new p5(disk_app, 'disk_app');
+	let root_check = cockpit.permission({ admin: true });
+	root_check.addEventListener(
+		"changed", 
+		function() {
+			if(root_check.allowed){
+				//user is an administrator, start the module as normal
+				document.getElementById("disk_app").innerHTML = "";
+				diskP5 = new p5(disk_app, 'disk_app');
+			}else{
+				//user is not an administrator, replace the page content with message
+				let page_content = document.getElementById("disk_content");
+				page_content.innerHTML = "";
+				let user_msg = document.createElement("div");
+				user_msg.className = "content_block_msg";
+				user_msg.innerHTML = "You must be an administrator to use this feature.";
+				page_content.appendChild(user_msg);
+			}
+	 	}
+	)
+
 }
 
 startDiskApp();

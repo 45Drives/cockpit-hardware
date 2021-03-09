@@ -62,10 +62,9 @@ function sys_manual_scan(){
 		var sys_promise = cockpit.defer();
 		var proc = cockpit.spawn(
 				[
-					"/usr/bin/pkexec",
 					"/usr/share/cockpit/45drives-system/helper_scripts/system"
 				],
-				{err: "out"}
+				{err: "out",superuser: "require"}
 		);
 
 		proc.stream(
@@ -92,10 +91,9 @@ function mobo()
 		var mobo_promise = cockpit.defer();
 		var motherboard_proc = cockpit.spawn(
 				[
-					"/usr/bin/pkexec",
 					"/usr/share/cockpit/45drives-system/helper_scripts/motherboard"
 				], 
-				{err: "out"}
+				{err: "out",superuser: "require"}
 		);
 		motherboard_proc.stream(
 			function(data)
@@ -108,7 +106,6 @@ function mobo()
 				cpu_content.innerHTML = "";
 				let cpu_table = buildCPUTable();
 				cpu_content.appendChild(cpu_table);
-
 				mobo_promise.resolve();
 			}
 		);
@@ -121,10 +118,9 @@ function pci(){
 			// load the pci information
 		var pci_proc = cockpit.spawn(
 		[
-			"/usr/bin/pkexec",
 			"/usr/share/cockpit/45drives-system/helper_scripts/pci"
 		], 
-		{err: "out"}
+		{err: "out",superuser: "require"}
 		);
 
 		pci_proc.stream(
@@ -146,10 +142,9 @@ function ram(){
 		//load the ram information
 		var ram_proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/usr/share/cockpit/45drives-system/helper_scripts/ram"
 			], 
-			{err: "out"}
+			{err: "out",superuser: "require"}
 		);
 		ram_proc.stream(
 			function(data){
@@ -170,10 +165,9 @@ function network(){
 	// load the pci information
 	var network_proc = cockpit.spawn(
 		[
-			"/usr/bin/pkexec",
 			"/usr/share/cockpit/45drives-system/helper_scripts/network"
 		], 
-		{err: "out"}
+		{err: "out",superuser: "require"}
 	);
 
 	network_proc.stream(
@@ -359,10 +353,9 @@ function get_server_info(){
 	// get the server_info.json file
 	var server_info_proc = cockpit.spawn(
 		[
-			"/usr/bin/pkexec",
 			"/usr/share/cockpit/45drives-system/helper_scripts/server_info"
 		], 
-		{err: "out"}
+		{err: "out",superuser: "require"}
 	);
 	server_info_proc.done(
 			function(data){
@@ -375,10 +368,9 @@ function get_server_info(){
 					if (confirm("/etc/45drives/server_info/server_info.json not found.\nThis file can be created by dmap.\n Would you like to run dmap?")) {
 						var dmap_proc = cockpit.spawn(
 							[
-								"/usr/bin/pkexec",
 								"/opt/45drives/tools/dmap"
 							], 
-							{err: "out"}
+							{err: "out",superuser: "require"}
 						);
 						dmap_proc.done(
 							function(data){
@@ -419,7 +411,7 @@ function get_server_info(){
 
 function main()
 {
-	root_check = cockpit.permission({ admin: true });
+	let root_check = cockpit.permission({ admin: true });
 	root_check.addEventListener(
 		"changed", 
 		function() {
@@ -437,8 +429,12 @@ function main()
 			}else{
 				//user is not an administrator, inform them of this by
 				//displaying a message on each tab page. 
-				let user_msg = document.getElementById("45drives_system_content");
+				let page_content = document.getElementById("45drives_system_content");
+				page_content.innerHTML = "";
+				let user_msg = document.createElement("div");
+				user_msg.className = "content_block_msg";
 				user_msg.innerHTML = "You must be an administrator to use this feature.";
+				page_content.appendChild(user_msg);
 			}
 	 	}
 	)

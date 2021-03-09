@@ -48,7 +48,6 @@ var mobo_app = function( m ) {
 
 
 m.createComponentMasks = function(a){
-	//var dfd = cockpit.defer();
 	var img_path = (
 		"img/motherboard/" + 
 		String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + 
@@ -56,7 +55,6 @@ m.createComponentMasks = function(a){
 		String(mobo_json[a]["id"]) + ".png"
 	);
 	MASK_ARR.push(m.loadImage(img_path));
-	//dfd.resolve();
 };
 
 class component{
@@ -106,7 +104,6 @@ m.verifyAssetsLoaded = function(){
 
 m.setup = function(){
 	let cnv = m.createCanvas(1024,1024);
-	//cnv.parent("motherboard_app");
 	cnv.mouseMoved(m.mouseActivity);
 	mobo_image = document.getElementById("mobo_image");
 	m.frameRate(20);
@@ -174,11 +171,9 @@ m.draw = function (){
 }
 
 m.setGlobalMask = function(){
-	//var dfd = cockpit.defer();
 	let inset = 30;
 	let yTrim = 30;
 	globalMask = m.generateMask(background_img.width,background_img.height,inset,inset+yTrim,background_img.width-(2*inset),background_img.height-((2*inset)+yTrim),true);
-	//dfd.resolve();
 }
 
 
@@ -352,7 +347,6 @@ m.generateMask = function(w,h,x0,y0,x1,y1,invert=false){
 
 
 m.resizePopups = function(){
-	//var dfd = cockpit.defer();
 	for(let i = 0; i < components.length; i++){
 		var lines = components[i].popup.content.split(/\r\n|\r|\n/);
 		var linecount = components[i].popup.content.split(/\r\n|\r|\n/).length;
@@ -366,11 +360,9 @@ m.resizePopups = function(){
 		}
 		components[i].popup.width = 9*max_chars + 10;
 	}
-	//dfd.resolve();
 };
 
 m.getRam= function(){
-	//var dfd = cockpit.defer();
 	if(ram_info){
 		for(let i = 0; i < ram_info["Ram Info"].length; i++){
 			for(let c = 0; c < components.length; c++){
@@ -404,11 +396,9 @@ m.getRam= function(){
 			}
 		}
 	}
-	//dfd.resolve();
 };
 
 m.getPCI = function(){
-	//var dfd = cockpit.defer();
 	let VERTOFFSET = 5.37;
 	let VERTSCALE = 19.0;
 	let WIDTHOFFSET = 1.24;
@@ -609,7 +599,6 @@ m.getPCI = function(){
 		}
 
 	}
-	//dfd.resolve();
 };
 
 m.getCPU = function(){
@@ -637,7 +626,6 @@ m.getCPU = function(){
 };
 
 m.getSATA = function(){
-	//var dfd = cockpit.defer();
 	if(sata_info){
 		//sata info is a global variable in hardware.js
 		for(let i = 0; i < sata_info["SATA Info"].length; i++){
@@ -678,7 +666,6 @@ m.getSATA = function(){
 			}
 		}
 	}
-	//dfd.resolve();
 };
 
 m.loadAssets = function(){
@@ -690,14 +677,12 @@ m.loadAssets = function(){
 };
 
 m.jsonLoadMotherboard = function(fname){
-	//var dfd = cockpit.defer();
 	var proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/usr/share/cockpit/45drives-motherboard/helper_scripts/dump_json",
 				fname 
 			], 
-			{err: "out"}
+			{err: "out", superuser: "require"}
 	);
 	proc.stream(
 		function(data){
@@ -719,7 +704,6 @@ m.jsonLoadMotherboard = function(fname){
 					);
 				}
 			}
-			//dfd.resolve();
 		}
 	);
 };
@@ -768,16 +752,14 @@ function resourceSleep(ms) {
 }
 
 async function motherboard_script(){
-	//var dfd = cockpit.defer();
 	while(!document.getElementById("motherboard_output") || !document.getElementById("mobo_image") || !document.getElementById("motherboard_msg_state")){await resourceSleep(300);}
 	var m_output = document.getElementById("motherboard_output");
 	var mobo_img = document.getElementById("mobo_image");
 	var motherboard_proc = cockpit.spawn(
 			[
-				"/usr/bin/pkexec",
 				"/usr/share/cockpit/45drives-motherboard/helper_scripts/motherboard"
 			], 
-			{err: "out"}
+			{err: "out", superuser: "require"}
 	);
 	motherboard_proc.stream(
 		function(data)
@@ -793,22 +775,18 @@ async function motherboard_script(){
 					String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + "/" +
 					String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) + ".json");
 				document.getElementById("motherboard_msg_state").innerHTML = "&#10003;";
-			//dfd.resolve();
 		}
 	);
 }
 
 async function pci_script(){
-	//var pci_promise = cockpit.defer();
 	// load the pci information
 	while(!document.getElementById("pci_msg_state")){await resourceSleep(300);}
-	//document.getElementById("pci_msg_state").innerHTML = "(Loading)";
 	var pci_proc = cockpit.spawn(
 	[
-		"/usr/bin/pkexec",
 		"/usr/share/cockpit/45drives-motherboard/helper_scripts/pci"
 	], 
-	{err: "out"}
+	{err: "out", superuser: "require"}
 	);
 
 	pci_proc.stream(
@@ -823,16 +801,13 @@ async function pci_script(){
 }
 
 async function sata_script(){
-	//var sata_promise = cockpit.defer();
 	//load the sata information
 	while(!document.getElementById("sata_msg_state")){await resourceSleep(300);}
-	//document.getElementById("sata_msg_state").innerHTML = "(Loading)";
 	var sata_proc = cockpit.spawn(
 		[
-			"/usr/bin/pkexec",
 			"/usr/share/cockpit/45drives-motherboard/helper_scripts/sata"
 		], 
-		{err: "out"}
+		{err: "out", superuser: "require"}
 	);
 
 	sata_proc.stream(
@@ -841,22 +816,18 @@ async function sata_script(){
 			console.log("sata_info");
 			console.log(sata_info);
 			document.getElementById("sata_msg_state").innerHTML = "&#10003;";
-			//sata_promise.resolve();
 		}
 	);
 }
 
 async function ram_script(){
-	//var ram_promise = cockpit.defer();
 	//load the ram information
 	while(!document.getElementById("ram_msg_state")){await resourceSleep(300);}
-	//document.getElementById("ram_msg_state").innerHTML = "(Loading)";
 	var ram_proc = cockpit.spawn(
 		[
-			"/usr/bin/pkexec",
 			"/usr/share/cockpit/45drives-motherboard/helper_scripts/ram"
 		], 
-		{err: "out"}
+		{err: "out", superuser: "require"}
 	);
 	ram_proc.stream(
 		function(data){
@@ -864,22 +835,19 @@ async function ram_script(){
 			console.log("ram_info");
 			console.log(ram_info);
 			document.getElementById("ram_msg_state").innerHTML = "&#10003;";
-			//ram_promise.resolve();
 		}
 	);
 }
 
 async function network_script(){
-	//var network_promise = cockpit.defer();
 	while(!document.getElementById("network_msg_state")){await resourceSleep(300);}
-	//document.getElementById("network_msg_state").innerHTML = "(Loading)";
 	// load the pci information
 	var network_proc = cockpit.spawn(
 		[
-			"/usr/bin/pkexec",
+
 			"/usr/share/cockpit/45drives-motherboard/helper_scripts/network"
 		], 
-		{err: "out"}
+		{err: "out", superuser: "require"}
 	);
 
 	network_proc.stream(
@@ -888,7 +856,7 @@ async function network_script(){
 			console.log("network_info");
 			console.log(network_info);
 			document.getElementById("network_msg_state").innerHTML = "&#10003;";
-			//network_promise.resolve();
+
 		}
 	);
 }
@@ -900,17 +868,20 @@ function runServerSideScripts(){
 		function() {
 			if(root_check.allowed){
 				//user is an administrator, start the module as normal
-				//system_script();
 				motherboard_script();
 				pci_script();
 				ram_script();
 				sata_script();
 				network_script();
 			}else{
-				//user is not an administrator, inform them of this by
-				//displaying a message on each tab page. 
-				let mo = document.getElementById("motherboard_output");
-				mo.innerHTML = "You must be an administrator to use this feature.";
+				//user is not an administrator, don't run any scripts
+				let page_content = document.getElementById("motherboard_content");
+				page_content.innerHTML = "";
+				let user_msg = document.createElement("div");
+				user_msg.className = "content_block_msg";
+				user_msg.innerHTML = "You must be an administrator to use this feature.";
+				page_content.appendChild(user_msg);
+
 			}
 	 	}
 	)
@@ -944,14 +915,6 @@ async function startMoboApp(){
 				" is not available at this time.");
 		}
 	}
-	//else{
-	//	document.getElementById("motherboard_output").innerHTML = (
-	//		"Unable to obtain the required server information to start interactive motherboard application"
-	//		);
-	//}
 }
 
-//document.addEventListener("DOMContentLoaded", (event) => {
-//	startMoboApp();
-//});
 startMoboApp();
