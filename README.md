@@ -90,6 +90,11 @@ yum install cockpit-45drives-hardware
 
 ## Ubuntu 20
 
+### Import 45drives repo GPG
+```
+wget -qO - http://images.45drives.com/repo/keys/aptpubkey.asc | apt-key add -
+```
+
 ### Add the 45drives.list
 ```
 cd /etc/apt/sources.list.d
