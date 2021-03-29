@@ -3,7 +3,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:		cockpit-45drives-hardware
-Version:	1.3.2
+Version:	1.3.3
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
@@ -62,6 +62,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/45drives-motherboard/*
 
 %changelog
+* Thu Mar 25 2021 Mark Hooper <mhooper@45drives.com> 1.3.3-1
+- fixed bug for AV15-BASE models caused by ram helper script.
 * Tue Mar 09 2021 Mark Hooper <mhooper@45drives.com> 1.3.2-1
 - All modules can now be used by users with sudo privelages.
 * Mon Mar 08 2021 Mark Hooper <mhooper@45drives.com> 1.3.1-2

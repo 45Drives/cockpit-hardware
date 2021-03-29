@@ -87,25 +87,43 @@ def dmidecode():
 		return False
 
 	slot_entries = []
+	slot_template = {
+		"Size": "No Module Installed",
+		"Form Factor": "-",
+		"Locator" : "-",
+		"Type": "-",
+		"Manufacturer": "-",
+		"Serial Number" : "-",
+		"Temperature" : "-"
+	}
+
+	current_slot = None
+
 	for line in dmi_result:
-		for field in g_dmi_fields:
-			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
-			if regex != None:
-				slot_entries.append((regex.group(1),regex.group(2)))
+		if line.startswith("Handle "):
+			if current_slot != None:
+				slot_entries.append(current_slot.copy())
+			current_slot = slot_template.copy()
+		elif current_slot != None:
+			for field in g_dmi_fields:
+				regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
+				if regex != None and current_slot != None:
+					current_slot[regex.group(1)] = regex.group(2)
+					
+	#append the last entry
+	if current_slot != None:
+		slot_entries.append(current_slot.copy())
 
-	# Take the subset of fields in the list for each card and 
-	# append them as a dictionary into a new list. 
-	dimms = []
-	for i in range(0,len(slot_entries),len(g_dmi_fields)):
-		dimms.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
-
-	return dimms
+	return slot_entries
 
 def main():
 	ram = dmidecode()
 	temps = ipmitool_sensor()
 	if ram and temps:
 		for module in ram:
+			for key in g_dmi_fields:
+				if key not in module.keys():
+					module[key] = "-"
 			if module["Locator"] in temps.keys():
 				module["Temperature"] = temps[module["Locator"]]
 				if module["Temperature"] == "na (C)":
