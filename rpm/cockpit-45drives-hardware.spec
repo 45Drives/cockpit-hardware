@@ -3,7 +3,7 @@
 %define        __os_install_post %{_dbpath}/brp-compress
 
 Name:		cockpit-45drives-hardware
-Version:	1.3.3
+Version:	1.3.4
 Release:	1%{?dist}
 Summary:	A cockpit package for 45Drives Storinator Products. 
 
@@ -22,7 +22,7 @@ Requires: dmidecode
 Requires: ipmitool
 Requires: python3
 Requires: lshw
-Requires: 45drives-tools >= 1.8.6
+Requires: 45drives-tools >= 1.8.10
 
 
 Obsoletes: 45drives-cockpit-hardware
@@ -62,6 +62,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/45drives-motherboard/*
 
 %changelog
+* Thu Apr 1 2021 Mark Hooper <mhooper@45drives.com> 1.3.4-1
+- Fixed timeout bug for motherboard app. App no longer fails to launch if server-side scripts take longer than expected.
+- Added support for Storinator-H8 Servers.
+- Updated dependency to required 45drives-tools version 1.8.10 or later.
 * Thu Mar 25 2021 Mark Hooper <mhooper@45drives.com> 1.3.3-1
 - fixed bug for AV15-BASE models caused by ram helper script.
 * Tue Mar 09 2021 Mark Hooper <mhooper@45drives.com> 1.3.2-1

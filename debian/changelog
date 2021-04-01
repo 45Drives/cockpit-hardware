@@ -1,3 +1,11 @@
+cockpit-45drives-hardware (1.3.4-1focal) focal; urgency=medium
+
+  * Fixed timeout bug for motherboard app. App no longer fails to launch if server-side scripts take longer than expected.
+  * Added support for Storinator-H8 Servers.
+  * Updated dependency to required 45drives-tools version 1.8.10 or later.
+
+ -- 45Drives <mhooper@45drives.com>  Thu, 1 Apr 2021 11:01:03 +0000
+
 cockpit-45drives-hardware (1.3.3-1focal) focal; urgency=medium
 
   * fixed bug for AV15-BASE models caused by ram helper script.
