@@ -889,9 +889,8 @@ function runServerSideScripts(){
 
 async function startMoboApp(){
 	while(!document.getElementById("motherboard_app")){	await resourceSleep(300);}
-	var timeout = 0;
 	runServerSideScripts();
-	while((!mobo_info || !mobo_json_path || !pci_info || !sata_info || !ram_info) || timeout > 20){await resourceSleep(500); timeout++;}
+	while((!mobo_info || !mobo_json_path || !pci_info || !sata_info || !ram_info)){await resourceSleep(500);}
 	while(
 		document.getElementById("motherboard_msg_state").innerHTML != "✓" &&
 		document.getElementById("pci_msg_state").innerHTML != "✓" &&
