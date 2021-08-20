@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.0.0-1
+## cockpit-45drives-hardware 2.0.0-2
 
-* added auto packaging for Ubuntu, Rocky and CentOS7
+* first build using autopackaging

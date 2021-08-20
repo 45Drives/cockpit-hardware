@@ -40,5 +40,7 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Fri Aug 20 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-2
+- first build using autopackaging
 * Fri Aug 20 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-1
 - added auto packaging for Ubuntu, Rocky and CentOS7
