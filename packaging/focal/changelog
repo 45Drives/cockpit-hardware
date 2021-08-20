@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.0.0-3focal) focal; urgency=medium
+
+  * second build, changed deb dependencies format for >= style entry
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 20 Aug 2021 07:02:48 -0300
+
 cockpit-45drives-hardware (2.0.0-2focal) focal; urgency=medium
 
   * first build using autopackaging
