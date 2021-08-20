@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.0.0-4focal) focal; urgency=medium
+
+  * build 3, added require el7 folder
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 20 Aug 2021 07:07:36 -0300
+
 cockpit-45drives-hardware (2.0.0-3focal) focal; urgency=medium
 
   * second build, changed deb dependencies format for >= style entry
