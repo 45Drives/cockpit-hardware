@@ -1,0 +1,72 @@
+{
+    "__version": "45D-R1",
+    "name": "cockpit-45drives-hardware",
+    "title": "cockpit-45drives-hardware",
+    "prerelease": true,
+    "version": "2.0.0",
+    "buildVersion": "1",
+    "author": "Mark Hooper <mhooper@45drives.com>",
+    "url": "https://github.com/45Drives/cockpit-hardware",
+    "category": "utils",
+    "priority": "optional",
+    "licence": "GPL-3.0+",
+    "architecture": {
+        "deb": "all",
+        "el": "noarch"
+    },
+    "description": {
+        "long": "A Cockpit Module for 45Drives Server Products",
+        "short": "A Cockpit Module for 45Drives Server Products"
+    },
+    "defaults": {
+        "urgency": "medium"
+    },
+    "dependencies": {
+        "deb": [
+            "cockpit",
+            "python3",
+            "cockpit-ws",
+            "cockpit-bridge",
+            "dmidecode",
+            "ipmitool",
+            "lshw",
+            "45drives-tools >= 1.8.10"
+        ],
+        "el": [
+            "cockpit",
+            "python3",
+            "cockpit-ws",
+            "cockpit-bridge",
+            "dmidecode",
+            "ipmitool",
+            "lshw",
+            "45drives-tools >= 1.8.10"
+        ]
+    },
+    "releases": [
+        {
+            "image": "ubuntu-focal-builder",
+            "codeName": "focal",
+            "type": "deb"
+        },
+        {
+            "image": "rocky-el8-builder",
+            "codeName": "el8",
+            "type": "el"
+        },
+        {
+            "image": "centos-el7-builder",
+            "codeName": "el7",
+            "type": "el"
+        }
+    ],
+    "changelog": {
+        "urgency": "medium",
+        "version": "2.0.0",
+        "buildVersion": "1",
+        "ignore": [],
+        "date": null,
+        "packager": "Mark Hooper <mhooper@45drives.com>",
+        "changes": []
+    }
+}

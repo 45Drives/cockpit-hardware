@@ -1,0 +1,5 @@
+cockpit-45drives-hardware (2.0.0-1focal) focal; urgency=medium
+
+  * added auto packaging for Ubuntu, Rocky and CentOS7
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 20 Aug 2021 06:54:11 -0300
