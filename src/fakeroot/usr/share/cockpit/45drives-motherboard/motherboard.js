@@ -914,7 +914,9 @@ async function startMoboApp(){
 			}
 		}
 		if(!mobo_supported){
-			if(String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) == "undefined"){
+			if(	String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) == "undefined" || 
+				String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) == "?")
+				{
 				document.getElementById("motherboard_output").innerHTML = (
 					"Unknown/Unsupported Motherboard detected.<br><br>Supported Motherboards: <br>" + supported_motherboards.join("<br>"));
 			}

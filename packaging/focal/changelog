@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.0.1-4focal) focal; urgency=medium
+
+  * updated unsupported motherboard message in 45Drives-motherboard module
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 23 Aug 2021 12:51:06 -0300
+
 cockpit-45drives-hardware (2.0.1-3focal) focal; urgency=medium
 
   * updated helper scripts to handle virtual machine hardware configurations

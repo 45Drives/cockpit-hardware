@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.0.1-3
+## cockpit-45drives-hardware 2.0.1-4
 
-* updated helper scripts to handle virtual machine hardware configurations
+* updated unsupported motherboard message in 45Drives-motherboard module
