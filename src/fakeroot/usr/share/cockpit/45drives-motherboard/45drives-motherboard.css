@@ -1,3 +1,7 @@
+body {
+    overflow-y:auto !important;
+}
+
 .hardware_container {
     margin: 0;
     padding: 0;

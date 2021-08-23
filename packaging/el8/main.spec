@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-5
+- updated images used in 45drives-system page
 * Fri Aug 20 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-4
 - build 3, added require el7 folder
 * Fri Aug 20 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-3

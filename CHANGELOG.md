@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.0.0-4
+## cockpit-45drives-hardware 2.0.0-5
 
-* build 3, added require el7 folder
+* updated images used in 45drives-system page
