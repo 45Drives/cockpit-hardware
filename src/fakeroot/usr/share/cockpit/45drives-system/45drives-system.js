@@ -4,6 +4,7 @@ let cpu_info = null;
 let pci_info = null;
 let ram_info = null;
 let network_info = null;
+let ipmi_info = null;
 
 var product_img_lut = {};
 	product_img_lut[""] = "img/products/45dlogo.svg";
@@ -197,6 +198,39 @@ function pci(){
 	}
 }
 
+function ipmi(){
+	if(!ipmi_info){
+		var ipmi_promise = cockpit.defer();
+			// load the ipmi information
+		var ipmi_proc = cockpit.spawn(
+		[
+			"/usr/share/cockpit/45drives-system/helper_scripts/ipmi"
+		], 
+		{err: "out",superuser: "require"}
+		);
+
+		ipmi_proc.stream(
+			function(data){
+				try {
+					ipmi_info = JSON.parse(data);
+				} catch (error) {
+					ipmi_info = {
+						"IP Address": "-",
+						"Subnet Mask": "-",
+						"MAC Address": "-",
+						"Default Gateway IP": "-"
+					}
+				}
+				let ipmi_content = document.getElementById("ipmi_content");
+				ipmi_content.innerHTML = "";
+				let ipmi_table = buildIPMITable();
+				ipmi_content.appendChild(ipmi_table);
+				ipmi_promise.resolve();
+			}
+		);
+	}
+}
+
 function ram(){
 	if(!ram_info){
 		var ram_promise = cockpit.defer();
@@ -385,6 +419,34 @@ function buildPCITable(){
 	return pciTable;
 }
 
+function buildIPMITable(){
+	let ipmiTable = document.createElement("table");
+	ipmiTable.className = "info_box_table";
+	let tr = ipmiTable.insertRow(0);
+	tr.className = "info_box_table_element";
+	let headers = ["IP Address","Subnet Mask","MAC Address","Default Gateway IP"];
+	for(let i = 0; i < headers.length; i++){
+		th = document.createElement("th");
+		th.className = "info_box_table_element";
+		th.innerHTML = headers[i];
+		tr.appendChild(th);
+	}
+
+	tr = ipmiTable.insertRow(-1);
+	tr.className = "info_box_table_element";
+	for(let j = 0; j < headers.length; j++){
+		let cell = tr.insertCell(-1);
+		cell.className = "info_box_table_element";
+		if(ipmi_info.hasOwnProperty(headers[j])){
+			cell.innerHTML = ipmi_info[headers[j]];
+		}else{
+			cell.innerHTML = "-";
+		}
+	}
+	
+	return ipmiTable;
+}
+
 function cpu_refresh(){
 	document.getElementById("cpu_content").innerHTML = "<div class=\"loader\"></div></div>"
 	mobo_info = null;
@@ -407,6 +469,12 @@ function network_refresh(){
 	document.getElementById("network_content").innerHTML = "<div class=\"loader\"></div></div>"
 	network_info = null;
 	network();
+}
+
+function ipmi_refresh(){
+	document.getElementById("ipmi_content").innerHTML = "<div class=\"loader\"></div></div>"
+	ipmi_info = null;
+	ipmi();
 }
 
 function get_server_info(){
@@ -494,10 +562,12 @@ function main()
 				if(!pci_info){pci();}
 				if(!ram_info){ram();}
 				if(!network_info){network();}
+				if(!ipmi_info){ipmi();}
 				document.getElementById("cpu_refresh").addEventListener("click",cpu_refresh);
 				document.getElementById("pci_refresh").addEventListener("click",pci_refresh);
 				document.getElementById("ram_refresh").addEventListener("click",ram_refresh);
 				document.getElementById("network_refresh").addEventListener("click",network_refresh);
+				document.getElementById("ipmi_refresh").addEventListener("click",ipmi_refresh);
 			}else{
 				//user is not an administrator, inform them of this by
 				//displaying a message on each tab page. 

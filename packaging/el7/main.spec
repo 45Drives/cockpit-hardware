@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.1-5
+- added ipmi lan info section to 45Drives-system module
 * Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.1-4
 - updated unsupported motherboard message in 45Drives-motherboard module
 * Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.1-3

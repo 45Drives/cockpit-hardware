@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+################################################################################
+# ram:
+# 	used to return information about the ram configuration in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+import subprocess
+import re
+import json
+
+
+def ipmi_lan():
+	try:
+		ipmi_lan_result = subprocess.Popen(
+			["ipmitool","lan","print","1"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		return None
+
+	ipmi_lan_dict = {
+		"IP Address": "-",
+		"Subnet Mask": "-",
+		"MAC Address": "-",
+		"Default Gateway IP": "-"
+	}
+
+	for line in ipmi_lan_result:
+		for field in ipmi_lan_dict.keys():
+			regex = re.search("^({fld})\s+:\s+(\S+)".format(fld=field),line)
+			if regex != None:
+				ipmi_lan_dict[regex.group(1)] = regex.group(2)
+	return ipmi_lan_dict
+
+def main():
+	ipmi_lan_dict = ipmi_lan()
+	print(json.dumps(ipmi_lan_dict,indent = 4))
+
+if __name__ == "__main__":
+    main()
