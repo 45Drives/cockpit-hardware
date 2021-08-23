@@ -1,7 +1,8 @@
 # cockpit-hardware
-A cockpit module for 45Drives storage servers.
+A cockpit module that displays hardware information for 45Drives storage server products.
 
 ## Supported OS
+- Rocky Linux
 - CentOS 7.X
 - Ubuntu 20.04.1 LTS (Focal Fossa) (Requires Version >= 1.3.0)
 
@@ -44,43 +45,19 @@ Currently supports the following motherboard models:
 
 # Installation
 
-## CentOS 7
+## Rocky Linux or CentOS 7
 
-### Add the 45drives-centos.repo
-```
-cd /etc/yum.repos.d
-curl -LO http://images.45drives.com/repo/centos/45drives-centos.repo 
-yum clean all
-```
-
-### 45drives-centos.repo
-```
-[45drives_stable]
-baseurl = http://images.45drives.com/repo/centos/el$releasever/stable
-enabled = 1
-gpgcheck = 1
-repo_gpgcheck = 1
-gpgkey = http://images.45drives.com/repo/keys/rpmpubkey.asc
-name = 45Drives Stable Packages
-priority = 1
-
-[45drives_testing]
-baseurl = http://images.45drives.com/repo/centos/el$releasever/testing
-enabled = 0
-gpgcheck = 1
-repo_gpgcheck = 1
-gpgkey = http://images.45drives.com/repo/keys/rpmpubkey.asc
-name = 45Drives Testing Packages
-priority = 1
-
-```
+### Add the official 45Drives Repo
+https://repo.45drives.com/setup.html
 
 ### Enable the 45drives_testing repo (*optional*)
 The **latest versions** of our packages are available in our **45drives_testing** repo.  
 By default, the 45drives_testing packages are **not** enabled.  
 
-You can enable them by editing ```/etc/yum.repos.d/45drives-centos.repo``` with a text editor (nano, vim, etc ).  
-Simply change ```enabled = 0``` to ```enabled = 1```.  
+You can enable them by editing ```/etc/yum.repos.d/45drives.repo``` with a text editor (nano, vim, etc ).  
+Simply change ```enabled = 0``` to ```enabled = 1```. 
+**or**
+enable using this command: ```sed -i 's/enabled = 0/enabled = 1/g' /etc/yum.repos.d/45drives.repo```
 
 ### Install Package
 With the 45drives Repo enabled, you can now install using yum from your terminal.
@@ -90,26 +67,18 @@ yum install cockpit-45drives-hardware
 
 ## Ubuntu 20
 
-### Add the 45drives.list
-```
-cd /etc/apt/sources.list.d
-sudo curl -LO http://images.45drives.com/repo/debian/45drives.list
-sudo apt update
-```
+### Add the official 45Drives Repo
+https://repo.45drives.com/setup.html
 
-### 45drives.list
-```
-deb http://images.45drives.com/repo/debian focal main
-#deb http://images.45drives.com/repo/debian focal-testing main
-
-```
 
 ### Enable the 45drives_testing packages (*optional*)
 The **latest versions** of our packages are available in our **45drives_testing** repo.  
 By default, the 45drives_testing packages are **not** enabled.  
 
-You can enable them by editing ```/etc/apt/sources.list.d/45drives.list``` with a text editor (nano, vim, etc ).  
-You can uncomment (delete the **#** character) the second line.
+You can enable them by editing ```/etc/apt/sources.list.d/45drives.list``` with a text editor (nano, vim, etc ).
+simply change ```Enabled: no``` to ```Enabled: yes```.
+**or**
+enable using this command: ```sed -i 's/Enabled: no/Enabled: yes/g' /etc/apt/sources.list.d/45drives.sources```
 
 ### Install Package
 ```

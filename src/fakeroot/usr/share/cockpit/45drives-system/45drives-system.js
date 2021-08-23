@@ -6,7 +6,8 @@ let ram_info = null;
 let network_info = null;
 
 var product_img_lut = {};
-	product_img_lut[""] = "img/products/45dlogo.png";
+	product_img_lut[""] = "img/products/45dlogo.svg";
+	product_img_lut["?"] = "img/products/45dlogo.svg";
 	product_img_lut["Storinator-H8-AV15-Enhanced"] = "img/products/storinatorAV15.jpg";
 	product_img_lut["Storinator-H8-AV15-Enhanced-S"] = "img/products/storinatorAV15.jpg";
 	product_img_lut["Storinator-H8-AV15-Enhanced-AMD"] = "img/products/storinatorAV15.jpg";
@@ -132,9 +133,9 @@ function sys_manual_scan(){
 				var product_idx = 0; 
 				var ipmi_idx = 4;
 				sys_info = JSON.parse(data);
-				let sys_img = document.createElement("IMG");
-				sys_img.src = product_img_lut[String(sys_info["System"][product_idx]["Product"][0]["ProductID"])];
-				//sys_img.src = product_img_lut[String(sys_info["System"][product_idx]["Product"][0]["Chassis Size"])]
+				let sys_img = document.createElement("img");
+				sys_img.src = (product_img_lut.hasOwnProperty(String(sys_info["System"][product_idx]["Product"][0]["ProductID"]))) ?
+					product_img_lut[String(sys_info["System"][product_idx]["Product"][0]["ProductID"])]:"img/products/45dlogo.svg";
 				document.getElementById("sys_img_div").appendChild(sys_img);
 				document.getElementById("sys_model").innerHTML = sys_info["System"][product_idx]["Product"][0]["System Model"];
 				document.getElementById("sys_chassis_size").innerHTML = sys_info["System"][product_idx]["Product"][0]["Chassis Size"];
@@ -454,8 +455,9 @@ function get_server_info(){
 				else{
 					//we got the information successfully. 
 					sys_info = JSON.parse(data);
-					let sys_img = document.createElement("IMG");
-					sys_img.src = product_img_lut[String(sys_info["Model"])];
+					let sys_img = document.createElement("img");
+					sys_img.src = product_img_lut.hasOwnProperty(String(sys_info["Model"])) ? 
+						product_img_lut[String(sys_info["Model"])]: "img/products/45dlogo.svg";
 					document.getElementById("sys_img_div").appendChild(sys_img);
 					document.getElementById("sys_model").innerHTML = sys_info["Model"];
 					document.getElementById("sys_chassis_size").innerHTML = sys_info["Chassis Size"];

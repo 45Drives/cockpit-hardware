@@ -733,7 +733,13 @@ m.jsonLoadMotherboard = function(fname){
 						 
 					}
 					if((components[i].y0 - 20 ) > 0 ){
-					components[i].popup.y0 = components[i].y0 - 20;
+						if((components[i].y0 + components[i].popup.height) < background_img.height){
+							//popup window isn't at risk of overflowing the board footprint.
+							components[i].popup.y0 = components[i].y0 - 20;
+						}else{
+							// popupwindow is going off the footprint of the board, move it up.
+							components[i].popup.y0 = background_img.height - components[i].popup.height;
+						}
 					}
 					else{
 						components[i].popup.y0 = 0;
