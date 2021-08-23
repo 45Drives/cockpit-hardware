@@ -56,10 +56,17 @@ body {
     text-align: left;
 }
 
+.panel-heading {
+    flex-direction: column;
+}
+
 .panel-title {
     margin-top: 0;
     margin-bottom:0;
     font-size: 18px;
+    line-height: var(--pf-global--LineHeight--sm);
+    font-family: var(--pf-global--FontFamily--redhatfont--heading--sans-serif);
+    font-weight: bold;
 }
 
 .disk_output {
