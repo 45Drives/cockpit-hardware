@@ -459,12 +459,22 @@ function get_server_info(){
 					sys_img.src = product_img_lut.hasOwnProperty(String(sys_info["Model"])) ? 
 						product_img_lut[String(sys_info["Model"])]: "img/products/45dlogo.svg";
 					document.getElementById("sys_img_div").appendChild(sys_img);
-					document.getElementById("sys_model").innerHTML = sys_info["Model"];
-					document.getElementById("sys_chassis_size").innerHTML = sys_info["Chassis Size"];
-					document.getElementById("sys_serial").innerHTML = sys_info["Serial"];
-					document.getElementById("mobo_manufacturer").innerHTML = sys_info["Motherboard"]["Manufacturer"];
-					document.getElementById("mobo_model").innerHTML = sys_info["Motherboard"]["Product Name"];
-					document.getElementById("mobo_serial").innerHTML = sys_info["Motherboard"]["Serial Number"];
+					if(sys_info["VM"] == true){
+						document.getElementById("sys_model").innerHTML = "Virtual Machine";
+						document.getElementById("sys_chassis_size").innerHTML = "?";
+						document.getElementById("sys_serial").innerHTML = "?";
+						document.getElementById("mobo_manufacturer").innerHTML = "?";
+						document.getElementById("mobo_model").innerHTML = "?";
+						document.getElementById("mobo_serial").innerHTML = "?";
+					}else{
+						document.getElementById("sys_model").innerHTML = sys_info["Model"];
+						document.getElementById("sys_chassis_size").innerHTML = sys_info["Chassis Size"];
+						document.getElementById("sys_serial").innerHTML = sys_info["Serial"];
+						document.getElementById("mobo_manufacturer").innerHTML = sys_info["Motherboard"]["Manufacturer"];
+						document.getElementById("mobo_model").innerHTML = sys_info["Motherboard"]["Product Name"];
+						document.getElementById("mobo_serial").innerHTML = sys_info["Motherboard"]["Serial Number"];
+					}
+					
 				}
 				server_info_promise.resolve();
 			}

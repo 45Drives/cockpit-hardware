@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.0.1-2
+## cockpit-45drives-hardware 2.0.1-3
 
-* updated CSS for 45Drives Disks
+* updated helper scripts to handle virtual machine hardware configurations

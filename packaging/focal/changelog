@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.0.1-3focal) focal; urgency=medium
+
+  * updated helper scripts to handle virtual machine hardware configurations
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 23 Aug 2021 12:42:01 -0300
+
 cockpit-45drives-hardware (2.0.1-2focal) focal; urgency=medium
 
   * updated CSS for 45Drives Disks

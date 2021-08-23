@@ -896,7 +896,7 @@ function runServerSideScripts(){
 async function startMoboApp(){
 	while(!document.getElementById("motherboard_app")){	await resourceSleep(300);}
 	runServerSideScripts();
-	while((!mobo_info || !mobo_json_path || !pci_info || !sata_info || !ram_info)){await resourceSleep(500);}
+	while((!mobo_info || !mobo_json_path || !pci_info || !sata_info || !ram_info || !network_info)){await resourceSleep(500);}
 	while(
 		document.getElementById("motherboard_msg_state").innerHTML != "✓" &&
 		document.getElementById("pci_msg_state").innerHTML != "✓" &&
@@ -914,10 +914,16 @@ async function startMoboApp(){
 			}
 		}
 		if(!mobo_supported){
-			document.getElementById("motherboard_output").innerHTML = (
-				"Interactive Motherboard Support for " +
-				mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] +
-				" is not available at this time.");
+			if(String(mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]) == "undefined"){
+				document.getElementById("motherboard_output").innerHTML = (
+					"Unknown/Unsupported Motherboard detected.<br><br>Supported Motherboards: <br>" + supported_motherboards.join("<br>"));
+			}
+			else{
+				document.getElementById("motherboard_output").innerHTML = (
+					"Interactive Motherboard Support for " +
+					mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"] +
+					" is not available at this time.<br><br>Supported Motherboards: <br>" + supported_motherboards.join("<br>"));
+			}
 		}
 	}
 }

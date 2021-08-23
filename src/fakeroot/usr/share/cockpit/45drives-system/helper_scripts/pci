@@ -206,7 +206,7 @@ def main():
 			for card in network_cards:
 				if "ID" in slot.keys() and card["PCI Slot"] == slot["ID"]:
 					slot["Card Type"] = "Network Card"
-					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]));
+					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]))
 					if "Connections" not in slot.keys():
 						slot["Connections"] = []
 					slot["Connections"].append(card)
@@ -231,7 +231,10 @@ def main():
 	for slot in pci_slots:
 		output_str += json.dumps(slot) + ","
 	
-	output_str = output_str[:-1] + "]}"
+	if pci_slots:
+		output_str = output_str[:-1] + "]}"
+	else:
+		output_str = "{ \"PCI Info\":[]}"
 
 	# print output string to stdout
 	print(json.dumps(json.loads(output_str),indent=4))
