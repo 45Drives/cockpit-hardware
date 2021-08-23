@@ -3,8 +3,8 @@
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
     "prerelease": false,
-    "version": "2.0.0",
-    "buildVersion": "5",
+    "version": "2.0.1",
+    "buildVersion": "1",
     "author": "Mark Hooper <mhooper@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-hardware",
     "category": "utils",
@@ -65,14 +65,8 @@
         "version": "2.0.1",
         "buildVersion": "1",
         "ignore": [],
-        "date": "2021-08-23T12:40:59.598985",
+        "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",
-        "changes": [
-            "added new product keys for Bronze, Silver and Gold Intel CPUs using X11SPL-F Motherboards",
-            "added a placeholder image to 45Drives-system page",
-            "Mouseover popups on motherboard no longer extend below board footprint",
-            "Added Package for Rocky Linux",
-            "updated README.md"
-        ]
+        "changes": []
     }
 }

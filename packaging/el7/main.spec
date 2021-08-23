@@ -40,6 +40,12 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.1-1
+- added new product keys for Bronze, Silver and Gold Intel CPUs using X11SPL-F Motherboards
+- added a placeholder image to 45Drives-system page
+- Mouseover popups on motherboard no longer extend below board footprint
+- Added Package for Rocky Linux
+- updated README.md
 * Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-5
 - updated images used in 45drives-system page
 * Fri Aug 20 2021 Mark Hooper <mhooper@45drives.com> 2.0.0-4
