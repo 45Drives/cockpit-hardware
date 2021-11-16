@@ -1,3 +1,11 @@
+cockpit-45drives-hardware (2.0.2-1focal) focal; urgency=medium
+
+  * added support for X11SPi-TF Motherboards in 45drives-motherboard module
+  * updated assets for X11SPL-F Motherboard
+  * modified how detected ram is displayed in 45drives-motherboard module
+
+ -- Mark Hooper <mhooper@45drives.com>  Tue, 16 Nov 2021 06:38:29 -0400
+
 cockpit-45drives-hardware (2.0.1-5focal) focal; urgency=medium
 
   * added ipmi lan info section to 45Drives-system module

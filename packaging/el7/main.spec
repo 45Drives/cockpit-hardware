@@ -40,6 +40,10 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Tue Nov 16 2021 Mark Hooper <mhooper@45drives.com> 2.0.2-1
+- added support for X11SPi-TF Motherboards in 45drives-motherboard module
+- updated assets for X11SPL-F Motherboard
+- modified how detected ram is displayed in 45drives-motherboard module
 * Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.1-5
 - added ipmi lan info section to 45Drives-system module
 * Mon Aug 23 2021 Mark Hooper <mhooper@45drives.com> 2.0.1-4
