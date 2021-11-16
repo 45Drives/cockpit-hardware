@@ -34,7 +34,7 @@ var pci_info = null;
 var ram_info = null;
 var sata_info = null;
 var network_info = null;
-var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F"];
+var supported_motherboards = ["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F","X11SPi-TF"];
 var mobo_supported = false;
 var root_check = null;
 
@@ -191,10 +191,14 @@ class peripheral{
 	show(){
 		m.push();
 		if(this.img_idx != -1){
-			let aspectRatio = peripheralImages[this.img_idx].width/peripheralImages[this.img_idx].height;
-			let newWidth = peripheralImages[this.img_idx].width*this.wScale;
-			let newHeight = newWidth/aspectRatio;
-			m.image(peripheralImages[this.img_idx],this.x0,this.y0,newWidth,newHeight);
+			if(this.pType == "RAM"){
+				m.image(peripheralImages[this.img_idx],this.x0,this.y0,this.width*this.wScale,this.height);
+			}else{
+				let aspectRatio = peripheralImages[this.img_idx].width/peripheralImages[this.img_idx].height;
+				let newWidth = peripheralImages[this.img_idx].width*this.wScale;
+				let newHeight = newWidth/aspectRatio;
+				m.image(peripheralImages[this.img_idx],this.x0,this.y0,newWidth,newHeight);
+			}
 		}else{
 			m.fill(this.fill);
 			m.noStroke();
@@ -381,13 +385,12 @@ m.getRam= function(){
 						peripherals.push(
 							new peripheral(
 							"RAM",
-							components[c]["x0"]+components[c]["width"]*0.08,
-							components[c]["y0"]+components[c]["height"]*0.09,
+							components[c]["x0"],
+							components[c]["y0"],
 							components[c]["width"],
 							components[c]["height"],
 							"#8080FF80",
-							peripheralImages.length,
-							components[c]["width"]*ramScale,
+							peripheralImages.length
 							)
 						);
 						peripheralImages.push(m.loadImage("img/motherboard/ram.png"));
