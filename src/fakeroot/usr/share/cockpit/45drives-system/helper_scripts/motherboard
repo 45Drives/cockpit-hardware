@@ -142,7 +142,7 @@ def get_cpu_info():
 	if len(cpu) == len(g_dmi_cpu_fields):
 		#there is only 1 cpu listed
 		cpu_json_str = "{\"CPU\":["+json.dumps(dict(cpu))+"]}"
-	else:
+	elif len(cpu) == 2*len(g_dmi_cpu_fields):
 		#system has 2 CPUs, but duplicate keys if used as dict
 		cpu_json_str = (
 			"{\"CPU\":[" +
@@ -151,6 +151,8 @@ def get_cpu_info():
 			json.dumps(dict(cpu[len(g_dmi_cpu_fields):-1])) +
 			"]}"
 		)
+	elif len(cpu) == 0:
+		return "{\"CPU\":[]}"
 	return cpu_json_str
 
 def get_sensor_readings():
