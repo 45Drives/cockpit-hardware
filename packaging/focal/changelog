@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.0.2-2focal) focal; urgency=medium
+
+  * updated helper scripts for 45drives-system and 45drives-motherboard to play nice
+    with vms
+
+ -- Mark Hooper <mhooper@45drives.com>  Tue, 16 Nov 2021 10:52:17 -0400
+
 cockpit-45drives-hardware (2.0.2-1focal) focal; urgency=medium
 
   * added support for X11SPi-TF Motherboards in 45drives-motherboard module

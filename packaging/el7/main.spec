@@ -40,6 +40,9 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Tue Nov 16 2021 Mark Hooper <mhooper@45drives.com> 2.0.2-2
+- updated helper scripts for 45drives-system and 45drives-motherboard to play nice
+  with vms
 * Tue Nov 16 2021 Mark Hooper <mhooper@45drives.com> 2.0.2-1
 - added support for X11SPi-TF Motherboards in 45drives-motherboard module
 - updated assets for X11SPL-F Motherboard
