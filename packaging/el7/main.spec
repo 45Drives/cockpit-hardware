@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Fri Dec 10 2021 Mark Hooper <mhooper@45drives.com> 2.0.2-3
+- fixed bug in disks module causing 16th drive in hybrid 16 rows to not be displayed
 * Tue Nov 16 2021 Mark Hooper <mhooper@45drives.com> 2.0.2-2
 - updated helper scripts for 45drives-system and 45drives-motherboard to play nice
   with vms

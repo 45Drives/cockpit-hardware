@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.0.2-2
+## cockpit-45drives-hardware 2.0.2-3
 
-* updated helper scripts for 45drives-system and 45drives-motherboard to play nice with vms
+* fixed bug in disks module causing 16th drive in hybrid 16 rows to not be displayed

@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.0.2-3focal) focal; urgency=medium
+
+  * fixed bug in disks module causing 16th drive in hybrid 16 rows to not be displayed
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 10 Dec 2021 06:55:12 -0400
+
 cockpit-45drives-hardware (2.0.2-2focal) focal; urgency=medium
 
   * updated helper scripts for 45drives-system and 45drives-motherboard to play nice
