@@ -386,7 +386,7 @@
 			"x":283,
 			"y":42,
 			"HDD":false,
-			"SSD":false,
+			"SSD":true,
 			"CADDY":false
 		},
 		{
