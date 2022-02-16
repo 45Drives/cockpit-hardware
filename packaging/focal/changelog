@@ -1,3 +1,11 @@
+cockpit-45drives-hardware (2.0.3-1focal) focal; urgency=medium
+
+  * Added support for 2U Stornado
+  * Added disk images for Toshiba HDDs, Seagate Nytro SAS and Micron 5300 drives.
+  * updated H11SSL-i motherboard background assets
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 16 Feb 2022 10:08:52 -0400
+
 cockpit-45drives-hardware (2.0.2-3focal) focal; urgency=medium
 
   * fixed bug in disks module causing 16th drive in hybrid 16 rows to not be displayed

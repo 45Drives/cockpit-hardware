@@ -1,3 +1,5 @@
-## cockpit-45drives-hardware 2.0.2-3
+## cockpit-45drives-hardware 2.0.3-1
 
-* fixed bug in disks module causing 16th drive in hybrid 16 rows to not be displayed
+* Added support for 2U Stornado
+* Added disk images for Toshiba HDDs, Seagate Nytro SAS and Micron 5300 drives.
+* updated H11SSL-i motherboard background assets
