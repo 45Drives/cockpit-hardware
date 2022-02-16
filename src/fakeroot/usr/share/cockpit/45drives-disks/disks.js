@@ -12,15 +12,25 @@ var disk_app = function( d ) {
 
 	//drive images
 	let ssd_micron_img;
+	let ssd_micron_5300_img;
 	let ssd_seagate_img;
+	let ssd_seagate_sas_img;
 	let ssd_generic_img;
 	let hdd_seagate_img;
-	let hdd_seagate_18t_img;
+	let hdd_seagate_st_img;
+	let hdd_toshiba_img;
 	let hdd_generic_img;
 	let caddy_micron_img;
+	let caddy_micron_5300_img;
 	let caddy_seagate_img;
+	let caddy_seagate_sas_img;
 	let caddy_generic_img;
 	let caddy_c8_mi4_img;
+	let ssd_seagate_sas_2u_img;
+	let ssd_seagate_2u_img;
+	let ssd_micron_2u_img;
+	let ssd_micron_5300_2u_img;
+	let ssd_generic_2u_img;
 
 	//json files
 	let json_server_info;
@@ -42,6 +52,7 @@ var disk_app = function( d ) {
 	const ROW_H16 = 2;
 	const ROW_C8 = 3;
 	const ROW_MI4 = 4;
+	const ROW_2U_STORNADO = 5;
 
 	//draw variables
 	let drive_rect_x = 0;
@@ -56,7 +67,7 @@ var disk_app = function( d ) {
 	let error_msg = "";
 	let error_shown = false;
 
-	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16","ROW_C8","ROW_MI4"];
+	let ROW_JSON_KEYS = ["ROW_HDD","ROW_SSD","ROW_H16","ROW_C8","ROW_MI4","ROW_2U_STORNADO"];
 
 	let ALIAS_TEMPLATE = {
 		"H16":{
@@ -78,7 +89,11 @@ var disk_app = function( d ) {
 			"MI4":[ROW_MI4]
 		},
 		"STORNADO":{
-			"AV15":[ROW_SSD]
+			"AV15":[ROW_SSD],
+			"F32":[ROW_SSD]
+		},
+		"2USTORNADO":{
+			"2U":[ROW_2U_STORNADO]
 		},
 		"AV15-BASE":{
 			"AV15":[ROW_HDD]
@@ -177,6 +192,16 @@ var disk_app = function( d ) {
 			"AV15":[
 				["2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
 				"1-16","1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			],
+			"F32":[
+				["2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
+				"1-16","1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
+			]
+		},
+		"2USTORNADO":{
+			"2U":[
+				["2-16","2-15","2-14","2-13","2-12","2-11","2-10","2-9","2-8","2-7","2-6","2-5","2-4","2-3","2-2","2-1",
+				"1-16","1-15","1-14","1-13","1-12","1-11","1-10","1-9","1-8","1-7","1-6","1-5","1-4","1-3","1-2","1-1"]
 			]
 		},
 		"AV15-BASE":{
@@ -196,6 +221,7 @@ var disk_app = function( d ) {
 			this.occupied = [];
 			this.drive_img_arr = [];
 			this.lsdev_values = lsdev_values;
+			this.alias_style = alias_style;
 			this.x0 = x0;
 			this.y0 = y0;
 			this.w = w;
@@ -210,11 +236,15 @@ var disk_app = function( d ) {
 						// There is a drive in this slot
 						if(this.lsdev_values[i]["rotation-rate"] != 0){
 							//hard drive in slot
-							if(this.lsdev_values[i]["model-name"].search("ST18000") != -1){
-								drive_img = hdd_seagate_18t_img;
+							if(/ST18000|ST16000|ST20000|ST14000|ST12000/.test(this.lsdev_values[i]["model-name"])){
+								//console.log(this.lsdev_values[i]["model-name"],/ST18000|ST16000|ST20000|ST14000|ST12000/.test(this.lsdev_values[i]["model-name"]));
+								drive_img = hdd_seagate_st_img;
 							}
-							else if(this.lsdev_values[i]["model-family"].search("Seagate Enterprise") != -1){
+							else if(/Seagate Enterprise/.test(this.lsdev_values[i]["model-family"])){
 								drive_img = hdd_seagate_img;
+							}
+							else if(/TOSHIBA/.test(this.lsdev_values[i]["model-name"])){
+								drive_img = hdd_toshiba_img;
 							}
 							else{
 								drive_img = hdd_generic_img;
@@ -222,11 +252,17 @@ var disk_app = function( d ) {
 						}
 						else{
 							//ssd in slot
-							if(this.lsdev_values[i]["model-family"].search("Seagate Nytro") != -1){
+							if(/Seagate Nytro/.test(this.lsdev_values[i]["model-family"])){
 								drive_img = caddy_seagate_img;
 							}
-							else if(this.lsdev_values[i]["model-family"].search("Micron 5100 Pro") != -1){
+							else if(/SEAGATE XS400LE10003/.test(this.lsdev_values[i]["model-name"])){
+								drive_img = caddy_seagate_sas_img;
+							}
+							else if(/Micron_5100_|Mircon_5200_/.test(this.lsdev_values[i]["model-name"])){
 								drive_img = caddy_micron_img;
+							}
+							else if(/Micron_5300_/.test(this.lsdev_values[i]["model-name"])){
+								drive_img = caddy_micron_5300_img;
 							}
 							else{
 								drive_img = caddy_generic_img;
@@ -234,15 +270,42 @@ var disk_app = function( d ) {
 						}
 					}
 				}
+				else if(this.json_values[i].SSD && alias_style == "2USTORNADO"){
+					//SSD sized slot
+					if(this.occupied[i]){
+						// There is a drive in this slot
+						if(/Seagate Nytro/.test(this.lsdev_values[i]["model-family"])){
+							drive_img = ssd_seagate_2u_img;
+						}
+						else if(/SEAGATE XS400LE10003/.test(this.lsdev_values[i]["model-name"])){
+							drive_img = ssd_seagate_sas_2u_img;
+						}
+						else if(/Micron_5100_|Micron_5200_/.test(this.lsdev_values[i]["model-name"])){
+							drive_img = ssd_micron_2u_img;
+						}
+						else if(/Micron_5300_/.test(this.lsdev_values[i]["model-name"])){
+							drive_img = ssd_micron_5300_2u_img;
+						}
+						else{
+							drive_img = ssd_generic_2u_img;
+						}
+					}
+				}
 				else if(this.json_values[i].SSD){
 					//SSD sized slot
 					if(this.occupied[i]){
 						// There is a drive in this slot
-						if(this.lsdev_values[i]["model-family"].search("Seagate Nytro") != -1){
+						if(/SEAGATE XS400LE10003/.test(this.lsdev_values[i]["model-name"])){
+							drive_img = ssd_seagate_sas_img;
+						}
+						else if(/Seagate Nytro/.test(this.lsdev_values[i]["model-family"])){
 							drive_img = ssd_seagate_img;
 						}
-						else if(this.lsdev_values[i]["model-family"].search("Micron 5100 Pro") != -1){
+						else if(/Micron_5100_|Micron_5200_/.test(this.lsdev_values[i]["model-name"])){
 							drive_img = ssd_micron_img;
+						}
+						else if(/Micron_5300_/.test(this.lsdev_values[i]["model-name"])){
+							drive_img = ssd_micron_5300_img;
 						}
 						else{
 							drive_img = ssd_generic_img;
@@ -269,7 +332,7 @@ var disk_app = function( d ) {
 					d.text(this.label_values[i],this.json_values[i].x + 16, this.json_values[i].y + this.y_offset -10);
 					d.pop();
 				}
-				else if(this.json_values[i].SSD){
+				else if(this.json_values[i].SSD && this.alias_style != "2USTORNADO"){
 					//SSD sized slot
 					d.push();
 					d.fill(255);
@@ -367,18 +430,32 @@ var disk_app = function( d ) {
 		// c8 & mi4 images
 		c8_chassis_img = d.loadImage("img/disk/C8_CHASSIS.png");
 		mi4_chassis_img = d.loadImage("img/disk/MI4_CHASSIS.png");
+
+		//2u stornado image
+		stornado_2u_img = d.loadImage("img/disk/2U_STORNADO_CHASSIS.png");
 		
 		//drive images
 		ssd_micron_img = d.loadImage("img/disk/SSD_micron.png");
+		ssd_micron_5300_img = d.loadImage("img/disk/SSD_micron_5300.png");
 		ssd_seagate_img = d.loadImage("img/disk/SSD_seagate.png");
+		ssd_seagate_sas_img = d.loadImage("img/disk/SSD_seagate_sas.png");
 		ssd_generic_img = d.loadImage("img/disk/SSD_generic.png");
 
+		ssd_micron_2u_img = d.loadImage("img/disk/SSD_micron_2u.png");
+		ssd_micron_5300_2u_img = d.loadImage("img/disk/SSD_micron_5300_2u.png");
+		ssd_seagate_2u_img = d.loadImage("img/disk/SSD_seagate_2u.png");
+		ssd_generic_2u_img = d.loadImage("img/disk/SSD_generic_2u.png");
+		ssd_seagate_sas_2u_img = d.loadImage("img/disk/SSD_seagate_sas_2u.png");
+
 		hdd_seagate_img = d.loadImage("img/disk/HDD_seagate.png");
-		hdd_seagate_18t_img = d.loadImage("img/disk/HDD_seagate_18T.png");
+		hdd_seagate_st_img = d.loadImage("img/disk/HDD_seagate_ST.png");
+		hdd_toshiba_img = d.loadImage("img/disk/HDD_toshiba.png");
 		hdd_generic_img = d.loadImage("img/disk/HDD_generic.png");
 
 		caddy_micron_img = d.loadImage("img/disk/CADDY_micron.png");
+		caddy_micron_5300_img = d.loadImage("img/disk/CADDY_micron_5300.png");
 		caddy_seagate_img = d.loadImage("img/disk/CADDY_seagate.png");
+		caddy_seagate_sas_img = d.loadImage("img/disk/CADDY_seagate_sas.png");
 		caddy_generic_img = d.loadImage("img/disk/CADDY_generic.png");
 
 		caddy_c8_mi4_img = d.loadImage("img/disk/CADDY_c8_mi4.png");
@@ -510,8 +587,9 @@ var disk_app = function( d ) {
 			], 
 			{err: "out", superuser: "require"}
 	);
-	proc.stream(
+	proc.done(
 		function(data){
+				console.log("DEBUG: ",data);
 				json_row = JSON.parse(data);
 				console.log("JSON_ROW");
 				console.log(json_row);
@@ -528,15 +606,24 @@ var disk_app = function( d ) {
 			front_plate_img &&
 			ssd_micron_img &&
 			ssd_seagate_img &&
+			ssd_seagate_sas_img &&
 			ssd_generic_img &&
 			hdd_seagate_img &&
-			hdd_seagate_18t_img &&
+			hdd_seagate_st_img &&
+			hdd_toshiba_img &&
 			hdd_generic_img &&
 			caddy_micron_img &&
+			caddy_micron_5300_img &&
 			caddy_seagate_img &&
+			caddy_seagate_sas_img &&
 			caddy_generic_img &&
 			c8_chassis_img &&
-			mi4_chassis_img
+			mi4_chassis_img &&
+			stornado_2u_img &&
+			ssd_seagate_sas_2u_img &&
+			ssd_seagate_2u_img &&
+			ssd_micron_2u_img &&
+			ssd_generic_2u_img
 		);
 	}
 
@@ -579,6 +666,7 @@ var disk_app = function( d ) {
 		row_img_arr.push(row_h16_img);
 		row_img_arr.push(c8_chassis_img);
 		row_img_arr.push(mi4_chassis_img);
+		row_img_arr.push(stornado_2u_img);
 
 		//ensure that the /etc/45drives/server_info/server_info.json file 
 		//and /usr/share/cockpit/hardware/img/disk/ROW.json files have been parsed for us.
@@ -586,7 +674,7 @@ var disk_app = function( d ) {
 		if(json_server_info.hasOwnProperty("Alias Style") && json_server_info.hasOwnProperty("Chassis Size")){
 			//We can draw the background rows based on the alias style and chassis size
 
-			if(json_server_info["Chassis Size"] != "MI4" && json_server_info["Chassis Size"] != "C8"){
+			if(json_server_info["Chassis Size"] != "MI4" && json_server_info["Chassis Size"] != "C8" && json_server_info["Chassis Size"] != "2U"){
 				// We have a top down server view to display.
 
 				//put the chassis image at the start of the server_img_arr
@@ -748,6 +836,63 @@ var disk_app = function( d ) {
 				}
 				// this is a flag for draw to ket it know that it can start drawing the server. 
 				alt_server = true;
+			}
+			else if(json_server_info["Chassis Size"] == "2U"){
+				//adjust the page layout to accomodate the different form factor
+				//of the server.
+				d.resizeCanvas(stornado_2u_img.width,stornado_2u_img.height);
+				let disk_content_div = document.getElementById("disk_output");
+				disk_content_div.style.flexDirection = "column";
+				let disk_info_box_div = document.getElementById("disk_info_box");
+				disk_info_box.style.display = "flex";
+				disk_info_box.style.width = "1178px";
+				let disk_info_window = document.getElementById("disk-info-window");
+				disk_info_window.style.flexGrow = 1;
+				let zfs_info_window = document.getElementById("zfs-info-window");
+				zfs_info_window.style.flexGrow = 1;
+				zfs_info_window.style.marginBottom = "inherit";
+
+				//Flip json back around for this server.
+				//The order is 1-1, 1-2, 1-3, 1-4
+				json_lsdev["rows"].reverse();
+				for(let i = 0; i < json_lsdev["rows"].length; i++){
+					json_lsdev["rows"][i].reverse();
+				}
+				//create the c8 server row objects.
+				for(let i = 0; i < ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]].length; i++){
+
+					//add the relevant row image to the server_img arr
+					server_img_arr.push(row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]]);
+
+					console.log(server_img_arr.length);
+					console.log(server_rows);
+					//create a new ServerRow Object.
+					server_rows.push(
+						new ServerRow(
+							ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i],
+							0,
+							i,
+							json_server_info["Alias Style"],
+							json_server_info["Chassis Size"],
+							json_row[
+								ROW_JSON_KEYS[
+									ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]
+								]
+							],
+							json_lsdev["rows"][i],
+							0,
+							0,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].width,
+							row_img_arr[ALIAS_TEMPLATE[json_server_info["Alias Style"]][json_server_info["Chassis Size"]][i]].height
+						)
+					);
+				}
+				// this is a flag for draw to ket it know that it can start drawing the server. 
+				alt_server = true;
+			}
+			else{
+					alert("Unrecognized hardware configuration detected. \nDisks module needs recognizable 45drives hardware to operate properly");
+					error_state = true;
 			}
 		}
 		else{
