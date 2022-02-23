@@ -1,5 +1,6 @@
-## cockpit-45drives-hardware 2.0.3-1
+## cockpit-45drives-hardware 2.0.3-2
 
-* Added support for 2U Stornado
-* Added disk images for Toshiba HDDs, Seagate Nytro SAS and Micron 5300 drives.
-* updated H11SSL-i motherboard background assets
+* releasing 2.0.3-2 on 45drives stable repo
+* added support for 2U Stornado
+* added disk images for Toshiba HDDs, Seagate Nytro SAS and Micron 5300 ssds
+* Updated H11SSL-i motherboard background assets

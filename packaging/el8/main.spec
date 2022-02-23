@@ -40,6 +40,11 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Wed Feb 23 2022 Mark Hooper <mhooper@45drives.com> 2.0.3-2
+- releasing 2.0.3-2 on 45drives stable repo
+- added support for 2U Stornado
+- added disk images for Toshiba HDDs, Seagate Nytro SAS and Micron 5300 ssds
+- Updated H11SSL-i motherboard background assets
 * Wed Feb 16 2022 Mark Hooper <mhooper@45drives.com> 2.0.3-1
 - Added support for 2U Stornado
 - Added disk images for Toshiba HDDs, Seagate Nytro SAS and Micron 5300 drives.
