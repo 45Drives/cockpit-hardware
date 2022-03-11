@@ -1,21 +1,23 @@
 <script setup>
-// This starter template is using Vue 3 <script setup> SFCs
-// Check out https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup
-import HelloWorld from './components/HelloWorld.vue'
+import ffdHeader from './components/ffdHeader.vue'
+import SectionHeading from './components/SectionHeading.vue';
+import "@fontsource/red-hat-text/600.css";
+import "@fontsource/red-hat-text/400.css";
 </script>
 
 <template>
-  <img alt="Vue logo" src="./assets/logo.png" />
-  <HelloWorld msg="Hello Vue 3 + Vite" />
+  <ffdHeader moduleName="System"/>
+  <SectionHeading/>
 </template>
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Red Hat Text";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin:0;
+  padding:0;
+  @apply bg-white dark:bg-stone-800 h-screen w-screen;
 }
 </style>
