@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+################################################################################
+# ram:
+# 	used to return information about the ram configuration in a .json
+#   format. This is a helper sctipt for use with the
+#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
+#
+# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#   
+################################################################################
+import subprocess
+import re
+import json
+
+g_dmi_fields = [
+	"Size",
+	"Form Factor",
+	"Locator",
+	"Type",
+	"Manufacturer",
+	"Serial Number"
+]
+
+g_ipmitool_sensor_fields = {
+	"P1-DIMMA1 Temp": " (C)",
+	"P1-DIMMB1 Temp": " (C)",
+	"P1-DIMMC1 Temp": " (C)",
+	"P1-DIMMD1 Temp": " (C)",
+	"P1-DIMME1 Temp": " (C)",
+	"P1-DIMMF1 Temp": " (C)",
+	"P1-DIMMG1 Temp": " (C)",
+	"P1-DIMMH1 Temp": " (C)",
+	"P2-DIMMA1 Temp": " (C)",
+	"P2-DIMMB1 Temp": " (C)",
+	"P2-DIMMC1 Temp": " (C)",
+	"P2-DIMMD1 Temp": " (C)",
+	"P2-DIMME1 Temp": " (C)",
+	"P2-DIMMF1 Temp": " (C)",
+	"P2-DIMMG1 Temp": " (C)",
+	"P2-DIMMH1 Temp": " (C)",
+	"DIMMA1 Temp": " (C)",
+	"DIMMA2 Temp": " (C)",
+	"DIMMB1 Temp": " (C)",
+	"DIMMB2 Temp": " (C)",
+	"DIMMC1 Temp": " (C)",
+	"DIMMC2 Temp": " (C)",
+	"DIMMD1 Temp": " (C)",
+	"DIMMD2 Temp": " (C)",
+	"DIMME1 Temp": " (C)",
+	"DIMME2 Temp": " (C)",
+	"DIMMF1 Temp": " (C)",
+	"DIMMF2 Temp": " (C)",
+	"DIMMG1 Temp": " (C)",
+	"DIMMG2 Temp": " (C)",
+	"DIMMH1 Temp": " (C)",
+	"DIMMH2 Temp": " (C)"
+}
+
+def ipmitool_sensor():
+	try:
+		ipmitool_sensor_result = subprocess.Popen(
+			["ipmitool","sensor"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True).stdout
+	except:
+		#print("ERROR: ipmitool is not installed")
+		return False
+
+	sensor_readings = []
+	for line in ipmitool_sensor_result:
+		for field in g_ipmitool_sensor_fields.keys():
+			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
+			if regex != None:
+				sensor_readings.append(
+				(regex.group(1)[:-5],regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
+				)
+	
+	return dict(sensor_readings)
+
+def dmidecode():
+	try:
+		dmi_result = subprocess.Popen(
+			["dmidecode","-t","17"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		return False
+
+	slot_entries = []
+	slot_template = {
+		"Size": "No Module Installed",
+		"Form Factor": "-",
+		"Locator" : "-",
+		"Type": "-",
+		"Manufacturer": "-",
+		"Serial Number" : "-",
+		"Temperature" : "-"
+	}
+
+	current_slot = None
+
+	for line in dmi_result:
+		if line.startswith("Handle "):
+			if current_slot != None:
+				slot_entries.append(current_slot.copy())
+			current_slot = slot_template.copy()
+		elif current_slot != None:
+			for field in g_dmi_fields:
+				regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
+				if regex != None and current_slot != None:
+					current_slot[regex.group(1)] = regex.group(2)
+					
+	#append the last entry
+	if current_slot != None:
+		slot_entries.append(current_slot.copy())
+
+	return slot_entries
+
+def main():
+	ram = dmidecode()
+	temps = ipmitool_sensor()
+	output_str = "{\"Ram Info\":[]}"
+	if ram and temps:
+		for module in ram:
+			for key in g_dmi_fields:
+				if key not in module.keys():
+					module[key] = "-"
+			if module["Locator"] in temps.keys():
+				module["Temperature"] = temps[module["Locator"]]
+				if module["Temperature"] == "na (C)":
+					module["Temperature"] = "-"
+				if module["Manufacturer"] == "NO DIMM":
+					module["Manufacturer"] = "-"
+				if module["Serial Number"] == "NO DIMM":
+					module["Serial Number"] = "-"
+	if ram:
+		output_str = "{\"Ram Info\":["
+		for module in ram:
+			output_str += json.dumps(module) + ","
+		output_str = output_str[:-1] + "]}"
+		# print output string to stdout
+		print(json.dumps(json.loads(output_str),indent=4))
+	else:
+		print(json.dumps(json.loads(output_str),indent=4))
+
+
+
+if __name__ == "__main__":
+    main()

@@ -6,7 +6,7 @@
 		<div class="flex flex-row items-baseline basis-10">
 			<img
 				class="w-6 h-6 text-gray-50 mr-0.5 self-center"
-				:src="darkMode ? '45d-fan-dark.svg' : '45d-fan-light.svg'"
+				:src="darkMode ? 'img/45d-fan-dark.svg' : 'img/45d-fan-light.svg'"
 			/>
 			<h1 class="text-2xl">
 				<span
