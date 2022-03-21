@@ -163,16 +163,31 @@ def get_network_info():
 				if regex != None:
 					obj["PCI Slot"] = regex.group(1)
 
-	return json.dumps(j_dict)
+	return j_dict["Network Info"]
 
 def main():
 	network = get_network_info()
+	result = []
 	if network:
-		print(json.dumps(json.loads(network),indent=4))
+		for connection in network:
+			result.append(
+				{ 
+					"connectionName": connection["Connection Name"], 
+					"connectionState": connection["Connection State"], 
+					"connectionType": connection["Type"], 
+					"mac": connection["MAC"], 
+					"ipv4": connection["IPv4"] if "IPv4" in connection.keys() else "-", 
+					"ipv6": connection["IPv6"] if "IPv6" in connection.keys() else "-", 
+					"pciSlot": connection["PCI Slot"] if "PCI Slot" in connection.keys() else "-", 
+					"busAddress": connection["Bus Address"] if "Bus Address" in connection.keys() else "-"
+				}
+			)
+		print(json.dumps(result,indent=4))
 	else:
 		print("Unable to provide network information.")
 		print("Please ensure that the following programs are installed:")
 		print("\tdmidecode, lshw")
+		sys.exit(1)
 
 if __name__ == "__main__":
     main()

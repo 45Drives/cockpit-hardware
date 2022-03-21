@@ -1,8 +1,8 @@
 <!-- This example requires Tailwind CSS v2.0+ -->
 <template>
-  <div class="card">
+  <div class="card mt-2">
     <div
-      class="card-header p-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between"
+      class="card-header p-5 border-b border-stone-200 dark:border-stone-500 dark:bg-stone-700 sm:flex sm:items-center sm:justify-between"
     >
       <h3 class="text-lg leading-6 font-semibold">System</h3>
       <div class="mt-3 sm:mt-0 sm:ml-4">
@@ -11,50 +11,50 @@
         </button>
       </div>
     </div>
-    <div class="card-body">
+    <div class="card-body dark:bg-stone-700">
       <div v-if="!fatalError" class="flex flex-row justify-evenly">
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div class="border-b border-gray-200">
+        <div class="bg-white dark:bg-stone-600 shadow overflow-hidden sm:rounded-lg">
+          <div class="border-b border-stone-200 dark:border-stone-600">
             <dl>
               <div
-                class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-stone-50 dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-gray-500">Model</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Model</dt>
+                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
                   {{ sysModel }}
                 </dd>
               </div>
               <div
-                class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-white dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-gray-500">Chassis Size</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Chassis Size</dt>
+                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
                   {{ sysChassis }}
                 </dd>
               </div>
               <div
-                class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-stone-50 dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-gray-500">Serial</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Serial</dt>
+                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
                   {{ sysSerial }}
                 </dd>
               </div>
               <div
-                class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-white dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-gray-500">Motherboard</dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Motherboard</dt>
+                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
                   {{ moboModel }}
                 </dd>
               </div>
               <div
-                class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-stone-50 dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-gray-500">
+                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">
                   Motherboard Serial
                 </dt>
-                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
                   {{ moboSerial }}
                 </dd>
               </div>
@@ -113,16 +113,16 @@ export default {
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
-          "AV15": "img/storinatorAV15.jpg",
-          "Q30": "img/storinatorQ30.jpg",
-          "S45": "img/storinatorS45.jpg",
-          "XL60": "img/storinatorXL60.jpg",
-          "C8": "img/storinatorC8.jpg",
-          "MI4": "img/storinatorMI4.jpg",
+          "AV15": "img/storinatorAV15.png",
+          "Q30": "img/storinatorQ30.png",
+          "S45": "img/storinatorS45.png",
+          "XL60": "img/storinatorXL60.png",
+          "C8": "img/storinatorC8.png",
+          "MI4": "img/storinatorMI4.png",
         },
         "Stornado": {
-          "2U": "img/stornado2U.jpg",
-          "AV15": "img/stornadoAV15.jpg",
+          "2U": "img/stornado2U.png",
+          "AV15": "img/stornadoAV15.png",
         },
       };
 

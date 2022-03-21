@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-################################################################################
-# pci:
-# 	used to return information about pci cards in a .json
-#   format. This is a helper sctipt for use with the
-#   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
-#
-# Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#   
-################################################################################
-
 import subprocess
 import re
 import json
@@ -24,8 +10,6 @@ g_dmi_fields = [
 	"ID",
 	"Bus Address"
 ]
-
-
 
 g_storcli64_fields = [
 	"SAS9305-16i",
@@ -49,7 +33,8 @@ def dmidecode():
 		dmi_result = subprocess.Popen(
 			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
-		return False
+		print("Error running 'dmidecode -t 9'")
+		sys.exit(1)
 
 	slot_entries = []
 	for line in dmi_result:
@@ -72,7 +57,8 @@ def storcli():
 		storcli64_result = subprocess.Popen(
 			["/opt/45drives/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
 	except:
-		return False
+		print("Error running '/opt/45drives/tools/storcli64 show all'")
+		sys.exit(1)
 	hba_cards = []
 	hba_dict = {}
 	for line in storcli64_result.stdout:
@@ -88,17 +74,19 @@ def storcli():
 	return hba_cards
 
 def network():
+	network_script_path = "/usr/share/cockpit/45drives-system-vue/scripts/network"
 	try:
 		network_result = subprocess.Popen(
-			["/usr/share/cockpit/45drives-system/helper_scripts/network"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+			[network_script_path],stdout=subprocess.PIPE,universal_newlines=True).stdout
 	except:
-		return False
+		print(f"Error running '{network_script_path}'")
+		sys.exit(1)
 	
 	network_output = json.loads(network_result.read())
 
 	network_cards = []
-	for connection in network_output["Network Info"]:
-		if "PCI Slot" in connection.keys():
+	for connection in network_output:
+		if "pciSlot" in connection.keys():
 			network_cards.append(connection)
 
 	return network_cards
@@ -126,7 +114,8 @@ def sata():
 		lspci_result = subprocess.Popen(
 			["lspci"],stdout=subprocess.PIPE,universal_newlines=True).stdout
 	except:
-		return False
+		print("Error running 'lspci'")
+		sys.exit(1)
 
 	sata = []
 	sata_dict = {}
@@ -144,7 +133,8 @@ def sata():
 		ls_result = subprocess.Popen(
 			["ls","-l","/dev/disk/by-path"],stdout=subprocess.PIPE,universal_newlines=True).stdout
 	except:
-		return False
+		print("Error running 'ls -l /dev/disk/by-path'")
+		sys.exit(1)
 
 	drives = []
 	
@@ -165,7 +155,8 @@ def lsblk(device):
 		lsblk_result = subprocess.Popen(
 			["lsblk","-l","/dev/"+device],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
-		return False
+		print(f"Error running 'lsblk -l /dev/{device}'")
+		exit(1)
 
 	partitions = []
 	for line in lsblk_result:
@@ -204,7 +195,7 @@ def main():
 	if pci_slots and network_cards:
 		for slot in pci_slots:
 			for card in network_cards:
-				if "ID" in slot.keys() and card["PCI Slot"] == slot["ID"]:
+				if "ID" in slot.keys() and card["pciSlot"] == slot["ID"]:
 					slot["Card Type"] = "Network Card"
 					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]))
 					if "Connections" not in slot.keys():
@@ -225,19 +216,18 @@ def main():
 					slot["Connections"] = card["Connections"]
 					# TODO: Get the partition information for any connected drives.
 
-	# Create .json formatted output string
-	output_str = "{ \"PCI Info\":["
-	
+	result = []
 	for slot in pci_slots:
-		output_str += json.dumps(slot) + ","
-	
-	if pci_slots:
-		output_str = output_str[:-1] + "]}"
-	else:
-		output_str = "{ \"PCI Info\":[]}"
+		result.append({
+			"slot": ' '.join(slot["Designation"].split()[0:2]), 
+			"type": slot["Type"], 
+			"availibility": slot["Current Usage"], 
+			"busAddress": slot["Bus Address"], 
+			"cardType": slot["Card Type"] if "Card Type" in slot.keys() else "-", 
+			"cardModel": slot["Card Model"] if "Card Model" in slot.keys() else "-"
+		})
 
-	# print output string to stdout
-	print(json.dumps(json.loads(output_str),indent=4))
+	print(json.dumps(result,indent=4))
 
 
 if __name__ == "__main__":

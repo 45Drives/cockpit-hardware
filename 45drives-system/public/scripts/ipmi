@@ -22,7 +22,8 @@ def ipmi_lan():
 		ipmi_lan_result = subprocess.Popen(
 			["ipmitool","lan","print","1"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True).stdout
 	except:
-		return None
+		print("Error running 'ipmitool lan print 1'")
+		sys.exit(1)
 
 	ipmi_lan_dict = {
 		"IP Address": "-",
@@ -40,7 +41,13 @@ def ipmi_lan():
 
 def main():
 	ipmi_lan_dict = ipmi_lan()
-	print(json.dumps(ipmi_lan_dict,indent = 4))
+	result = {
+		"ipAddress": ipmi_lan_dict["IP Address"],
+		"subnetMask":ipmi_lan_dict["Subnet Mask"],
+		"macAddress":ipmi_lan_dict["MAC Address"],
+		"defaultGatewayIp":ipmi_lan_dict["Default Gateway IP"]
+	}
+	print(json.dumps(result,indent = 4))
 
 if __name__ == "__main__":
     main()

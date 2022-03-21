@@ -17,7 +17,6 @@ import "@fontsource/red-hat-text/400.css";
   font-family: "Red Hat Text";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
   margin:0;
   @apply bg-white dark:bg-stone-800 h-full;
 }
