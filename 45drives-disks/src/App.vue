@@ -2,13 +2,13 @@
 import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from './components/FfdHeader.vue';
-import SectionContainer from './components/SectionContainer.vue'
+import P5Canvas from "./components/p5Canvas.vue";
 </script>
 
 <template>
 <div class="h-full flex flex-col overflow-hidden">
-  <FfdHeader moduleName="System" centerName/>
-  <SectionContainer/>
+  <FfdHeader moduleName="Disks" centerName/>
+  <P5Canvas></P5Canvas>
 </div>
 </template>
 
