@@ -3,8 +3,8 @@
 <div class="h-full w-full overflow-y-scroll">
 	<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8 grow">
 		<SectionSystem/>
-		<SectionCpu/>
 		<SectionPci/>
+		<SectionCpu/>
 		<SectionRam/>
 		<SectionNetwork/>
 		<SectionIpmiLan/>
