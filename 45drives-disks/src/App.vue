@@ -24,7 +24,14 @@ export default {
   },
   setup() {
     const currentDisk = ref("");
-    provide("currentDisk",currentDisk);
+    provide("currentDisk", currentDisk);
+    const lsdevState = ref("");
+    provide("lsdevState", lsdevState);
+    const lsdevJson = reactive({ lsdevDuration: 5 });
+    provide("lsdevJson", lsdevJson);
+
+    const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
+
     const preloadChecks = reactive({
       serverInfo: {
         content: reactive({}),
@@ -85,10 +92,21 @@ export default {
           promise: true,
         });
         let result = JSON.parse(state.stdout);
-        preloadChecks.lsdev.content = result;
-        preloadChecks.lsdev.finished = true;
-        preloadChecks.lsdev.failed = false;
-        preloadChecks.lsdev.fixAvailable = false;
+        if (
+          !lsdevJson.hasOwnProperty("rows") ||
+          result.rows.flat().filter((slot) => slot.occupied).length !=
+          lsdevJson.rows.flat().filter((slot) => slot.occupied).length
+        ) {
+          console.log("result and lsdevJson differed");
+          Object.assign(lsdevJson, result);
+          preloadChecks.lsdev.content = result;
+          preloadChecks.lsdev.finished = true;
+          preloadChecks.lsdev.failed = false;
+          preloadChecks.lsdev.fixAvailable = false;
+          return true;
+        } else {
+          return false;
+        }
       } catch (error) {
         console.log(error);
         preloadChecks.lsdev.content = null;
@@ -100,14 +118,46 @@ export default {
           "An error occurred when trying to run /opt/45drives/tools/lsdev"
         );
         preloadChecks.lsdev.errorMessage.push(error.stderr);
+        return false;
       }
     };
+
     const init = async () => {
       await runServerInfo();
       await runLsdev();
     };
+
+    const retryLsdev = async (duration) => {
+      await delay(duration);
+      while (await runLsdev()) {
+        console.log(`Waited ${duration}s`);
+        console.log("running lsdev again.");
+        await delay(duration);
+      }
+    };
+
+    const udevState = cockpit.file(
+      "/usr/share/cockpit/45drives-disks-vue/udev/state"
+    );
+    udevState.watch(async function (content) {
+      lsdevState.value = content;
+      console.log("udev state updated: ", lsdevState.value);
+      // a disk was inserted or removed from system, run lsdev again.
+      if (await runLsdev()) {
+        console.log('runLsdev resulted in updated information, running retryLsdev');
+        retryLsdev(lsdevJson.lsdevDuration.toFixed(2) * 2);
+      }
+    });
+
     init();
-    return { preloadChecks, runServerInfo, runLsdev };
+    return {
+      preloadChecks,
+      runServerInfo,
+      runLsdev,
+      udevState,
+      lsdevJson,
+      retryLsdev,
+    };
   },
 };
 </script>
@@ -134,7 +184,9 @@ export default {
         </div>
         <div class="flex p-2 mx-auto grow flex-col items-stretch">
           <ServerSection
-            v-if="preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished"
+            v-if="
+              preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
+            "
             :serverInfo="preloadChecks.serverInfo.content"
             :diskInfo="preloadChecks.lsdev.content"
           />

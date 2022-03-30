@@ -4,11 +4,6 @@
       class="card-header py-2 px-5 border-b border-stone-200 dark:border-stone-500 dark:bg-stone-700 sm:flex sm:items-center sm:justify-between"
     >
       <h3 class="text-lg leading-6 font-semibold">Disk Information</h3>
-      <!-- <div class="mt-3 sm:mt-0 sm:ml-4"> -->
-        <!-- <button type="button" class="card-refresh-btn"> -->
-          <!-- <RefreshIconOutline class="h-5 w-5" aria-hidden="true" /> -->
-        <!-- </button> -->
-      <!-- </div> -->
     </div>
     <div class="card-body dark:bg-stone-700 grow flex flex-col">
       <div v-if="currentDisk">
@@ -338,11 +333,11 @@ export default {
     const currentDisk = inject("currentDisk");
     const wMsg = ref("Click on a disk for more detail.");
     const diskObj = reactive({});
-
+    const lsdevJson = inject("lsdevJson");
 
     const updateDiskObj = () => {
       if (!currentDisk.value) return;
-      const tmpObj = props.diskInfo.rows
+      const tmpObj = lsdevJson.rows
         .flat()
         .filter((slot) => slot.occupied)
         .find((slot) => slot["bay-id"] === currentDisk.value);
@@ -357,12 +352,13 @@ export default {
     };
 
     watch(currentDisk, updateDiskObj);
-    watch(props.diskInfo, updateDiskObj); //when lsdev is run again on udev rule trigger
+    watch(lsdevJson, updateDiskObj); //when lsdev is run again on udev rule trigger
 
     return {
       wMsg,
       currentDisk,
       diskObj,
+      lsdevJson
     };
   },
 };

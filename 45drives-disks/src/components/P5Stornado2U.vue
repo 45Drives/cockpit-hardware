@@ -3,7 +3,6 @@
 </template>
 
 <script>
-import { ReceiptTaxIcon } from "@heroicons/vue/solid";
 import P5 from "p5";
 import { ref, watch, onMounted, inject } from "vue";
 
@@ -268,16 +267,25 @@ export default {
     diskInfo: Object,
   },
   setup(props) {
-    const diskInfo = ref({});
+    const diskInfoObj = ref({});
     const currentDisk = inject("currentDisk");
+    const lsdevJson = inject("lsdevJson");
 
-    watch(
-      props,
-      () => {
-        diskInfo.value = props.diskInfo;
-      },
-      { immediate: true, deep: true }
-    );
+    watch(lsdevJson, () => {
+      diskInfoObj.value = lsdevJson;
+        diskInfoObj.value.rows.flat().forEach((slot) => {
+          const index = diskLocations.findIndex(
+            (loc) => loc.BAY === slot["bay-id"]
+          );
+          diskLocations[index].occupied = slot.occupied;
+          diskLocations[index].image = getDiskImage(
+            slot.occupied,
+            slot["model-name"],
+            slot["model-family"]
+          );
+        });
+    },
+    {immediate:true, deep: true});
 
     function getDiskImage(occupied, modelName, modelFamily) {
       if (!occupied) return null;
@@ -294,8 +302,6 @@ export default {
     }
 
     const p5Script = function (p5) {
-      var speed = 2;
-      var posX = 35;
 
       p5.preload = (_) => {
         assets.chassis.image = p5.loadImage(assets.chassis.path);
@@ -303,7 +309,7 @@ export default {
           assets.disks[dsk].image = p5.loadImage(val.path);
         });
 
-        diskInfo.value.rows.flat().forEach((slot) => {
+        diskInfoObj.value.rows.flat().forEach((slot) => {
           const index = diskLocations.findIndex(
             (loc) => loc.BAY === slot["bay-id"]
           );
@@ -322,7 +328,7 @@ export default {
           assets.chassis.image.height
         );
         canvas.parent("p5-stornado2u");
-        p5.noLoop();
+        //p5.noLoop();
       };
       // NOTE: Draw is here
       p5.draw = (_) => {
@@ -362,7 +368,7 @@ export default {
             my < loc.y + loc.image.height
           ) {
             currentDisk.value = loc.BAY;
-            p5.redraw();
+            //p5.redraw();
           }
         });
       };
@@ -373,8 +379,9 @@ export default {
     });
 
     return {
-      diskInfo,
+      diskInfoObj,
       currentDisk,
+      lsdevJson
     };
   },
 };

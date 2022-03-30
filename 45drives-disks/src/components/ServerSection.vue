@@ -48,7 +48,7 @@
               </dd>
             </div>
 
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4">
+            <div v-if="avgTemp!=0" class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
               >
@@ -115,7 +115,7 @@
 </template>
 
 <script>
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, inject } from "vue";
 
 export default {
   props: {
@@ -123,54 +123,53 @@ export default {
     diskInfo: Object,
   },
   setup(props) {
+    const lsdevJson = inject("lsdevJson");
     const diskCount = ref(
       props.diskInfo.rows.flat().filter((slot) => slot.occupied).length
     );
+
+    const getCapacityGB = (capacityStr) => {
+      let coeffLut = {
+        "TB": 1000,
+        "GB": 1
+      };
+      return (Number(capacityStr.split(" ")[0]) * coeffLut[capacityStr.split(" ")[1]])
+    };
+
     const storageCapacity = ref(
-      props.diskInfo.rows
-        .flat()
-        .filter((slot) => slot.occupied)
-        .map((disk) => Number(disk.capacity.split(" ")[0]))
-        .reduce((total, cap) => total + cap)
-        .toFixed(2)
+      0
     );
 
-    const avgTemp = ref(
-      (
-        props.diskInfo.rows
-          .flat()
-          .filter((slot) => slot.occupied)
-          .map((disk) => Number(disk["temp-c"].replace(/[^0-9]/g, "")))
-          .reduce((total, cap) => total + cap) / Number(diskCount.value)
-      ).toFixed(2)
-    );
+    const avgTemp = ref(0);
 
     const updateDiskSummary = () => {
-      avgTemp.value = (
-        props.diskInfo.rows
+      diskCount.value = lsdevJson.rows
+        .flat()
+        .filter((slot) => slot.occupied).length;
+      
+      storageCapacity.value = (diskCount.value > 0) ? lsdevJson.rows
+        .flat()
+        .filter((slot) => slot.occupied)
+        .map((disk) => getCapacityGB(disk.capacity))
+        .reduce((total, cap) => total + cap)
+        .toFixed(2) : 0;
+
+      avgTemp.value = (diskCount.value > 0) ? (
+        lsdevJson.rows
           .flat()
           .filter((slot) => slot.occupied)
           .map((disk) => Number(disk["temp-c"].replace(/[^0-9]/g, "")))
           .reduce((total, cap) => total + cap) / Number(diskCount.value)
-      ).toFixed(2);
-
-      storageCapacity.value = props.diskInfo.rows
-        .flat()
-        .filter((slot) => slot.occupied)
-        .map((disk) => Number(disk.capacity.split(" ")[0]))
-        .reduce((total, cap) => total + cap)
-        .toFixed(2);
-
-      diskCount.value = props.diskInfo.rows
-        .flat()
-        .filter((slot) => slot.occupied).length;
+      ).toFixed(2): 0;
     };
-    watch(props.diskInfo, updateDiskSummary); //when lsdev is run again on udev rule trigger
+
+    watch(lsdevJson, updateDiskSummary); //when lsdev is run again on udev rule trigger
 
     return {
       diskCount,
       storageCapacity,
       avgTemp,
+      lsdevJson
     };
   },
 };
