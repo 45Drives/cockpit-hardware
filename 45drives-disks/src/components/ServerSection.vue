@@ -9,53 +9,53 @@
       <div class="grow flex flex-col items-stretch">
         <div class="mt-0">
           <dl class="sm:divide-y sm:divide-stone-200">
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
               >
                 Model
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-3"
+                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
               >
                 {{ serverInfo.Model }}
               </dd>
             </div>
 
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
               >
                 Disk Count
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-3"
+                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
               >
                 {{ diskCount }}
               </dd>
             </div>
 
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
               >
                 Total Storage
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-3"
+                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
               >
                 {{ storageCapacity }} GB
               </dd>
             </div>
 
-            <div v-if="avgTemp!=0" class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4">
+            <div v-if="avgTemp!=0" class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
               >
                 Disk Temperature (avg)
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-3"
+                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
               >
                 {{ avgTemp }} °C / {{ (avgTemp * (9 / 5) + 32).toFixed(2) }} °F
               </dd>
@@ -63,7 +63,7 @@
 
             <div
               v-for="card in serverInfo.HBA"
-              class="py-2 sm:py-2 sm:grid sm:grid-cols-4 sm:gap-4"
+              class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4"
             >
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
@@ -106,6 +106,18 @@
                   {{ card["PCI Slot"] }}
                 </dd>
               </div>
+                            <div>
+                <dt
+                  class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                >
+                  Bus Address
+                </dt>
+                <dd
+                  class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-1"
+                >
+                  {{ card["Bus Address"] }}
+                </dd>
+              </div>
             </div>
           </dl>
         </div>
@@ -120,12 +132,11 @@ import { ref, reactive, watch, inject } from "vue";
 export default {
   props: {
     serverInfo: Object,
-    diskInfo: Object,
   },
   setup(props) {
     const lsdevJson = inject("lsdevJson");
     const diskCount = ref(
-      props.diskInfo.rows.flat().filter((slot) => slot.occupied).length
+      lsdevJson.rows.flat().filter((slot) => slot.occupied).length
     );
 
     const getCapacityGB = (capacityStr) => {
@@ -136,11 +147,20 @@ export default {
       return (Number(capacityStr.split(" ")[0]) * coeffLut[capacityStr.split(" ")[1]])
     };
 
-    const storageCapacity = ref(
-      0
-    );
+    const storageCapacity = (diskCount.value > 0) ? lsdevJson.rows
+        .flat()
+        .filter((slot) => slot.occupied)
+        .map((disk) => getCapacityGB(disk.capacity))
+        .reduce((total, cap) => total + cap)
+        .toFixed(2) : 0;
 
-    const avgTemp = ref(0);
+    const avgTemp = (diskCount.value > 0) ? (
+        lsdevJson.rows
+          .flat()
+          .filter((slot) => slot.occupied)
+          .map((disk) => Number(disk["temp-c"].replace(/[^0-9]/g, "")))
+          .reduce((total, cap) => total + cap) / Number(diskCount.value)
+      ).toFixed(2): 0;
 
     const updateDiskSummary = () => {
       diskCount.value = lsdevJson.rows

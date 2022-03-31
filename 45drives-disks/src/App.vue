@@ -99,7 +99,7 @@ export default {
         ) {
           console.log("result and lsdevJson differed");
           Object.assign(lsdevJson, result);
-          preloadChecks.lsdev.content = result;
+          preloadChecks.lsdev.content = lsdevJson;
           preloadChecks.lsdev.finished = true;
           preloadChecks.lsdev.failed = false;
           preloadChecks.lsdev.fixAvailable = false;
@@ -173,13 +173,11 @@ export default {
               preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
             "
             :serverInfo="preloadChecks.serverInfo.content"
-            :diskInfo="preloadChecks.lsdev.content"
           />
           <DiskSection
             v-if="
               preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
             "
-            :diskInfo="preloadChecks.lsdev.content"
           />
         </div>
         <div class="flex p-2 mx-auto grow flex-col items-stretch">
@@ -188,7 +186,6 @@ export default {
               preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
             "
             :serverInfo="preloadChecks.serverInfo.content"
-            :diskInfo="preloadChecks.lsdev.content"
           />
         </div>
       </div>
