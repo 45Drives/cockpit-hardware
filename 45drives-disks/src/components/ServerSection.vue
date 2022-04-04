@@ -8,7 +8,7 @@
     <div class="card-body dark:bg-stone-700 grow flex">
       <div class="grow flex flex-col items-stretch">
         <div class="mt-0">
-          <dl class="sm:divide-y sm:divide-stone-200">
+          <dl class="sm:divide-y sm:divide-stone-200 dark:divide-stone-600">
             <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"

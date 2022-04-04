@@ -8,7 +8,7 @@ import { ref, watch, onMounted, inject } from "vue";
 
 const assets = {
   chassis: {
-    path: "img/2u-stornado/2u-stornado-chassis.png",
+    path: "img/chassis/2u-stornado-chassis.png",
     image: null,
   },
   disks: {

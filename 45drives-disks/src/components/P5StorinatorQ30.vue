@@ -8,7 +8,11 @@ import { ref, watch, onMounted, inject } from "vue";
 
 const assets = {
   chassis: {
-    path: "img/q30/q30-storinator.png",
+    path: "img/chassis/q30-storinator.png",
+    image: null,
+  },
+  fade: {
+    path: "img/chassis/chassis-fade.png",
     image: null,
   },
   disks: {
@@ -36,211 +40,211 @@ const assets = {
 };
 const diskLocations = [
   {
-    x: 457,
-    y: 321,
+    x: 459,
+    y: 197,
     BAY: "1-1",
     occupied: false,
     image: null,
   },
   {
-    x: 425,
-    y: 321,
+    x: 427,
+    y: 197,
     BAY: "1-2",
     occupied: false,
     image: null,
   },
   {
-    x: 393,
-    y: 321,
+    x: 394,
+    y: 197,
     BAY: "1-3",
     occupied: false,
     image: null,
   },
   {
-    x: 361,
-    y: 321,
+    x: 362,
+    y: 197,
     BAY: "1-4",
     occupied: false,
     image: null,
   },
   {
-    x: 329,
-    y: 321,
+    x: 330,
+    y: 197,
     BAY: "1-5",
     occupied: false,
     image: null,
   },
   {
-    x: 297,
-    y: 321,
+    x: 298,
+    y: 197,
     BAY: "1-6",
     occupied: false,
     image: null,
   },
   {
-    x: 265,
-    y: 321,
+    x: 266,
+    y: 197,
     BAY: "1-7",
     occupied: false,
     image: null,
   },
   {
-    x: 233,
-    y: 321,
+    x: 234,
+    y: 197,
     BAY: "1-8",
     occupied: false,
     image: null,
   },
   {
-    x: 201,
-    y: 321,
+    x: 202,
+    y: 197,
     BAY: "1-9",
     occupied: false,
     image: null,
   },
   {
-    x: 169,
-    y: 321,
+    x: 170,
+    y: 197,
     BAY: "1-10",
     occupied: false,
     image: null,
   },
   {
-    x: 137,
-    y: 321,
+    x: 138,
+    y: 197,
     BAY: "1-11",
     occupied: false,
     image: null,
   },
   {
-    x: 105,
-    y: 321,
+    x: 106,
+    y: 197,
     BAY: "1-12",
     occupied: false,
     image: null,
   },
   {
-    x: 73,
-    y: 321,
+    x: 74,
+    y: 197,
     BAY: "1-13",
     occupied: false,
     image: null,
   },
   {
-    x: 41,
-    y: 321,
+    x: 42,
+    y: 197,
     BAY: "1-14",
     occupied: false,
     image: null,
   },
   {
-    x: 9,
-    y: 321,
+    x: 10,
+    y: 197,
     BAY: "1-15",
     occupied: false,
     image: null,
   },
   {
-    x: 457,
-    y: 158,
+    x: 459,
+    y: 33,
     BAY: "2-1",
     occupied: false,
     image: null,
   },
   {
-    x: 425,
-    y: 158,
+    x: 427,
+    y: 33,
     BAY: "2-2",
     occupied: false,
     image: null,
   },
   {
-    x: 393,
-    y: 158,
+    x: 394,
+    y: 33,
     BAY: "2-3",
     occupied: false,
     image: null,
   },
   {
-    x: 361,
-    y: 158,
+    x: 362,
+    y: 33,
     BAY: "2-4",
     occupied: false,
     image: null,
   },
   {
-    x: 329,
-    y: 158,
+    x: 330,
+    y: 33,
     BAY: "2-5",
     occupied: false,
     image: null,
   },
   {
-    x: 297,
-    y: 158,
+    x: 298,
+    y: 33,
     BAY: "2-6",
     occupied: false,
     image: null,
   },
   {
-    x: 265,
-    y: 158,
+    x: 266,
+    y: 33,
     BAY: "2-7",
     occupied: false,
     image: null,
   },
   {
-    x: 233,
-    y: 158,
+    x: 234,
+    y: 33,
     BAY: "2-8",
     occupied: false,
     image: null,
   },
   {
-    x: 201,
-    y: 158,
+    x: 202,
+    y: 33,
     BAY: "2-9",
     occupied: false,
     image: null,
   },
   {
-    x: 169,
-    y: 158,
+    x: 170,
+    y: 33,
     BAY: "2-10",
     occupied: false,
     image: null,
   },
   {
-    x: 137,
-    y: 158,
+    x: 138,
+    y: 33,
     BAY: "2-11",
     occupied: false,
     image: null,
   },
   {
-    x: 105,
-    y: 158,
+    x: 106,
+    y: 33,
     BAY: "2-12",
     occupied: false,
     image: null,
   },
   {
-    x: 73,
-    y: 158,
+    x: 74,
+    y: 33,
     BAY: "2-13",
     occupied: false,
     image: null,
   },
   {
-    x: 41,
-    y: 158,
+    x: 42,
+    y: 33,
     BAY: "2-14",
     occupied: false,
     image: null,
   },
   {
-    x: 9,
-    y: 158,
+    x: 10,
+    y: 33,
     BAY: "2-15",
     occupied: false,
     image: null,
@@ -288,6 +292,7 @@ export default {
 
       p5.preload = (_) => {
         assets.chassis.image = p5.loadImage(assets.chassis.path);
+        assets.fade.image = p5.loadImage(assets.fade.path);
         Object.entries(assets.disks).forEach(([dsk, val]) => {
           assets.disks[dsk].image = p5.loadImage(val.path);
         });
@@ -308,17 +313,23 @@ export default {
       p5.setup = (_) => {
         const canvas = p5.createCanvas(
           assets.chassis.image.width,
-          assets.chassis.image.height
+          assets.chassis.image.height + assets.fade.image.height
         );
         canvas.parent("p5-q30-storinator");
+        p5.image(assets.fade.image,0,0);
+        // increment the y positions of the disks by the height of the fade.
+        diskLocations.forEach((loc) => {
+          loc.y += assets.fade.image.height;
+        });
         //p5.noLoop();
       };
       // NOTE: Draw is here
       p5.draw = (_) => {
-        p5.image(assets.chassis.image, 0, 0);
+        p5.image(assets.chassis.image, 0, assets.fade.image.height
+        );
         diskLocations.forEach((loc) => {
           if (loc.occupied) {
-            p5.image(loc.image, loc.x, loc.y);
+            p5.image(loc.image, loc.x, loc.y );
           }
         });
         if (currentDisk.value) {
