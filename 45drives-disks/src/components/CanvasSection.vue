@@ -9,6 +9,7 @@
       <P5Stornado2U v-if="serverModel.split('-')[0] === 'Stornado' && serverModel.split('-')[1] === '2U'" />
       <P5StorinatorQ30 v-else-if="serverModel.split('-')[0] === 'Storinator' && serverModel.split('-')[1] === 'Q30'" />
       <P5Stornado v-else-if="serverModel.split('-')[0] === 'Stornado' && serverModel.split('-')[1] === 'AV15' || serverModel.split('-')[1] === 'F32'" />
+      <P5StorinatorXL60H16 v-else-if="serverModel.split('-')[0] === 'Storinator' && serverModel.split('-')[1] === 'H16' && serverModel.split('-')[2] === 'XL60'" />
     </div>
   </div>
 </template>
@@ -18,12 +19,14 @@ import P5Stornado2U from "./P5Stornado2U.vue";
 import P5StorinatorQ30 from "./P5StorinatorQ30.vue";
 import P5Stornado from "./P5Stornado.vue";
 import {ref} from "vue";
+import P5StorinatorXL60H16 from "./P5StorinatorXL60H16.vue";
 
 export default {
   components: {
     P5Stornado2U,
     P5StorinatorQ30,
-    P5Stornado
+    P5Stornado,
+    P5StorinatorXL60H16
 },
   props:{
     serverInfo: Object

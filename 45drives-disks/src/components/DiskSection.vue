@@ -5,270 +5,185 @@
     >
       <h3 class="text-lg leading-6 font-semibold">Disk Information</h3>
     </div>
-    <div class="card-body dark:bg-stone-700 grow flex flex-col justify-center">
-      <div v-if="currentDisk" class="grow flex justify-evenly">
-        <table class="table-auto">
-          <tbody class="divide-y divide-stone-200 dark:divide-stone-600">
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Drive Slot
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["bay-id"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Disk Type
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["disk_type"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Device Path (sd)
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["dev"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Device Path (by-path)
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["dev-by-path"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Partition Count
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["partitions"] }}
-              </td>
-            </tr>
-            <tr
-              v-if="
-                diskObj['model-family'] &&
-                !['?'].includes(diskObj['model-family'])
-              "
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Model Family
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["model-family"] }}
-              </td>
-            </tr>
-            <tr
-              v-if="
-                diskObj['model-name'] && !['?'].includes(diskObj['model-name'])
-              "
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Model Name
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["model-name"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Serial
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["serial"] }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <table class="table-auto">
-          <tbody class="divide-y divide-stone-200 dark:divide-stone-600">
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Capacity
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["capacity"] }}
-              </td>
-            </tr>
-            <tr
-              v-if="diskObj['firm-ver'] && !['?'].includes(diskObj['firm-ver'])"
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Firmware Version
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["firm-ver"] }}
-              </td>
-            </tr>
-            <tr v-if="diskObj['rotation-rate'] != 0">
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Rotation Rate (rpm)
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["rotation-rate"] }}
-              </td>
-            </tr>
-            <tr
-              v-if="
-                diskObj['start-stop-count'] &&
-                !['?'].includes(diskObj['start-stop-count'])
-              "
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Start/Stop Count
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["start-stop-count"] }}
-              </td>
-            </tr>
-            <tr
-              v-if="
-                diskObj['power-cycle-count'] &&
-                !['?'].includes(diskObj['power-cycle-count'])
-              "
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Power Cycle Count
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["power-cycle-count"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Temperature
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["temp-c"].replace(/[^0-9]/g, "") }} °C /
-                {{
-                  (
-                    diskObj["temp-c"].replace(/[^0-9]/g, "") * (9 / 5) +
-                    32
-                  ).toFixed(1)
-                }}
-                °F
-              </td>
-            </tr>
-            <tr
-              v-if="
-                diskObj['current-pending-sector'] &&
-                !['?', 0, '0'].includes(diskObj['current-pending-sector'])
-              "
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Current Pending Sector
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["current-pending-sector"] }}
-              </td>
-            </tr>
-            <tr
-              v-if="
-                diskObj['offline-uncorrectable'] &&
-                !['?', 0, '0'].includes(diskObj['offline-uncorrectable'])
-              "
-            >
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Offline Uncorrectable
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["offline-uncorrectable"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Power On Time (h)
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["power-on-time"] }}
-              </td>
-            </tr>
-            <tr>
-              <td
-                class="p-1 text-sm font-medium text-stone-500 dark:text-stone-400"
-              >
-                Health (smartctl)
-              </td>
-              <td
-                class="p-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0"
-              >
-                {{ diskObj["health"] }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <div class="card-body dark:bg-stone-700 grow flex flex-col justify-start">
+      <div v-if="currentDisk">
+        <div class="grid grid-cols-6 divide-y divide-gray-300">
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2 border-t border-gray-300"
+          >
+            <div class="text-sm text-gray-500">Drive Slot</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["bay-id"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Disk Type</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["disk_type"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Device Path (sd)</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["dev"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Device Path (by-path)</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["dev-by-path"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Partition Count</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["partitions"] }}
+            </div>
+          </div>
+          <div
+            v-if="
+              diskObj['model-family'] &&
+              !['?'].includes(diskObj['model-family'])
+            "
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Model Family</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["model-family"] }}
+            </div>
+          </div>
+          <div
+            v-if="
+              diskObj['model-name'] && !['?'].includes(diskObj['model-name'])
+            "
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Model Name</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["model-name"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Serial</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["serial"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Capacity</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["capacity"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Firmware Version</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["firm-ver"] }}
+            </div>
+          </div>
+          <div
+            v-if="diskObj['rotation-rate'] != 0"
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Rotation Rate</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["rotation-rate"] }} RPM
+            </div>
+          </div>
+          <div
+            v-if="
+              diskObj['start-stop-count'] &&
+              !['?'].includes(diskObj['start-stop-count'])
+            "
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Start/Stop Count</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["start-stop-count"] }}
+            </div>
+          </div>
+          <div
+            v-if="
+              diskObj['power-cycle-count'] &&
+              !['?'].includes(diskObj['power-cycle-count'])
+            "
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Power Cycle Count</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["power-cycle-count"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Temperature</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["temp-c"].replace(/[^0-9]/g, "") }} °C /
+              {{
+                (
+                  diskObj["temp-c"].replace(/[^0-9]/g, "") * (9 / 5) +
+                  32
+                ).toFixed(1)
+              }}
+              °F
+            </div>
+          </div>
+          <div
+            v-if="
+              diskObj['current-pending-sector'] &&
+              !['?', 0, '0'].includes(diskObj['current-pending-sector'])
+            "
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Current Pending Sector</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["current-pending-sector"] }}
+            </div>
+          </div>
+          <div
+            v-if="
+              diskObj['offline-uncorrectable'] &&
+              !['?', 0, '0'].includes(diskObj['offline-uncorrectable'])
+            "
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Offline Uncorrectable</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["offline-uncorrectable"] }}
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Power On Time</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["power-on-time"] }} h
+            </div>
+          </div>
+          <div
+            class="col-span-6 md:col-span-3 grid grid-cols-3 py-1 md:py-2 px-2"
+          >
+            <div class="text-sm text-gray-500">Health</div>
+            <div class="col-span-2 text-sm text-gray-900">
+              {{ diskObj["health"] }}
+            </div>
+          </div>
+        </div>
       </div>
       <div v-else class="grow flex justify-center items-center">
         <div
