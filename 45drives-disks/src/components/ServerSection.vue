@@ -44,20 +44,27 @@
               <dd
                 class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
               >
-                {{ storageCapacity }} GB
+                {{ storageCapacityStr }}
               </dd>
             </div>
 
-            <div v-if="avgTemp!=0" class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
                 class="text-sm font-medium text-stone-500 dark:text-stone-400"
               >
                 Disk Temperature (avg)
               </dt>
               <dd
+                v-if="avgTemp != 0"
                 class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
               >
                 {{ avgTemp }} °C / {{ (avgTemp * (9 / 5) + 32).toFixed(2) }} °F
+              </dd>
+              <dd
+                v-else
+                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
+              >
+                {{ avgTempStr }}
               </dd>
             </div>
 
@@ -106,7 +113,7 @@
                   {{ card["PCI Slot"] }}
                 </dd>
               </div>
-                            <div>
+              <div>
                 <dt
                   class="text-sm font-medium text-stone-500 dark:text-stone-400"
                 >
@@ -135,52 +142,61 @@ export default {
   },
   setup(props) {
     const lsdevJson = inject("lsdevJson");
-    const diskCount = ref(
-      lsdevJson.rows.flat().filter((slot) => slot.occupied).length
-    );
+    const diskInfo = inject("diskInfo");
+    const diskCount = ref(diskInfo.rows
+      .flat()
+      .filter((slot) => slot.occupied).length)
 
     const getCapacityGB = (capacityStr) => {
       let coeffLut = {
-        "TB": 1000,
-        "GB": 1
+        TB: 1000,
+        GB: 1,
       };
-      return (Number(capacityStr.split(" ")[0]) * coeffLut[capacityStr.split(" ")[1]])
+      if (!capacityStr) return 0;
+      return (
+        Number(capacityStr.split(" ")[0]) * coeffLut[capacityStr.split(" ")[1]]
+      );
     };
 
-    const storageCapacity = (diskCount.value > 0) ? lsdevJson.rows
-        .flat()
-        .filter((slot) => slot.occupied)
-        .map((disk) => getCapacityGB(disk.capacity))
-        .reduce((total, cap) => total + cap)
-        .toFixed(2) : 0;
-
-    const avgTemp = (diskCount.value > 0) ? (
-        lsdevJson.rows
-          .flat()
-          .filter((slot) => slot.occupied)
-          .map((disk) => Number(disk["temp-c"].replace(/[^0-9]/g, "")))
-          .reduce((total, cap) => total + cap) / Number(diskCount.value)
-      ).toFixed(2): 0;
+    const storageCapacity = ref(0);
+    const storageCapacityStr = ref("Loading ...");
+    const avgTemp = ref(0);
+    const avgTempStr = ref("Loading...");
 
     const updateDiskSummary = () => {
-      diskCount.value = lsdevJson.rows
-        .flat()
-        .filter((slot) => slot.occupied).length;
-      
-      storageCapacity.value = (diskCount.value > 0) ? lsdevJson.rows
-        .flat()
-        .filter((slot) => slot.occupied)
-        .map((disk) => getCapacityGB(disk.capacity))
-        .reduce((total, cap) => total + cap)
-        .toFixed(2) : 0;
-
-      avgTemp.value = (diskCount.value > 0) ? (
-        lsdevJson.rows
+      if (lsdevJson.rows) {
+        diskCount.value = lsdevJson.rows
           .flat()
-          .filter((slot) => slot.occupied)
-          .map((disk) => Number(disk["temp-c"].replace(/[^0-9]/g, "")))
-          .reduce((total, cap) => total + cap) / Number(diskCount.value)
-      ).toFixed(2): 0;
+          .filter((slot) => slot.occupied).length;
+
+        storageCapacity.value =
+          diskCount.value > 0
+            ? lsdevJson.rows
+                .flat()
+                .filter((slot) => slot.occupied)
+                .map((disk) => getCapacityGB(disk.capacity))
+                .reduce((total, cap) => total + cap)
+                .toFixed(2)
+            : 0;
+
+        storageCapacityStr.value =
+          storageCapacity.value > 1000
+            ? (storageCapacity.value / 1000).toFixed(2).toString() + " TB"
+            : storageCapacity.value.toString() + " GB";
+
+        avgTemp.value =
+          diskCount.value > 0
+            ? (
+                lsdevJson.rows
+                  .flat()
+                  .filter((slot) => slot.occupied)
+                  .map((disk) =>
+                    Number(disk["temp-c"]?.replace(/[^0-9]/g, "") ?? 0)
+                  )
+                  .reduce((total, cap) => total + cap) / Number(diskCount.value)
+              ).toFixed(2)
+            : 0;
+      }
     };
 
     watch(lsdevJson, updateDiskSummary); //when lsdev is run again on udev rule trigger
@@ -188,8 +204,11 @@ export default {
     return {
       diskCount,
       storageCapacity,
+      storageCapacityStr,
       avgTemp,
-      lsdevJson
+      lsdevJson,
+      diskInfo,
+      avgTempStr
     };
   },
 };

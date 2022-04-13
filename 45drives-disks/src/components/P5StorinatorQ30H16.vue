@@ -1,0 +1,649 @@
+<template>
+  <div id="p5-q30-h16-storinator" class="m-2"></div>
+</template>
+
+<script>
+import { DocumentSearchIcon } from "@heroicons/vue/solid";
+import P5 from "p5";
+import { ref, watch, onMounted, inject } from "vue";
+
+const assets = {
+  chassis: {
+    path: "img/chassis/q30-h16-storinator.png",
+    image: null,
+  },
+  fade: {
+    path: "img/chassis/chassis-fade.png",
+    image: null,
+  },
+  disks: {
+    caddy: {
+      default: {
+        path: "img/disks/caddy-generic.png",
+        image: null,
+      },
+      micron5200: {
+        path: "img/disks/caddy-micron.png",
+        image: null,
+      },
+      micron5300: {
+        path: "img/disks/caddy-micron-5300.png",
+        image: null,
+      },
+      seagate: {
+        path: "img/disks/caddy-seagate.png",
+        image: null,
+      },
+      seagateSas: {
+        path: "img/disks/caddy-seagate-sas.png",
+        image: null,
+      },
+      loading: {
+        path: "img/disks/caddy-loading.png",
+        image: null,
+      },
+    },
+    ssd: {
+      micron5200: {
+        path: "img/disks/ssd-micron.png",
+        image: null,
+      },
+      micron5300: {
+        path: "img/disks/ssd-micron-5300.png",
+        image: null,
+      },
+      seagate: {
+        path: "img/disks/ssd-seagate.png",
+        image: null,
+      },
+      seagateSas: {
+        path: "img/disks/ssd-seagate-sas.png",
+        image: null,
+      },
+      default: {
+        path: "img/disks/ssd-generic.png",
+        image: null,
+      },
+      loading: {
+        path: "img/disks/ssd-loading.png",
+        image: null,
+      },
+      hdd25: {
+        path: "img/disks/hdd-25.png",
+        image: null,
+      },
+    },
+    hdd: {
+      default: {
+        path: "img/disks/hdd-generic.png",
+        image: null,
+      },
+      seagateSt: {
+        path: "img/disks/hdd-seagate-st.png",
+        image: null,
+      },
+      seagate: {
+        path: "img/disks/hdd-seagate.png",
+        image: null,
+      },
+      toshiba: {
+        path: "img/disks/hdd-toshiba.png",
+        image: null,
+      },
+      loading: {
+        path: "img/disks/hdd-loading.png",
+        image: null,
+      },
+    },
+  },
+  loadingFlag: true,
+};
+
+const diskLocations = [
+  {
+    x: 460,
+    y: 197,
+    BAY: "1-1",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 428,
+    y: 197,
+    BAY: "1-2",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 396,
+    y: 197,
+    BAY: "1-3",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 364,
+    y: 197,
+    BAY: "1-4",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 332,
+    y: 197,
+    BAY: "1-5",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 300,
+    y: 197,
+    BAY: "1-6",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 268,
+    y: 197,
+    BAY: "1-7",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 236,
+    y: 197,
+    BAY: "1-8",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 204,
+    y: 197,
+    BAY: "1-9",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 172,
+    y: 197,
+    BAY: "1-10",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 140,
+    y: 197,
+    BAY: "1-11",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 108,
+    y: 197,
+    BAY: "1-12",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 76,
+    y: 197,
+    BAY: "1-13",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 44,
+    y: 197,
+    BAY: "1-14",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 12,
+    y: 197,
+    BAY: "1-15",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 471,
+    y: 40,
+    BAY: "2-1",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 460,
+    y: 40,
+    BAY: "2-2",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 435,
+    y: 40,
+    BAY: "2-3",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 424,
+    y: 40,
+    BAY: "2-4",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 413,
+    y: 40,
+    BAY: "2-5",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 402,
+    y: 40,
+    BAY: "2-6",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 377,
+    y: 40,
+    BAY: "2-7",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 366,
+    y: 40,
+    BAY: "2-8",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 354,
+    y: 40,
+    BAY: "2-9",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 343,
+    y: 40,
+    BAY: "2-10",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 317,
+    y: 40,
+    BAY: "2-11",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 306,
+    y: 40,
+    BAY: "2-12",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 295,
+    y: 40,
+    BAY: "2-13",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 284,
+    y: 40,
+    BAY: "2-14",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 259,
+    y: 40,
+    BAY: "2-15",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 248,
+    y: 40,
+    BAY: "2-16",
+    HDD: false,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 204,
+    y: 33,
+    BAY: "2-17",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 172,
+    y: 33,
+    BAY: "2-18",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 140,
+    y: 33,
+    BAY: "2-19",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 108,
+    y: 33,
+    BAY: "2-20",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 76,
+    y: 33,
+    BAY: "2-21",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 44,
+    y: 33,
+    BAY: "2-22",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+  {
+    x: 12,
+    y: 33,
+    BAY: "2-23",
+    HDD: true,
+    occupied: false,
+    image: null,
+  },
+];
+
+export default {
+  name: "P5StorinatorQ30H16",
+  setup() {
+    const diskInfoObj = ref({});
+    const currentDisk = inject("currentDisk");
+    const lsdevJson = inject("lsdevJson");
+    const diskInfo = inject("diskInfo");
+
+    watch(
+      diskInfo,
+      () => {
+        diskInfoObj.value = diskInfo;
+        diskInfoObj.value.rows.flat().forEach((slot) => {
+          const index = diskLocations.findIndex(
+            (loc) => loc.BAY === slot["bay-id"]
+          );
+          if(index == -1) return;
+          diskLocations[index].occupied = slot.occupied;
+          diskLocations[index].image = getDiskImage(
+            slot.occupied,
+            slot["model-name"],
+            slot["model-family"],
+            slot["disk_type"],
+            diskLocations[index].HDD
+          );
+        });
+      },
+      { immediate: true, deep: true }
+    );
+
+    watch(
+      lsdevJson,
+      () => {
+        diskInfoObj.value = lsdevJson;
+        assets.loadingFlag = false;
+        diskInfoObj.value.rows.flat().forEach((slot) => {
+          const index = diskLocations.findIndex(
+            (loc) => loc.BAY === slot["bay-id"]
+          );
+          if(index == -1) return;
+          diskLocations[index].occupied = slot.occupied;
+          diskLocations[index].image = getDiskImage(
+            slot.occupied,
+            slot["model-name"],
+            slot["model-family"],
+            slot["disk_type"],
+            diskLocations[index].HDD
+          );
+        });
+      },
+      { immediate: false, deep: true }
+    );
+
+    function getDiskImage(occupied, modelName, modelFamily, diskType, slotHdd) {
+      if (!occupied) return null;
+      if (assets.loadingFlag && diskType === "SSD" && slotHdd)
+        return assets.disks.caddy.loading.image;
+      if (assets.loadingFlag && diskType === "SSD" && !slotHdd)
+        return assets.disks.ssd.loading.image;
+      if (assets.loadingFlag && diskType === "HDD" && !slotHdd)
+        return assets.disks.ssd.loading.image;
+      if (assets.loadingFlag && diskType === "HDD")
+        return assets.disks.hdd.loading.image;
+      if (diskType === "SSD" && slotHdd) {
+        if (/Seagate Nytro/.test(modelFamily)) {
+          return assets.disks.caddy.seagate.image;
+        } else if (/SEAGATE XS400LE10003/.test(modelName)) {
+          return assets.disks.caddy.seagateSas.image;
+        } else if (/Micron_5100_|Micron_5200_/.test(modelName)) {
+          return assets.disks.caddy.micron5200.image;
+        } else if (/Micron_5300_/.test(modelName)) {
+          return assets.disks.caddy.micron5300.image;
+        }
+        return assets.disks.caddy.default.image;
+      }
+      if (diskType === "SSD" && !slotHdd) {
+        if (/Seagate Nytro/.test(modelFamily)) {
+          return assets.disks.ssd.seagate.image;
+        } else if (/SEAGATE XS400LE10003/.test(modelName)) {
+          return assets.disks.ssd.seagateSas.image;
+        } else if (/Micron_5100_|Micron_5200_/.test(modelName)) {
+          return assets.disks.ssd.micron5200.image;
+        } else if (/Micron_5300_/.test(modelName)) {
+          return assets.disks.ssd.micron5300.image;
+        }
+        return assets.disks.ssd.default.image;
+      }
+      if (diskType === "HDD" && slotHdd) {
+        //hard drive in slot
+        if (/ST18000|ST16000|ST20000|ST14000|ST12000/.test(modelName)) {
+          return assets.disks.hdd.seagateSt.image;
+        } else if (/Seagate Enterprise/.test(modelFamily)) {
+          return assets.disks.hdd.seagate.image;
+        } else if (/TOSHIBA/.test(modelName)) {
+          return assets.disks.hdd.toshiba.image;
+        } else {
+          return assets.disks.hdd.default.image;
+        }
+      }
+      if (diskType === "HDD" && !slotHdd) {
+        //hard drive in ssd sized slot
+        return assets.disks.ssd.hdd25.image;
+      }
+    }
+
+    const p5Script = function (p5) {
+      let loadingIndex = 0;
+      let animationSteps = 20;
+      p5.preload = (_) => {
+        assets.chassis.image = p5.loadImage(assets.chassis.path);
+        assets.fade.image = p5.loadImage(assets.fade.path);
+        Object.entries(assets.disks.caddy).forEach(([dsk, val]) => {
+          assets.disks.caddy[dsk].image = p5.loadImage(val.path);
+        });
+        Object.entries(assets.disks.ssd).forEach(([dsk, val]) => {
+          assets.disks.ssd[dsk].image = p5.loadImage(val.path);
+        });
+        Object.entries(assets.disks.hdd).forEach(([dsk, val]) => {
+          assets.disks.hdd[dsk].image = p5.loadImage(val.path);
+        });
+
+        diskInfoObj.value.rows.flat().forEach((slot) => {
+          const index = diskLocations.findIndex(
+            (loc) => loc.BAY === slot["bay-id"]
+          );
+          if (index === -1) return;
+          diskLocations[index].occupied = slot.occupied;
+          diskLocations[index].image = getDiskImage(
+            slot.occupied,
+            slot["model-name"],
+            slot["model-family"],
+            slot["disk_type"],
+            diskLocations[index].HDD
+          );
+        });
+      };
+      // NOTE: Set up is here
+      p5.setup = (_) => {
+        const canvas = p5.createCanvas(
+          assets.chassis.image.width,
+          assets.chassis.image.height + assets.fade.image.height
+        );
+        canvas.parent("p5-q30-h16-storinator");
+        document.getElementById("disk-section-card-body").style.height = `${
+          assets.chassis.image.height + assets.fade.image.height
+        }px`;
+        p5.image(assets.fade.image, 0, 0);
+        // increment the y positions of the disks by the height of the fade.
+        diskLocations.forEach((loc) => {
+          loc.y += assets.fade.image.height;
+        });
+        //p5.noLoop();
+      };
+      // NOTE: Draw is here
+      p5.draw = (_) => {
+        if (assets.loadingFlag) {
+          p5.frameRate(10);
+          loadingIndex = p5.int((loadingIndex + 1) % animationSteps);
+        } else {
+          p5.frameRate(30);
+        }
+        p5.image(assets.chassis.image, 0, assets.fade.image.height);
+        diskLocations.forEach((loc) => {
+          if (loc.occupied && loc.image) {
+            p5.image(loc.image, loc.x, loc.y);
+            if (assets.loadingFlag) {
+              p5.animateLoading(
+                loc.x,
+                loc.y,
+                loc.image.width,
+                loc.image.height,
+                animationSteps,
+                loadingIndex
+              );
+            }
+          }
+        });
+        if (currentDisk.value) {
+          let idx = diskLocations.findIndex(
+            (loc) => loc.BAY === currentDisk.value
+          );
+          if (diskLocations[idx].image) {
+            p5.fill(255, 255, 255, 50);
+            p5.stroke(206, 242, 212);
+            p5.strokeWeight(2);
+            p5.rect(
+              diskLocations[idx].x,
+              diskLocations[idx].y,
+              diskLocations[idx].image.width,
+              diskLocations[idx].image.height
+            );
+          }
+        }
+      };
+
+      p5.animateLoading = (x, y, w, h, steps, index) => {
+        p5.push();
+        p5.colorMode(p5.RGB);
+        p5.noStroke();
+        let from = p5.color(100, 100, 110, 100);
+        let to = p5.color(0, 0, 0, 100);
+        p5.colorMode(p5.RGB);
+        let stepPx = h / steps;
+        let stepPercent = 1.0 / steps;
+        for (let i = 0; i < steps; i++) {
+          p5.fill(p5.lerpColor(from, to, stepPercent * i));
+          p5.rect(x, y + stepPx * ((index + i) % steps), w, stepPx);
+        }
+        p5.pop();
+      };
+      p5.mouseClicked = (_) => {
+        let mx = p5.mouseX;
+        let my = p5.mouseY;
+        diskLocations.forEach((loc) => {
+          if (
+            loc.occupied &&
+            mx > loc.x &&
+            mx < loc.x + loc.image.width &&
+            my > loc.y &&
+            my < loc.y + loc.image.height
+          ) {
+            currentDisk.value = loc.BAY;
+            //p5.redraw();
+          }
+        });
+      };
+    };
+
+    onMounted(() => {
+      new P5(p5Script);
+    });
+
+    return {
+      diskInfoObj,
+      currentDisk,
+      lsdevJson,
+      diskInfo,
+    };
+  },
+};
+</script>

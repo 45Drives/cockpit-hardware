@@ -2,7 +2,6 @@
 import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
-import P5Canvas from "./components/P5Canvas.vue";
 import DebugBox from "./components/DebugBox.vue";
 import { ref, reactive, provide } from "vue";
 import ServerSection from "./components/ServerSection.vue";
@@ -14,7 +13,6 @@ import useSpawn from "./components/cockpitSpawn";
 export default {
   name: "App",
   components: {
-    P5Canvas,
     FfdHeader,
     DebugBox,
     ServerSection,
@@ -29,6 +27,8 @@ export default {
     provide("lsdevState", lsdevState);
     const lsdevJson = reactive({ lsdevDuration: 5 });
     provide("lsdevJson", lsdevJson);
+    const diskInfo = reactive({ lsdevDuration: 5 });
+    provide("diskInfo", diskInfo);
 
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
 
@@ -95,9 +95,8 @@ export default {
         if (
           !lsdevJson.hasOwnProperty("rows") ||
           result.rows.flat().filter((slot) => slot.occupied).length !=
-          lsdevJson.rows.flat().filter((slot) => slot.occupied).length
+            lsdevJson.rows.flat().filter((slot) => slot.occupied).length
         ) {
-          console.log("result and lsdevJson differed");
           Object.assign(lsdevJson, result);
           preloadChecks.lsdev.content = lsdevJson;
           preloadChecks.lsdev.finished = true;
@@ -122,41 +121,66 @@ export default {
       }
     };
 
+    const runDiskInfo = async () => {
+      try {
+        const state = await useSpawn(
+          ["/usr/share/cockpit/45drives-disks-vue/scripts/disk_info"],
+          {
+            err: "out",
+            superuser: "require",
+            promise: true,
+          }
+        );
+        let result = JSON.parse(state.stdout);
+        Object.assign(diskInfo, result);
+        preloadChecks.lsdev.content = result;
+        preloadChecks.lsdev.finished = true;
+        preloadChecks.lsdev.failed = false;
+        preloadChecks.lsdev.fixAvailable = false;
+        return true;
+      } catch (error) {
+        console.log(error);
+        return false;
+      }
+    };
+
     const init = async () => {
       await runServerInfo();
-      await runLsdev();
+      await runDiskInfo();
     };
 
     const retryLsdev = async (duration) => {
       await delay(duration);
       while (await runLsdev()) {
-        console.log(`Waited ${duration}s`);
-        console.log("running lsdev again.");
         await delay(duration);
       }
     };
 
-    const udevState = cockpit.file(
-      "/usr/share/cockpit/45drives-disks-vue/udev/state"
-    );
-    udevState.watch(async function (content) {
-      lsdevState.value = content;
-      console.log("udev state updated: ", lsdevState.value);
-      // a disk was inserted or removed from system, run lsdev again.
-      if (await runLsdev()) {
-        console.log('runLsdev resulted in updated information, running retryLsdev');
-        retryLsdev(lsdevJson.lsdevDuration.toFixed(2) * 2);
-      }
-    });
+    let watchInitiated = false;
+
+    const udevState = cockpit
+      .file("/usr/share/cockpit/45drives-disks-vue/udev/state")
+      .watch(async (content) => {
+        if (watchInitiated) {
+          lsdevState.value = content;
+          // a disk was inserted or removed from system, run lsdev again.
+          if (await runLsdev()) {
+            retryLsdev((lsdevJson.lsdevDuration?.toFixed(2) ?? 5) * 2);
+          }
+        } else {
+          watchInitiated = true;
+          runLsdev();
+        }
+      });
 
     init();
     return {
       preloadChecks,
       runServerInfo,
       runLsdev,
-      udevState,
       lsdevJson,
       retryLsdev,
+      diskInfo,
     };
   },
 };
@@ -190,6 +214,13 @@ export default {
         </div>
       </div>
       <div class="flex-auto flex items-center justify-evenly mt-2 mx-2">
+        <div
+          v-if="
+            !preloadChecks.serverInfo.finished || !preloadChecks.lsdev.finished
+          "
+        >
+          Gathering disk information. Please wait...
+        </div>
         <div v-if="preloadChecks.serverInfo.failed" class="p-2 m-2">
           <ErrorMessage
             :errorMsg="preloadChecks.serverInfo.errorMessage"
@@ -205,9 +236,6 @@ export default {
           />
         </div>
       </div>
-      <!-- <div class="flex-auto flex"> -->
-      <!-- <DebugBox></DebugBox> -->
-      <!-- </div> -->
     </div>
   </div>
 </template>
