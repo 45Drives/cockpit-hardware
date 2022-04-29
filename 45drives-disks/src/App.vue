@@ -8,7 +8,8 @@ import ServerSection from "./components/ServerSection.vue";
 import DiskSection from "./components/DiskSection.vue";
 import CanvasSection from "./components/CanvasSection.vue";
 import ErrorMessage from "./components/ErrorMessage.vue";
-import useSpawn from "./components/cockpitSpawn";
+import { useSpawn } from "@45drives/cockpit-helpers/useSpawn";
+import ZfsSection from "./components/ZfsSection.vue";
 
 export default {
   name: "App",
@@ -19,6 +20,7 @@ export default {
     DiskSection,
     CanvasSection,
     ErrorMessage,
+    ZfsSection,
   },
   setup() {
     const currentDisk = ref("");
@@ -29,6 +31,12 @@ export default {
     provide("lsdevJson", lsdevJson);
     const diskInfo = reactive({ lsdevDuration: 5 });
     provide("diskInfo", diskInfo);
+    const zfsInfo = reactive({});
+    provide("zfsInfo", zfsInfo);
+    const enableZfsAnimations = reactive({ flag: true });
+    provide("enableZfsAnimations", enableZfsAnimations);
+    const pageLayout = ref("AZ");
+    provide("pageLayout", pageLayout);
 
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
 
@@ -53,7 +61,95 @@ export default {
           console.log("Default handler was run for the fix button.");
         },
       },
+      zfs: {
+        content: reactive({}),
+        finished: false,
+        failed: false,
+        errorMessage: [],
+        fixAvailable: false,
+        fixHandler: () => {
+          console.log("Default handler was run for the fix button.");
+        },
+      },
     });
+
+    const setPageLayout = () => {
+      if (preloadChecks.zfs.failed) {
+        // no zfs
+        if (!preloadChecks.serverInfo.failed) {
+          // server info is available.
+          switch (preloadChecks.serverInfo.content["Chassis Size"]) {
+            case "2U":
+              console.log("2U");
+              pageLayout.value = "A";
+              break;
+            case "AV15":
+              console.log("AV15");
+              pageLayout.value = "B";
+              break;
+            case "C8":
+              console.log("C8");
+              pageLayout.value = "A";
+              break;
+            case "MI4":
+              console.log("MI4");
+              pageLayout.value = "A";
+              break;
+            case "Q30":
+              console.log("Q30");
+              pageLayout.value = "B";
+              break;
+            case "S45":
+              console.log("S45");
+              pageLayout.value = "B";
+              break;
+            case "XL60":
+              console.log("XL60");
+              pageLayout.value = "C";
+              break;
+            default:
+              console.log("UNKNOWN CHASSIS SIZE");
+          }
+        }
+      } else {
+        //zfs info needs to be displayed
+        if (!preloadChecks.serverInfo.failed) {
+          // server info is available.
+          switch (preloadChecks.serverInfo.content["Chassis Size"]) {
+            case "2U":
+              console.log("2U");
+              pageLayout.value = "AZ";
+              break;
+            case "AV15":
+              console.log("AV15");
+              pageLayout.value = "BZ";
+              break;
+            case "C8":
+              console.log("C8");
+              pageLayout.value = "AZ";
+              break;
+            case "MI4":
+              console.log("MI4");
+              pageLayout.value = "AZ";
+              break;
+            case "Q30":
+              console.log("Q30");
+              pageLayout.value = "BZ";
+              break;
+            case "S45":
+              console.log("S45");
+              pageLayout.value = "BZ";
+              break;
+            case "XL60":
+              console.log("XL60");
+              pageLayout.value = "CZ";
+              break;
+            default:
+              console.log("UNKNOWN CHASSIS SIZE");
+          }
+        }
+      }
+    };
 
     const runServerInfo = async () => {
       try {
@@ -62,9 +158,8 @@ export default {
           {
             err: "out",
             superuser: "require",
-            promise: true,
           }
-        );
+        ).promise();
         let result = JSON.parse(state.stdout);
         preloadChecks.serverInfo.content = result;
         preloadChecks.serverInfo.finished = true;
@@ -89,8 +184,7 @@ export default {
         const state = await useSpawn(["/opt/45drives/tools/lsdev", "--json"], {
           err: "out",
           superuser: "require",
-          promise: true,
-        });
+        }).promise();
         let result = JSON.parse(state.stdout);
         if (
           !lsdevJson.hasOwnProperty("rows") ||
@@ -128,9 +222,8 @@ export default {
           {
             err: "out",
             superuser: "require",
-            promise: true,
           }
-        );
+        ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(diskInfo, result);
         preloadChecks.lsdev.content = result;
@@ -144,9 +237,32 @@ export default {
       }
     };
 
+    const runZfsInfo = async () => {
+      try {
+        const state = await useSpawn(
+          ["/usr/share/cockpit/45drives-disks-vue/scripts/zfs_info"],
+          {
+            err: "out",
+            superuser: "require",
+          }
+        ).promise();
+        let result = JSON.parse(state.stdout);
+        Object.assign(zfsInfo, result);
+        preloadChecks.zfs.content = result;
+        preloadChecks.zfs.finished = true;
+        preloadChecks.zfs.failed = !result?.zfs_installed;
+        preloadChecks.zfs.fixAvailable = false;
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
     const init = async () => {
       await runServerInfo();
       await runDiskInfo();
+      await runZfsInfo();
+      setPageLayout();
+      console.log(pageLayout);
     };
 
     const retryLsdev = async (duration) => {
@@ -154,6 +270,7 @@ export default {
       while (await runLsdev()) {
         await delay(duration);
       }
+      await runZfsInfo();
     };
 
     let watchInitiated = false;
@@ -181,30 +298,77 @@ export default {
       lsdevJson,
       retryLsdev,
       diskInfo,
+      zfsInfo,
+      enableZfsAnimations,
+      pageLayout,
     };
   },
 };
 </script>
 
 <template>
-  <div id="App">
-    <div class="h-screen flex flex-col overflow-hidden">
-      <FfdHeader moduleName="Disks" centerName />
-      <div class="flex flex-wrap overflow-y-auto">
-        <div class="flex p-2 grow flex-wrap">
-          <CanvasSection
-            v-if="
-              preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
-            "
-            :serverInfo="preloadChecks.serverInfo.content"
-          />
+  <div id="App" class="flex flex-col h-full">
+    <FfdHeader moduleName="Disks" centerName />
+    <div class="grow flex flex-col well overflow-y-auto p-4">
+      <div class="gap-well grid grid-cols-6">
+        <div
+          :class="[
+            pageLayout === 'AZ' ? 'col-span-6' : '',
+            pageLayout === 'BZ' ? 'col-span-2' : '',
+            pageLayout === 'CZ' ? 'col-span-3' : '',
+            pageLayout === 'A' ? 'col-span-6' : '',
+            pageLayout === 'B' ? 'col-span-2' : '',
+            pageLayout === 'C' ? 'col-span-3' : '',
+            'grow grid gap-well',
+          ]"
+        >
+          <div class="flex flex-col gap-well grow flex-wrap">
+            <CanvasSection
+              v-if="
+                preloadChecks.serverInfo.finished &&
+                preloadChecks.lsdev.finished
+              "
+              :serverInfo="preloadChecks.serverInfo.content"
+            />
+          </div>
+        </div>
+
+        <div
+          v-if="
+            preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
+          "
+          :class="[
+            pageLayout === 'AZ' ? 'col-span-3' : '',
+            pageLayout === 'BZ' ? 'col-span-4' : '',
+            pageLayout === 'CZ' ? 'col-span-3' : '',
+            pageLayout === 'A' ? 'col-span-2' : '',
+            pageLayout === 'B' ? 'col-span-4' : '',
+            pageLayout === 'C' ? 'col-span-3' : '',
+            'grow grid gap-well',
+          ]"
+        >
           <DiskSection
             v-if="
               preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
             "
           />
         </div>
-        <div class="flex p-2 mx-auto grow flex-col items-stretch">
+
+        <div
+          v-if="preloadChecks.zfs.finished && !preloadChecks.zfs.failed"
+          :class="[
+            pageLayout === 'AZ' ? 'col-span-3' : '',
+            pageLayout === 'BZ' ? 'col-span-6' : '',
+            pageLayout === 'CZ' ? 'col-span-6' : '',
+            'grow grid gap-well',
+          ]"
+        >
+          <ZfsSection
+            v-if="preloadChecks.zfs.finished && !preloadChecks.zfs.failed"
+          />
+        </div>
+
+        <div class="flex grow flex-col items-stretch gap-well col-span-6">
           <ServerSection
             v-if="
               preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
@@ -213,7 +377,7 @@ export default {
           />
         </div>
       </div>
-      <div class="flex-auto flex items-center justify-evenly mt-2 mx-2">
+      <div class="flex-auto flex items-center justify-evenly mx-2">
         <div
           v-if="
             !preloadChecks.serverInfo.finished || !preloadChecks.lsdev.finished
@@ -241,11 +405,12 @@ export default {
 </template>
 
 <style>
+@import "@45drives/cockpit-css/src/index.css";
 #app {
-  font-family: "Red Hat Text";
+  /*font-family: "Red Hat Text";*/
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
-  @apply bg-white dark:bg-stone-800 h-full;
+  @apply bg-default h-full text-default;
 }
 </style>

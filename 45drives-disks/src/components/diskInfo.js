@@ -1,5 +1,5 @@
 import { reactive, watch } from "vue";
-import useSpawn from "./cockpitSpawn.js";
+import { useSpawn } from "@45drives/cockpit-helpers/useSpawn";
 
 export default async function getServerInfo() {
   try {
@@ -8,9 +8,8 @@ export default async function getServerInfo() {
       {
         err: "out",
         superuser: "require",
-        promise: true,
       }
-    );
+    ).promise()
     let serverInfo = JSON.parse(state.stdout);
     return serverInfo;
   } catch (error) {

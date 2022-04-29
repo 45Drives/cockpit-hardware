@@ -61,7 +61,7 @@
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref, reactive } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
-import useSpawn from "./cockpitSpawn.js";
+import { useSpawn } from "@45drives/cockpit-helpers/useSpawn";
 
 export default {
   setup() {
@@ -94,9 +94,8 @@ export default {
           {
             err: "out",
             superuser: "require",
-            promise: true,
           }
-        );
+        ).promise()
         let result = JSON.parse(state.stdout);
         console.log(result);
         serverInfo.value = state.stdout;
@@ -120,8 +119,7 @@ export default {
         const state = await useSpawn(["/opt/45drives/tools/lsdev", "--json"], {
           err: "out",
           superuser: "require",
-          promise: true,
-        });
+        }).promise()
         let result = JSON.parse(state.stdout);
         console.log(result);
         lsdevInfo.value = state.stdout;

@@ -6,6 +6,8 @@
 import { DocumentSearchIcon } from "@heroicons/vue/solid";
 import P5 from "p5";
 import { ref, watch, onMounted, inject } from "vue";
+import zfsAnimation from "./zfsAnimation.js";
+import loadingAnimation from "./loadingAnimation.js";
 
 const assets = {
   chassis: {
@@ -68,6 +70,10 @@ const assets = {
         path: "img/disks/ssd-loading.png",
         image: null,
       },
+      empty: {
+        path: "img/disks/empty-ssd.png",
+        image: null,
+      },
     },
     hdd: {
       default: {
@@ -90,9 +96,13 @@ const assets = {
         path: "img/disks/hdd-loading.png",
         image: null,
       },
+      empty: {
+        path: "img/disks/empty-hdd.png",
+        image: null,
+      },
     },
   },
-  loadingFlag: true
+  loadingFlag: true,
 };
 
 const diskLocations = [
@@ -465,6 +475,8 @@ export default {
     const currentDisk = inject("currentDisk");
     const lsdevJson = inject("lsdevJson");
     const diskInfo = inject("diskInfo");
+    const zfsInfo = inject("zfsInfo");
+    const enableZfsAnimations = inject("enableZfsAnimations");
 
     watch(
       lsdevJson,
@@ -475,7 +487,7 @@ export default {
           const index = diskLocations.findIndex(
             (loc) => loc.BAY === slot["bay-id"]
           );
-          if(index == -1) return;
+          if (index == -1) return;
           diskLocations[index].occupied = slot.occupied;
           diskLocations[index].image = getDiskImage(
             slot.occupied,
@@ -497,7 +509,7 @@ export default {
           const index = diskLocations.findIndex(
             (loc) => loc.BAY === slot["bay-id"]
           );
-          if(index == -1) return;
+          if (index == -1) return;
           diskLocations[index].occupied = slot.occupied;
           diskLocations[index].image = getDiskImage(
             slot.occupied,
@@ -512,8 +524,12 @@ export default {
     );
 
     function getDiskImage(occupied, modelName, modelFamily, diskType, slotHdd) {
-      if (!occupied) return null;
-            if (assets.loadingFlag && diskType === "SSD" && slotHdd)
+      if (!occupied) {
+        return slotHdd
+          ? assets.disks.hdd.empty.image
+          : assets.disks.ssd.empty.image;
+      }
+      if (assets.loadingFlag && diskType === "SSD" && slotHdd)
         return assets.disks.caddy.loading.image;
       if (assets.loadingFlag && diskType === "SSD" && !slotHdd)
         return assets.disks.ssd.loading.image;
@@ -558,8 +574,8 @@ export default {
     }
 
     const p5Script = function (p5) {
-            let loadingIndex = 0;
-      let animationSteps = 20;
+      loadingAnimation(p5);
+      zfsAnimation(p5);
       p5.preload = (_) => {
         assets.chassis.image = p5.loadImage(assets.chassis.path);
         assets.fade.image = p5.loadImage(assets.fade.path);
@@ -595,23 +611,21 @@ export default {
           assets.chassis.image.height + assets.fade.image.height
         );
         canvas.parent("p5-s45-storinator");
-        document.getElementById("disk-section-card-body").style.height = `${
-          assets.chassis.image.height + assets.fade.image.height
-        }px`;
         p5.image(assets.fade.image, 0, 0);
         // increment the y positions of the disks by the height of the fade.
         diskLocations.forEach((loc) => {
           loc.y += assets.fade.image.height;
         });
-        //p5.noLoop();
       };
       // NOTE: Draw is here
       p5.draw = (_) => {
-                if (assets.loadingFlag) {
+        if (assets.loadingFlag) {
           p5.frameRate(10);
-          loadingIndex = p5.int((loadingIndex + 1) % animationSteps);
+          p5.loadingAnimationIndex = p5.int(
+            (p5.loadingAnimationIndex + 1) % p5.loadingAnimationSteps
+          );
         } else {
-          p5.frameRate(30);
+          p5.frameRate(24);
         }
         p5.image(assets.chassis.image, 0, assets.fade.image.height);
         diskLocations.forEach((loc) => {
@@ -623,8 +637,8 @@ export default {
                 loc.y,
                 loc.image.width,
                 loc.image.height,
-                animationSteps,
-                loadingIndex
+                p5.animationSteps,
+                p5.animationLoadingIndex
               );
             }
           }
@@ -634,6 +648,9 @@ export default {
             (loc) => loc.BAY === currentDisk.value
           );
           if (diskLocations[idx].image) {
+            if (enableZfsAnimations.flag) {
+              p5.showZfs(currentDisk.value, zfsInfo, diskLocations);
+            }
             p5.fill(255, 255, 255, 50);
             p5.stroke(206, 242, 212);
             p5.strokeWeight(2);
@@ -646,35 +663,19 @@ export default {
           }
         }
       };
-            p5.animateLoading = (x, y, w, h, steps, index) => {
-        p5.push();
-        p5.colorMode(p5.RGB);
-        p5.noStroke();
-        let from = p5.color(100, 100, 110, 100);
-        let to = p5.color(0, 0, 0, 100);
-        p5.colorMode(p5.RGB);
-        let stepPx = h / steps;
-        let stepPercent = 1.0 / steps;
-        for (let i = 0; i < steps; i++) {
-          p5.fill(p5.lerpColor(from, to, stepPercent * i));
-          p5.rect(x, y + stepPx * ((index + i) % steps), w, stepPx);
-        }
-        p5.pop();
-      };
 
       p5.mouseClicked = (_) => {
         let mx = p5.mouseX;
         let my = p5.mouseY;
         diskLocations.forEach((loc) => {
           if (
-            loc.occupied &&
+            loc.image &&
             mx > loc.x &&
             mx < loc.x + loc.image.width &&
             my > loc.y &&
             my < loc.y + loc.image.height
           ) {
             currentDisk.value = loc.BAY;
-            //p5.redraw();
           }
         });
       };
@@ -688,7 +689,8 @@ export default {
       diskInfoObj,
       currentDisk,
       lsdevJson,
-      diskInfo
+      diskInfo,
+      enableZfsAnimations,
     };
   },
 };

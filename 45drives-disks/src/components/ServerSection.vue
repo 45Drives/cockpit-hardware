@@ -1,22 +1,22 @@
 <template>
-  <div class="card mx-2 grow flex flex-col">
+  <div class="card grow flex flex-col">
     <div
-      class="card-header py-2 px-5 border-b border-stone-200 dark:border-stone-500 dark:bg-stone-700 sm:flex sm:items-center sm:justify-between"
+      class="card-header"
     >
-      <h3 class="text-lg py-1 leading-6 font-semibold">Server</h3>
+      <h3 class="text-header text-default">Server</h3>
     </div>
-    <div class="card-body dark:bg-stone-700 grow flex">
+    <div class="card-body grow flex">
       <div class="grow flex flex-col items-stretch">
         <div class="mt-0">
-          <dl class="sm:divide-y sm:divide-stone-200 dark:divide-stone-600">
+          <dl class="sm:divide-y divide-default">
             <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
-                class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                class="text-sm font-medium text-muted"
               >
                 Model
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
               >
                 {{ serverInfo.Model }}
               </dd>
@@ -24,12 +24,12 @@
 
             <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
-                class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                class="text-sm font-medium text-muted"
               >
                 Disk Count
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
               >
                 {{ diskCount }}
               </dd>
@@ -37,12 +37,12 @@
 
             <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
-                class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                class="text-sm font-medium text-muted"
               >
                 Total Storage
               </dt>
               <dd
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
               >
                 {{ storageCapacityStr }}
               </dd>
@@ -50,19 +50,19 @@
 
             <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
               <dt
-                class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                class="text-sm font-medium text-muted"
               >
                 Disk Temperature (avg)
               </dt>
               <dd
                 v-if="avgTemp != 0"
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
               >
                 {{ avgTemp }} °C / {{ (avgTemp * (9 / 5) + 32).toFixed(2) }} °F
               </dd>
               <dd
                 v-else
-                class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
               >
                 {{ avgTempStr }}
               </dd>
@@ -73,54 +73,54 @@
               class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4"
             >
               <dt
-                class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                class="text-sm font-medium text-muted"
               >
                 HBA{{ card.Ctl + 1 }}
               </dt>
               <div>
                 <dt
-                  class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                  class="text-sm font-medium text-muted"
                 >
                   Model
                 </dt>
                 <dd
-                  class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-1"
+                  class="mt-1 text-sm sm:mt-0 sm:col-span-1"
                 >
                   {{ card.Model }}
                 </dd>
               </div>
               <div>
                 <dt
-                  class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                  class="text-sm font-medium text-muted"
                 >
                   Controller ID
                 </dt>
                 <dd
-                  class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-1"
+                  class="mt-1 text-sm sm:mt-0 sm:col-span-1"
                 >
                   {{ card.Ctl }}
                 </dd>
               </div>
               <div>
                 <dt
-                  class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                  class="text-sm font-medium text-muted"
                 >
                   PCI Slot
                 </dt>
                 <dd
-                  class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-1"
+                  class="mt-1 text-sm sm:mt-0 sm:col-span-1"
                 >
                   {{ card["PCI Slot"] }}
                 </dd>
               </div>
               <div>
                 <dt
-                  class="text-sm font-medium text-stone-500 dark:text-stone-400"
+                  class="text-sm font-medium text-muted"
                 >
                   Bus Address
                 </dt>
                 <dd
-                  class="mt-1 text-sm text-stone-900 dark:text-stone-300 sm:mt-0 sm:col-span-1"
+                  class="mt-1 text-sm sm:mt-0 sm:col-span-1"
                 >
                   {{ card["Bus Address"] }}
                 </dd>
@@ -143,9 +143,7 @@ export default {
   setup(props) {
     const lsdevJson = inject("lsdevJson");
     const diskInfo = inject("diskInfo");
-    const diskCount = ref(diskInfo.rows
-      .flat()
-      .filter((slot) => slot.occupied).length)
+    const diskCount = ref(0);
 
     const getCapacityGB = (capacityStr) => {
       let coeffLut = {
