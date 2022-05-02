@@ -27,7 +27,7 @@
     <div
       v-if="activeSketchStr"
       ref="canvasCardBody"
-      class="card-body flex-auto flex flex-col items-center content-center p-0"
+      class="card-body flex-auto flex flex-col items-center content-center p-0 overflow-visible"
     >
       <P5Stornado2U v-if="activeSketchStr === 'Stornado2U'" />
       <P5StorinatorQ30 v-else-if="activeSketchStr === 'StorinatorQ30'" />
@@ -114,8 +114,7 @@ export default {
 
     const canvasCardBody = ref();
     const activeSketchStr = enableSketch(serverModel.value);
-    //watch(zfsInfo,()=>{console.log("zfsInfo Updated"); console.log(zfsInfo.hasOwnProperty('zfs_installed') && zfsInfo.zfs_installed)});
-    watch(enableZfsAnimations,()=>{console.log(enableZfsAnimations.flag)});
+    watch(enableZfsAnimations,()=>{});
 
 
     return {

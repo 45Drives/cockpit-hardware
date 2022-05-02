@@ -1,5 +1,5 @@
 <template>
-  <div id="p5-mi4-storinator" class="m-2"></div>
+  <div id="p5-mi4-storinator" class="self-stretch m-2 flex justify-center"></div>
 </template>
 
 <script>
@@ -7,6 +7,7 @@ import P5 from "p5";
 import { ref, watch, onMounted, inject } from "vue";
 import zfsAnimation from "./zfsAnimation.js";
 import loadingAnimation from "./loadingAnimation.js";
+import resizeHook from "./resizeHook.js";
 
 const assets = {
   chassis: {
@@ -77,7 +78,7 @@ export default {
     watch(
       lsdevJson,
       () => {
-        diskInfoObj.value = lsdevJson;
+        Object.assign(diskInfoObj.value, diskInfo);
         assets.loadingFlag = false;
         diskInfoObj.value.rows.flat().forEach((slot) => {
           const index = diskLocations.findIndex(
@@ -94,14 +95,16 @@ export default {
     watch(
       diskInfo,
       () => {
-        diskInfoObj.value = diskInfo;
-        diskInfoObj.value.rows.flat().forEach((slot) => {
-          const index = diskLocations.findIndex(
-            (loc) => loc.BAY === slot["bay-id"]
-          );
-          diskLocations[index].occupied = slot.occupied;
-          diskLocations[index].image = getDiskImage(slot.occupied);
-        });
+        if(assets.loadingFlag) {
+          Object.assign(diskInfoObj.value, diskInfo);
+          diskInfoObj.value.rows.flat().forEach((slot) => {
+            const index = diskLocations.findIndex(
+              (loc) => loc.BAY === slot["bay-id"]
+            );
+            diskLocations[index].occupied = slot.occupied;
+            diskLocations[index].image = getDiskImage(slot.occupied);
+          });
+        }
       },
       { immediate: true, deep: true }
     );
@@ -143,6 +146,7 @@ export default {
           assets.chassis.image.height
         );
         canvas.parent("p5-mi4-storinator");
+        resizeHook(p5,canvas.id(),assets.chassis.image.width);
       };
       // NOTE: Draw is here
       p5.draw = (_) => {

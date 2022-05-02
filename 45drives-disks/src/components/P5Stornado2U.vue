@@ -1,5 +1,5 @@
 <template>
-  <div id="p5-stornado2u" class="m-2"></div>
+  <div id="p5-stornado2u" class="self-stretch m-2 flex justify-center"></div>
 </template>
 
 <script>
@@ -7,6 +7,7 @@ import P5 from "p5";
 import { ref, watch, onMounted, inject } from "vue";
 import zfsAnimation from "./zfsAnimation.js";
 import loadingAnimation from "./loadingAnimation.js";
+import resizeHook from "./resizeHook.js";
 
 const assets = {
   chassis: {
@@ -446,7 +447,6 @@ export default {
     const p5Script = function (p5) {
       loadingAnimation(p5);
       zfsAnimation(p5);
-
       p5.preload = (_) => {
         assets.loadingFlag = true;
         assets.chassis.image = p5.loadImage(assets.chassis.path);
@@ -482,6 +482,7 @@ export default {
         );
         canvas.parent("p5-stornado2u");
         p5.frameRate(24);
+        resizeHook(p5,canvas.id(),assets.chassis.image.width);
       };
       // NOTE: Draw is here
       p5.draw = (_) => {
@@ -543,6 +544,7 @@ export default {
           }
         });
       };
+
     };
 
     onMounted(() => {

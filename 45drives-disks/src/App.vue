@@ -80,31 +80,24 @@ export default {
           // server info is available.
           switch (preloadChecks.serverInfo.content["Chassis Size"]) {
             case "2U":
-              console.log("2U");
               pageLayout.value = "A";
               break;
             case "AV15":
-              console.log("AV15");
               pageLayout.value = "B";
               break;
             case "C8":
-              console.log("C8");
               pageLayout.value = "A";
               break;
             case "MI4":
-              console.log("MI4");
               pageLayout.value = "A";
               break;
             case "Q30":
-              console.log("Q30");
               pageLayout.value = "B";
               break;
             case "S45":
-              console.log("S45");
               pageLayout.value = "B";
               break;
             case "XL60":
-              console.log("XL60");
               pageLayout.value = "C";
               break;
             default:
@@ -117,31 +110,24 @@ export default {
           // server info is available.
           switch (preloadChecks.serverInfo.content["Chassis Size"]) {
             case "2U":
-              console.log("2U");
               pageLayout.value = "AZ";
               break;
             case "AV15":
-              console.log("AV15");
               pageLayout.value = "BZ";
               break;
             case "C8":
-              console.log("C8");
               pageLayout.value = "AZ";
               break;
             case "MI4":
-              console.log("MI4");
               pageLayout.value = "AZ";
               break;
             case "Q30":
-              console.log("Q30");
               pageLayout.value = "BZ";
               break;
             case "S45":
-              console.log("S45");
               pageLayout.value = "BZ";
               break;
             case "XL60":
-              console.log("XL60");
               pageLayout.value = "CZ";
               break;
             default:
@@ -187,7 +173,7 @@ export default {
         }).promise();
         let result = JSON.parse(state.stdout);
         if (
-          !lsdevJson.hasOwnProperty("rows") ||
+          !lsdevJson["rows"] ||
           result.rows.flat().filter((slot) => slot.occupied).length !=
             lsdevJson.rows.flat().filter((slot) => slot.occupied).length
         ) {
@@ -262,7 +248,7 @@ export default {
       await runDiskInfo();
       await runZfsInfo();
       setPageLayout();
-      console.log(pageLayout);
+      runLsdev();
     };
 
     const retryLsdev = async (duration) => {
@@ -286,7 +272,6 @@ export default {
           }
         } else {
           watchInitiated = true;
-          runLsdev();
         }
       });
 
@@ -313,13 +298,13 @@ export default {
       <div class="gap-well grid grid-cols-6">
         <div
           :class="[
-            pageLayout === 'AZ' ? 'col-span-6' : '',
-            pageLayout === 'BZ' ? 'col-span-2' : '',
-            pageLayout === 'CZ' ? 'col-span-3' : '',
-            pageLayout === 'A' ? 'col-span-6' : '',
-            pageLayout === 'B' ? 'col-span-2' : '',
-            pageLayout === 'C' ? 'col-span-3' : '',
-            'grow grid gap-well',
+            pageLayout === 'AZ' ? 'lg:col-span-6' : '',
+            pageLayout === 'BZ' ? 'xl:col-span-3 2xl:col-span-2' : '',
+            pageLayout === 'CZ' ? 'xl:col-span-4 2xl:col-span-3' : '',
+            pageLayout === 'A' ? 'lg:col-span-6' : '',
+            pageLayout === 'B' ? 'xl:col-span-3 2xl:col-span-2' : '',
+            pageLayout === 'C' ? 'xl:col-span-4 2xl:col-span-3' : '',
+            'grow grid gap-well col-span-6',
           ]"
         >
           <div class="flex flex-col gap-well grow flex-wrap">
@@ -338,13 +323,13 @@ export default {
             preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
           "
           :class="[
-            pageLayout === 'AZ' ? 'col-span-3' : '',
-            pageLayout === 'BZ' ? 'col-span-4' : '',
-            pageLayout === 'CZ' ? 'col-span-3' : '',
-            pageLayout === 'A' ? 'col-span-2' : '',
-            pageLayout === 'B' ? 'col-span-4' : '',
-            pageLayout === 'C' ? 'col-span-3' : '',
-            'grow grid gap-well',
+            pageLayout === 'AZ' ? 'lg:col-span-3' : '',
+            pageLayout === 'BZ' ? 'xl:col-span-3 2xl:col-span-4' : '',
+            pageLayout === 'CZ' ? 'xl:col-span-2 2xl:col-span-3' : '',
+            pageLayout === 'A' ? 'lg:col-span-2' : '',
+            pageLayout === 'B' ? 'xl:col-span-3 2xl:col-span-4' : '',
+            pageLayout === 'C' ? 'xl:col-span-2 2xl:col-span-3' : '',
+            'grow grid gap-well col-span-6',
           ]"
         >
           <DiskSection
@@ -357,10 +342,10 @@ export default {
         <div
           v-if="preloadChecks.zfs.finished && !preloadChecks.zfs.failed"
           :class="[
-            pageLayout === 'AZ' ? 'col-span-3' : '',
-            pageLayout === 'BZ' ? 'col-span-6' : '',
-            pageLayout === 'CZ' ? 'col-span-6' : '',
-            'grow grid gap-well',
+            pageLayout === 'AZ' ? 'lg:col-span-3' : '',
+            pageLayout === 'BZ' ? 'lg:col-span-6' : '',
+            pageLayout === 'CZ' ? 'lg:col-span-6' : '',
+            'grow grid gap-well col-span-6',
           ]"
         >
           <ZfsSection

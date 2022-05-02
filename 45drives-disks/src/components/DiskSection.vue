@@ -12,7 +12,7 @@
       <div
         id="diskInfoTable"
         v-if="currentDisk"
-        class="grid grid-cols-4 grid-flow-row-dense grow"
+        class="grid grid-cols-2 2xl:grid-cols-3 grid-flow-row-dense grow"
       >
         <div
           v-if="diskObj['bay-id']"

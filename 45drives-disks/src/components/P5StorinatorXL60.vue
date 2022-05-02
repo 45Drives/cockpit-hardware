@@ -1,5 +1,5 @@
 <template>
-  <div id="p5-xl60-storinator" class="m-2"></div>
+  <div id="p5-xl60-storinator" class="self-stretch m-2 flex justify-center"></div>
 </template>
 
 <script>
@@ -8,6 +8,7 @@ import P5 from "p5";
 import { ref, watch, onMounted, inject } from "vue";
 import zfsAnimation from "./zfsAnimation.js";
 import loadingAnimation from "./loadingAnimation.js";
+import resizeHook from "./resizeHook.js";
 
 const assets = {
   chassis: {
@@ -734,6 +735,7 @@ export default {
         diskLocations.forEach((loc) => {
           loc.x += assets.fade.image.width;
         });
+        resizeHook(p5,canvas.id(),assets.chassis.image.width+assets.fade.image.width);
       };
       // NOTE: Draw is here
       p5.draw = (_) => {

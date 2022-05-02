@@ -8,47 +8,47 @@
     <div class="card-body grow flex">
       <div class="grow flex flex-col items-stretch">
         <div class="mt-0">
-          <dl class="sm:divide-y divide-default">
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
+          <dl class="sm:divide-y divide-default divide-y">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4 grid grid-cols-2">
               <dt
                 class="text-sm font-medium text-muted"
               >
                 Model
               </dt>
               <dd
-                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4 col-span-2"
               >
                 {{ serverInfo.Model }}
               </dd>
             </div>
 
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4 grid grid-cols-2">
               <dt
                 class="text-sm font-medium text-muted"
               >
                 Disk Count
               </dt>
               <dd
-                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4 col-span-2"
               >
                 {{ diskCount }}
               </dd>
             </div>
 
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4 grid grid-cols-2">
               <dt
                 class="text-sm font-medium text-muted"
               >
                 Total Storage
               </dt>
               <dd
-                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4 col-span-2"
               >
                 {{ storageCapacityStr }}
               </dd>
             </div>
 
-            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4">
+            <div class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4 grid grid-cols-2">
               <dt
                 class="text-sm font-medium text-muted"
               >
@@ -56,13 +56,13 @@
               </dt>
               <dd
                 v-if="avgTemp != 0"
-                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4 col-span-2"
               >
                 {{ avgTemp }} °C / {{ (avgTemp * (9 / 5) + 32).toFixed(2) }} °F
               </dd>
               <dd
                 v-else
-                class="mt-1 text-sm sm:mt-0 sm:col-span-4"
+                class="mt-1 text-sm sm:mt-0 sm:col-span-4 col-span-2"
               >
                 {{ avgTempStr }}
               </dd>
@@ -70,26 +70,26 @@
 
             <div
               v-for="card in serverInfo.HBA"
-              class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4"
+              class="py-2 sm:py-2 sm:grid sm:grid-cols-5 sm:gap-4 grid grid-cols-2 col-span-2"
             >
               <dt
-                class="text-sm font-medium text-muted"
+                class="text-sm font-medium text-muted col-span-2 sm:col-span-5"
               >
                 HBA{{ card.Ctl + 1 }}
               </dt>
-              <div>
+              <div class="col-span-1 sm:col-span-1">
                 <dt
                   class="text-sm font-medium text-muted"
                 >
                   Model
                 </dt>
                 <dd
-                  class="mt-1 text-sm sm:mt-0 sm:col-span-1"
+                  class="mt-1 text-sm sm:mt-0 sm:col-span-1 col-span-1"
                 >
                   {{ card.Model }}
                 </dd>
               </div>
-              <div>
+              <div class="col-span-1 sm:col-span-1">
                 <dt
                   class="text-sm font-medium text-muted"
                 >
@@ -101,7 +101,7 @@
                   {{ card.Ctl }}
                 </dd>
               </div>
-              <div>
+              <div class="col-span-1 sm:col-span-1">
                 <dt
                   class="text-sm font-medium text-muted"
                 >
@@ -113,7 +113,7 @@
                   {{ card["PCI Slot"] }}
                 </dd>
               </div>
-              <div>
+              <div class="col-span-1 sm:col-span-1">
                 <dt
                   class="text-sm font-medium text-muted"
                 >
@@ -194,6 +194,11 @@ export default {
                   .reduce((total, cap) => total + cap) / Number(diskCount.value)
               ).toFixed(2)
             : 0;
+        
+        if(avgTemp.value === 0){
+          avgTempStr.value = "No Disks Present";
+        }
+
       }
     };
 
