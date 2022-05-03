@@ -1,7 +1,7 @@
  209 lines (205 sloc) 4.28 KB
 <template>
-<div class="h-full w-full overflow-y-scroll">
-	<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8 grow">
+<div class="h-full w-full overflow-y-scroll well">
+	<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8 grow gap-well">
 		<SectionSystem/>
 		<SectionPci/>
 		<SectionCpu/>

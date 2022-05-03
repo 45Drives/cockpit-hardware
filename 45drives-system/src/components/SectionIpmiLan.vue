@@ -2,35 +2,35 @@
 <template>
 <div class="card">
   <div
-    class="card-header p-5 border-b border-stone-200 dark:border-stone-500  dark:bg-stone-700 sm:flex sm:items-center sm:justify-between"
+    class="card-header card-header flex flex-row items-center justify-between"
   >
-    <h3 class="text-lg leading-6 font-semibold">IPMI</h3>
+    <h3 class="text-header text-default">IPMI</h3>
     <div class="mt-3 sm:mt-0 sm:ml-4">
         <button type="button" class="card-refresh-btn" @click="getIpmiInfo()">
           <RefreshIconOutline class="h-5 w-5" aria-hidden="true" />
         </button>
     </div>
   </div>
-  <div class="card-body dark:bg-stone-700">
+  <div class="card-body">
     <div v-if="!fatalError" class="mt-2 flex flex-col">
       <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
           <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-            <table class="min-w-full divide-y divide-stone-400 dark:divide-stone-600">
-              <thead class="bg-stone-50 dark:bg-stone-500">
+            <table class="min-w-full divide-y divide-default">
+              <thead class="bg-accent">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-stone-900 dark:text-stone-200 sm:pl-6">IP Address</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">Subnet Mask</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">MAC Address</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">Default Gateway IP</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">IP Address</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Subnet Mask</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">MAC Address</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Default Gateway IP</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-stone-200 bg-white dark:bg-stone-600 dark:divide-stone-500">
+              <tbody class="divide-y divide-default">
                 <tr>
-                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-stone-900 dark:text-stone-200 sm:pl-6">{{ ipmi.ipAddress }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ ipmi.subnetMask }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ ipmi.macAddress }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ ipmi.defaultGatewayIp }}</td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ ipmi.ipAddress }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ ipmi.subnetMask }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ ipmi.macAddress }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ ipmi.defaultGatewayIp }}</td>
                 </tr>
               </tbody>
             </table>
@@ -53,7 +53,7 @@
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
-import useSpawn from "./cockpitSpawn.js";
+import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
 import ErrorMessage from "./ErrorMessage.vue";
 
 export default {
@@ -75,9 +75,8 @@ export default {
           {
             err: "out",
             superuser: "require",
-            promise: true,
           }
-        );
+        ).promise();
         let ipmiInfo = JSON.parse(state.stdout);
         ipmi.value = ipmiInfo;
           fatalError.value = false;

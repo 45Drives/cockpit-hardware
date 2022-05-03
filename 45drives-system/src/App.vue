@@ -13,11 +13,11 @@ import SectionContainer from './components/SectionContainer.vue'
 </template>
 
 <style>
+@import "@45drives/cockpit-css/src/index.css";
 #app {
-  font-family: "Red Hat Text";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin:0;
-  @apply bg-white dark:bg-stone-800 h-full;
+  @apply bg-default h-full text-default;
 }
 </style>

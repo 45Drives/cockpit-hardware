@@ -2,59 +2,59 @@
 <template>
   <div class="card mt-2">
     <div
-      class="card-header p-5 border-b border-stone-200 dark:border-stone-500 dark:bg-stone-700 sm:flex sm:items-center sm:justify-between"
+      class="card-header card-header flex flex-row items-center justify-between"
     >
-      <h3 class="text-lg leading-6 font-semibold">System</h3>
+      <h3 class="text-header text-default">System</h3>
       <div class="mt-3 sm:mt-0 sm:ml-4">
         <button type="button" class="card-refresh-btn" @click="getSystemInfo()">
           <RefreshIconOutline class="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
     </div>
-    <div class="card-body dark:bg-stone-700">
-      <div v-if="!fatalError" class="flex flex-row justify-evenly">
-        <div class="bg-white dark:bg-stone-600 shadow overflow-hidden sm:rounded-lg">
-          <div class="border-b border-stone-200 dark:border-stone-600">
+    <div class="card-body">
+      <div v-if="!fatalError" class="flex flex-col md:flex-row justify-evenly">
+        <div class="bg-default shadow overflow-hidden sm:rounded-lg">
+          <div class="border-b border-default">
             <dl>
               <div
-                class="bg-stone-50 dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Model</dt>
-                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium ">Model</dt>
+                <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ sysModel }}
                 </dd>
               </div>
               <div
-                class="bg-white dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Chassis Size</dt>
-                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium">Chassis Size</dt>
+                <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ sysChassis }}
                 </dd>
               </div>
               <div
-                class="bg-stone-50 dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Serial</dt>
-                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium ">Serial</dt>
+                <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ sysSerial }}
                 </dd>
               </div>
               <div
-                class="bg-white dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">Motherboard</dt>
-                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
+                <dt class="text-sm font-medium ">Motherboard</dt>
+                <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ moboModel }}
                 </dd>
               </div>
               <div
-                class="bg-stone-50 dark:bg-stone-600 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
               >
-                <dt class="text-sm font-medium text-stone-900 dark:text-stone-200">
+                <dt class="text-sm font-medium">
                   Motherboard Serial
                 </dt>
-                <dd class="mt-1 text-sm text-stone-500 dark:text-stone-400 sm:mt-0 sm:col-span-2">
+                <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ moboSerial }}
                 </dd>
               </div>
@@ -64,7 +64,7 @@
 
         <img
           :src="serverImgPath"
-          class="object-contain h-72 rounded-none justify-self-center"
+          class="object-contain md:h-72 h-48 rounded-none justify-self-center"
         />
       </div>
       <div v-if="fatalError">
@@ -81,8 +81,8 @@
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
-import useSpawn from "./cockpitSpawn.js";
 import ErrorMessage from "./ErrorMessage.vue";
+import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
 
 export default {
   components: {
@@ -143,9 +143,8 @@ export default {
           {
             err: "out",
             superuser: "require",
-            promise: true,
           }
-        );
+        ).promise();
         let sysInfo = JSON.parse(state.stdout);
         sysModel.value = sysInfo["Model"];
         sysChassis.value = sysInfo["Chassis Size"];

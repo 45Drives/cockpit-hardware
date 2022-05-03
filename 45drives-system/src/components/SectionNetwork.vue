@@ -2,43 +2,43 @@
 <template>
 <div class="card">
   <div
-    class="card-header p-5 border-b border-stone-200 dark:border-stone-500 dark:bg-stone-700 sm:flex sm:items-center sm:justify-between"
+    class="card-header card-header flex flex-row items-center justify-between"
   >
-    <h3 class="text-lg leading-6 font-semibold">Network</h3>
+    <h3 class="text-header text-default">Network</h3>
     <div class="mt-3 sm:mt-0 sm:ml-4">
         <button type="button" class="card-refresh-btn" @click="getNetworkInfo()">
           <RefreshIconOutline class="h-5 w-5" aria-hidden="true" />
         </button>
     </div>
   </div>
-  <div class="card-body dark:bg-stone-700">
+  <div class="card-body">
     <div v-if="!fatalError" class="mt-2 flex flex-col">
       <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
           <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-            <table class="min-w-full divide-y divide-stone-400 dark:divide-stone-600">
-              <thead class="bg-stone-50 dark:bg-stone-500">
+            <table class="min-w-full divide-y divide-default">
+              <thead class="bg-accent">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-stone-900 dark:text-stone-200 sm:pl-6">Connection Name</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">Connection State</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">Type</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">MAC</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">IPv4</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">IPv6</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">PCI Slot</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-stone-900 dark:text-stone-200">Bus Address</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Connection Name</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Connection State</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Type</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">MAC</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">IPv4</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">IPv6</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">PCI Slot</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Bus Address</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-stone-200 bg-white dark:bg-stone-600 dark:divide-stone-500">
+              <tbody class="divide-y divide-default bg-default">
                 <tr v-for="network in networks" :key="network.connectionName">
-                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-stone-900 dark:text-stone-200 sm:pl-6">{{ network.connectionName }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.connectionState }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.connectionType }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.mac }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.ipv4 }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.ipv6 }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.pciSlot }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{{ network.busAddress }}</td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ network.connectionName }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.connectionState }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.connectionType }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.mac }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.ipv4 }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.ipv6 }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.pciSlot }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ network.busAddress }}</td>
                 </tr>
               </tbody>
             </table>
@@ -61,7 +61,7 @@
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
-import useSpawn from "./cockpitSpawn.js";
+import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
 import ErrorMessage from "./ErrorMessage.vue";
 
 export default {
@@ -84,9 +84,8 @@ export default {
           {
             err: "out",
             superuser: "require",
-            promise: true,
           }
-        );
+        ).promise();
         let networkInfo = JSON.parse(state.stdout);
         networks.value.length = 0;
         networkInfo.forEach(network => {
