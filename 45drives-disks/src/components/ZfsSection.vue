@@ -7,7 +7,7 @@
       v-if="currentDisk != '' && zfsInfo.zfs_disks.hasOwnProperty(currentDisk)"
       class="card-body overflow-y-auto grow-0 flex flex-wrap gap-12"
     >
-      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-3">
+      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5">
         <div
           class="text-label text-default col-span-3 border-b-[1px] shrink-0 border-neutral-200 dark:border-neutral-700"
         >
@@ -119,7 +119,7 @@
           </div>
         </div>
       </div>
-      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-3">
+      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5">
         <div
           class="text-label text-default col-span-3 border-b-[1px] shrink-0 border-neutral-200 dark:border-neutral-700"
         >
@@ -225,7 +225,7 @@
           </div>
         </div>
       </div>
-      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-3 h-fit">
+      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5 h-fit">
         <div
           class="text-label text-default col-span-3 border-b-[1px] self-start border-neutral-200 dark:border-neutral-700"
         >

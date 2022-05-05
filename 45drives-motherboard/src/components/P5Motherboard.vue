@@ -1,10 +1,11 @@
 <template>
-  <div id="motherboard_app"></div>
+  <div id="motherboard_app" class="flex flex-col items-center"></div>
 </template>
 
 <script>
 import { onMounted, inject, ref, watch } from "vue";
 import P5 from "p5";
+import resizeHook from "./resizeHook.js";
 
 export default {
   name: "P5Motherboard",
@@ -61,7 +62,6 @@ export default {
       let globalMask;
       let APPLIED_COUNT = 0;
 
-      //var hardware_info = null;
       const mobo_json_path =
         "img/motherboard/" +
         String(
@@ -72,9 +72,6 @@ export default {
           mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
         ) +
         ".json";
-
-      //var mobo_supported = false;
-      //var root_check = null;
 
       m.createComponentMasks = function (a) {
         var img_path =
@@ -123,9 +120,9 @@ export default {
           m.push();
           m.fill(this.fill);
           m.stroke(this.border);
+          m.strokeWeight(2);
           m.rect(this.x0, this.y0, this.width, this.height, 10, 10);
-          m.stroke(0);
-          m.strokeWeight(1);
+          m.noStroke();
           try {
             m.textSize(14);
           } catch (err) {}
@@ -146,17 +143,14 @@ export default {
         let ret_val = true;
         if (!background_img) {
           ret_val = false;
-        } else {
-          //m.resizeCanvas(background_img.width, background_img.height);
-          console.log("background_img", background_img);
         }
         return ret_val;
       };
 
       m.setup = function () {
         let cnv = m.createCanvas(1024, 1024);
+        m.canvas_id = cnv.id();
         cnv.mouseMoved(m.mouseActivity);
-        //mobo_image = document.getElementById("mobo_image");
         m.frameRate(20);
       };
 
@@ -545,7 +539,8 @@ export default {
                     .replaceAll("]\n", "")
                     .replaceAll("}", "")
                     .replaceAll(",", "")
-                    .replaceAll("    ", "  ");
+                    .replaceAll("    ", "  ")
+                    .slice(0, -1);
                   if (
                     pci_info["PCI Info"][i].hasOwnProperty("Card Type") &&
                     pci_info["PCI Info"][i].hasOwnProperty("Card Model")
@@ -1097,6 +1092,7 @@ export default {
       m.setNewCanvasDimensions = function (im) {
         console.log("setting new dimensions for canvas:", im.width, im.height);
         m.resizeCanvas(im.width, im.height);
+        resizeHook(m,m.canvas_id,im.width,im.height);
       };
 
       m.jsonLoadMotherboard = function (fname) {

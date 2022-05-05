@@ -31,7 +31,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			class="text-red-800 dark:text-white text-2xl cursor-pointer grow-0 text-center"
 			@click="home"
 		>{{ moduleName }}</h1>
-		<div class="flex basis-32 justify-end grow shrink-0">
+		<div class="flex basis-24 justify-end grow shrink-0">
 			<button
 				@click="darkMode = !darkMode"
 				id="theme-toggle"

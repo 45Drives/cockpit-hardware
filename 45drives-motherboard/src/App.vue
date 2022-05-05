@@ -5,16 +5,26 @@ import FfdHeader from "./components/FfdHeader.vue";
 import P5Motherboard from "./components/P5Motherboard.vue";
 import { ref, reactive, provide } from "vue";
 import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
+import {
+  CheckIcon,
+  ExclamationIcon,
+  DotsHorizontalIcon,
+} from "@heroicons/vue/outline";
+import ErrorMessage from "./components/ErrorMessage.vue";
 
 export default {
   name: "App",
   components: {
     FfdHeader,
-    P5Motherboard
+    P5Motherboard,
+    CheckIcon,
+    ExclamationIcon,
+    DotsHorizontalIcon,
+    ErrorMessage,
   },
   setup() {
     const darkMode = ref(false);
-    provide("darkModeInjectionKey",darkMode);
+    provide("darkModeInjectionKey", darkMode);
     const mobo_info = reactive({});
     provide("mobo_info", mobo_info);
     const mobo_json_path = ref("");
@@ -29,7 +39,17 @@ export default {
     provide("network_info", network_info);
     const scriptsComplete = ref(false);
     const scriptsValid = ref(false);
-    const supportedMotherboards = reactive(["X11DPL-i","X11SPL-F","H11SSL-i","X11SSH-CTF","X11SSM-F","X11SPi-TF"]);
+    const supportedMotherboards = reactive([
+      "X11SPL-F",
+      "X11DPL-i",
+      "H11SSL-i",
+      "X11SSH-CTF",
+      "X11SSM-F",
+      "X11SPi-TF",
+    ]);
+
+    const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
+    const delay_ms = (ms) => new Promise((res) => setTimeout(res, ms));
 
     const preloadChecks = reactive({
       mobo_info: {
@@ -37,30 +57,35 @@ export default {
         finished: false,
         failed: false,
         errorMessage: [],
+        errorHeader: "Failed to obtain Motherboard & CPU Information",
       },
       pci_info: {
         content: reactive({}),
         finished: false,
         failed: false,
         errorMessage: [],
+        errorHeader: "Failed to obtain PCI Information",
       },
       sata_info: {
         content: reactive({}),
         finished: false,
         failed: false,
         errorMessage: [],
+        errorHeader: "Failed to obtain SATA Information",
       },
       ram_info: {
         content: reactive({}),
         finished: false,
         failed: false,
         errorMessage: [],
+        errorHeader: "Failed to obtain RAM Information",
       },
       network_info: {
         content: reactive({}),
         finished: false,
         failed: false,
         errorMessage: [],
+        errorHeader: "Failed to obtain Network Information",
       },
     });
 
@@ -77,7 +102,7 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(mobo_info, result);
-        console.log("mobo_info",result);
+        console.log("mobo_info", result);
         preloadChecks.mobo_info.content = result;
         preloadChecks.mobo_info.finished = true;
         preloadChecks.mobo_info.failed = false;
@@ -86,15 +111,17 @@ export default {
         preloadChecks.mobo_info.content = null;
         preloadChecks.mobo_info.finished = true;
         preloadChecks.mobo_info.failed = true;
+        if (error.stdout)
+          preloadChecks.mobo_info.errorMessage.push(error.stdout);
+        if (error.stderr)
+          preloadChecks.mobo_info.errorMessage.push(error.stderr);
       }
     };
 
     const getPciInfo = async () => {
       try {
         const state = await useSpawn(
-          [
-            "/usr/share/cockpit/45drives-motherboard/helper_scripts/pci",
-          ],
+          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/pci"],
           {
             err: "out",
             superuser: "require",
@@ -102,7 +129,7 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(pci_info, result);
-        console.log("pci_info",result);
+        console.log("pci_info", result);
         preloadChecks.pci_info.content = result;
         preloadChecks.pci_info.finished = true;
         preloadChecks.pci_info.failed = false;
@@ -111,15 +138,17 @@ export default {
         preloadChecks.pci_info.content = null;
         preloadChecks.pci_info.finished = true;
         preloadChecks.pci_info.failed = true;
+        if (error.stdout)
+          preloadChecks.pci_info.errorMessage.push(error.stdout);
+        if (error.stderr)
+          preloadChecks.pci_info.errorMessage.push(error.stderr);
       }
     };
 
     const getSataInfo = async () => {
       try {
         const state = await useSpawn(
-          [
-            "/usr/share/cockpit/45drives-motherboard/helper_scripts/sata",
-          ],
+          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/sata"],
           {
             err: "out",
             superuser: "require",
@@ -127,7 +156,7 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(sata_info, result);
-        console.log("sata_info",result);
+        console.log("sata_info", result);
         preloadChecks.sata_info.content = result;
         preloadChecks.sata_info.finished = true;
         preloadChecks.sata_info.failed = false;
@@ -136,15 +165,17 @@ export default {
         preloadChecks.sata_info.content = null;
         preloadChecks.sata_info.finished = true;
         preloadChecks.sata_info.failed = true;
+        if (error.stdout)
+          preloadChecks.sata_info.errorMessage.push(error.stdout);
+        if (error.stderr)
+          preloadChecks.sata_info.errorMessage.push(error.stderr);
       }
     };
 
     const getRamInfo = async () => {
       try {
         const state = await useSpawn(
-          [
-            "/usr/share/cockpit/45drives-motherboard/helper_scripts/ram",
-          ],
+          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/ram"],
           {
             err: "out",
             superuser: "require",
@@ -152,7 +183,7 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(ram_info, result);
-        console.log("ram_info",result);
+        console.log("ram_info", result);
         preloadChecks.ram_info.content = result;
         preloadChecks.ram_info.finished = true;
         preloadChecks.ram_info.failed = false;
@@ -161,15 +192,17 @@ export default {
         preloadChecks.ram_info.content = null;
         preloadChecks.ram_info.finished = true;
         preloadChecks.ram_info.failed = true;
+        if (error.stdout)
+          preloadChecks.ram_info.errorMessage.push(error.stdout);
+        if (error.stderr)
+          preloadChecks.ram_info.errorMessage.push(error.stderr);
       }
     };
 
     const getNetworkInfo = async () => {
       try {
         const state = await useSpawn(
-          [
-            "/usr/share/cockpit/45drives-motherboard/helper_scripts/network",
-          ],
+          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/network"],
           {
             err: "out",
             superuser: "require",
@@ -177,7 +210,7 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(network_info, result);
-        console.log("network_info",result);
+        console.log("network_info", result);
         preloadChecks.network_info.content = result;
         preloadChecks.network_info.finished = true;
         preloadChecks.network_info.failed = false;
@@ -186,15 +219,25 @@ export default {
         preloadChecks.network_info.content = null;
         preloadChecks.network_info.finished = true;
         preloadChecks.network_info.failed = true;
+        if (error.stdout)
+          preloadChecks.network_info.errorMessage.push(error.stdout);
+        if (error.stderr)
+          preloadChecks.network_info.errorMessage.push(error.stderr);
       }
     };
 
-    const init = async () => {
-      await getMoboInfo();
-      await getPciInfo();
-      await getSataInfo();
-      await getRamInfo();
-      await getNetworkInfo();
+    const verifyPreload = async () => {
+      while (
+        !Boolean(
+          preloadChecks.mobo_info.finished &&
+            preloadChecks.pci_info.finished &&
+            preloadChecks.sata_info.finished &&
+            preloadChecks.ram_info.finished &&
+            preloadChecks.network_info.finished
+        )
+      ) {
+        await delay_ms(300);
+      }
       scriptsComplete.value = Boolean(
         preloadChecks.mobo_info.finished &&
           preloadChecks.pci_info.finished &&
@@ -209,16 +252,15 @@ export default {
           !preloadChecks.ram_info.failed &&
           !preloadChecks.network_info.failed
       );
-      console.log(mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name'])
-      console.log(        supportedMotherboards.includes(
-          mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
-        ))
-      console.log(        scriptsComplete.value &&
-        scriptsValid.value &&
-        supportedMotherboards.includes(
-          mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
-        ))
-      
+    };
+
+    const init = async () => {
+      getMoboInfo();
+      getPciInfo();
+      getSataInfo();
+      getRamInfo();
+      getNetworkInfo();
+      await verifyPreload();
     };
 
     init();
@@ -243,26 +285,207 @@ export default {
   <div class="h-full flex flex-col overflow-hidden">
     <FfdHeader moduleName="Motherboard" centerName />
     <div
+      id="MotherboardContainer"
       v-if="
         scriptsComplete &&
         scriptsValid &&
         supportedMotherboards.includes(
           mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
         )
-      " class="well flex flex-col items-center h-full"
+      "
+      class="well flex flex-col items-center h-full"
     >
       <P5Motherboard></P5Motherboard>
     </div>
-    <div v-else-if="!scriptsComplete">
-      <div>SCRIPTS INCOMPLETE</div>
-      <div>mobo_info {{ preloadChecks.mobo_info.finished }}  {{ preloadChecks.mobo_info.failed }}</div>
-      <div>pci_info  {{ preloadChecks.pci_info.finished }}   {{ preloadChecks.pci_info.failed }}</div>
-      <div>sata_info {{ preloadChecks.sata_info.finished }}  {{ preloadChecks.sata_info.failed }}</div>
-      <div>ram_info  {{ preloadChecks.ram_info.finished }}   {{ preloadChecks.ram_info.failed }}</div>
-      <div>network_info {{ preloadChecks.network_info.finished }} {{ preloadChecks.network_info.failed }}</div>
+    <div
+      v-else-if="
+        scriptsComplete &&
+        scriptsValid &&
+        !supportedMotherboards.includes(
+          mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
+        )
+      "
+      class="well flex flex-col items-center h-full"
+    >
+      <div class="card">
+        <div class="card-header">
+          <h3 class="text-header text-default">
+            Unsupported Motherboard Model Detected
+          </h3>
+        </div>
+        <div class="card-body flex flex-col gap-4">
+          <div class="flex flex-row gap-8">
+            <div>Motherboard Detected:</div>
+            <div class="text-muted">
+              {{
+                mobo_info["Motherboard Info"][0]["Motherboard"][0][
+                  "Product Name"
+                ]
+              }}
+            </div>
+          </div>
+          <div>
+            <div class="bg-accent rounded-md p-5 flex flex-col items-center gap-4">
+              <div>
+                Support for
+                <span class="text-muted">{{
+                  mobo_info["Motherboard Info"][0]["Motherboard"][0][
+                    "Product Name"
+                  ]
+                }}</span>
+                is not available at this time.
+              </div>
+              <a
+                href="https://github.com/45Drives/cockpit-hardware/issues"
+                class="text-blue-500" target="_blank"
+              >
+                Submit a feature request
+              </a>
+            </div>
+          </div>
+          <div class="grid grid-cols-2">
+            <div class="col-span-1">Supported Motherboards:</div>
+            <ul
+              role="list"
+              class="col-span-1 list-none pl-8 space-y-1 whitespace-pre text-muted"
+            >
+              <li v-for="entry in supportedMotherboards">{{ entry }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-    <div v-else>
-      <div>ONE OR MORE SCRIPTS FAILED BRO</div>
+    <div
+      v-else-if="!scriptsComplete"
+      class="card w-96 mx-auto z-10 my-10 flex flex-col"
+    >
+      <div class="card-header flex flex-row items-center">
+        <h3 class="text-header text-default">Gathering Information</h3>
+      </div>
+      <div class="card-body">
+        <div class="flex">
+          <span
+            :class="[
+              preloadChecks.mobo_info.finished ? 'line-through' : '',
+              'text-muted basis-1/2',
+            ]"
+            >Motherboard & CPU</span
+          >
+          <DotsHorizontalIcon
+            v-if="!preloadChecks.mobo_info.finished"
+            class="size-icon-lg icon-default basis-1/2"
+          />
+          <ExclamationIcon
+            v-else-if="preloadChecks.mobo_info.failed"
+            class="size-icon-lg icon-warning basis-1/2"
+          />
+          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+        </div>
+        <div class="flex">
+          <span
+            :class="[
+              preloadChecks.pci_info.finished ? 'line-through' : '',
+              'text-muted basis-1/2',
+            ]"
+            >PCI</span
+          >
+          <DotsHorizontalIcon
+            v-if="!preloadChecks.pci_info.finished"
+            class="size-icon-lg icon-default basis-1/2"
+          />
+          <ExclamationIcon
+            v-else-if="preloadChecks.pci_info.failed"
+            class="size-icon-lg icon-warning basis-1/2"
+          />
+          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+        </div>
+        <div class="flex">
+          <span
+            :class="[
+              preloadChecks.sata_info.finished ? 'line-through' : '',
+              'text-muted basis-1/2',
+            ]"
+            >SATA</span
+          >
+          <DotsHorizontalIcon
+            v-if="!preloadChecks.sata_info.finished"
+            class="size-icon-lg icon-default basis-1/2"
+          />
+          <ExclamationIcon
+            v-else-if="preloadChecks.sata_info.failed"
+            class="size-icon-lg icon-warning basis-1/2"
+          />
+          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+        </div>
+        <div class="flex">
+          <span
+            :class="[
+              preloadChecks.ram_info.finished ? 'line-through' : '',
+              'text-muted basis-1/2',
+            ]"
+            >RAM</span
+          >
+          <DotsHorizontalIcon
+            v-if="!preloadChecks.ram_info.finished"
+            class="size-icon-lg icon-default basis-1/2"
+          />
+          <ExclamationIcon
+            v-else-if="preloadChecks.ram_info.failed"
+            class="size-icon-lg icon-warning basis-1/2"
+          />
+          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+        </div>
+        <div class="flex">
+          <span
+            :class="[
+              preloadChecks.network_info.finished ? 'line-through' : '',
+              'text-muted basis-1/2',
+            ]"
+            >Network Devices</span
+          >
+          <DotsHorizontalIcon
+            v-if="!preloadChecks.network_info.finished"
+            class="size-icon-lg icon-default basis-1/2"
+          />
+          <ExclamationIcon
+            v-else-if="preloadChecks.network_info.failed"
+            class="size-icon-lg icon-warning basis-1/2"
+          />
+          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+        </div>
+      </div>
+    </div>
+    <div v-else class="card-body">
+      <div v-if="preloadChecks.mobo_info.failed">
+        <ErrorMessage
+          :errorMsg="preloadChecks.mobo_info.errorMessage"
+          :errorHeader="preloadChecks.mobo_info.errorHeader"
+        ></ErrorMessage>
+      </div>
+      <div v-if="preloadChecks.pci_info.failed">
+        <ErrorMessage
+          :errorMsg="preloadChecks.pci_info.errorMessage"
+          :errorHeader="preloadChecks.pci_info.errorHeader"
+        ></ErrorMessage>
+      </div>
+      <div v-if="preloadChecks.sata_info.failed">
+        <ErrorMessage
+          :errorMsg="preloadChecks.sata_info.errorMessage"
+          :errorHeader="preloadChecks.sata_info.errorHeader"
+        ></ErrorMessage>
+      </div>
+      <div v-if="preloadChecks.ram_info.failed">
+        <ErrorMessage
+          :errorMsg="preloadChecks.ram_info.errorMessage"
+          :errorHeader="preloadChecks.ram_info.errorHeader"
+        ></ErrorMessage>
+      </div>
+      <div v-if="preloadChecks.network_info.failed">
+        <ErrorMessage
+          :errorMsg="preloadChecks.network_info.errorMessage"
+          :errorHeader="preloadChecks.network_info.errorHeader"
+        ></ErrorMessage>
+      </div>
     </div>
   </div>
 </template>
