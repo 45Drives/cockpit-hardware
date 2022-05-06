@@ -1,8 +1,8 @@
 # A script that you can use to sync the compiled app to a server running cockpit.
 # you need to be able to ssh into it with a copied key prior to running.
 
-TEST_SERVER_A="192.168.35.36"
-TEST_SERVER_B="192.168.13.33"
+TEST_SERVER_A="192.168.13.45"
+TEST_SERVER_B="192.168.13.44"
 COCKPIT_MODULE="45drives-motherboard"
 
 echo "Running npm run build"

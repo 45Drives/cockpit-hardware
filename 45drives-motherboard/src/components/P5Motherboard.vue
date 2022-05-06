@@ -1098,15 +1098,13 @@ export default {
       m.jsonLoadMotherboard = function (fname) {
         var proc = cockpit.spawn(
           [
-            "/usr/share/cockpit/45drives-motherboard/helper_scripts/dump_json",
+            "/usr/share/cockpit/45drives-motherboard-vue/helper_scripts/dump_json",
             fname,
           ],
           { err: "out", superuser: "require" }
         );
         proc.stream(function (data) {
           mobo_json = JSON.parse(data);
-          //mobo_image = document.getElementById("mobo_image");
-          //let im_path = mobo_image.src;
           for (let i = 0; i < mobo_json.length; i++) {
             if (mobo_json[i]["shape"] == "rect") {
               components.push(
