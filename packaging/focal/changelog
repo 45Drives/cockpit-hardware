@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.1.0-6focal) focal; urgency=medium
+
+  * 6th build, added more flags
+  * 7th build, passed a --no-parallel flag to dh make because yarn is trash
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 09 May 2022 12:59:27 -0300
+
 cockpit-45drives-hardware (2.1.0-5focal) focal; urgency=medium
 
   * 5th build, added network concurrency flag to make file

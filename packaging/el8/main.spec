@@ -40,6 +40,9 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-6
+- 6th build, added more flags
+- 7th build, passed a --no-parallel flag to dh make because yarn is trash
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-5
 - 5th build, added network concurrency flag to make file
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-4
