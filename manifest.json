@@ -58,10 +58,12 @@
     "changelog": {
         "urgency": "medium",
         "version": "2.1.0",
-        "buildVersion": "5",
+        "buildVersion": "6",
         "ignore": [],
-        "date": null,
+        "date": "2022-05-09T15:49:17.635579",
         "packager": "Mark Hooper <mhooper@45drives.com>",
-        "changes": []
+        "changes": [
+            "6th build, added more flags"
+        ]
     }
 }
