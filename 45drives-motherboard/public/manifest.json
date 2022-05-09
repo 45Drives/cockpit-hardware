@@ -2,8 +2,8 @@
     "version": 0,
 
     "menu": {
-        "45drives-disks-vue": {
-            "label": "45Drives Motherboard-vue",
+        "45drives-motherboard": {
+            "label": "45Drives Motherboard",
             "path": "index.html",
         	"order": 112
         }

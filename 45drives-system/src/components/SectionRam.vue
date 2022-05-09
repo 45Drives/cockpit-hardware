@@ -76,7 +76,7 @@ export default {
       rams.value.push({ locator: 'Loading...', type: 'Loading...', size: 'Loading...', manufacturer: 'Loading...', serialNumber: 'Loading...', temperature: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system-vue/scripts/ram"],
+          ["/usr/share/cockpit/45drives-system/scripts/ram"],
           {
             err: "out",
             superuser: "require",

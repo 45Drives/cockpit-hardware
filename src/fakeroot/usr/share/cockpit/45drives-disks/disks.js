@@ -237,7 +237,6 @@ var disk_app = function( d ) {
 						if(this.lsdev_values[i]["rotation-rate"] != 0){
 							//hard drive in slot
 							if(/ST18000|ST16000|ST20000|ST14000|ST12000/.test(this.lsdev_values[i]["model-name"])){
-								//console.log(this.lsdev_values[i]["model-name"],/ST18000|ST16000|ST20000|ST14000|ST12000/.test(this.lsdev_values[i]["model-name"]));
 								drive_img = hdd_seagate_st_img;
 							}
 							else if(/Seagate Enterprise/.test(this.lsdev_values[i]["model-family"])){
@@ -493,8 +492,6 @@ var disk_app = function( d ) {
 						controller.innerHTML = json_lsdev["meta"]["disk-controller"];
 						driver_vers.innerHTML = json_lsdev["meta"]["driver-version"];
 					}
-					console.log("JSON_LSDEV");
-					console.log(json_lsdev);
 				}
 		);
 

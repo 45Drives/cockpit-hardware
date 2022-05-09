@@ -140,7 +140,7 @@ export default {
     const runServerInfo = async () => {
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks-vue/scripts/server_info"],
+          ["/usr/share/cockpit/45drives-disks/scripts/server_info"],
           {
             err: "out",
             superuser: "require",
@@ -204,7 +204,7 @@ export default {
     const runDiskInfo = async () => {
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks-vue/scripts/disk_info"],
+          ["/usr/share/cockpit/45drives-disks/scripts/disk_info"],
           {
             err: "out",
             superuser: "require",
@@ -226,7 +226,7 @@ export default {
     const runZfsInfo = async () => {
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks-vue/scripts/zfs_info"],
+          ["/usr/share/cockpit/45drives-disks/scripts/zfs_info"],
           {
             err: "out",
             superuser: "require",
@@ -262,7 +262,7 @@ export default {
     let watchInitiated = false;
 
     const udevState = cockpit
-      .file("/usr/share/cockpit/45drives-disks-vue/udev/state")
+      .file("/usr/share/cockpit/45drives-disks/udev/state")
       .watch(async (content) => {
         if (watchInitiated) {
           lsdevState.value = content;

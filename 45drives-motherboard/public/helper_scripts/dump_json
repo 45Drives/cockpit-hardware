@@ -2,7 +2,7 @@
 import os
 import sys
 def main(argv):
-	json_path = "/usr/share/cockpit/45drives-motherboard-vue/" + argv[0]
+	json_path = "/usr/share/cockpit/45drives-motherboard/" + argv[0]
 	if os.path.exists(json_path):
 		f = open(json_path,"r")
 		print(f.read());

@@ -1070,7 +1070,7 @@ export default {
                     components[c]["y0"],
                     components[c]["width"],
                     components[c]["height"],
-                    "#FFFFFF40",
+                    "#FFFFFF00",
                     -1,
                     1.0
                   )
@@ -1092,13 +1092,13 @@ export default {
       m.setNewCanvasDimensions = function (im) {
         console.log("setting new dimensions for canvas:", im.width, im.height);
         m.resizeCanvas(im.width, im.height);
-        resizeHook(m,m.canvas_id,im.width,im.height);
+        resizeHook(m, m.canvas_id, im.width, im.height);
       };
 
       m.jsonLoadMotherboard = function (fname) {
         var proc = cockpit.spawn(
           [
-            "/usr/share/cockpit/45drives-motherboard-vue/helper_scripts/dump_json",
+            "/usr/share/cockpit/45drives-motherboard/helper_scripts/dump_json",
             fname,
           ],
           { err: "out", superuser: "require" }
@@ -1161,11 +1161,9 @@ export default {
                 components[i].popup.x0 =
                   components[i].x0 - 20 - components[i].popup.width;
               } else {
-                //popup window is very wide, we need to place it above the component,
-                //starting from the left and sliding it toward the right
-                //until it fits on the canvas.
-                components[i].popup.x0 =
-                  (components[i].x0 - 20 - components[i].popup.width) * -1 + 20;
+                //popup window is very wide, set its x position to ensure that the right most
+                //edge will fit on the canvas. assume that the left-most edge will be visible.
+                components[i].popup.x0 = background_img.width - components[i].popup.width - 20;
               }
               if (components[i].y0 - 20 > 0) {
                 if (

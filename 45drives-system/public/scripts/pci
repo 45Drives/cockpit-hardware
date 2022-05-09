@@ -74,7 +74,7 @@ def storcli():
 	return hba_cards
 
 def network():
-	network_script_path = "/usr/share/cockpit/45drives-system-vue/scripts/network"
+	network_script_path = "/usr/share/cockpit/45drives-system/scripts/network"
 	try:
 		network_result = subprocess.Popen(
 			[network_script_path],stdout=subprocess.PIPE,universal_newlines=True).stdout

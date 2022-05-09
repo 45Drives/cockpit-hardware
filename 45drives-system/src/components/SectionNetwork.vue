@@ -80,7 +80,7 @@ export default {
       networks.value.push({ connectionName: 'Loading...', connectionState: 'Loading...', connectionType: 'Loading...', mac: 'Loading...', ipv4: 'Loading...', ipv6: 'Loading...', pciSlot: 'Loading...', busAddress: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system-vue/scripts/network"],
+          ["/usr/share/cockpit/45drives-system/scripts/network"],
           {
             err: "out",
             superuser: "require",

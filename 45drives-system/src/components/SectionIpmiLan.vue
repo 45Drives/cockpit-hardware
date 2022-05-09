@@ -71,7 +71,7 @@ export default {
       ipmi.value={ ipAddress: 'Loading...', subnetMask: 'Loading...', macAddress: 'Loading...', defaultGatewayIp: 'Loading...' };
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system-vue/scripts/ipmi"],
+          ["/usr/share/cockpit/45drives-system/scripts/ipmi"],
           {
             err: "out",
             superuser: "require",

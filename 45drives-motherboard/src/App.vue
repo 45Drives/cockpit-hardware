@@ -102,7 +102,6 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(mobo_info, result);
-        console.log("mobo_info", result);
         preloadChecks.mobo_info.content = result;
         preloadChecks.mobo_info.finished = true;
         preloadChecks.mobo_info.failed = false;
@@ -293,7 +292,7 @@ export default {
           mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
         )
       "
-      class="well flex flex-col items-center h-full"
+      class="well flex flex-col items-center h-full overflow-y-auto"
     >
       <P5Motherboard></P5Motherboard>
     </div>

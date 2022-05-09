@@ -268,17 +268,6 @@ export default {
 
     const updateDiskObj = () => {
       if (!currentDisk.value) return;
-
-      /*const tmpObj = lsdevJson.rows
-        ? lsdevJson.rows
-            .flat()
-            .filter((slot) => slot.occupied)
-            .find((slot) => slot["bay-id"] === currentDisk.value)
-        : diskInfo.rows
-            .flat()
-            .filter((slot) => slot.occupied)
-            .find((slot) => slot["bay-id"] === currentDisk.value);
-      */
       const tmpObj = lsdevJson.rows
         ? lsdevJson.rows
             .flat()

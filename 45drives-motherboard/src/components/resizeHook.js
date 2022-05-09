@@ -14,7 +14,7 @@ export default function resizeHook(p5, cnv_id, max_w, max_h) {
       cnv.style.height = `auto`;
       if(p5.isOverflownHeight(cnv,app)){
         cnv.style.height = `${Math.min(
-          p5.int((app.clientHeight*0.9)-60),
+          p5.int((app.clientHeight*0.9)),
           p5.int(p5.max_h)
         )}px`;
         cnv.style.width = `auto`;
@@ -23,7 +23,7 @@ export default function resizeHook(p5, cnv_id, max_w, max_h) {
   };
 
   p5.isOverflownHeight = (cnv, app) => {
-    return cnv.clientHeight > app.clientHeight - 60;
+    return cnv.clientHeight > p5.int(app.clientHeight*0.9);
   };
 
   p5.isOverflownWidth = (cnv, app) => {
@@ -38,7 +38,7 @@ export default function resizeHook(p5, cnv_id, max_w, max_h) {
       cnv.style.width = `auto`;
       if (p5.isOverflownHeight(cnv, app)) {
         cnv.style.height = `${Math.min(
-          p5.int((app.clientHeight*0.9)-60),
+          p5.int((app.clientHeight*0.9)),
           p5.int(p5.max_h)
         )}px`;
         cnv.style.width = `auto`;

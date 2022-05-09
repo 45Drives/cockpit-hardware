@@ -2,8 +2,8 @@
     "version": 0,
 
     "menu": {
-        "45drives-disks-vue": {
-            "label": "45Drives Disks-vue",
+        "45drives-disks": {
+            "label": "45Drives Disks",
             "path": "index.html",
         	"order": 112
         }

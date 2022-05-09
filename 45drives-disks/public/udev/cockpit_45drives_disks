@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# /usr/share/cockpit/45drives-disks-vue/udev/cockpit_45drives_disks
+# /usr/share/cockpit/45drives-disks/udev/cockpit_45drives_disks
 #
 # updates a state file to trigger 45drives-disks module to reload when 
 # a disk is inserted/removed from the server.
@@ -79,5 +79,5 @@ fi
 ID_VDEV=`alias_handler`
 
 if [ -n "$ID_VDEV" ] ; then
-        echo "${ID_VDEV}" > /usr/share/cockpit/45drives-disks-vue/udev/state
+        echo "${ID_VDEV}" > /usr/share/cockpit/45drives-disks/udev/state
 fi

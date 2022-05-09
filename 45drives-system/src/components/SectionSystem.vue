@@ -139,7 +139,7 @@ export default {
       serverImgPath.value = "img/45dlogo.png";
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system-vue/scripts/server_info"],
+          ["/usr/share/cockpit/45drives-system/scripts/server_info"],
           {
             err: "out",
             superuser: "require",
@@ -189,7 +189,6 @@ export default {
                 fatalErrorMsg.value.push(error.stderr);
                 fatalErrorMsg.value.push("An error occurred when running /opt/45drives/tools/server_identifier");
                 showFixButton.value = false;
-                console.log(showFixButton.value);
               }
             };
           }else{
@@ -202,7 +201,6 @@ export default {
           fatalErrorMsg.value.push(error.stderr);
           fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/server_info");
           showFixButton.value = false;
-          console.log(showFixButton.value);
         }
       }
     };

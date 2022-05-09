@@ -2,8 +2,8 @@
     "version": 0,
 
     "menu": {
-        "45drives-system-vue": {
-            "label": "45Drives System-vue",
+        "45drives-system": {
+            "label": "45Drives System",
             "path": "index.html",
         	"order": 112
         }

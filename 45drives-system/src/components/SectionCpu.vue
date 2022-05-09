@@ -74,7 +74,7 @@ export default {
       cpus.value.push({ socket: 'Loading...', model: 'Loading...', maxSpeed: 'Loading...', currentSpeed: 'Loading...', temperature: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system-vue/scripts/cpu_info"],
+          ["/usr/share/cockpit/45drives-system/scripts/cpu_info"],
           {
             err: "out",
             superuser: "require",

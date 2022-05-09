@@ -90,7 +90,7 @@ export default {
     const runServerInfo = async () => {
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks-vue/scripts/server_info"],
+          ["/usr/share/cockpit/45drives-disks/scripts/server_info"],
           {
             err: "out",
             superuser: "require",

@@ -76,7 +76,7 @@ export default {
       pcis.value.push({ slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system-vue/scripts/pci"],
+          ["/usr/share/cockpit/45drives-system/scripts/pci"],
           {
             err: "out",
             superuser: "require",
