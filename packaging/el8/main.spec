@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-1
+- first build of cockpit-45drives-hardware using vue.js
 * Wed Feb 23 2022 Mark Hooper <mhooper@45drives.com> 2.0.3-2
 - releasing 2.0.3-2 on 45drives stable repo
 - added support for 2U Stornado
