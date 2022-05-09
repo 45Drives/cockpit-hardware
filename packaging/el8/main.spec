@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-4
+- fourth build, tried initializing with a yarn.lock file in each subdir
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-3
 - third build
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-2
