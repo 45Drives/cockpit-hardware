@@ -77,7 +77,7 @@ $(VERSION_FILES): ./manifest.json
 .SECONDEXPANSION:
 $(OUTPUTS): %/dist/index.html: $$(shell find $$*/{src,public} -type f) $$(shell find $$* -name 'yarn.lock' -o -name 'package.json' -not -path '*node_modules*') $$*/*.html  $$*/*.js
 	@echo -e $(call cyantext,Building $*)
-	$(NPM_PREFIX) $* install
+	$(NPM_PREFIX) $* install --network-concurrency 1
 ifeq ($(AUTO_UPGRADE_DEPS),1)
 	$(NPM_UPDATE) $*
 endif
