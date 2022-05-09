@@ -128,7 +128,6 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(pci_info, result);
-        console.log("pci_info", result);
         preloadChecks.pci_info.content = result;
         preloadChecks.pci_info.finished = true;
         preloadChecks.pci_info.failed = false;
@@ -155,7 +154,6 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(sata_info, result);
-        console.log("sata_info", result);
         preloadChecks.sata_info.content = result;
         preloadChecks.sata_info.finished = true;
         preloadChecks.sata_info.failed = false;
@@ -182,7 +180,6 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(ram_info, result);
-        console.log("ram_info", result);
         preloadChecks.ram_info.content = result;
         preloadChecks.ram_info.finished = true;
         preloadChecks.ram_info.failed = false;
@@ -209,7 +206,6 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(network_info, result);
-        console.log("network_info", result);
         preloadChecks.network_info.content = result;
         preloadChecks.network_info.finished = true;
         preloadChecks.network_info.failed = false;

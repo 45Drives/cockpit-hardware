@@ -1090,7 +1090,6 @@ export default {
       };
 
       m.setNewCanvasDimensions = function (im) {
-        console.log("setting new dimensions for canvas:", im.width, im.height);
         m.resizeCanvas(im.width, im.height);
         resizeHook(m, m.canvas_id, im.width, im.height);
       };

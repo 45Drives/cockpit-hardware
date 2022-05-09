@@ -83,7 +83,6 @@ export default {
           }
         ).promise();
         let ramInfo = JSON.parse(state.stdout);
-        console.log(ramInfo);
         rams.value.length = 0;
         ramInfo.forEach(ram => {
           rams.value.push(ram);
