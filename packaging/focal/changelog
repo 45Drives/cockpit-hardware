@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.0-2focal) focal; urgency=medium
+
+  * second build using autopackaging
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 09 May 2022 10:12:59 -0300
+
 cockpit-45drives-hardware (2.1.0-1focal) focal; urgency=medium
 
   * first build of cockpit-45drives-hardware using vue.js

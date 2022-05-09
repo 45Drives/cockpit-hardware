@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.0-1
+## cockpit-45drives-hardware 2.1.0-2
 
-* first build of cockpit-45drives-hardware using vue.js
+* second build using autopackaging

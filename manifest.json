@@ -4,7 +4,7 @@
     "title": "cockpit-45drives-hardware",
     "prerelease": true,
     "version": "2.1.0",
-    "buildVersion": "1",
+    "buildVersion": "2",
     "author": "Mark Hooper <mhooper@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-hardware",
     "category": "utils",
@@ -45,25 +45,20 @@
     },
     "releases": [
         {
-            "image": "ubuntu-focal-builder",
+            "image": "node-ubuntu-focal-builder",
             "codeName": "focal",
             "type": "deb"
         },
         {
-            "image": "rocky-el8-builder",
+            "image": "node-rocky-el8-builder",
             "codeName": "el8",
-            "type": "el"
-        },
-        {
-            "image": "centos-el7-builder",
-            "codeName": "el7",
             "type": "el"
         }
     ],
     "changelog": {
         "urgency": "medium",
         "version": "2.1.0",
-        "buildVersion": "1",
+        "buildVersion": "2",
         "ignore": [],
         "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",

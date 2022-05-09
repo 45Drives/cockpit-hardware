@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-2
+- second build using autopackaging
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-1
 - first build of cockpit-45drives-hardware using vue.js
 * Wed Feb 23 2022 Mark Hooper <mhooper@45drives.com> 2.0.3-2
