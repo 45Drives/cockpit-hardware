@@ -80,7 +80,7 @@ $(OUTPUTS): %/dist/index.html: $$(shell find $$*/src -type f) $$(shell find $$*/
 ifeq ($(AUTO_UPGRADE_DEPS),1)
 	$(NPM_UPDATE) $* --skip-integrity-check
 endif
-	$(NPM_PREFIX) $* run build $(BUILD_FLAGS) > /dev/null 2>&1
+	$(NPM_PREFIX) $* run build $(BUILD_FLAGS)
 	@echo -e $(call greentext,Done building $*)
 	@echo
 
