@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.0-7focal) focal; urgency=medium
+
+  * 8th build
+
+ -- Mark Hooper <mhooper@45drives.com>  Tue, 10 May 2022 07:04:18 -0300
+
 cockpit-45drives-hardware (2.1.0-6focal) focal; urgency=medium
 
   * 6th build, added more flags
