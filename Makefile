@@ -27,7 +27,7 @@ RESTART_COCKPIT?=0
 DEBUG?=0
 
 # Run yarn upgrade or npm update for each project before build
-AUTO_UPGRADE_DEPS?=1
+AUTO_UPGRADE_DEPS?=0
 
 # USAGE
 # installation:
@@ -76,11 +76,11 @@ $(VERSION_FILES): ./manifest.json
 # build outputs
 .SECONDEXPANSION:
 $(OUTPUTS): %/dist/index.html: $$(shell find $$*/src -type f) $$(shell find $$*/public -type f) $$(shell find $$* -name 'yarn.lock' -o -name 'package.json' -not -path '*node_modules*') $$*/*.html  $$*/*.js
-	$(NPM_PREFIX) $* install --network-concurrency 1 --skip-integrity-check
+	$(NPM_PREFIX) $* install --skip-integrity-check
 ifeq ($(AUTO_UPGRADE_DEPS),1)
-	$(NPM_UPDATE) $* --network-concurrency 1 --skip-integrity-check
+	$(NPM_UPDATE) $* --skip-integrity-check
 endif
-	$(NPM_PREFIX) $* run build $(BUILD_FLAGS)
+	$(NPM_PREFIX) $* run build $(BUILD_FLAGS) > /dev/null 2>&1
 	@echo -e $(call greentext,Done building $*)
 	@echo
 

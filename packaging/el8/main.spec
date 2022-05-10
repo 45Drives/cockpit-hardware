@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-10
+- updated makefile
 * Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-9
 - updated makefile
 * Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-8
