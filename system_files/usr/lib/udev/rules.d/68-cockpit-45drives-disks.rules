@@ -1,0 +1,5 @@
+#
+# /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
+#
+
+ENV{DEVTYPE}=="disk", IMPORT{program}="/usr/share/cockpit/45drives-disks/udev/cockpit_45drives_disks -d %k -c /etc/vdev_id.conf"

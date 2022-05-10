@@ -162,6 +162,7 @@ export default {
           "An error occurred when trying to run /usr/share/cockpit/45drives-disks/scripts/server_info"
         );
         preloadChecks.serverInfo.errorMessage.push(error.stderr);
+        preloadChecks.serverInfo.errorMessage.push(error.stdout);
       }
     };
 
@@ -197,6 +198,7 @@ export default {
           "An error occurred when trying to run /opt/45drives/tools/lsdev"
         );
         preloadChecks.lsdev.errorMessage.push(error.stderr);
+        preloadChecks.lsdev.errorMessage.push(error.stdout);
         return false;
       }
     };

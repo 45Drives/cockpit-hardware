@@ -34,10 +34,12 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-system
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
+/usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
 /usr/share/cockpit/45drives-system/*
+/usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
 * Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-10
