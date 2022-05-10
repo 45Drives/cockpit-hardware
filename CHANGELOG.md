@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.0-10
+## cockpit-45drives-hardware 2.1.0-11
 
-* updated makefile
+* updated build number manually
