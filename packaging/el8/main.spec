@@ -40,6 +40,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-8
+- updated makefile because the ubuntu container uses dash as its default shell
 * Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-7
 - 8th build
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-6

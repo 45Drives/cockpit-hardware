@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.0-7
+## cockpit-45drives-hardware 2.1.0-8
 
-* 8th build
+* updated makefile because the ubuntu container uses dash as its default shell

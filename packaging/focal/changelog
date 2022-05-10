@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.0-8focal) focal; urgency=medium
+
+  * updated makefile because the ubuntu container uses dash as its default shell
+
+ -- Mark Hooper <mhooper@45drives.com>  Tue, 10 May 2022 07:42:08 -0300
+
 cockpit-45drives-hardware (2.1.0-7focal) focal; urgency=medium
 
   * 8th build
