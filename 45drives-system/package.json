@@ -8,8 +8,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@45drives/cockpit-css": "^0.1.8",
-    "@45drives/cockpit-helpers": "^0.1.3",
+    "@45drives/cockpit-css": "^0.1.12",
+    "@45drives/cockpit-helpers": "^0.1.9",
     "@fontsource/red-hat-text": "^4.5.4",
     "@headlessui/vue": "^1.5.0",
     "@heroicons/vue": "^1.0.6",

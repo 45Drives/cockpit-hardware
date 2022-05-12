@@ -3,13 +3,19 @@ import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import DebugBox from "./components/DebugBox.vue";
-import { ref, reactive, provide } from "vue";
+import { ref, reactive, provide, inject } from "vue";
 import ServerSection from "./components/ServerSection.vue";
 import DiskSection from "./components/DiskSection.vue";
 import CanvasSection from "./components/CanvasSection.vue";
 import ErrorMessage from "./components/ErrorMessage.vue";
-import { useSpawn } from "@45drives/cockpit-helpers/useSpawn";
+import {
+  useSpawn,
+  errorString,
+  errorStringHTML,
+  FIFO,
+} from "@45drives/cockpit-helpers";
 import ZfsSection from "./components/ZfsSection.vue";
+import Notifications from "./components/Notifications.vue";
 
 export default {
   name: "App",
@@ -21,8 +27,10 @@ export default {
     CanvasSection,
     ErrorMessage,
     ZfsSection,
+    Notifications,
   },
-  setup() {
+  props: { notificationFIFO: FIFO },
+  setup(props) {
     const currentDisk = ref("");
     provide("currentDisk", currentDisk);
     const lsdevState = ref("");
@@ -38,40 +46,82 @@ export default {
     const pageLayout = ref("AZ");
     provide("pageLayout", pageLayout);
 
+    const notifications = ref();
+    provide("Notifications", notifications);
+
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
+
+    let watchInitiated = false;
+
+    const adminFlag = ref(false);
+    const adminCheck = ref(false);
 
     const preloadChecks = reactive({
       serverInfo: {
         content: reactive({}),
         finished: false,
         failed: false,
-        errorMessage: [],
-        fixAvailable: false,
-        fixHandler: () => {
-          console.log("Default handler was run for the fix button.");
-        },
       },
       lsdev: {
         content: reactive({}),
         finished: false,
         failed: false,
-        errorMessage: [],
-        fixAvailable: false,
-        fixHandler: () => {
-          console.log("Default handler was run for the fix button.");
-        },
+      },
+      diskInfo: {
+        content: reactive({}),
+        finished: false,
+        failed: false,
       },
       zfs: {
         content: reactive({}),
         finished: false,
         failed: false,
-        errorMessage: [],
-        fixAvailable: false,
-        fixHandler: () => {
-          console.log("Default handler was run for the fix button.");
-        },
       },
     });
+
+    const runDmap = async () => {
+      preloadChecks.serverInfo.finished = false;
+      preloadChecks.diskInfo.finished = false;
+      try {
+        const state = await useSpawn(["/opt/45drives/tools/dmap"], {
+          err: "out",
+          superuser: "require",
+        }).promise();
+        init();
+      } catch (error) {
+        preloadChecks.serverInfo.finished = true;
+        preloadChecks.diskInfo.finished = true;
+        notifications.value.constructNotification(
+          "Error running dmap",
+          errorStringHTML(error.stdout),
+          "error",
+          0
+        );
+        return false;
+      }
+    };
+
+    const runServerIdentifier = async () => {
+      try {
+        const state = await useSpawn(
+          ["/opt/45drives/tools/server_identifier"],
+          {
+            err: "out",
+            superuser: "require",
+          }
+        ).promise();
+        return await runServerInfo();
+      } catch (error) {
+        console.log(error);
+        notifications.value.constructNotification(
+          "Error running server_identifier",
+          errorStringHTML(error.stdout),
+          "error",
+          0
+        );
+        return false;
+      }
+    };
 
     const setPageLayout = () => {
       if (preloadChecks.zfs.failed) {
@@ -137,6 +187,7 @@ export default {
       }
     };
 
+    let serverInfoFailNotification = null;
     const runServerInfo = async () => {
       try {
         const state = await useSpawn(
@@ -150,19 +201,26 @@ export default {
         preloadChecks.serverInfo.content = result;
         preloadChecks.serverInfo.finished = true;
         preloadChecks.serverInfo.failed = false;
-        preloadChecks.serverInfo.fixAvailable = false;
       } catch (error) {
         console.log(error);
         preloadChecks.serverInfo.content = null;
-        preloadChecks.serverInfo.finished = false;
+        preloadChecks.serverInfo.finished = true;
         preloadChecks.serverInfo.failed = true;
-        preloadChecks.serverInfo.fixAvailable = false;
-        preloadChecks.serverInfo.errorMessage.length = 0;
-        preloadChecks.serverInfo.errorMessage.push(
-          "An error occurred when trying to run /usr/share/cockpit/45drives-disks/scripts/server_info"
-        );
-        preloadChecks.serverInfo.errorMessage.push(error.stderr);
-        preloadChecks.serverInfo.errorMessage.push(error.stdout);
+        if (
+          error.stdout &&
+          error.stdout.includes(
+            "/etc/45drives/server_info/server_info.json not found."
+          )
+        ) {
+          serverInfoFailNotification = notifications.value
+            .constructNotification(
+              "Error obtaining server model information",
+              errorStringHTML(error.stdout),
+              "error",
+              30000
+            )
+            .addAction("fix", () => runServerIdentifier());
+        }
       }
     };
 
@@ -182,7 +240,6 @@ export default {
           preloadChecks.lsdev.content = lsdevJson;
           preloadChecks.lsdev.finished = true;
           preloadChecks.lsdev.failed = false;
-          preloadChecks.lsdev.fixAvailable = false;
           return true;
         } else {
           return false;
@@ -190,15 +247,14 @@ export default {
       } catch (error) {
         console.log(error);
         preloadChecks.lsdev.content = null;
-        preloadChecks.lsdev.finished = false;
+        preloadChecks.lsdev.finished = true;
         preloadChecks.lsdev.failed = true;
-        preloadChecks.lsdev.fixAvailable = false;
-        preloadChecks.lsdev.errorMessage.length = 0;
-        preloadChecks.lsdev.errorMessage.push(
-          "An error occurred when trying to run /opt/45drives/tools/lsdev"
+        notifications.value.constructNotification(
+          "Error obtaining disk information",
+          errorStringHTML(error.stdout),
+          "error",
+          0
         );
-        preloadChecks.lsdev.errorMessage.push(error.stderr);
-        preloadChecks.lsdev.errorMessage.push(error.stdout);
         return false;
       }
     };
@@ -217,11 +273,39 @@ export default {
         preloadChecks.lsdev.content = result;
         preloadChecks.lsdev.finished = true;
         preloadChecks.lsdev.failed = false;
-        preloadChecks.lsdev.fixAvailable = false;
+        preloadChecks.diskInfo.content = result;
+        preloadChecks.diskInfo.finished = true;
+        preloadChecks.diskInfo.failed = false;
         return true;
       } catch (error) {
         console.log(error);
-        return false;
+        preloadChecks.diskInfo.content = null;
+        preloadChecks.diskInfo.failed = true;
+        preloadChecks.diskInfo.finished = true;
+        if (
+          error.stdout &&
+          error.stdout.includes("Error opening /etc/vdev_id.conf. Run `dmap`.")
+        ) {
+          notifications.value
+            .constructNotification(
+              "Error obtaining disk information",
+              errorStringHTML(error.stdout),
+              "error",
+              0
+            )
+            .addAction("fix", () => {
+              if (serverInfoFailNotification)
+                serverInfoFailNotification.show = false;
+              runDmap();
+            });
+        } else {
+          notifications.value.constructNotification(
+            "Error obtaining disk information",
+            errorStringHTML(error.stdout),
+            "error"
+          );
+          return false;
+        }
       }
     };
 
@@ -239,9 +323,18 @@ export default {
         preloadChecks.zfs.content = result;
         preloadChecks.zfs.finished = true;
         preloadChecks.zfs.failed = !result?.zfs_installed;
-        preloadChecks.zfs.fixAvailable = false;
       } catch (error) {
         console.log(error);
+        preloadChecks.zfs.content = null;
+        preloadChecks.zfs.finished = true;
+        preloadChecks.zfs.failed = true;
+        notifications.value.constructNotification(
+          "Unable to gather zfs information",
+          errorStringHTML(error.stdout),
+          "warning",
+          0
+        );
+        return false;
       }
     };
 
@@ -249,8 +342,10 @@ export default {
       await runServerInfo();
       await runDiskInfo();
       await runZfsInfo();
-      setPageLayout();
-      runLsdev();
+      if (!preloadChecks.diskInfo.failed && !preloadChecks.serverInfo.failed) {
+        setPageLayout();
+        runLsdev();
+      }
     };
 
     const retryLsdev = async (duration) => {
@@ -260,8 +355,6 @@ export default {
       }
       await runZfsInfo();
     };
-
-    let watchInitiated = false;
 
     const udevState = cockpit
       .file("/usr/share/cockpit/45drives-disks/udev/state")
@@ -277,8 +370,28 @@ export default {
         }
       });
 
-    init();
+    const rootCheck = async () => {
+      let root_check = cockpit.permission({ admin: true });
+      root_check.addEventListener("changed", () => {
+        if (root_check.allowed) {
+          //user is an administrator, start the module as normal
+          //setup on-click listeners for buttons as required.
+          adminCheck.value = true;
+          adminFlag.value = true;
+          init();
+        } else {
+          //user is not an administrator, block the page content.
+          adminCheck.value = true;
+          adminFlag.value = false;
+        }
+      });
+    };
+
+    rootCheck();
+
     return {
+      adminCheck,
+      adminFlag,
       preloadChecks,
       runServerInfo,
       runLsdev,
@@ -288,6 +401,7 @@ export default {
       zfsInfo,
       enableZfsAnimations,
       pageLayout,
+      notifications,
     };
   },
 };
@@ -296,7 +410,17 @@ export default {
 <template>
   <div id="App" class="flex flex-col h-full">
     <FfdHeader moduleName="Disks" centerName />
-    <div class="grow flex flex-col well overflow-y-auto p-4">
+    <div
+      v-if="
+        adminCheck &&
+        adminFlag &&
+        preloadChecks.serverInfo.finished &&
+        preloadChecks.diskInfo.finished &&
+        !preloadChecks.serverInfo.failed &&
+        !preloadChecks.diskInfo.failed
+      "
+      class="grow flex flex-col well overflow-y-auto p-4"
+    >
       <div class="gap-well grid grid-cols-6">
         <div
           :class="[
@@ -313,7 +437,9 @@ export default {
             <CanvasSection
               v-if="
                 preloadChecks.serverInfo.finished &&
-                preloadChecks.lsdev.finished
+                preloadChecks.diskInfo.finished &&
+                !preloadChecks.serverInfo.failed &&
+                !preloadChecks.diskInfo.failed
               "
               :serverInfo="preloadChecks.serverInfo.content"
             />
@@ -322,7 +448,10 @@ export default {
 
         <div
           v-if="
-            preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
+            preloadChecks.serverInfo.finished &&
+            preloadChecks.diskInfo.finished &&
+            !preloadChecks.serverInfo.failed &&
+            !preloadChecks.diskInfo.failed
           "
           :class="[
             pageLayout === 'AZ' ? 'lg:col-span-3' : '',
@@ -336,13 +465,21 @@ export default {
         >
           <DiskSection
             v-if="
-              preloadChecks.serverInfo.finished && preloadChecks.lsdev.finished
+              preloadChecks.serverInfo.finished &&
+              preloadChecks.diskInfo.finished &&
+              !preloadChecks.serverInfo.failed &&
+              !preloadChecks.diskInfo.failed
             "
           />
         </div>
 
         <div
-          v-if="preloadChecks.zfs.finished && !preloadChecks.zfs.failed"
+          v-if="
+            preloadChecks.zfs.finished &&
+            !preloadChecks.zfs.failed &&
+            !preloadChecks.serverInfo.failed &&
+            !preloadChecks.diskInfo.failed
+          "
           :class="[
             pageLayout === 'AZ' ? 'lg:col-span-3' : '',
             pageLayout === 'BZ' ? 'lg:col-span-6' : '',
@@ -364,29 +501,77 @@ export default {
           />
         </div>
       </div>
-      <div class="flex-auto flex items-center justify-evenly mx-2">
+      <Notifications :notificationFIFO="notificationFIFO" ref="notifications" />
+      <div class="flex-auto flex flex-col items-center justify-evenly mx-2">
         <div
           v-if="
-            !preloadChecks.serverInfo.finished || !preloadChecks.lsdev.finished
+            !preloadChecks.serverInfo.finished ||
+            !preloadChecks.diskInfo.finished
           "
         >
           Gathering disk information. Please wait...
         </div>
-        <div v-if="preloadChecks.serverInfo.failed" class="p-2 m-2">
-          <ErrorMessage
-            :errorMsg="preloadChecks.serverInfo.errorMessage"
-            :FixButton="preloadChecks.serverInfo.fixAvailable"
-            :FixButtonHandler="preloadChecks.serverInfo.fixHandler"
-          />
-        </div>
-        <div v-if="preloadChecks.lsdev.failed" class="p-2 m-2">
-          <ErrorMessage
-            :errorMsg="preloadChecks.lsdev.errorMessage"
-            :FixButton="preloadChecks.lsdev.fixAvailable"
-            :FixButtonHandler="preloadChecks.lsdev.fixHandler"
-          />
+        <div
+          v-if="
+            (preloadChecks.serverInfo.finished &&
+              preloadChecks.serverInfo.failed) ||
+            (preloadChecks.diskInfo.finished && preloadChecks.diskInfo.failed)
+          "
+          class="well flex flex-col items-center h-full"
+        >
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-header text-default">
+                45Drives Disks - Unable to proceed
+              </h3>
+            </div>
+            <div class="card-body flex flex-col gap-4">
+              <h3>This module is designed to work with 45Drives servers.</h3>
+              <div>Consult any notifications for potential fixes.</div>
+              <div>
+                If you are still experiencing issues, contact 45Drives Support
+                or let us know by submitting an issue on our github.
+              </div>
+              <div
+                class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+              >
+                <a
+                  href="https://github.com/45Drives/cockpit-hardware/issues"
+                  class="text-blue-500"
+                  target="_blank"
+                >
+                  Submit a github issue
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+    <div
+      v-else-if="adminCheck && !adminFlag"
+      class="grow flex flex-col well overflow-y-auto p-4 justify-center items-center"
+    >
+      <div class="card">
+        <div class="card-header">
+          <h3 class="text-header text-default">
+            Administrative Access Required
+          </h3>
+        </div>
+        <div class="card-body flex flex-col gap-4">
+          <div
+            class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+          >
+            45Drives Disks requires administrative access to proceed.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      v-else
+      class="grow flex flex-col well overflow-y-auto p-4 justify-center items-center"
+    >
+      Loading ...
     </div>
   </div>
 </template>

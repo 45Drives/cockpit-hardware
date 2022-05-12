@@ -1,5 +1,5 @@
 import { reactive, watch } from "vue";
-import { useSpawn } from "@45drives/cockpit-helpers/useSpawn";
+import { useSpawn } from "@45drives/cockpit-helpers";
 
 export default async function getServerInfo() {
   try {

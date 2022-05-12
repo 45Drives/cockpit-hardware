@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.0-11
+## cockpit-45drives-hardware 2.1.0-12
 
-* updated build number manually
+* added notifications

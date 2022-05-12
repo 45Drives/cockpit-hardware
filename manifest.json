@@ -4,7 +4,7 @@
     "title": "cockpit-45drives-hardware",
     "prerelease": true,
     "version": "2.1.0",
-    "buildVersion": "11",
+    "buildVersion": "12",
     "author": "Mark Hooper <mhooper@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-hardware",
     "category": "utils",
@@ -58,7 +58,7 @@
     "changelog": {
         "urgency": "medium",
         "version": "2.1.0",
-        "buildVersion": "11",
+        "buildVersion": "12",
         "ignore": [],
         "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",

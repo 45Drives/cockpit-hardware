@@ -48,6 +48,9 @@ export default {
       "X11SPi-TF",
     ]);
 
+    const adminCheck = ref(false);
+    const adminFlag = ref(false);
+
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
     const delay_ms = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -258,9 +261,28 @@ export default {
       await verifyPreload();
     };
 
-    init();
+    const rootCheck = async () => {
+      let root_check = cockpit.permission({ admin: true });
+      root_check.addEventListener("changed", function () {
+        if (root_check.allowed) {
+          //user is an administrator, start the module as normal
+          //setup on-click listeners for buttons as required.
+          adminCheck.value = true;
+          adminFlag.value = true;
+          init();
+        } else {
+          //user is not an administrator, block the page content.
+          adminCheck.value = true;
+          adminFlag.value = false;
+        }
+      });
+    };
+
+    rootCheck();
 
     return {
+      adminCheck,
+      adminFlag,
       scriptsComplete,
       scriptsValid,
       preloadChecks,
@@ -279,207 +301,231 @@ export default {
 <template>
   <div class="h-full flex flex-col overflow-hidden">
     <FfdHeader moduleName="Motherboard" centerName />
-    <div
-      id="MotherboardContainer"
-      v-if="
-        scriptsComplete &&
-        scriptsValid &&
-        supportedMotherboards.includes(
-          mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
-        )
-      "
-      class="well flex flex-col items-center h-full overflow-y-auto"
-    >
-      <P5Motherboard></P5Motherboard>
+    <div v-if="adminCheck && adminFlag">
+      <div
+        id="MotherboardContainer"
+        v-if="
+          scriptsComplete &&
+          scriptsValid &&
+          supportedMotherboards.includes(
+            mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
+          )
+        "
+        class="well flex flex-col items-center h-full overflow-y-auto"
+      >
+        <P5Motherboard></P5Motherboard>
+      </div>
+      <div
+        v-else-if="
+          scriptsComplete &&
+          scriptsValid &&
+          !supportedMotherboards.includes(
+            mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
+          )
+        "
+        class="well flex flex-col items-center h-full"
+      >
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-header text-default">
+              Unsupported Motherboard Model Detected
+            </h3>
+          </div>
+          <div class="card-body flex flex-col gap-4">
+            <div class="flex flex-row gap-8">
+              <div>Motherboard Detected:</div>
+              <div class="text-muted">
+                {{
+                  mobo_info["Motherboard Info"][0]["Motherboard"][0][
+                    "Product Name"
+                  ]
+                }}
+              </div>
+            </div>
+            <div>
+              <div
+                class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+              >
+                <div>
+                  Support for
+                  <span class="text-muted">{{
+                    mobo_info["Motherboard Info"][0]["Motherboard"][0][
+                      "Product Name"
+                    ]
+                  }}</span>
+                  is not available at this time.
+                </div>
+                <a
+                  href="https://github.com/45Drives/cockpit-hardware/issues"
+                  class="text-blue-500"
+                  target="_blank"
+                >
+                  Submit a feature request
+                </a>
+              </div>
+            </div>
+            <div class="grid grid-cols-2">
+              <div class="col-span-1">Supported Motherboards:</div>
+              <ul
+                role="list"
+                class="col-span-1 list-none pl-8 space-y-1 whitespace-pre text-muted"
+              >
+                <li v-for="entry in supportedMotherboards">{{ entry }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        v-else-if="!scriptsComplete"
+        class="card w-96 mx-auto z-10 my-10 flex flex-col"
+      >
+        <div class="card-header flex flex-row items-center">
+          <h3 class="text-header text-default">Gathering Information</h3>
+        </div>
+        <div class="card-body">
+          <div class="flex">
+            <span
+              :class="[
+                preloadChecks.mobo_info.finished ? 'line-through' : '',
+                'text-muted basis-1/2',
+              ]"
+              >Motherboard & CPU</span
+            >
+            <DotsHorizontalIcon
+              v-if="!preloadChecks.mobo_info.finished"
+              class="size-icon-lg icon-default basis-1/2"
+            />
+            <ExclamationIcon
+              v-else-if="preloadChecks.mobo_info.failed"
+              class="size-icon-lg icon-warning basis-1/2"
+            />
+            <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+          </div>
+          <div class="flex">
+            <span
+              :class="[
+                preloadChecks.pci_info.finished ? 'line-through' : '',
+                'text-muted basis-1/2',
+              ]"
+              >PCI</span
+            >
+            <DotsHorizontalIcon
+              v-if="!preloadChecks.pci_info.finished"
+              class="size-icon-lg icon-default basis-1/2"
+            />
+            <ExclamationIcon
+              v-else-if="preloadChecks.pci_info.failed"
+              class="size-icon-lg icon-warning basis-1/2"
+            />
+            <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+          </div>
+          <div class="flex">
+            <span
+              :class="[
+                preloadChecks.sata_info.finished ? 'line-through' : '',
+                'text-muted basis-1/2',
+              ]"
+              >SATA</span
+            >
+            <DotsHorizontalIcon
+              v-if="!preloadChecks.sata_info.finished"
+              class="size-icon-lg icon-default basis-1/2"
+            />
+            <ExclamationIcon
+              v-else-if="preloadChecks.sata_info.failed"
+              class="size-icon-lg icon-warning basis-1/2"
+            />
+            <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+          </div>
+          <div class="flex">
+            <span
+              :class="[
+                preloadChecks.ram_info.finished ? 'line-through' : '',
+                'text-muted basis-1/2',
+              ]"
+              >RAM</span
+            >
+            <DotsHorizontalIcon
+              v-if="!preloadChecks.ram_info.finished"
+              class="size-icon-lg icon-default basis-1/2"
+            />
+            <ExclamationIcon
+              v-else-if="preloadChecks.ram_info.failed"
+              class="size-icon-lg icon-warning basis-1/2"
+            />
+            <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+          </div>
+          <div class="flex">
+            <span
+              :class="[
+                preloadChecks.network_info.finished ? 'line-through' : '',
+                'text-muted basis-1/2',
+              ]"
+              >Network Devices</span
+            >
+            <DotsHorizontalIcon
+              v-if="!preloadChecks.network_info.finished"
+              class="size-icon-lg icon-default basis-1/2"
+            />
+            <ExclamationIcon
+              v-else-if="preloadChecks.network_info.failed"
+              class="size-icon-lg icon-warning basis-1/2"
+            />
+            <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
+          </div>
+        </div>
+      </div>
+      <div v-else class="card-body">
+        <div v-if="preloadChecks.mobo_info.failed">
+          <ErrorMessage
+            :errorMsg="preloadChecks.mobo_info.errorMessage"
+            :errorHeader="preloadChecks.mobo_info.errorHeader"
+          ></ErrorMessage>
+        </div>
+        <div v-if="preloadChecks.pci_info.failed">
+          <ErrorMessage
+            :errorMsg="preloadChecks.pci_info.errorMessage"
+            :errorHeader="preloadChecks.pci_info.errorHeader"
+          ></ErrorMessage>
+        </div>
+        <div v-if="preloadChecks.sata_info.failed">
+          <ErrorMessage
+            :errorMsg="preloadChecks.sata_info.errorMessage"
+            :errorHeader="preloadChecks.sata_info.errorHeader"
+          ></ErrorMessage>
+        </div>
+        <div v-if="preloadChecks.ram_info.failed">
+          <ErrorMessage
+            :errorMsg="preloadChecks.ram_info.errorMessage"
+            :errorHeader="preloadChecks.ram_info.errorHeader"
+          ></ErrorMessage>
+        </div>
+        <div v-if="preloadChecks.network_info.failed">
+          <ErrorMessage
+            :errorMsg="preloadChecks.network_info.errorMessage"
+            :errorHeader="preloadChecks.network_info.errorHeader"
+          ></ErrorMessage>
+        </div>
+      </div>
     </div>
     <div
-      v-else-if="
-        scriptsComplete &&
-        scriptsValid &&
-        !supportedMotherboards.includes(
-          mobo_info['Motherboard Info'][0]['Motherboard'][0]['Product Name']
-        )
-      "
-      class="well flex flex-col items-center h-full"
+      v-else-if="adminCheck && !adminFlag"
+      class="grow flex flex-col well overflow-y-auto p-4 justify-center items-center"
     >
       <div class="card">
         <div class="card-header">
           <h3 class="text-header text-default">
-            Unsupported Motherboard Model Detected
+            Administrative Access Required
           </h3>
         </div>
         <div class="card-body flex flex-col gap-4">
-          <div class="flex flex-row gap-8">
-            <div>Motherboard Detected:</div>
-            <div class="text-muted">
-              {{
-                mobo_info["Motherboard Info"][0]["Motherboard"][0][
-                  "Product Name"
-                ]
-              }}
-            </div>
-          </div>
-          <div>
-            <div class="bg-accent rounded-md p-5 flex flex-col items-center gap-4">
-              <div>
-                Support for
-                <span class="text-muted">{{
-                  mobo_info["Motherboard Info"][0]["Motherboard"][0][
-                    "Product Name"
-                  ]
-                }}</span>
-                is not available at this time.
-              </div>
-              <a
-                href="https://github.com/45Drives/cockpit-hardware/issues"
-                class="text-blue-500" target="_blank"
-              >
-                Submit a feature request
-              </a>
-            </div>
-          </div>
-          <div class="grid grid-cols-2">
-            <div class="col-span-1">Supported Motherboards:</div>
-            <ul
-              role="list"
-              class="col-span-1 list-none pl-8 space-y-1 whitespace-pre text-muted"
-            >
-              <li v-for="entry in supportedMotherboards">{{ entry }}</li>
-            </ul>
+          <div
+            class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+          >
+            45Drives Motherboard requires administrative access to proceed.
           </div>
         </div>
-      </div>
-    </div>
-    <div
-      v-else-if="!scriptsComplete"
-      class="card w-96 mx-auto z-10 my-10 flex flex-col"
-    >
-      <div class="card-header flex flex-row items-center">
-        <h3 class="text-header text-default">Gathering Information</h3>
-      </div>
-      <div class="card-body">
-        <div class="flex">
-          <span
-            :class="[
-              preloadChecks.mobo_info.finished ? 'line-through' : '',
-              'text-muted basis-1/2',
-            ]"
-            >Motherboard & CPU</span
-          >
-          <DotsHorizontalIcon
-            v-if="!preloadChecks.mobo_info.finished"
-            class="size-icon-lg icon-default basis-1/2"
-          />
-          <ExclamationIcon
-            v-else-if="preloadChecks.mobo_info.failed"
-            class="size-icon-lg icon-warning basis-1/2"
-          />
-          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
-        </div>
-        <div class="flex">
-          <span
-            :class="[
-              preloadChecks.pci_info.finished ? 'line-through' : '',
-              'text-muted basis-1/2',
-            ]"
-            >PCI</span
-          >
-          <DotsHorizontalIcon
-            v-if="!preloadChecks.pci_info.finished"
-            class="size-icon-lg icon-default basis-1/2"
-          />
-          <ExclamationIcon
-            v-else-if="preloadChecks.pci_info.failed"
-            class="size-icon-lg icon-warning basis-1/2"
-          />
-          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
-        </div>
-        <div class="flex">
-          <span
-            :class="[
-              preloadChecks.sata_info.finished ? 'line-through' : '',
-              'text-muted basis-1/2',
-            ]"
-            >SATA</span
-          >
-          <DotsHorizontalIcon
-            v-if="!preloadChecks.sata_info.finished"
-            class="size-icon-lg icon-default basis-1/2"
-          />
-          <ExclamationIcon
-            v-else-if="preloadChecks.sata_info.failed"
-            class="size-icon-lg icon-warning basis-1/2"
-          />
-          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
-        </div>
-        <div class="flex">
-          <span
-            :class="[
-              preloadChecks.ram_info.finished ? 'line-through' : '',
-              'text-muted basis-1/2',
-            ]"
-            >RAM</span
-          >
-          <DotsHorizontalIcon
-            v-if="!preloadChecks.ram_info.finished"
-            class="size-icon-lg icon-default basis-1/2"
-          />
-          <ExclamationIcon
-            v-else-if="preloadChecks.ram_info.failed"
-            class="size-icon-lg icon-warning basis-1/2"
-          />
-          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
-        </div>
-        <div class="flex">
-          <span
-            :class="[
-              preloadChecks.network_info.finished ? 'line-through' : '',
-              'text-muted basis-1/2',
-            ]"
-            >Network Devices</span
-          >
-          <DotsHorizontalIcon
-            v-if="!preloadChecks.network_info.finished"
-            class="size-icon-lg icon-default basis-1/2"
-          />
-          <ExclamationIcon
-            v-else-if="preloadChecks.network_info.failed"
-            class="size-icon-lg icon-warning basis-1/2"
-          />
-          <CheckIcon v-else class="size-icon-lg icon-success basis-1/2" />
-        </div>
-      </div>
-    </div>
-    <div v-else class="card-body">
-      <div v-if="preloadChecks.mobo_info.failed">
-        <ErrorMessage
-          :errorMsg="preloadChecks.mobo_info.errorMessage"
-          :errorHeader="preloadChecks.mobo_info.errorHeader"
-        ></ErrorMessage>
-      </div>
-      <div v-if="preloadChecks.pci_info.failed">
-        <ErrorMessage
-          :errorMsg="preloadChecks.pci_info.errorMessage"
-          :errorHeader="preloadChecks.pci_info.errorHeader"
-        ></ErrorMessage>
-      </div>
-      <div v-if="preloadChecks.sata_info.failed">
-        <ErrorMessage
-          :errorMsg="preloadChecks.sata_info.errorMessage"
-          :errorHeader="preloadChecks.sata_info.errorHeader"
-        ></ErrorMessage>
-      </div>
-      <div v-if="preloadChecks.ram_info.failed">
-        <ErrorMessage
-          :errorMsg="preloadChecks.ram_info.errorMessage"
-          :errorHeader="preloadChecks.ram_info.errorHeader"
-        ></ErrorMessage>
-      </div>
-      <div v-if="preloadChecks.network_info.failed">
-        <ErrorMessage
-          :errorMsg="preloadChecks.network_info.errorMessage"
-          :errorHeader="preloadChecks.network_info.errorHeader"
-        ></ErrorMessage>
       </div>
     </div>
   </div>

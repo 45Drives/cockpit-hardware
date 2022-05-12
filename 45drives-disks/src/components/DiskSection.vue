@@ -229,7 +229,7 @@
         </div>
         <div
           v-if="loadingSpinner"
-          class="grid grid-cols-1 self-start py-1 md:py-2 px-2 row-span-2"
+          class="grid grid-cols-1 self-center py-1 md:py-2 px-2 row-span-2"
         >
           <LoadingSpinner></LoadingSpinner>
         </div>

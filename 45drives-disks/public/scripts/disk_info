@@ -6,7 +6,7 @@ import re
 
 def getDiskInfo(path):
     if not os.path.isfile(path):
-        print(f"Error opening {path}. Run `dmap`.")
+        print(f"Error opening {path}. Run `dmap`.",file=sys.stderr)
         sys.exit(1)
     
     c_lines = []

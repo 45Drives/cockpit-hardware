@@ -15,3 +15,6 @@ debian/.debhelper
 
 # docker builds
 dist
+
+# version files
+version.js

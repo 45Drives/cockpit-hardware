@@ -1,5 +1,8 @@
 <template>
-  <div id="p5-xl60-h16-storinator" class="self-stretch m-2 flex justify-center"></div>
+  <div
+    id="p5-xl60-h16-storinator"
+    class="self-stretch m-2 flex justify-center"
+  ></div>
 </template>
 
 <script>
@@ -806,13 +809,17 @@ export default {
           assets.chassis.image.height
         );
         canvas.parent("p5-xl60-h16-storinator");
-        
+
         p5.image(assets.fade.image, 0, 0);
         // increment the y positions of the disks by the height of the fade.
         diskLocations.forEach((loc) => {
           loc.x += assets.fade.image.width;
         });
-        resizeHook(p5,canvas.id(),assets.chassis.image.width + assets.fade.image.width);
+        resizeHook(
+          p5,
+          canvas.id("xl60-h16-storinator"),
+          assets.chassis.image.width + assets.fade.image.width
+        );
       };
       // NOTE: Draw is here
       p5.draw = (_) => {
@@ -880,7 +887,7 @@ export default {
 
     onMounted(() => {
       new P5(p5Script);
-    });
+    })
 
     return {
       diskInfoObj,

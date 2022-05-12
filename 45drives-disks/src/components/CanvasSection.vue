@@ -7,7 +7,7 @@
         <Switch
           v-model="enableZfsAnimations.flag"
           :class="[
-            enableZfsAnimations.flag ? 'bg-45d' : 'bg-accent',
+            enableZfsAnimations.flag ? '!bg-red-700 dark:!bg-red-800' : '!bg-neutral-200 dark:!bg-neutral-900',
             'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none',
           ]"
         >
@@ -15,7 +15,7 @@
             aria-hidden="true"
             :class="[
               enableZfsAnimations.flag ? 'translate-x-5' : 'translate-x-0',
-              'pointer-events-none inline-block h-5 w-5 rounded-full bg-default shadow transform ring-0 transition ease-in-out duration-200',
+              'pointer-events-none inline-block h-5 w-5 rounded-full shadow bg-default transform ring-0 transition ease-in-out duration-200',
             ]"
           />
         </Switch>
