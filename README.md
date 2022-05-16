@@ -7,7 +7,7 @@ A cockpit module that displays hardware information for 45Drives storage server 
 
 ## Features (Version 2.1.1)
 ### System
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-system.png">  
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-system.png">  
 Lists information about your 45Drives Storinator product including:
 
 * System Information (model, serial and chassis data)
