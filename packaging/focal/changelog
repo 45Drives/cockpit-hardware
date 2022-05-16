@@ -1,3 +1,13 @@
+cockpit-45drives-hardware (2.1.1-1focal) focal; urgency=medium
+
+  * updated 45Drives-Motherboard, 45Drives-Disks and 45Drives-System modules using
+    VueJS
+  * Added dark mode for all modules
+  * Disks module will now highlight and animate zpools, vdevs and devices
+  * Updated all modules to work on mobile
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 16 May 2022 08:34:54 -0300
+
 cockpit-45drives-hardware (2.1.0-13focal) focal; urgency=medium
 
   * updated zfs_info script

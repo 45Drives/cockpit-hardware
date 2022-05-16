@@ -42,6 +42,12 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-1
+- updated 45Drives-Motherboard, 45Drives-Disks and 45Drives-System modules using
+  VueJS
+- Added dark mode for all modules
+- Disks module will now highlight and animate zpools, vdevs and devices
+- Updated all modules to work on mobile
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-13
 - updated zfs_info script
 * Thu May 12 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-12

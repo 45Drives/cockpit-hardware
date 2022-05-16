@@ -3,10 +3,9 @@ A cockpit module that displays hardware information for 45Drives storage server 
 
 ## Supported OS
 - Rocky Linux
-- CentOS 7.X
-- Ubuntu 20.04.1 LTS (Focal Fossa) (Requires Version >= 1.3.0)
+- Ubuntu 20.04.1 LTS (Focal Fossa)
 
-## Features (Version 1.3.0)
+## Features (Version 2.1.1)
 ### System
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-system.png">  
 Lists information about your 45Drives Storinator product including:
@@ -17,6 +16,7 @@ Lists information about your 45Drives Storinator product including:
 * PCI Devices (Speeds, slot numbers, bus addresses, installed cards, and models)
 * Memory (Location, Memory Type, Size, Manufacturer, serial and temperature readings)
 * Network Information (Connection Names, States, MAC & IP Addresses, and PCI information if detected)
+* IPMI address information
 
 ### Disks
 Displays disks as they appear physically on your 45Drives Storage Server.
@@ -41,11 +41,12 @@ Currently supports the following motherboard models:
 * H11SSL-i
 * X11SSH-CTF
 * X11SSM-F
+* X11SPi-TF
 
 
 # Installation
 
-## Rocky Linux or CentOS 7
+## Rocky Linux
 
 ### Add the official 45Drives Repo
 https://repo.45drives.com/setup.html
@@ -60,9 +61,9 @@ Simply change ```enabled = 0``` to ```enabled = 1```.
 enable using this command: ```sed -i 's/enabled = 0/enabled = 1/g' /etc/yum.repos.d/45drives.repo```
 
 ### Install Package
-With the 45drives Repo enabled, you can now install using yum from your terminal.
+With the 45drives Repo enabled, you can now install using dnf from your terminal.
 ```
-yum install cockpit-45drives-hardware
+dnf install cockpit-45drives-hardware
 ```
 
 ## Ubuntu 20
