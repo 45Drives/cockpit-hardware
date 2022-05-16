@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-3
+- updated layout of motherboard page
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-2
 - redirected stderr in zfs_info
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-1

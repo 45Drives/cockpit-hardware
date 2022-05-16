@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.1-2
+## cockpit-45drives-hardware 2.1.1-3
 
-* redirected stderr in zfs_info
+* updated layout of motherboard page

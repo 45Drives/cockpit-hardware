@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.1-3focal) focal; urgency=medium
+
+  * updated layout of motherboard page
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 16 May 2022 10:06:01 -0300
+
 cockpit-45drives-hardware (2.1.1-2focal) focal; urgency=medium
 
   * redirected stderr in zfs_info

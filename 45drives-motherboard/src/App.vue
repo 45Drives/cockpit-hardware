@@ -301,7 +301,7 @@ export default {
 <template>
   <div class="h-full flex flex-col overflow-hidden">
     <FfdHeader moduleName="Motherboard" centerName />
-    <div v-if="adminCheck && adminFlag">
+    <div v-if="adminCheck && adminFlag" class="h-full bg-well">
       <div
         id="MotherboardContainer"
         v-if="
