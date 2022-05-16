@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.0-13focal) focal; urgency=medium
+
+  * updated zfs_info script
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 16 May 2022 08:15:18 -0300
+
 cockpit-45drives-hardware (2.1.0-12focal) focal; urgency=medium
 
   * added notifications

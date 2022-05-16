@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-13
+- updated zfs_info script
 * Thu May 12 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-12
 - added notifications
 * Tue May 10 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-11

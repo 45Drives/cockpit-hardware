@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.0-12
+## cockpit-45drives-hardware 2.1.0-13
 
-* added notifications
+* updated zfs_info script
