@@ -20,7 +20,7 @@ Lists information about your 45Drives Storinator product including:
 
 ### Disks
 Displays disks as they appear physically on your 45Drives Storage Server.
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-disks.png">  
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-disks.png">  
 
 This can show you useful device information including:
 * Device Path
@@ -33,7 +33,7 @@ If ZFS is installed, you can also see additional information.
 ### Motherboard Viewer
 Shows the physical layout and placement of all PCI cards, Memory modules and SATA connections. 
 
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/45drives-motherboard.png">
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-motherboard.png">
 
 Currently supports the following motherboard models:
 * X11DPL-i
@@ -93,4 +93,4 @@ Example:
 http://192.168.13.37:9090
 ```
 Then enter your login credentials (you must have admin rights to use cockpit-hardware)
-<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/dev/documentation/houston.png">
+<img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/houston.png">
