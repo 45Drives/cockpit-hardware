@@ -3,7 +3,7 @@ import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import P5Motherboard from "./components/P5Motherboard.vue";
-import { ref, reactive, provide } from "vue";
+import { ref, reactive, provide, onMounted } from "vue";
 import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
 import {
   CheckIcon,
@@ -277,8 +277,9 @@ export default {
         }
       });
     };
-
-    rootCheck();
+    onMounted(()=>{
+      rootCheck();
+    });
 
     return {
       adminCheck,

@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.1-5
+## cockpit-45drives-hardware 2.1.1-6
 
-* updated error handling
+* updated guard check for page content

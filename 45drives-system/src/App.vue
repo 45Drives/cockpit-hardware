@@ -3,7 +3,7 @@ import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import SectionContainer from "./components/SectionContainer.vue";
-import { ref } from "vue";
+import { ref , onMounted} from "vue";
 
 const adminCheck = ref(false);
 const adminFlag = ref(false);
