@@ -78,7 +78,7 @@ def get_zpool_list():
 def zpool_status(pool_name):
     try:
         zpool_status_result = subprocess.Popen(
-            ["zpool", "status", pool_name], stdout=subprocess.PIPE, universal_newlines=True).stdout.read()
+            ["zpool", "status", pool_name], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout.read()
     except:
         print(f"failed to run 'zpool status {pool_name}'")
         exit(1)
@@ -89,7 +89,7 @@ def zpool_status(pool_name):
 def zpool_iostat(pool_name):
     try:
         zpool_status_result = subprocess.Popen(
-            ["zpool", "iostat","-v", pool_name], stdout=subprocess.PIPE, universal_newlines=True).stdout.read()
+            ["zpool", "iostat","-v", pool_name], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout.read()
     except:
         print(f"failed to run 'zpool iostat -v {pool_name}'")
         exit(1)
