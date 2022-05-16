@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.1-3
+## cockpit-45drives-hardware 2.1.1-4
 
-* updated layout of motherboard page
+* updated how notifications are sent

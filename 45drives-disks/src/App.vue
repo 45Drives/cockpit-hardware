@@ -3,7 +3,7 @@ import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import DebugBox from "./components/DebugBox.vue";
-import { ref, reactive, provide, inject } from "vue";
+import { ref, reactive, provide, inject, onMounted } from "vue";
 import ServerSection from "./components/ServerSection.vue";
 import DiskSection from "./components/DiskSection.vue";
 import CanvasSection from "./components/CanvasSection.vue";
@@ -356,20 +356,6 @@ export default {
       await runZfsInfo();
     };
 
-    const udevState = cockpit
-      .file("/usr/share/cockpit/45drives-disks/udev/state")
-      .watch(async (content) => {
-        if (watchInitiated) {
-          lsdevState.value = content;
-          // a disk was inserted or removed from system, run lsdev again.
-          if (await runLsdev()) {
-            retryLsdev((lsdevJson.lsdevDuration?.toFixed(2) ?? 5) * 2);
-          }
-        } else {
-          watchInitiated = true;
-        }
-      });
-
     const rootCheck = async () => {
       let root_check = cockpit.permission({ admin: true });
       root_check.addEventListener("changed", () => {
@@ -387,7 +373,28 @@ export default {
       });
     };
 
-    rootCheck();
+    let udevState;
+
+    const setupWatches = () => {
+      udevState = cockpit
+      .file("/usr/share/cockpit/45drives-disks/udev/state")
+      .watch(async (content) => {
+        if (watchInitiated) {
+          lsdevState.value = content;
+          // a disk was inserted or removed from system, run lsdev again.
+          if (await runLsdev()) {
+            retryLsdev((lsdevJson.lsdevDuration?.toFixed(2) ?? 5) * 2);
+          }
+        } else {
+          watchInitiated = true;
+        }
+      });
+    }
+
+    onMounted(() => {
+      setupWatches();
+      rootCheck();
+    });
 
     return {
       adminCheck,
@@ -408,6 +415,7 @@ export default {
 </script>
 
 <template>
+  <Notifications :notificationFIFO="notificationFIFO" ref="notifications" />
   <div id="App" class="flex flex-col h-full">
     <FfdHeader moduleName="Disks" centerName />
     <div
@@ -501,7 +509,6 @@ export default {
           />
         </div>
       </div>
-      <Notifications :notificationFIFO="notificationFIFO" ref="notifications" />
       <div class="flex-auto flex flex-col items-center justify-evenly mx-2">
         <div
           v-if="

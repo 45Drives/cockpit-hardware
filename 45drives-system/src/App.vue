@@ -24,7 +24,9 @@ const rootCheck = async () => {
   });
 };
 
-rootCheck();
+onMounted(()=>{
+  rootCheck();
+});
 
 </script>
 

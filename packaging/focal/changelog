@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.1-4focal) focal; urgency=medium
+
+  * updated how notifications are sent
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 16 May 2022 11:03:47 -0300
+
 cockpit-45drives-hardware (2.1.1-3focal) focal; urgency=medium
 
   * updated layout of motherboard page
