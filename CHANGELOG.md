@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.1.1-4
+## cockpit-45drives-hardware 2.1.1-5
 
-* updated how notifications are sent
+* updated error handling

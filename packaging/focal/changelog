@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.1-5focal) focal; urgency=medium
+
+  * updated error handling
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 16 May 2022 12:02:59 -0300
+
 cockpit-45drives-hardware (2.1.1-4focal) focal; urgency=medium
 
   * updated how notifications are sent

@@ -189,6 +189,7 @@ export default {
 
     let serverInfoFailNotification = null;
     const runServerInfo = async () => {
+      preloadChecks.serverInfo.finished = false;
       try {
         const state = await useSpawn(
           ["/usr/share/cockpit/45drives-disks/scripts/server_info"],
@@ -260,6 +261,8 @@ export default {
     };
 
     const runDiskInfo = async () => {
+      preloadChecks.lsdev.finished = false;
+      preloadChecks.diskInfo.finished = false;
       try {
         const state = await useSpawn(
           ["/usr/share/cockpit/45drives-disks/scripts/disk_info"],
@@ -377,19 +380,19 @@ export default {
 
     const setupWatches = () => {
       udevState = cockpit
-      .file("/usr/share/cockpit/45drives-disks/udev/state")
-      .watch(async (content) => {
-        if (watchInitiated) {
-          lsdevState.value = content;
-          // a disk was inserted or removed from system, run lsdev again.
-          if (await runLsdev()) {
-            retryLsdev((lsdevJson.lsdevDuration?.toFixed(2) ?? 5) * 2);
+        .file("/usr/share/cockpit/45drives-disks/udev/state")
+        .watch(async (content) => {
+          if (watchInitiated) {
+            lsdevState.value = content;
+            // a disk was inserted or removed from system, run lsdev again.
+            if (await runLsdev()) {
+              retryLsdev((lsdevJson.lsdevDuration?.toFixed(2) ?? 5) * 2);
+            }
+          } else {
+            watchInitiated = true;
           }
-        } else {
-          watchInitiated = true;
-        }
-      });
-    }
+        });
+    };
 
     onMounted(() => {
       setupWatches();
@@ -509,47 +512,46 @@ export default {
           />
         </div>
       </div>
-      <div class="flex-auto flex flex-col items-center justify-evenly mx-2">
-        <div
-          v-if="
-            !preloadChecks.serverInfo.finished ||
-            !preloadChecks.diskInfo.finished
-          "
-        >
-          Gathering disk information. Please wait...
-        </div>
-        <div
-          v-if="
-            (preloadChecks.serverInfo.finished &&
-              preloadChecks.serverInfo.failed) ||
-            (preloadChecks.diskInfo.finished && preloadChecks.diskInfo.failed)
-          "
-          class="well flex flex-col items-center h-full"
-        >
-          <div class="card">
-            <div class="card-header">
-              <h3 class="text-header text-default">
-                45Drives Disks - Unable to proceed
-              </h3>
+    </div>
+    <div v-else-if="adminCheck && adminFlag" class="flex-auto flex flex-col items-center justify-evenly well">
+      <div
+        v-if="
+          !preloadChecks.serverInfo.finished || !preloadChecks.diskInfo.finished
+        "
+      >
+        Gathering disk information. Please wait...
+      </div>
+      <div
+        v-if="
+          (preloadChecks.serverInfo.finished &&
+            preloadChecks.serverInfo.failed) ||
+          (preloadChecks.diskInfo.finished && preloadChecks.diskInfo.failed)
+        "
+        class="well flex flex-col items-center h-full"
+      >
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-header text-default">
+              45Drives Disks - Unable to proceed
+            </h3>
+          </div>
+          <div class="card-body flex flex-col gap-4">
+            <h3>This module is designed to work with 45Drives servers.</h3>
+            <div>Consult any notifications for potential fixes.</div>
+            <div>
+              If you are still experiencing issues, contact 45Drives Support or
+              let us know by submitting an issue on our github.
             </div>
-            <div class="card-body flex flex-col gap-4">
-              <h3>This module is designed to work with 45Drives servers.</h3>
-              <div>Consult any notifications for potential fixes.</div>
-              <div>
-                If you are still experiencing issues, contact 45Drives Support
-                or let us know by submitting an issue on our github.
-              </div>
-              <div
-                class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+            <div
+              class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+            >
+              <a
+                href="https://github.com/45Drives/cockpit-hardware/issues"
+                class="text-blue-500"
+                target="_blank"
               >
-                <a
-                  href="https://github.com/45Drives/cockpit-hardware/issues"
-                  class="text-blue-500"
-                  target="_blank"
-                >
-                  Submit a github issue
-                </a>
-              </div>
+                Submit a github issue
+              </a>
             </div>
           </div>
         </div>

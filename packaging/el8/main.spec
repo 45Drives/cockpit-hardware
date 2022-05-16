@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-5
+- updated error handling
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-4
 - updated how notifications are sent
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-3
