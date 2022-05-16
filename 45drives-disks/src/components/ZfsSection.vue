@@ -7,7 +7,9 @@
       v-if="currentDisk != '' && zfsInfo.zfs_disks.hasOwnProperty(currentDisk)"
       class="card-body overflow-y-auto grow-0 flex flex-wrap gap-12"
     >
-      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5">
+      <div
+        class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5"
+      >
         <div
           class="text-label text-default col-span-3 border-b-[1px] shrink-0 border-neutral-200 dark:border-neutral-700"
         >
@@ -119,7 +121,9 @@
           </div>
         </div>
       </div>
-      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5">
+      <div
+        class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5"
+      >
         <div
           class="text-label text-default col-span-3 border-b-[1px] shrink-0 border-neutral-200 dark:border-neutral-700"
         >
@@ -133,6 +137,11 @@
                 zfsInfo.zfs_disks[currentDisk].vdev_idx
               ].name
             }}
+            <span v-if="zfsInfo.zpools[zfsInfo.zfs_disks[currentDisk].zpool_idx].vdevs[
+                zfsInfo.zfs_disks[currentDisk].vdev_idx
+              ].tag != zfsInfo.zfs_disks[currentDisk].zpool_name"> ({{zfsInfo.zpools[zfsInfo.zfs_disks[currentDisk].zpool_idx].vdevs[
+                zfsInfo.zfs_disks[currentDisk].vdev_idx
+              ].tag}})</span>
           </div>
         </div>
         <div>
@@ -224,8 +233,19 @@
             }}
           </div>
         </div>
+        <div>
+          <div class="text-sm text-muted">vdev type</div>
+          <div class="text-sm">
+            <span v-if="zfsInfo.zfs_disks[currentDisk].tag != zfsInfo.zfs_disks[currentDisk].zpool_name">
+            {{ zfsInfo.zfs_disks[currentDisk].tag }}
+            </span>
+            <span v-else>storage</span>
+          </div>
+        </div>
       </div>
-      <div class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5 h-fit">
+      <div
+        class="grow-0 2xl:grow grid grid-cols-3 items-stretch gap-y-3 gap-x-5 h-fit"
+      >
         <div
           class="text-label text-default col-span-3 border-b-[1px] self-start border-neutral-200 dark:border-neutral-700"
         >
@@ -275,6 +295,15 @@
           <div class="text-sm text-muted">checksum errors</div>
           <div class="text-sm">
             {{ zfsInfo.zfs_disks[currentDisk].checksum_errors }}
+          </div>
+        </div>
+        <div>
+          <div class="text-sm text-muted">device type</div>
+          <div class="text-sm">
+            <span v-if="zfsInfo.zfs_disks[currentDisk].tag != zfsInfo.zfs_disks[currentDisk].zpool_name">
+            {{ zfsInfo.zfs_disks[currentDisk].tag }}
+            </span>
+            <span v-else>storage</span>
           </div>
         </div>
       </div>

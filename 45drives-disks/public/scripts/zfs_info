@@ -20,7 +20,7 @@ def get_zfs_list():
     zpools = []
     for line in zfs_list_result:
         regex = re.search("^(\S+)\s+(\S+)\s+(\S+)\s+\S+\s+(\S+).*$", line)
-        if regex != None and regex.group(1) != "NAME" and not("/" in regex.group(1)):
+        if regex != None and regex.group(1) != "NAME" and not any(x in regex.group(1) for x in ["/","@"]):
             zpools.append(
                 {
                     "name": regex.group(1),
@@ -75,118 +75,167 @@ def get_zpool_list():
 
     return zpools
 
+def zpool_status(pool_name):
+    try:
+        zpool_status_result = subprocess.Popen(
+            ["zpool", "status", pool_name], stdout=subprocess.PIPE, universal_newlines=True).stdout.read()
+    except:
+        print(f"failed to run 'zpool status {pool_name}'")
+        exit(1)
+    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+|^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    groupings.append( [("state",match.group(1)) for match in re.finditer(r"^.*state\:\s+(\S+)",zpool_status_result,flags=re.MULTILINE)][0])
+    return dict(groupings)
+
+def zpool_iostat(pool_name):
+    try:
+        zpool_status_result = subprocess.Popen(
+            ["zpool", "iostat","-v", pool_name], stdout=subprocess.PIPE, universal_newlines=True).stdout.read()
+    except:
+        print(f"failed to run 'zpool iostat -v {pool_name}'")
+        exit(1)
+    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    return dict(groupings)
+
+
+def zpool_status_parse(zp_status_obj,key):
+    if key not in zp_status_obj.keys():
+        return {}, {}
+    vdevs = {
+        match.group(1):{
+            "state": match.group(2), 
+            "read_errors": match.group(3), 
+            "write_errors": match.group(4), 
+            "checksum_errors": match.group(5)
+            } for match in re.finditer(r"^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+        }
+    disks = {
+            match.group(1):{
+            "state": match.group(2), 
+            "read_errors": match.group(3), 
+            "write_errors": match.group(4), 
+            "checksum_errors": match.group(5)
+            } for match in re.finditer(r"^\t\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+        }
+    return vdevs, disks
+
+def zpool_status_parse(zp_status_obj,key):
+    if key not in zp_status_obj.keys():
+        return [], []
+    vdevs = [
+            {
+            "tag":key,
+            "name": match.group(1),
+            "state": match.group(2), 
+            "read_errors": match.group(3), 
+            "write_errors": match.group(4), 
+            "checksum_errors": match.group(5)
+            } for match in re.finditer(r"^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+    ]
+    disks = [
+            {
+            "tag":key,
+            "name":match.group(1),
+            "state": match.group(2), 
+            "read_errors": match.group(3), 
+            "write_errors": match.group(4), 
+            "checksum_errors": match.group(5)
+            } for match in re.finditer(r"^\t\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+    ]
+    counts = []
+    disk_count = 0
+    for line in zp_status_obj[key].splitlines():
+        regex_vdev = re.search("^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+        regex_disk = re.search("^\t\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+        if regex_vdev != None and disk_count > 0:
+            counts.append(disk_count)
+            disk_count = 0
+        if regex_disk != None:
+            disk_count = disk_count + 1
+    if disk_count > 0:
+        counts.append(disk_count)
+
+    return vdevs, disks, counts
+    return vdevs, disks
+
+def zpool_iostat_parse(zp_status_obj,key):
+    if key not in zp_status_obj.keys():
+        return [], []
+    vdevs = [
+            {
+            "tag":key,
+            "raid_level":match.group(1), 
+            "alloc": match.group(2),
+            "free": match.group(3),
+            "read_ops": match.group(4),
+            "write_ops": match.group(5),
+            "read_bw": match.group(6),
+            "write_bw": match.group(7)
+            } for match in re.finditer(r"^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+        ]
+    disks = [
+            {
+            "tag":key,
+            "name":match.group(1), 
+            "alloc": match.group(2),
+            "free": match.group(3),
+            "read_ops": match.group(4),
+            "write_ops": match.group(5),
+            "read_bw": match.group(6),
+            "write_bw": match.group(7)
+            } for match in re.finditer(r"^\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+        ]
+    counts = []
+    disk_count = 0
+    for line in zp_status_obj[key].splitlines():
+        regex_vdev = re.search("^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+        regex_disk = re.search("^    (\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+        if regex_vdev != None and disk_count > 0:
+            counts.append(disk_count)
+            disk_count = 0
+        if regex_disk != None:
+            disk_count = disk_count + 1
+    if disk_count > 0:
+        counts.append(disk_count)
+
+    return vdevs, disks, counts
 
 def get_zpool_status():
-    disk_statuses = {}
-    vdev_statuses = {}
     for pool in json_zfs["zpools"]:
-        try:
-            zpool_status_result = subprocess.Popen(
-                ["zpool", "status", pool["name"]], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
-        except:
-            return False
-    # EXAMPLE COMMAND: zpool status tank1
-    #  pool: tank1
-    # state: ONLINE
-    #  scan: none requested
-    # config:
-    #
-    #        NAME        STATE     READ WRITE CKSUM
-    #        tank1       ONLINE       0     0     0
-    #          raidz1-0  ONLINE       0     0     0
-    #            1-15    ONLINE       0     0     0
-    #            1-14    ONLINE       0     0     0
-    #            1-12    ONLINE       0     0     0
-    #
-    # errors: No known data errors
-
-        for line in zpool_status_result:
-            regex_state = re.search("state:\s+(\S+)", line)
-            regex_disk = re.search(
-                "^\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*", line)
-            regex_vdev = re.search( "^\s+  (\S+-\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-            if regex_state != None:
-                pool["state"] = regex_state.group(1)
-            if regex_vdev != None:
-                vdev_statuses[regex_vdev.group(1)] = {
-                    "state": regex_vdev.group(2), 
-                    "read_errors": regex_vdev.group(3), 
-                    "write_errors": regex_vdev.group(4), 
-                    "checksum_errors": regex_vdev.group(5)
-                    }
-            if regex_disk != None:
-                disk_statuses[regex_disk.group(1)] = {
-                    "state": regex_disk.group(2), 
-                    "read_errors": regex_disk.group(3), 
-                    "write_errors": regex_disk.group(4), 
-                    "checksum_errors": regex_disk.group(5)
-                    }
-
-    # EXAMPLE COMMAND: zpool iostat -v tank1
-    #              capacity     operations     bandwidth
-    # pool        alloc   free   read  write   read  write
-    # ----------  -----  -----  -----  -----  -----  -----
-    # tank1       1.31M  21.8T      0      0     12     39
-    #  raidz1    1.31M  21.8T      0      0     12     39
-    #    1-15        -      -      0      0      4     13
-    #    1-14        -      -      0      0      4     12
-    #    1-12        -      -      0      0      4     12
-    # ----------  -----  -----  -----  -----  -----  -----
-
-    for pool in json_zfs["zpools"]:
-        try:
-            zpool_iostat_result = subprocess.Popen(
-                ["zpool", "iostat", "-v", pool["name"]], stdout=subprocess.PIPE, universal_newlines=True).stdout.readlines()
-        except:
-            return False
-
-        vdev_count = 0
-        # create an empty array to store vdevs and their child disks in.
+        # run 'zpool status <pool>' and 'zpool iostat -v <pool>' and group output by top level entry (<pool name>, special, cache etc.)
+        status_output = zpool_status(pool["name"])
+        iostat_output = zpool_iostat(pool["name"])
+        pool["state"] = status_output["state"]
         pool["vdevs"] = []
-        zpool_iostat_result = zpool_iostat_result[4:]  # trim the garbage
-        for line in zpool_iostat_result:
-            regex_vdev = re.search(
-                "^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*", line)
-            regex_disk = re.search(
-                "^    (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*", line)
-            if regex_vdev != None:
-                pool["vdevs"].append({})
-                vdev_count += 1
-                pool["vdevs"][-1]["raid_level"] = regex_vdev.group(1)
-                pool["vdevs"][-1]["name"] = f"{regex_vdev.group(1)}-{vdev_count-1}"
-                pool["vdevs"][-1]["state"] = vdev_statuses[f"{regex_vdev.group(1)}-{vdev_count-1}"]["state"]
-                pool["vdevs"][-1]["read_errors"] = vdev_statuses[f"{regex_vdev.group(1)}-{vdev_count-1}"]["read_errors"]
-                pool["vdevs"][-1]["write_errors"] = vdev_statuses[f"{regex_vdev.group(1)}-{vdev_count-1}"]["write_errors"]
-                pool["vdevs"][-1]["checksum_errors"] = vdev_statuses[f"{regex_vdev.group(1)}-{vdev_count-1}"]["checksum_errors"]
-                pool["vdevs"][-1]["alloc"] = regex_vdev.group(2)
-                pool["vdevs"][-1]["free"] = regex_vdev.group(3)
-                pool["vdevs"][-1]["read_ops"] = regex_vdev.group(4)
-                pool["vdevs"][-1]["write_ops"] = regex_vdev.group(5)
-                pool["vdevs"][-1]["read_bw"] = regex_vdev.group(6)
-                pool["vdevs"][-1]["write_bw"] = regex_vdev.group(7)
-                pool["vdevs"][-1]["disks"] = []
-            if regex_disk != None:
-                pool["vdevs"][-1]["disks"].append({})
-                pool["vdevs"][-1]["disks"][-1]["name"] = regex_disk.group(1)
-                pool["vdevs"][-1]["disks"][-1]["state"] = disk_statuses[regex_disk.group(
-                    1)]["state"]
-                pool["vdevs"][-1]["disks"][-1]["read_errors"] = disk_statuses[regex_disk.group(
-                    1)]["read_errors"]
-                pool["vdevs"][-1]["disks"][-1]["write_errors"] = disk_statuses[regex_disk.group(
-                    1)]["write_errors"]
-                pool["vdevs"][-1]["disks"][-1]["checksum_errors"] = disk_statuses[regex_disk.group(
-                    1)]["checksum_errors"]
-                pool["vdevs"][-1]["disks"][-1]["alloc"] = regex_disk.group(2)
-                pool["vdevs"][-1]["disks"][-1]["free"] = regex_disk.group(3)
-                pool["vdevs"][-1]["disks"][-1]["read_ops"] = regex_disk.group(
-                    4)
-                pool["vdevs"][-1]["disks"][-1]["write_ops"] = regex_disk.group(
-                    5)
-                pool["vdevs"][-1]["disks"][-1]["read_bw"] = regex_disk.group(6)
-                pool["vdevs"][-1]["disks"][-1]["write_bw"] = regex_disk.group(
-                    7)
-                pool["vdevs"][-1]["disks"][-1]["vdev_idx"] = vdev_count - 1
-
+        for key in status_output.keys():
+            # parse the output of both commands by top level entry
+            if key in iostat_output.keys():
+                # get all parsed output as arrays of objects from each command. 
+                status_vdevs, status_disks, status_disk_counts = zpool_status_parse(status_output,key)
+                iostat_vdevs, iostat_disks, iostat_disk_counts = zpool_iostat_parse(iostat_output,key)
+                disk_index = 0
+                for i in range(0,len(status_vdevs)):
+                    #combine output of iostat command and zpool status for each vdev
+                    status_vdevs[i]["raid_level"] = iostat_vdevs[i]["raid_level"]
+                    status_vdevs[i]["alloc"] = iostat_vdevs[i]["alloc"]
+                    status_vdevs[i]["free"] = iostat_vdevs[i]["free"]
+                    status_vdevs[i]["read_ops"] = iostat_vdevs[i]["read_ops"]
+                    status_vdevs[i]["write_ops"] = iostat_vdevs[i]["write_ops"]
+                    status_vdevs[i]["read_bw"] = iostat_vdevs[i]["read_bw"]
+                    status_vdevs[i]["write_bw"] = iostat_vdevs[i]["write_bw"]
+                    status_vdevs[i]["disks"] = []
+                    for j in range(disk_index,disk_index + status_disk_counts[i]):
+                        # status_disk_counts stores the number of disks in current vdev
+                        # combine the output of zpool status and zpool iostat for each disk in the current vdev
+                        status_disks[j]["alloc"] = iostat_disks[j]["alloc"]
+                        status_disks[j]["free"] = iostat_disks[j]["free"]
+                        status_disks[j]["read_ops"] = iostat_disks[j]["read_ops"]
+                        status_disks[j]["write_ops"] = iostat_disks[j]["write_ops"]
+                        status_disks[j]["read_bw"] = iostat_disks[j]["read_bw"]
+                        status_disks[j]["write_bw"] = iostat_disks[j]["write_bw"]
+                        status_disks[j]["vdev_idx"] = len(pool["vdevs"])
+                        status_vdevs[i]["disks"].append(status_disks[j])
+                    pool["vdevs"].append(status_vdevs[i])
+                    disk_index = disk_index + status_disk_counts[i]
 
 def check_zfs():
     try:
@@ -228,6 +277,7 @@ def create_disk_entries():
                 disk_entries[disk["name"]]["read_errors"] = disk["read_errors"]
                 disk_entries[disk["name"]]["write_errors"] = disk["write_errors"]
                 disk_entries[disk["name"]]["checksum_errors"] = disk["checksum_errors"]
+                disk_entries[disk["name"]]["tag"] = disk["tag"]
 
     json_zfs["zfs_disks"] = disk_entries
 
