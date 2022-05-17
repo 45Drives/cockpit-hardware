@@ -27,7 +27,8 @@ g_dmi_mobo_fields = {
 		"X11SPL-F",
 		"H11SSL-i",
 		"X11SSH-CTF",
-		"X11SSM-F"
+		"X11SSM-F",
+		"X11SPi-TF"
 		],
 	"Serial Number": None
 }
@@ -112,9 +113,26 @@ def get_motherboard_model():
 	if len(mobo) > 0:
 		mobo_json_str = "{\"Motherboard\":["+json.dumps(dict(mobo))+"]}"
 	else:
-		mobo_json_str = "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
+		mobo_json_str = get_motherboard_model_server_info()
 	return mobo_json_str
 
+def get_motherboard_model_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		mobo_obj = {
+			"Motherboard": [{
+				"Manufacturer": si["Motherboard"]["Manufacturer"],
+				"Product Name": si["Motherboard"]["Product Name"],
+				"Serial Number": si["Motherboard"]["Serial Number"]
+			}
+			]
+		}
+		return json.dumps(mobo_obj)
+	else:
+		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
 
 def get_cpu_info():
 	cpu = []
@@ -138,22 +156,15 @@ def get_cpu_info():
 						cpu.append((regex_group1_str,regex_group2_str+" (Generic)"))
 				else:
 					cpu.append((regex_group1_str,regex_group2_str))
+	cpu_dict = {
+		"CPU":[]
+	}
 
-	if len(cpu) == len(g_dmi_cpu_fields):
-		#there is only 1 cpu listed
-		cpu_json_str = "{\"CPU\":["+json.dumps(dict(cpu))+"]}"
-	elif len(cpu) == 2*len(g_dmi_cpu_fields):
-		#system has 2 CPUs, but duplicate keys if used as dict
-		cpu_json_str = (
-			"{\"CPU\":[" +
-			json.dumps(dict(cpu[0:(len(g_dmi_cpu_fields)-1)])) + 
-			"," +
-			json.dumps(dict(cpu[len(g_dmi_cpu_fields):-1])) +
-			"]}"
-		)
-	elif len(cpu) == 0:
-		return "{\"CPU\":[]}"
-	return cpu_json_str
+	cpu_count = len(cpu)//len(g_dmi_cpu_fields)
+	for i in range(0,cpu_count):
+		cpu_dict["CPU"].append(dict(cpu[i*len(g_dmi_cpu_fields):i*len(g_dmi_cpu_fields)+(len(g_dmi_cpu_fields))]))
+
+	return json.dumps(cpu_dict)
 
 def get_sensor_readings():
 	try:

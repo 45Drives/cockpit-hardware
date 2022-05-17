@@ -42,6 +42,11 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue May 17 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-7
+- updated 45drives-tools dependency
+- added handling for VMs
+- updated helper scripts for 45drives-system and 45drives-motherboard to play nice
+  with vms
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-6
 - updated guard check for page content
 * Mon May 16 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-5

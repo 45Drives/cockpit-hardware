@@ -817,7 +817,7 @@ export default {
         });
         resizeHook(
           p5,
-          canvas.id("xl60-h16-storinator"),
+          canvas.id(),
           assets.chassis.image.width + assets.fade.image.width
         );
       };

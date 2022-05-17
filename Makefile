@@ -17,7 +17,7 @@
 PLUGIN_SRCS=
 
 # For installing to a remote machine for testing with `make install-remote`
-REMOTE_TEST_HOST=192.168.13.33
+REMOTE_TEST_HOST=192.168.35.36
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install
@@ -28,6 +28,9 @@ DEBUG?=0
 
 # Run yarn upgrade or npm update for each project before build
 AUTO_UPGRADE_DEPS?=0
+
+# Remove the files on remote server before rsync
+REMOTE_TEST_REMOVE_BEFORE?=1
 
 # USAGE
 # installation:
@@ -97,6 +100,7 @@ endif
 
 install-remote : SSH=ssh $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST)
 
+
 plugin-install-% plugin-install-local-% plugin-install-remote-%:
 	@echo -e $(call cyantext,Installing $*)
 	@echo Creating install directory
@@ -105,7 +109,7 @@ plugin-install-% plugin-install-local-% plugin-install-remote-%:
 	@echo Copying files
 	@test -z "$(SSH)" && \
 		cp -af $*/dist/* $(DESTDIR)$(INSTALL_PREFIX)/$*$(INSTALL_SUFFIX) || \
-		rsync -avh $*/dist/* $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST):$(DESTDIR)$(INSTALL_PREFIX)/$*$(INSTALL_SUFFIX)
+		rsync -avh $*/dist/* $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST):$(DESTDIR)$(INSTALL_PREFIX)/$*$(INSTALL_SUFFIX) $(DELFLAG)
 	@echo -e $(call greentext,Done installing $*)
 	@echo
 
@@ -117,6 +121,7 @@ plugin-install-local-% : INSTALL_SUFFIX=-test
 plugin-install-remote-% : INSTALL_PREFIX=/usr/share/cockpit
 plugin-install-remote-% : INSTALL_SUFFIX=
 plugin-install-remote-% : SSH=ssh $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST)
+plugin-install-remote-% : DELFLAG=--delete
 
 system-files-install:
 	-cp -af system_files/* $(DESTDIR)/

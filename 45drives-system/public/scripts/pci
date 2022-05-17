@@ -2,6 +2,7 @@
 import subprocess
 import re
 import json
+import os
 
 g_dmi_fields = [
 	"Designation",
@@ -172,6 +173,16 @@ def lsblk(device):
 				)
 	return partitions
 
+def get_hba_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		return si["HBA"]
+	else:
+		return []
+
 def main():
 	pci_slots = dmidecode()
 	hba_cards = storcli()
@@ -226,6 +237,18 @@ def main():
 			"cardType": slot["Card Type"] if "Card Type" in slot.keys() else "-", 
 			"cardModel": slot["Card Model"] if "Card Model" in slot.keys() else "-"
 		})
+
+	if(len(result) == 0):
+		hba_arr = get_hba_server_info()
+		for card in hba_arr:
+			result.append({
+				"slot": '-', 
+				"type": '-', 
+				"availibility": "In Use", 
+				"busAddress": card["Bus Address"] if "Bus Address" in card.keys() else "-", 
+				"cardType": "HBA", 
+				"cardModel": card["Model"] if "Model" in card.keys() else "-"
+			})
 
 	print(json.dumps(result,indent=4))
 

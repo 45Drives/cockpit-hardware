@@ -1,3 +1,12 @@
+cockpit-45drives-hardware (2.1.1-7focal) focal; urgency=medium
+
+  * updated 45drives-tools dependency
+  * added handling for VMs
+  * updated helper scripts for 45drives-system and 45drives-motherboard to play nice
+    with vms
+
+ -- Mark Hooper <mhooper@45drives.com>  Tue, 17 May 2022 13:39:31 -0300
+
 cockpit-45drives-hardware (2.1.1-6focal) focal; urgency=medium
 
   * updated guard check for page content
