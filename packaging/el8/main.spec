@@ -42,6 +42,12 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Fri Jun 03 2022 Mark Hooper <mhooper@45drives.com> 2.1.2-1
+- Re-wrote all cockpit modules using VueJS framework
+- all modules now feature a dark mode
+- all modules are now better suited for use on mobile
+- 45drives-disks will now highlight and animate zpools, and vdevs when using zfs
+- Improved error handling for unknown hardware configurations
 * Tue May 17 2022 Mark Hooper <mhooper@45drives.com> 2.1.1-7
 - updated 45drives-tools dependency
 - added handling for VMs

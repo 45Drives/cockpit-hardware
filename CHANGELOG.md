@@ -1,5 +1,7 @@
-## cockpit-45drives-hardware 2.1.1-7
+## cockpit-45drives-hardware 2.1.2-1
 
-* updated 45drives-tools dependency
-* added handling for VMs
-* updated helper scripts for 45drives-system and 45drives-motherboard to play nice with vms
+* Re-wrote all cockpit modules using VueJS framework
+* all modules now feature a dark mode
+* all modules are now better suited for use on mobile
+* 45drives-disks will now highlight and animate zpools, and vdevs when using zfs
+* Improved error handling for unknown hardware configurations
