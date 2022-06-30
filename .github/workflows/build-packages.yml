@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - build
+      - dev
     tags:
       - 'v*.*.*'
 jobs:

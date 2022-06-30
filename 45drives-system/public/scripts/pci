@@ -200,8 +200,7 @@ def get_hba_server_info():
 
 def main():
 	pci_slots = dmidecode()
-	#hba_cards = lspci_hba() for when 45drives-tools 2.0.8 is on stable
-	hba_cards = storcli()
+	hba_cards = lspci_hba()
 	network_cards = network()
 	sata_cards = sata()
 
