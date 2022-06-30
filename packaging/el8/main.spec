@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Jun 30 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-2
+- fixed incorrect path when calling the network script in 45drives-motherboard module
 * Thu Jun 30 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-1
 - updated scripts to use lspci instead of storcli64 in 45drives-motherboard and 45drives-system
   modules

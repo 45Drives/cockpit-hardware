@@ -1,4 +1,3 @@
-## cockpit-45drives-hardware 2.1.3-1
+## cockpit-45drives-hardware 2.1.3-2
 
-* updated scripts to use lspci instead of storcli64 in 45drives-motherboard and 45drives-system modules
-* updated 45drives-tools dependency to 2.0.8 minimum version
+* fixed incorrect path when calling the network script in 45drives-motherboard module
