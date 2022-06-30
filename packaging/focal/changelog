@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.2-3focal) focal; urgency=medium
+
+  * modified 45drives-tools dependency
+
+ -- Mark Hooper <mhooper@45drives.com>  Thu, 30 Jun 2022 06:23:37 -0300
+
 cockpit-45drives-hardware (2.1.2-2focal) focal; urgency=medium
 
   * added support for 9600 series HBA cards

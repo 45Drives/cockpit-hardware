@@ -90,7 +90,7 @@ def storcli():
 def lspci_hba():
 	try:
 		lspci_hba_result = subprocess.Popen(
-			["lspci","-d","1000:*","-vv"],stdout=subprocess.PIPE,universal_newlines=True).stdout.read()
+			["lspci", "-d", "1000:*","-vv", "-i", "/opt/45drives/tools/pci.ids"],stdout=subprocess.PIPE,universal_newlines=True).stdout.read()
 	except:
 		return False
 	hba_cards = []
@@ -199,7 +199,8 @@ def lsblk(device):
 
 def main():
 	pci_slots = dmidecode()
-	hba_cards = lspci_hba()
+	#hba_cards = lspci_hba() for when 45drives-tools 2.0.8 is on stable
+	hba_cards = storcli()
 	network_cards = network()
 	sata_cards = sata()
 

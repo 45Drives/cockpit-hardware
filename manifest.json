@@ -4,7 +4,7 @@
     "title": "cockpit-45drives-hardware",
     "prerelease": false,
     "version": "2.1.2",
-    "buildVersion": "2",
+    "buildVersion": "3",
     "author": "Mark Hooper <mhooper@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-hardware",
     "category": "utils",
@@ -30,7 +30,7 @@
             "dmidecode",
             "ipmitool",
             "lshw",
-            "45drives-tools (>= 2.0.8)"
+            "45drives-tools (>= 2.0.7)"
         ],
         "el": [
             "cockpit",
@@ -40,7 +40,7 @@
             "dmidecode",
             "ipmitool",
             "lshw",
-            "45drives-tools >= 2.0.8"
+            "45drives-tools >= 2.0.7"
         ]
     },
     "releases": [
@@ -58,7 +58,7 @@
     "changelog": {
         "urgency": "medium",
         "version": "2.1.2",
-        "buildVersion": "2",
+        "buildVersion": "3",
         "ignore": [],
         "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",
