@@ -25,49 +25,54 @@ g_dmi_fields = [
 	"Type"
 ]
 
-def get_network_info():
-	# run the command: ip addr
-	# this will parse the output of this command to obtain the following:
-	# 	Connection Name: ex. (eno1)
-	# 	Connection State: ex. (DOWN)
-	# 	type: ex. (loopback)
-	# 	MAC: The MAC address associated with the connection
-	# 	inet: the ipv4 address if any
-	# 	inet6: the ipv6 address if any
-	# This information is manually entered into a .json formatted string
-	# called network_json_str. TODO: Modify this to simply create a 
-	# dictionary instead of a .json string. 
+def get_ipv4(addr_info):
+	if not addr_info:
+		return "-"
+
+	for addr in addr_info:
+		if addr["family"] == "inet":
+			return "{local}/{pre}".format(local=addr["local"],pre=str(addr["prefixlen"]))
+
+def get_ipv6(addr_info):
+	if not addr_info:
+		return "-"
+
+	for addr in addr_info:
+		if addr["family"] == "inet6":
+			return "{local}/{pre}".format(local=addr["local"],pre=str(addr["prefixlen"]))
+
+def ip_addr():
 	try:
 		ipaddr_result = subprocess.Popen(
-			["ip","addr"],stdout=subprocess.PIPE, universal_newlines=True).stdout
+			["ip","-j","addr"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
-		return False
-	network_json_str = "{\"Network Info\":["
-	# search for desired output from the ip addr command and add it to the 
-	# json string.
-	for line in ipaddr_result:
-		regex_connection = re.search("^(\w)\S+\s+(\w+).*state\s(\w+).*",line)
-		regex_link = re.search("^\s+link/(\S+)\s(\S+).*",line)
-		regex_inet = re.search("^\s+inet\s(\S+).*$",line)
-		regex_inet6 = re.search("^\s+inet6\s(\S+).*$",line)
-		if regex_connection != None:
-			network_json_str += (
-					"{\"Connection Name\":\"" + regex_connection.group(2)+"\"," +
-					"\"Connection State\":\"" + regex_connection.group(3)+"\"},"
-				)
-		if regex_link != None:
-			network_json_str = network_json_str[:-2]
-			network_json_str += (",\"Type\":\""+regex_link.group(1)+"\",")
-			network_json_str += ("\"MAC\":\""+regex_link.group(2)+"\"},")
-		if regex_inet != None:
-			network_json_str = network_json_str[:-2]
-			network_json_str += (",\"IPv4\":\""+regex_inet.group(1)+"\"},")
-		if regex_inet6 != None:
-			network_json_str = network_json_str[:-2]
-			network_json_str += (",\"IPv6\":\""+regex_inet6.group(1)+"\"},")
+		errorMessage = {"msg": "error running 'ip -j addr' command. "}
+		print(json.dumps(errorMessage))
+		exit(1)
+	#ipaddr_json = json.loads(ipaddr_result.read())
+	try:
+		ipaddr_json = json.loads(ipaddr_result.read())
+	except:
+		errorMessage = {"msg": "error parsing json output of 'ip -j addr' command."}
+		print(json.dumps(errorMessage))
+		exit(1)
+	
+	j_ipaddr = []
+	for connection in ipaddr_json:
+		j_ipaddr.append({
+			"Connection Name": connection["ifname"],
+			"Connection State": connection["operstate"],
+			"Type": connection["link_type"],
+			"MAC": connection["address"],
+			"IPv4": get_ipv4(connection["addr_info"].copy()),
+			"IPv6": get_ipv6(connection["addr_info"].copy())
+		})
+	return j_ipaddr
 
-	network_json_str = network_json_str[:-1]
-	network_json_str += "]}"
+
+def get_network_info():
+	#run ip -j addr
+	j_connections = ip_addr()
 
 	# LSHW COMMAND:
 	# This runs the command: lshw -C network -businfo -quiet
@@ -148,12 +153,10 @@ def get_network_info():
 		final_card_lst.append(card)
 		final_card_lst.append(card_duplicate)
 
-	# load in the network_json_str as a dictionary
-	j_dict = json.loads(network_json_str)
 
 	# add the relevant fields to the list of connections when we have a matching
 	# Connection Name
-	for obj in j_dict["Network Info"]:
+	for obj in j_connections:
 		for card in final_card_lst:		
 			if obj["Connection Name"] == card["Connection Name"]:
 				obj["Bus Address"] = card["Bus Address"]
@@ -163,7 +166,7 @@ def get_network_info():
 				if regex != None:
 					obj["PCI Slot"] = regex.group(1)
 
-	return j_dict["Network Info"]
+	return j_connections
 
 def main():
 	network = get_network_info()
