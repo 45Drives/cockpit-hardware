@@ -1,3 +1,12 @@
+cockpit-45drives-hardware (2.1.3-7focal) focal; urgency=medium
+
+  * updated network helper script in 45drives-system to use ip -j addr instead of
+    ip addr
+  * made adjustments to popup content in 45drives-motherboard so as to not cut off
+    end characters
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 06 Jul 2022 10:21:00 -0300
+
 cockpit-45drives-hardware (2.1.3-6focal) focal; urgency=medium
 
   * fixed bug in motherboard cutting off last character in hba card popups

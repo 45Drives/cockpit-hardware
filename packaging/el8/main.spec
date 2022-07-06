@@ -42,6 +42,11 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Jul 06 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-7
+- updated network helper script in 45drives-system to use ip -j addr instead of ip
+  addr
+- made adjustments to popup content in 45drives-motherboard so as to not cut off
+  end characters
 * Wed Jul 06 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-6
 - fixed bug in motherboard cutting off last character in hba card popups
 * Wed Jul 06 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-5
