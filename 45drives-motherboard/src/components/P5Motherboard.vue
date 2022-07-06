@@ -578,7 +578,7 @@ export default {
                         components[c]["width"] / (108.0 / 884.0);
                       components[c].popup.content = components[
                         c
-                      ].popup.content.slice(0, -1);
+                      ].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -621,7 +621,7 @@ export default {
                         components[c]["width"] / (108.0 / 884.0);
                       components[c].popup.content = components[
                         c
-                      ].popup.content.slice(0, -1);
+                      ].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
