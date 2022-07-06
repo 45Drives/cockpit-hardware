@@ -17,7 +17,7 @@
 PLUGIN_SRCS=
 
 # For installing to a remote machine for testing with `make install-remote`
-REMOTE_TEST_HOST=rockinator1
+REMOTE_TEST_HOST=192.168.13.13
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install

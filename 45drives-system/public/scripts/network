@@ -63,7 +63,7 @@ def ip_addr():
 			"Connection Name": connection["ifname"],
 			"Connection State": connection["operstate"],
 			"Type": connection["link_type"],
-			"MAC": connection["address"],
+			"MAC": connection["address"] if "address" in connection.keys() else "-",
 			"IPv4": get_ipv4(connection["addr_info"].copy()),
 			"IPv6": get_ipv6(connection["addr_info"].copy())
 		})
