@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Jul 06 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-4
+- updated network helper script in 45drives-system to use ip -j addr instead of ip
+  addr
 * Mon Jul 04 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-3
 - updated network script in 45drives-system to use ip addr command with json output
 - added iproute2 dependency for ubuntu

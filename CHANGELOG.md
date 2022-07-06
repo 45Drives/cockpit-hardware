@@ -1,4 +1,3 @@
-## cockpit-45drives-hardware 2.1.3-3
+## cockpit-45drives-hardware 2.1.3-4
 
-* updated network script in 45drives-system to use ip addr command with json output
-* added iproute2 dependency for ubuntu
+* updated network helper script in 45drives-system to use ip -j addr instead of ip addr
