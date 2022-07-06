@@ -32,6 +32,8 @@ def get_ipv4(addr_info):
 	for addr in addr_info:
 		if addr["family"] == "inet":
 			return "{local}/{pre}".format(local=addr["local"],pre=str(addr["prefixlen"]))
+	
+	return "-"
 
 def get_ipv6(addr_info):
 	if not addr_info:
@@ -40,6 +42,8 @@ def get_ipv6(addr_info):
 	for addr in addr_info:
 		if addr["family"] == "inet6":
 			return "{local}/{pre}".format(local=addr["local"],pre=str(addr["prefixlen"]))
+
+	return "-"
 
 def ip_addr():
 	try:
