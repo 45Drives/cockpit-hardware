@@ -2,7 +2,7 @@
     "__version": "45D-R1",
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
-    "prerelease": false,
+    "prerelease": true,
     "version": "2.1.3",
     "buildVersion": "8",
     "author": "Mark Hooper <mhooper@45drives.com>",
