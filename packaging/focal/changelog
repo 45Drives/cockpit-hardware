@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.1.3-8focal) focal; urgency=medium
+
+  * improved zfs_info script error handling
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 22 Jul 2022 09:00:50 -0300
+
 cockpit-45drives-hardware (2.1.3-7focal) focal; urgency=medium
 
   * updated network helper script in 45drives-system to use ip -j addr instead of

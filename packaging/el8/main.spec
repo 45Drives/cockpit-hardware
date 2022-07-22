@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Fri Jul 22 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-8
+- improved zfs_info script error handling
 * Wed Jul 06 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-7
 - updated network helper script in 45drives-system to use ip -j addr instead of ip
   addr
