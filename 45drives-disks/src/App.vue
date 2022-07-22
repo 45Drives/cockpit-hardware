@@ -77,6 +77,9 @@ export default {
         finished: false,
         failed: false,
       },
+      pageStatus: {
+        ready: false
+      }
     });
 
     const runDmap = async () => {
@@ -124,7 +127,7 @@ export default {
     };
 
     const setPageLayout = () => {
-      if (preloadChecks.zfs.failed) {
+      if (preloadChecks.zfs.finished && preloadChecks.zfs.failed) {
         // no zfs
         if (!preloadChecks.serverInfo.failed) {
           // server info is available.
@@ -154,9 +157,10 @@ export default {
               console.log("UNKNOWN CHASSIS SIZE");
           }
         }
+        preloadChecks.pageStatus.ready = true
       } else {
         //zfs info needs to be displayed
-        if (!preloadChecks.serverInfo.failed) {
+        if (preloadChecks.zfs.finished && !preloadChecks.serverInfo.failed) {
           // server info is available.
           switch (preloadChecks.serverInfo.content["Chassis Size"]) {
             case "2U":
@@ -184,6 +188,7 @@ export default {
               console.log("UNKNOWN CHASSIS SIZE");
           }
         }
+        preloadChecks.pageStatus.ready = true
       }
     };
 
@@ -345,7 +350,7 @@ export default {
       await runServerInfo();
       await runDiskInfo();
       await runZfsInfo();
-      if (!preloadChecks.diskInfo.failed && !preloadChecks.serverInfo.failed) {
+      if (!preloadChecks.diskInfo.failed && !preloadChecks.serverInfo.failed && preloadChecks.zfs.finished) {
         setPageLayout();
         runLsdev();
       }
@@ -428,7 +433,9 @@ export default {
         preloadChecks.serverInfo.finished &&
         preloadChecks.diskInfo.finished &&
         !preloadChecks.serverInfo.failed &&
-        !preloadChecks.diskInfo.failed
+        !preloadChecks.diskInfo.failed &&
+        preloadChecks.zfs.finished && 
+        preloadChecks.pageStatus.ready
       "
       class="grow flex flex-col well overflow-y-auto p-4"
     >
@@ -450,7 +457,9 @@ export default {
                 preloadChecks.serverInfo.finished &&
                 preloadChecks.diskInfo.finished &&
                 !preloadChecks.serverInfo.failed &&
-                !preloadChecks.diskInfo.failed
+                !preloadChecks.diskInfo.failed && 
+                preloadChecks.zfs.finished &&
+                preloadChecks.pageStatus.ready
               "
               :serverInfo="preloadChecks.serverInfo.content"
             />
@@ -462,13 +471,15 @@ export default {
             preloadChecks.serverInfo.finished &&
             preloadChecks.diskInfo.finished &&
             !preloadChecks.serverInfo.failed &&
-            !preloadChecks.diskInfo.failed
+            !preloadChecks.diskInfo.failed &&
+            preloadChecks.zfs.finished &&
+            preloadChecks.pageStatus.ready
           "
           :class="[
             pageLayout === 'AZ' ? 'lg:col-span-3' : '',
             pageLayout === 'BZ' ? 'xl:col-span-3 2xl:col-span-4' : '',
             pageLayout === 'CZ' ? 'xl:col-span-2 2xl:col-span-3' : '',
-            pageLayout === 'A' ? 'lg:col-span-2' : '',
+            pageLayout === 'A' ? 'lg:col-span-6' : '',
             pageLayout === 'B' ? 'xl:col-span-3 2xl:col-span-4' : '',
             pageLayout === 'C' ? 'xl:col-span-2 2xl:col-span-3' : '',
             'grow grid gap-well col-span-6',
@@ -479,7 +490,8 @@ export default {
               preloadChecks.serverInfo.finished &&
               preloadChecks.diskInfo.finished &&
               !preloadChecks.serverInfo.failed &&
-              !preloadChecks.diskInfo.failed
+              !preloadChecks.diskInfo.failed && 
+              preloadChecks.pageStatus.ready
             "
           />
         </div>
@@ -489,7 +501,8 @@ export default {
             preloadChecks.zfs.finished &&
             !preloadChecks.zfs.failed &&
             !preloadChecks.serverInfo.failed &&
-            !preloadChecks.diskInfo.failed
+            !preloadChecks.diskInfo.failed &&
+            preloadChecks.pageStatus.ready
           "
           :class="[
             pageLayout === 'AZ' ? 'lg:col-span-3' : '',
@@ -516,7 +529,7 @@ export default {
     <div v-else-if="adminCheck && adminFlag" class="flex-auto flex flex-col items-center justify-evenly well">
       <div
         v-if="
-          !preloadChecks.serverInfo.finished || !preloadChecks.diskInfo.finished
+          !preloadChecks.serverInfo.finished || !preloadChecks.diskInfo.finished || !preloadChecks.zfs.finished
         "
       >
         Gathering disk information. Please wait...

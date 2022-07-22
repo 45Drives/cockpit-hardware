@@ -96,28 +96,6 @@ def zpool_iostat(pool_name):
     groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
     return dict(groupings)
 
-
-def zpool_status_parse(zp_status_obj,key):
-    if key not in zp_status_obj.keys():
-        return {}, {}
-    vdevs = {
-        match.group(1):{
-            "state": match.group(2), 
-            "read_errors": match.group(3), 
-            "write_errors": match.group(4), 
-            "checksum_errors": match.group(5)
-            } for match in re.finditer(r"^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
-        }
-    disks = {
-            match.group(1):{
-            "state": match.group(2), 
-            "read_errors": match.group(3), 
-            "write_errors": match.group(4), 
-            "checksum_errors": match.group(5)
-            } for match in re.finditer(r"^\t\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
-        }
-    return vdevs, disks
-
 def zpool_status_parse(zp_status_obj,key):
     if key not in zp_status_obj.keys():
         return [], []
@@ -139,13 +117,13 @@ def zpool_status_parse(zp_status_obj,key):
             "read_errors": match.group(3), 
             "write_errors": match.group(4), 
             "checksum_errors": match.group(5)
-            } for match in re.finditer(r"^\t\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+            } for match in re.finditer(r"^\t\s+(\d+-\d+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
     ]
     counts = []
     disk_count = 0
     for line in zp_status_obj[key].splitlines():
         regex_vdev = re.search("^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-        regex_disk = re.search("^\t\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+        regex_disk = re.search("^\t\s+(\d+-\d+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
         if regex_vdev != None and disk_count > 0:
             counts.append(disk_count)
             disk_count = 0
@@ -155,7 +133,6 @@ def zpool_status_parse(zp_status_obj,key):
         counts.append(disk_count)
 
     return vdevs, disks, counts
-    return vdevs, disks
 
 def zpool_iostat_parse(zp_status_obj,key):
     if key not in zp_status_obj.keys():
@@ -182,13 +159,13 @@ def zpool_iostat_parse(zp_status_obj,key):
             "write_ops": match.group(5),
             "read_bw": match.group(6),
             "write_bw": match.group(7)
-            } for match in re.finditer(r"^\s+(\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
+            } for match in re.finditer(r"^\s+(\d+-\d+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
         ]
     counts = []
     disk_count = 0
     for line in zp_status_obj[key].splitlines():
         regex_vdev = re.search("^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-        regex_disk = re.search("^    (\d+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
+        regex_disk = re.search("^    (\d+-\d+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
         if regex_vdev != None and disk_count > 0:
             counts.append(disk_count)
             disk_count = 0
@@ -199,6 +176,41 @@ def zpool_iostat_parse(zp_status_obj,key):
 
     return vdevs, disks, counts
 
+def verify_zfs_device_format(zp_status_obj,pool_name):
+    default_pattern = r"^\t    (\d+-\d+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*"
+    unsupported_pattern = r"^\t    (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*"
+    disks = [
+            {
+            "tag":pool_name,
+            "name":match.group(1),
+            "state": match.group(2), 
+            "read_errors": match.group(3), 
+            "write_errors": match.group(4), 
+            "checksum_errors": match.group(5)
+            } for match in re.finditer(default_pattern,zp_status_obj[pool_name],flags=re.MULTILINE)
+    ]
+    if len(disks) == 0:
+        # default pattern didn't match.
+        unsupported_disks = [
+            {
+                "tag":pool_name,
+                "name":match.group(1),
+                "state": match.group(2), 
+                "read_errors": match.group(3), 
+                "write_errors": match.group(4), 
+                "checksum_errors": match.group(5)
+            } for match in re.finditer(unsupported_pattern,zp_status_obj[pool_name],flags=re.MULTILINE)
+        ]
+        print("Unsupported device format for zpool '{pn}'\n".format(pn=pool_name))
+        print("This module will only display zpool information when all zpools are created using a device alias.\n")
+        print("This can be done using the 45Drives cockpit-zfs-manager package:\nhttps://github.com/45Drives/cockpit-zfs-manager/releases/\n")
+        if unsupported_disks:
+            print("The following zfs devices do not conform: ")
+            for disk in unsupported_disks:
+                print("\t  {d}".format(d=disk["name"]))
+        sys.exit(1)
+
+
 def get_zpool_status():
     for pool in json_zfs["zpools"]:
         # run 'zpool status <pool>' and 'zpool iostat -v <pool>' and group output by top level entry (<pool name>, special, cache etc.)
@@ -206,12 +218,27 @@ def get_zpool_status():
         iostat_output = zpool_iostat(pool["name"])
         pool["state"] = status_output["state"]
         pool["vdevs"] = []
+        verify_zfs_device_format(status_output,pool["name"])
         for key in status_output.keys():
             # parse the output of both commands by top level entry
             if key in iostat_output.keys():
                 # get all parsed output as arrays of objects from each command. 
                 status_vdevs, status_disks, status_disk_counts = zpool_status_parse(status_output,key)
                 iostat_vdevs, iostat_disks, iostat_disk_counts = zpool_iostat_parse(iostat_output,key)
+                if not status_disks or not iostat_disks or not status_disk_counts or not iostat_disk_counts:
+                    print("/usr/share/cockpit/45drives-disks/scripts/zfs_info failed to interpret the following zfs information:")
+                    print("zpool status {pn}:".format(pn=pool["name"]))
+                    print(status_output[key])
+                    print("zpool iostat -v {pn}:".format(pn=pool["name"]))
+                    print(iostat_output[key])
+                    print("Other Information: ")
+                    print("status_vdevs",json.dumps(status_vdevs,indent=2))
+                    print("status_disks",json.dumps(status_disks,indent=2))
+                    print("status_disk_counts",json.dumps(status_disk_counts,indent=2))
+                    print("iostat_vdevs",json.dumps(iostat_vdevs,indent=2))
+                    print("iostat_disks",json.dumps(iostat_disks,indent=2))
+                    print("iostat_disk_counts",json.dumps(iostat_disk_counts,indent=2))
+                    exit(1)
                 disk_index = 0
                 for i in range(0,len(status_vdevs)):
                     #combine output of iostat command and zpool status for each vdev
