@@ -57,7 +57,13 @@ g_ipmitool_sensor_fields = {
 	"DIMMG1 Temp": " (C)",
 	"DIMMG2 Temp": " (C)",
 	"DIMMH1 Temp": " (C)",
-	"DIMMH2 Temp": " (C)"
+	"DIMMH2 Temp": " (C)",
+	"DDR4_A Temp": " (C)", #ASRockRack 
+	"DDR4_B Temp": " (C)", #ASRockRack
+	"DDR4_C Temp": " (C)", #ASRockRack
+	"DDR4_D Temp": " (C)", #ASRockRack
+	"DDR4_E Temp": " (C)", #ASRockRack
+	"DDR4_F Temp": " (C)"  #ASRockRack
 }
 
 def ipmitool_sensor():
@@ -114,6 +120,23 @@ def dmidecode():
 	if current_slot != None:
 		slot_entries.append(current_slot.copy())
 
+	# check slot_entries for translatable locator tags (ASRockRack Motherboards...)
+	locator_tags = {
+		"CPU1_DIMM_A1":"DDR4_A",
+		"CPU1_DIMM_A2":"DDR4_A",
+		"CPU1_DIMM_B1":"DDR4_B",
+		"CPU1_DIMM_C1":"DDR4_C",
+		"CPU1_DIMM_D1":"DDR4_D",
+		"CPU1_DIMM_D2":"DDR4_D",
+		"CPU1_DIMM_E1":"DDR4_E",
+		"CPU1_DIMM_F1":"DDR4_F",
+	}
+
+	for slot in slot_entries:
+		if "Locator" in slot.keys() and slot["Locator"] in locator_tags.keys():
+			slot["Temperature Key"] = locator_tags[slot["Locator"]]
+
+
 	return slot_entries
 
 def main():
@@ -127,12 +150,15 @@ def main():
 					module[key] = "-"
 			if module["Locator"] in temps.keys():
 				module["Temperature"] = temps[module["Locator"]]
-				if module["Temperature"] == "na (C)":
-					module["Temperature"] = "-"
-				if module["Manufacturer"] == "NO DIMM":
-					module["Manufacturer"] = "-"
-				if module["Serial Number"] == "NO DIMM":
-					module["Serial Number"] = "-"
+			elif "Temperature Key" in module.keys() and module["Temperature Key"] in temps.keys():
+				module["Temperature"] = temps[module["Temperature Key"]]
+			if module["Temperature"] == "na (C)":
+				module["Temperature"] = "-"
+			if module["Manufacturer"] == "NO DIMM":
+				module["Manufacturer"] = "-"
+			if module["Serial Number"] == "NO DIMM":
+				module["Serial Number"] = "-"
+
 	if ram:
 		output_str = "{\"Ram Info\":["
 		for module in ram:

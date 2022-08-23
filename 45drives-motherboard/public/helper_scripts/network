@@ -124,6 +124,19 @@ def get_network_info():
 	for i in range(0,len(slot_entries),len(g_dmi_fields)):
 		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
 
+	BA_EPC612D8A = {
+		"ff00:16:00.0":"0000:17:00.0", #PCIE1
+		"ff00:16:02.0":"0000:1c:00.0", #PCIE2
+		"ff00:64:00.0":"0000:65:00.0", #PCIE4
+		"ff00:64:02.0":"0000:66:00.0", #PCIE3
+		"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
+		"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
+	}
+
+	for card in cards:
+		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
+			card["Bus Address"] = BA_EPC612D8A[card["Bus Address"]]
+
 	# for each card in the list of dictionaries, append 
 	# dictionaries to a list that have the same Bus address
 	# as those found in the list of connections found in 
@@ -159,7 +172,7 @@ def get_network_info():
 				obj["Bus Address"] = card["Bus Address"]
 				obj["Designation"] = card["Designation"]
 				obj["PCI Type"] = card["Type"]
-				regex = re.search("^.*SLOT(\d).*",card["Designation"])
+				regex = re.search("^.*(?:SLOT|PCIE)(\d).*",card["Designation"])
 				if regex != None:
 					obj["PCI Slot"] = regex.group(1)
 

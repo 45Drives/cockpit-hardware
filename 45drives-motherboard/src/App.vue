@@ -46,6 +46,7 @@ export default {
       "X11SSH-CTF",
       "X11SSM-F",
       "X11SPi-TF",
+      "EPC621D8A",
     ]);
 
     const adminCheck = ref(false);

@@ -554,8 +554,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -569,9 +568,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
@@ -597,8 +594,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                            0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -612,9 +608,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
@@ -641,8 +635,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -656,9 +649,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
@@ -729,8 +720,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -748,16 +738,14 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         99.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (99.0 / 593.0);
                       components[c].popup.content = components[
                         c
-                      ].popup.content.slice(0, -5);
+                      ].popup.content.slice(0, -4);
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -776,8 +764,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -795,9 +782,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         98.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
@@ -823,8 +808,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -842,9 +826,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         99.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
@@ -870,8 +852,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -889,9 +870,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         98.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
@@ -918,8 +897,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -937,9 +915,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         97.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =

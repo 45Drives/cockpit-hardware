@@ -50,6 +50,19 @@ def dmidecode():
 	for i in range(0,len(slot_entries),len(g_dmi_fields)):
 		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
 
+	BA_EPC612D8A = {
+		"ff00:16:00.0":"0000:17:00.0", #PCIE1
+		"ff00:16:02.0":"0000:1c:00.0", #PCIE2
+		"ff00:64:00.0":"0000:65:00.0", #PCIE4
+		"ff00:64:02.0":"0000:66:00.0", #PCIE3
+		"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
+		"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
+	}
+
+	for slot in cards:
+		if "Bus Address" in slot.keys() and slot["Bus Address"] in BA_EPC612D8A.keys():
+			slot["Bus Address"] = BA_EPC612D8A[slot["Bus Address"]]
+
 	return cards
 
 def lspci_hba():
@@ -221,7 +234,7 @@ def main():
 	if pci_slots and network_cards:
 		for slot in pci_slots:
 			for card in network_cards:
-				if "ID" in slot.keys() and card["pciSlot"] == slot["ID"]:
+				if ("ID" in slot.keys() and card["pciSlot"] == slot["ID"]) or ("Designation" in slot.keys() and ("PCIE" in slot["Designation"] or "SLOT" in slot["Designation"]) and card["pciSlot"] in slot["Designation"]):
 					slot["Card Type"] = "Network Card"
 					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]))
 					if "Connections" not in slot.keys():

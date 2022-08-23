@@ -73,6 +73,19 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-6","I-SATA5"],
 		["pci-0000:00:17.0-ata-7","I-SATA6"],
 		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+	"EPC621D8A":[
+		["pci-0000:00:11.5-ata-1","SSATA_0"],
+		["pci-0000:00:11.5-ata-2","SSATA_1"],
+		["pci-0000:00:11.5-ata-3","SSATA_2"],
+		["pci-0000:00:11.5-ata-4","SSATA_3"],
+		["pci-0000:00:11.5-ata-5","SSATA_4"],
+		["pci-0000:00:11.5-ata-6","SSATA_5"],
+		["pci-0000:00:17.0-ata-1","SATA_0"],
+		["pci-0000:00:17.0-ata-2","SATA_1"],
+		["pci-0000:00:17.0-ata-3","SATA_2"],
+		["pci-0000:00:17.0-ata-4","SATA_3"],
+		["pci-0000:00:17.0-ata-5","SATA_4"]
 	]
 }
 

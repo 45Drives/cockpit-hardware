@@ -42,6 +42,12 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue Aug 23 2022 Mark Hooper <mhooper@45drives.com> 2.2.0-2
+- added support for ASRockRack EPC621D8A Motherboards
+- updated how PCI cards are rendered in 45drives-motherboard
+- updated helper scripts in 45drives-System and 45drives-Motherboard to work with
+  ASRockRack EPC621D8A Motherboards
+- updated 45drives-tools dependency to 2.1.0
 * Tue Jul 26 2022 Mark Hooper <mhooper@45drives.com> 2.1.3-9
 - improved error handling in zfs_info script
 - warning messages will now be produced if zpools aren't created with device aliasing

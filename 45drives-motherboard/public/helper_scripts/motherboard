@@ -21,14 +21,15 @@ import json
 
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
-	"Manufacturer":  ["Supermicro"],
+	"Manufacturer":  ["Supermicro","ASRockRack"],
 	"Product Name":  [
 		"X11DPL-i",
 		"X11SPL-F",
 		"H11SSL-i",
 		"X11SSH-CTF",
 		"X11SSM-F",
-		"X11SPi-TF"
+		"X11SPi-TF",
+		"EPC621D8A"
 		],
 	"Serial Number": None
 }
@@ -40,7 +41,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
-		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz"
+		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
+		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -80,7 +82,14 @@ g_ipmitool_sensor_fields = {
 	"DIMMF1 Temp": " (C)",
 	"DIMMF2 Temp": " (C)",
 	"DIMMG1 Temp": " (C)",
-	"DIMMH1 Temp": " (C)"
+	"DIMMH1 Temp": " (C)",
+	"DDR4_A Temp": " (C)", #ASRockRack 
+	"DDR4_B Temp": " (C)", #ASRockRack
+	"DDR4_C Temp": " (C)", #ASRockRack
+	"DDR4_D Temp": " (C)", #ASRockRack
+	"DDR4_E Temp": " (C)", #ASRockRack
+	"DDR4_F Temp": " (C)"  #ASRockRack
+
 }
 
 ################################################################################
@@ -93,6 +102,10 @@ g_ipmitool_sensor_fields = {
 #       result.  
 ################################################################################
 def get_motherboard_model():
+	mobo_json_str = get_motherboard_model_server_info()
+	if "?" not in mobo_json_str:
+		return mobo_json_str
+
 	mobo = []
 	try:
 		dmi_result = subprocess.Popen(["dmidecode","-t","2"],stdout=subprocess.PIPE,universal_newlines=True).stdout

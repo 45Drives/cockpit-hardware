@@ -1,4 +1,6 @@
-## cockpit-45drives-hardware 2.1.3-9
+## cockpit-45drives-hardware 2.2.0-2
 
-* improved error handling in zfs_info script
-* warning messages will now be produced if zpools aren't created with device aliasing
+* added support for ASRockRack EPC621D8A Motherboards
+* updated how PCI cards are rendered in 45drives-motherboard
+* updated helper scripts in 45drives-System and 45drives-Motherboard to work with ASRockRack EPC621D8A Motherboards
+* updated 45drives-tools dependency to 2.1.0
