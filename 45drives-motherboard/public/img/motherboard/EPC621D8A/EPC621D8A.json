@@ -102,7 +102,6 @@
     "type": "CPU1_DIMM_D2",
     "id": 2,
     "shape": "rect",
-    "x0": 502,
     "x0": 485,
     "y0": 290,
     "width": 20,

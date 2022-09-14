@@ -328,6 +328,14 @@ export default {
         ).promise();
         let result = JSON.parse(state.stdout);
         Object.assign(zfsInfo, result);
+        if (result.warnings && result.warnings.length > 0){
+          notifications.value.constructNotification(
+          "Warning:",
+          errorStringHTML(result.warnings.join("")),
+          "warning",
+          0
+        );
+        }
         preloadChecks.zfs.content = result;
         preloadChecks.zfs.finished = true;
         preloadChecks.zfs.failed = !result?.zfs_installed;

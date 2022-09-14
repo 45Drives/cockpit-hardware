@@ -2,9 +2,9 @@
     "__version": "45D-R1",
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
-    "prerelease": true,
-    "version": "2.2.0",
-    "buildVersion": "2",
+    "prerelease": false,
+    "version": "2.2.1",
+    "buildVersion": "1",
     "author": "Mark Hooper <mhooper@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-hardware",
     "category": "utils",
@@ -30,7 +30,7 @@
             "dmidecode",
             "ipmitool",
             "lshw",
-            "45drives-tools (>= 2.0.8)",
+            "45drives-tools (>= 2.1.0)",
             "iproute2"
         ],
         "el": [
@@ -41,7 +41,7 @@
             "dmidecode",
             "ipmitool",
             "lshw",
-            "45drives-tools >= 2.0.8"
+            "45drives-tools >= 2.1.0"
         ]
     },
     "releases": [
@@ -58,8 +58,8 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "2.2.0",
-        "buildVersion": "2",
+        "version": "2.2.1",
+        "buildVersion": "1",
         "ignore": [],
         "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",
