@@ -211,6 +211,17 @@ def get_hba_server_info():
 	else:
 		return []
 
+def check_pci_network_card_match(slot,card):
+	if ("ID" in slot.keys() and card["pciSlot"] == slot["ID"]):
+		return True
+	if "Designation" in slot.keys():
+		regex = r"(SLOT|PCIE)(\d+)"
+		test_str = slot["Designation"]
+		match = re.match(regex, test_str, re.DOTALL)
+		if match:
+			return (match.group(2) == card["pciSlot"])
+	return False
+
 def main():
 	pci_slots = dmidecode()
 	hba_cards = lspci_hba()
@@ -234,7 +245,7 @@ def main():
 	if pci_slots and network_cards:
 		for slot in pci_slots:
 			for card in network_cards:
-				if ("ID" in slot.keys() and card["pciSlot"] == slot["ID"]) or ("Designation" in slot.keys() and ("PCIE" in slot["Designation"] or "SLOT" in slot["Designation"]) and card["pciSlot"] in slot["Designation"]):
+				if check_pci_network_card_match(slot,card):
 					slot["Card Type"] = "Network Card"
 					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]))
 					if "Connections" not in slot.keys():

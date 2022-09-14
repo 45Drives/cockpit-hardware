@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Sep 14 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-2
+- modified how network cards are detected in 45drives-system's pci helper script
 * Wed Sep 14 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-1
 - updated zfs_info script in 45drives-disks to inform user about the requirement
   for zfs devices to be using device aliases
