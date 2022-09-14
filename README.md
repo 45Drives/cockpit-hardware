@@ -36,12 +36,13 @@ Shows the physical layout and placement of all PCI cards, Memory modules and SAT
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-motherboard.png">
 
 Currently supports the following motherboard models:
-* X11DPL-i
-* X11SPL-F
-* H11SSL-i
-* X11SSH-CTF
-* X11SSM-F
-* X11SPi-TF
+* Supermicro X11DPL-i
+* Supermicro X11SPL-F
+* Supermicro H11SSL-i
+* Supermicro X11SSH-CTF
+* Supermicro X11SSM-F
+* Supermicro X11SPi-TF
+* ASRockRack EPC621D8A
 
 
 # Installation
