@@ -135,15 +135,32 @@
 
 <script>
 import { ref, reactive, watch, inject } from "vue";
+import Notifications from "./Notifications.vue";
+import { errorStringHTML } from "@45drives/cockpit-helpers";
 
 export default {
   props: {
     serverInfo: Object,
   },
+  components: {
+    Notifications
+  },
   setup(props) {
     const lsdevJson = inject("lsdevJson");
     const diskInfo = inject("diskInfo");
+    const notifications = inject("Notifications");
     const diskCount = ref(0);
+
+    if(props.serverInfo.HBA){
+      const has_hwraid = props.serverInfo.HBA.filter((card) => (card.Model === "9361-16i")).length != 0;
+      if(has_hwraid){
+        notifications.value.constructNotification(
+        "Warning:",
+        errorStringHTML("Hardware RAID card(s) detected. \nDisks are not guaranteed to be displayed in their accurate physical location."),
+        "warning",
+        0);
+      }
+    }
 
     const getCapacityGB = (capacityStr) => {
       let coeffLut = {
@@ -211,7 +228,8 @@ export default {
       avgTemp,
       lsdevJson,
       diskInfo,
-      avgTempStr
+      avgTempStr,
+      notifications
     };
   },
 };

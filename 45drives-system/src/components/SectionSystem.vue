@@ -158,7 +158,8 @@ export default {
       } catch (err) {
         console.log(err);
         try {
-          let errorJson = JSON.parse(err.stderr);
+          console.log(err.stdout);
+          let errorJson = JSON.parse(err.stdout);
           fatalErrorMsg.value.length = 0;
           fatalErrorMsg.value.push(errorJson["error_msg"]);
           fatalErrorMsg.value.push("Click \"Fix\" to run /opt/45drives/tools/server_identifier");
@@ -186,7 +187,7 @@ export default {
                 console.log(error);
                 fatalError.value = true;
                 fatalErrorMsg.value.length = 0;
-                fatalErrorMsg.value.push(error.stderr);
+                if (error.stderr) fatalErrorMsg.value.push(error.stderr);
                 fatalErrorMsg.value.push("An error occurred when running /opt/45drives/tools/server_identifier");
                 showFixButton.value = false;
               }
@@ -198,7 +199,7 @@ export default {
           console.log(error);
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
-          fatalErrorMsg.value.push(error.stderr);
+          if (error.stderr) fatalErrorMsg.value.push(error.stderr);
           fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/server_info");
           showFixButton.value = false;
         }

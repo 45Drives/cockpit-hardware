@@ -12,7 +12,7 @@ def main():
 		server_info = {
 			"error_msg": "/etc/45drives/server_info/server_info.json does not exist"
 		}
-		print(json.dumps(server_info,indent=4))
+		print(json.dumps(server_info,indent=4),file=sys.stderr)
 		sys.exit(1)
 
 if __name__ == "__main__":
