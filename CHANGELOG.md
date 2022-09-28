@@ -1,3 +1,4 @@
-## cockpit-45drives-hardware 2.2.1-2
+## cockpit-45drives-hardware 2.2.1-3
 
-* modified how network cards are detected in 45drives-system's pci helper script
+* added support for 9361-16i HBA cards
+* added support for BCM57412 network cards

@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Sep 28 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-3
+- added support for 9361-16i HBA cards
+- added support for BCM57412 network cards
 * Wed Sep 14 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-2
 - modified how network cards are detected in 45drives-system's pci helper script
 * Wed Sep 14 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-1
