@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.2.1-5focal) focal; urgency=medium
+
+  * added support for 9400-16i HBA cards in System, Disks and Motherbaord Modules
+
+ -- Mark Hooper <mhooper@45drives.com>  Mon, 31 Oct 2022 11:29:06 -0300
+
 cockpit-45drives-hardware (2.2.1-4focal) focal; urgency=medium
 
   * Incremented build for release on repo
