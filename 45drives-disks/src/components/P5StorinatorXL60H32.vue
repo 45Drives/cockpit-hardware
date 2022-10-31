@@ -609,7 +609,7 @@ const diskLocations = [
   },
   {
     x: 46,
-    y: 465,
+    y: 265,
     BAY: "4-10",
     HDD: false,
     occupied: false,

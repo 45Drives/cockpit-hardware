@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.2.1-5
+## cockpit-45drives-hardware 2.2.1-6
 
-* added support for 9400-16i HBA cards in System, Disks and Motherbaord Modules
+* fixed drive placement error in 45drives-disks for XL60-H32 units not displaying disk 4-10 properly

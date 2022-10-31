@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Mon Oct 31 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-6
+- fixed drive placement error in 45drives-disks for XL60-H32 units not displaying
+  disk 4-10 properly
 * Mon Oct 31 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-5
 - added support for 9400-16i HBA cards in System, Disks and Motherbaord Modules
 * Wed Sep 28 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-4
