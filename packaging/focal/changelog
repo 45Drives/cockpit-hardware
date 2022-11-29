@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.2.2-1focal) focal; urgency=medium
+
+  * updated zfs_info script to fix bug when single disk vdevs are encountered
+  * single device vdevs are now reported as both a disk and vdev by zfs_info script
+
+ -- Mark Hooper <mhooper@45drives.com>  Tue, 29 Nov 2022 12:30:50 -0400
+
 cockpit-45drives-hardware (2.2.1-6focal) focal; urgency=medium
 
   * fixed drive placement error in 45drives-disks for XL60-H32 units not displaying

@@ -79,6 +79,27 @@ def get_zpool_list():
 
     return zpools
 
+def zpool_status_flags(pool_name):
+    try:
+        zpool_status_result = subprocess.Popen(
+            ["zpool", "status", pool_name, "-P"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout.read()
+    except:
+        print(f"failed to run 'zpool status {pool_name}'")
+        exit(1)
+    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+|^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    groupings.append( [("state",match.group(1)) for match in re.finditer(r"^.*state\:\s+(\S+)",zpool_status_result,flags=re.MULTILINE)][0])
+    return dict(groupings)
+
+def zpool_iostat_flags(pool_name):
+    try:
+        zpool_status_result = subprocess.Popen(
+            ["zpool", "iostat","-vP", pool_name], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout.read()
+    except:
+        print(f"failed to run 'zpool iostat -v {pool_name}'")
+        exit(1)
+    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    return dict(groupings)
+
 def zpool_status(pool_name):
     try:
         zpool_status_result = subprocess.Popen(
@@ -104,96 +125,86 @@ def zpool_iostat(pool_name):
     groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
     return dict(groupings)
 
-def zpool_status_parse(zp_status_obj,key):
+def zpool_status_parse(zp_status_obj,key,pool_name):
     if key not in zp_status_obj.keys():
         return [], []
-    vdevs = [
-            {
-            "tag":key,
-            "name": match.group(1),
-            "state": match.group(2), 
-            "read_errors": match.group(3), 
-            "write_errors": match.group(4), 
-            "checksum_errors": match.group(5)
-            } for match in re.finditer(r"^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
-    ]
-    disks = [
-            {
-            "tag":key,
-            "name":match.group(1),
-            "state": match.group(2), 
-            "read_errors": match.group(3), 
-            "write_errors": match.group(4), 
-            "checksum_errors": match.group(5)
-            } for match in re.finditer(r"^\t    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
-    ]
 
-    exception_match = r"^(\d+-\d+)(?:-part[0-9])"
-    for disk in disks:
-            match = re.match(exception_match,disk["name"])
-            if match:
-                disk["name"] = match.group(1)
+    #perform zpool status <pool_name> -P command and return the separated object.
+    zp_status_obj_path = zpool_status_flags(pool_name)
 
+    zp_status_default = zp_status_obj[key].splitlines()
+    zp_status_path = zp_status_obj_path[key].splitlines()
+
+    vdevs = []
+    disks = []
     counts = []
     disk_count = 0
     initial_disk = True
-    for line in zp_status_obj[key].splitlines():
-        regex_vdev = re.search("^\t  (\S+-\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-        regex_disk = re.search("^\t    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-        if regex_vdev != None and not initial_disk:
-            counts.append(disk_count)
-            disk_count = 0
-        if regex_disk != None:
+    for i in range(0,len(zp_status_default)):
+        re_vdev_default = re.search("^\t  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_default[i])
+        re_vdev_path = re.search("^\t  (/dev/\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_path[i])
+        re_disk_path = re.search(f"^\t    (/dev/\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_path[i])
+        re_disk_default = re.search(f"^\t    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_default[i])
+        if re_vdev_default != None:
+            #we have a vdev
+            vdevs.append(
+                {
+                    "tag":key,
+                    "name": re_vdev_default.group(1),
+                    "state": re_vdev_default.group(2), 
+                    "read_errors": re_vdev_default.group(3), 
+                    "write_errors": re_vdev_default.group(4), 
+                    "checksum_errors": re_vdev_default.group(5)
+                }
+            )
+            if re_vdev_path != None:
+                #vdev is also a disk. store it in the array of disks
+                disks.append(
+                    {
+                        "tag":key,
+                        "name":re_vdev_default.group(1),
+                        "state": re_vdev_default.group(2), 
+                        "read_errors": re_vdev_default.group(3), 
+                        "write_errors": re_vdev_default.group(4), 
+                        "checksum_errors": re_vdev_default.group(5)
+                    }
+                )
+                if not initial_disk:
+                    #store the previous disk count, as we need to track the previous vdev's disks
+                    counts.append(disk_count)
+                    disk_count = 1
+                else:
+                    # this is the first disk encountered, push disk count 
+                    disk_count = disk_count +1
+                    initial_disk = False
+
+            elif not initial_disk:
+                #This vdev is not a disk, and we already have encountered a disk before. append the disk count then reset it.
+                counts.append(disk_count)
+                disk_count = 0
+        if re_disk_path != None and re_disk_default != None:
+            #we've encountered our first regular disk. store the disk, and increment the disk count.
             initial_disk = False
+            disks.append(
+                {
+                        "tag":key,
+                        "name":re_disk_default.group(1),
+                        "state": re_disk_default.group(2), 
+                        "read_errors": re_disk_default.group(3), 
+                        "write_errors": re_disk_default.group(4), 
+                        "checksum_errors": re_disk_default.group(5)
+                }
+            )
             disk_count = disk_count + 1
-    counts.append(disk_count)
 
-    return vdevs, disks, counts
-
-def zpool_iostat_parse(zp_status_obj,key):
-    if key not in zp_status_obj.keys():
-        return [], []
-    vdevs = [
-            {
-            "tag":key,
-            "raid_level":match.group(1), 
-            "alloc": match.group(2),
-            "free": match.group(3),
-            "read_ops": match.group(4),
-            "write_ops": match.group(5),
-            "read_bw": match.group(6),
-            "write_bw": match.group(7)
-            } for match in re.finditer(r"^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
-        ]
-    disks = [
-            {
-            "tag":key,
-            "name":match.group(1), 
-            "alloc": match.group(2),
-            "free": match.group(3),
-            "read_ops": match.group(4),
-            "write_ops": match.group(5),
-            "read_bw": match.group(6),
-            "write_bw": match.group(7)
-            } for match in re.finditer(r"^    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_obj[key],flags=re.MULTILINE)
-        ]
-
+    #implement the fix for legacy true-nas customers (they had part-2 as part of the disk name):
     exception_match = r"^(\d+-\d+)(?:-part[0-9])"
     for disk in disks:
             match = re.match(exception_match,disk["name"])
             if match:
                 disk["name"] = match.group(1)
 
-    counts = []
-    disk_count = 0
-    for line in zp_status_obj[key].splitlines():
-        regex_vdev = re.search("^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-        regex_disk = re.search("^    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",line)
-        if regex_vdev != None and disk_count > 0:
-            counts.append(disk_count)
-            disk_count = 0
-        if regex_disk != None:
-            disk_count = disk_count + 1
+    #append the final disk count to the array and return both arrays and counts.
     counts.append(disk_count)
     return vdevs, disks, counts
 
@@ -242,6 +253,95 @@ def verify_zfs_device_format(zp_status_obj,pool_name):
         #sys.exit(1)
     return alert
 
+def zpool_iostat_parse(zp_iostat_obj,key,pool_name):
+    if key not in zp_iostat_obj.keys():
+        return [], []
+
+    #perform zpool iostat -vP <pool_name> command and return the separated object.
+    zp_iostat_obj_path = zpool_iostat_flags(pool_name)
+
+    zp_iostat_default = zp_iostat_obj[key].splitlines()
+    zp_iostat_path = zp_iostat_obj_path[key].splitlines()
+
+    vdevs = []
+    disks = []
+    counts = []
+    disk_count = 0
+    initial_disk = True
+    for i in range(0,len(zp_iostat_default)):
+        re_vdev_default = re.search(r"^  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_iostat_default[i])
+        re_vdev_path = re.search(r"^  (/dev/\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_iostat_path[i])
+        re_disk_path = re.search(r"^    (/dev/\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_iostat_path[i])
+        re_disk_default = re.search(r"^    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_iostat_default[i])
+        if re_vdev_default != None:
+            #we have a vdev
+            vdevs.append(
+                {
+                    "tag":key,
+                    "raid_level":re_vdev_default.group(1), 
+                    "alloc": re_vdev_default.group(2),
+                    "free": re_vdev_default.group(3),
+                    "read_ops": re_vdev_default.group(4),
+                    "write_ops": re_vdev_default.group(5),
+                    "read_bw": re_vdev_default.group(6),
+                    "write_bw": re_vdev_default.group(7)
+                }
+            )
+            if re_vdev_path != None:
+                #vdev is also a disk. store it in the array of disks, also update the raid_level of the vdev to "Disk".
+                disks.append(
+                    {
+                        "tag":key,
+                        "name":re_vdev_default.group(1), 
+                        "alloc": re_vdev_default.group(2),
+                        "free": re_vdev_default.group(3),
+                        "read_ops": re_vdev_default.group(4),
+                        "write_ops": re_vdev_default.group(5),
+                        "read_bw": re_vdev_default.group(6),
+                        "write_bw": re_vdev_default.group(7)
+                    }
+                )
+                vdevs[-1]["raid_level"] = "Disk"
+                if not initial_disk:
+                    #store the previous disk count, as we need to track the previous vdev's disks
+                    counts.append(disk_count)
+                    #a vdev that is also a disk will only have one disk.
+                    disk_count = 1
+                else:
+                    # this is the first disk encountered, increment the disk count and clear the flag.
+                    disk_count = disk_count + 1
+                    initial_disk=False
+            elif not initial_disk:
+                #This vdev is not a disk, and we already have encountered a disk before. append the disk count then reset it.
+                counts.append(disk_count)
+                disk_count = 0
+        if re_disk_path != None and re_disk_default != None:
+            #we've encountered our first regular disk. store the disk, and increment the disk count.
+            initial_disk = False
+            disks.append(
+                {
+                        "tag":key,
+                        "name":re_disk_default.group(1), 
+                        "alloc": re_disk_default.group(2),
+                        "free": re_disk_default.group(3),
+                        "read_ops": re_disk_default.group(4),
+                        "write_ops": re_disk_default.group(5),
+                        "read_bw": re_disk_default.group(6),
+                        "write_bw": re_disk_default.group(7)
+                }
+            )
+            disk_count = disk_count + 1
+
+    #implement the fix for legacy nfs customers (they had part-2 as part of the disk name):
+    exception_match = r"^(\d+-\d+)(?:-part[0-9])"
+    for disk in disks:
+            match = re.match(exception_match,disk["name"])
+            if match:
+                disk["name"] = match.group(1)
+
+    #append the final disk count to the array and return both arrays and counts.
+    counts.append(disk_count)
+    return vdevs, disks, counts
 
 def get_zpool_status():
     json_zfs["warnings"] = []
@@ -258,8 +358,8 @@ def get_zpool_status():
             # parse the output of both commands by top level entry
             if key in iostat_output.keys():
                 # get all parsed output as arrays of objects from each command. 
-                status_vdevs, status_disks, status_disk_counts = zpool_status_parse(status_output,key)
-                iostat_vdevs, iostat_disks, iostat_disk_counts = zpool_iostat_parse(iostat_output,key)
+                status_vdevs, status_disks, status_disk_counts = zpool_status_parse(status_output,key,pool["name"])
+                iostat_vdevs, iostat_disks, iostat_disk_counts = zpool_iostat_parse(iostat_output,key,pool["name"])
                 if not status_disks or not iostat_disks or not status_disk_counts or not iostat_disk_counts:
                     print("/usr/share/cockpit/45drives-disks/scripts/zfs_info failed to interpret the following zfs information:")
                     print("zpool status {pn}:".format(pn=pool["name"]))

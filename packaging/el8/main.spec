@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue Nov 29 2022 Mark Hooper <mhooper@45drives.com> 2.2.2-1
+- updated zfs_info script to fix bug when single disk vdevs are encountered
+- single device vdevs are now reported as both a disk and vdev by zfs_info script
 * Mon Oct 31 2022 Mark Hooper <mhooper@45drives.com> 2.2.1-6
 - fixed drive placement error in 45drives-disks for XL60-H32 units not displaying
   disk 4-10 properly
