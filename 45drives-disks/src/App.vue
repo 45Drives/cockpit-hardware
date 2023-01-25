@@ -132,6 +132,15 @@ export default {
         if (!preloadChecks.serverInfo.failed) {
           // server info is available.
           switch (preloadChecks.serverInfo.content["Chassis Size"]) {
+            case "F8X1":
+              pageLayout.value = "B";
+              break;
+            case "F8X2":
+              pageLayout.value = "B";
+              break;
+            case "F8X3":
+              pageLayout.value = "B";
+              break;
             case "2U":
               pageLayout.value = "A";
               break;
@@ -163,9 +172,18 @@ export default {
         if (preloadChecks.zfs.finished && !preloadChecks.serverInfo.failed) {
           // server info is available.
           switch (preloadChecks.serverInfo.content["Chassis Size"]) {
+            case "F8X1":
+              pageLayout.value = "BZ";
+              break;
+            case "F8X2":
+              pageLayout.value = "BZ";
+              break;
+            case "F8X3":
+              pageLayout.value = "BZ";
+              break;              
             case "2U":
               pageLayout.value = "AZ";
-              break;
+              break;                          
             case "AV15":
               pageLayout.value = "BZ";
               break;
