@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.2.2-2focal) focal; urgency=medium
+
+  * Added support for F8X servers in Disks and System modules
+  * updated 45Drives-tools dependency
+
+ -- Mark Hooper <mhooper@45drives.com>  Thu, 02 Feb 2023 05:36:07 -0400
+
 cockpit-45drives-hardware (2.2.2-1focal) focal; urgency=medium
 
   * updated zfs_info script to fix bug when single disk vdevs are encountered

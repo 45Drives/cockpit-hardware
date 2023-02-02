@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Feb 02 2023 Mark Hooper <mhooper@45drives.com> 2.2.2-2
+- Added support for F8X servers in Disks and System modules
+- updated 45Drives-tools dependency
 * Tue Nov 29 2022 Mark Hooper <mhooper@45drives.com> 2.2.2-1
 - updated zfs_info script to fix bug when single disk vdevs are encountered
 - single device vdevs are now reported as both a disk and vdev by zfs_info script

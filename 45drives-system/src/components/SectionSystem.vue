@@ -109,7 +109,7 @@ export default {
       }
 
       const regExpModel =
-        /(Storinator|Stornado).*(AV15|Q30|S45|XL60|2U|C8|MI4).*/;
+        /(Storinator|Stornado).*(AV15|Q30|S45|XL60|2U|C8|MI4|F8X1|F8X2|F8X3).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -119,6 +119,9 @@ export default {
           "XL60": "img/storinatorXL60.png",
           "C8": "img/storinatorC8.png",
           "MI4": "img/storinatorMI4.png",
+          "F8X1": "img/F8X1.png",
+          "F8X2": "img/F8X2.png",
+          "F8X3": "img/F8X3.png"
         },
         "Stornado": {
           "2U": "img/stornado2U.png",
