@@ -125,6 +125,18 @@
                   {{ card["Bus Address"] }}
                 </dd>
               </div>
+              <div class="col-span-1 sm:col-span-1">
+                <dt
+                  class="text-sm font-medium text-muted"
+                >
+                  Firmware Version
+                </dt>
+                <dd
+                  class="mt-1 text-sm sm:mt-0 sm:col-span-1"
+                >
+                  {{ card["Firmware Version"] || "-" }}
+                </dd>
+              </div>
             </div>
           </dl>
         </div>
@@ -152,11 +164,11 @@ export default {
     const diskCount = ref(0);
 
     if(props.serverInfo.HBA){
-      const has_hwraid = props.serverInfo.HBA.filter((card) => (card.Model === "9361-16i")).length != 0;
+      const has_hwraid = props.serverInfo.HBA.filter((card) => (["9361-16i","9361-24i"].includes(card.Model))).length != 0;
       if(has_hwraid){
         notifications.value.constructNotification(
         "Warning:",
-        errorStringHTML("Hardware RAID card(s) detected. \nDisks are not guaranteed to be displayed in their accurate physical location."),
+        errorStringHTML("Hardware RAID card(s) detected. \nDevice Mapping is subject to change on subsequent reboots. Run 'dmap' and refresh page to ensure reliable device mapping."),
         "warning",
         0);
       }

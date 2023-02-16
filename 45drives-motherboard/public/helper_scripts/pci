@@ -37,7 +37,8 @@ g_network_card_models = [
 	"XL710", 
 	"XXV710", 
 	"82599ES",
-	"BCM57412"
+	"BCM57412",
+	"MT27800"
 ]
 
 g_sata_controllers = [
@@ -116,7 +117,7 @@ def lspci_hba():
 		return False
 	hba_cards = []
 	hba_dict = {}
-	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i).*\n",re.MULTILINE)
+	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i|9361-24i).*\n",re.MULTILINE)
 	for match in rx_pci.finditer(lspci_hba_result):
 		hba_dict["Model"] = match.group(2)
 		hba_dict["Bus Address"] = "0000:" + match.group(1)

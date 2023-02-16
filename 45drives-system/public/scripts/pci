@@ -3,6 +3,7 @@ import subprocess
 import re
 import json
 import os
+import sys
 
 g_dmi_fields = [
 	"Designation",
@@ -22,7 +23,8 @@ g_network_card_models = [
 	"XL710", 
 	"XXV710", 
 	"82599ES",
-	"BCM57412"
+	"BCM57412",
+	"MT27800"
 ]
 
 g_sata_controllers = [
@@ -74,7 +76,7 @@ def lspci_hba():
 		return False
 	hba_cards = []
 	hba_dict = {}
-	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i).*\n",re.MULTILINE)
+	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i|9361-24i).*\n",re.MULTILINE)
 	for match in rx_pci.finditer(lspci_hba_result):
 		hba_dict["Model"] = match.group(2)
 		hba_dict["Bus Address"] = "0000:" + match.group(1)
@@ -269,13 +271,18 @@ def main():
 
 	result = []
 	for slot in pci_slots:
+		hba_arr = get_hba_server_info()
+		for card in hba_arr:
+			if slot["Bus Address"] == card.get("Bus Address","00:00:00:00"):
+				slot["Firmware Version"] = card.get("Firmware Version","-")
 		result.append({
 			"slot": ' '.join(slot["Designation"].split()[0:2]), 
 			"type": slot["Type"], 
 			"availibility": slot["Current Usage"], 
 			"busAddress": slot["Bus Address"], 
 			"cardType": slot["Card Type"] if "Card Type" in slot.keys() else "-", 
-			"cardModel": slot["Card Model"] if "Card Model" in slot.keys() else "-"
+			"cardModel": slot["Card Model"] if "Card Model" in slot.keys() else "-",
+			"firmwareVersion": slot["Firmware Version"] if "Firmware Version" in slot.keys() else "-"
 		})
 
 	if(len(result) == 0):
@@ -287,7 +294,8 @@ def main():
 				"availibility": "In Use", 
 				"busAddress": card["Bus Address"] if "Bus Address" in card.keys() else "-", 
 				"cardType": "HBA", 
-				"cardModel": card["Model"] if "Model" in card.keys() else "-"
+				"cardModel": card["Model"] if "Model" in card.keys() else "-",
+				"firmwareVersion": card["Firmware Version"] if "Firmware Version" in card.keys() else "-"
 			})
 
 	print(json.dumps(result,indent=4))

@@ -628,6 +628,47 @@ export default {
                     } 
                     else if (
                       pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
+                      pci_info["PCI Info"][i]["Card Model"] == "9361-24i"
+                    ) {
+                      peripherals.push(
+                        new peripheral(
+                          "PCI",
+                          components[c]["x0"] -
+                            components[c]["width"] * WIDTHOFFSET,
+                            0,
+                          components[c]["width"],
+                          components[c]["height"],
+                          "#FF800080",
+                          peripheralImages.length,
+                          components[c]["width"] * pciScale
+                        )
+                      );
+                      peripheralImages.push(
+                        m.loadImage("img/motherboard/9361-24i.png")
+                      );
+                      components[c]["x0"] =
+                        components[c]["x0"] -
+                        components[c]["width"] * WIDTHOFFSET;
+                      components[c]["y0"] = 0;
+                      components[c]["width"] =
+                        101.0 * components[c]["width"] * pciScale;
+                      components[c]["height"] =
+                        components[c]["width"] / (101.0 / 890.0);
+                      components[c].popup.content = components[
+                        c
+                      ].popup.content;
+                      let newMask = m.generateMask(
+                        background_img.width,
+                        background_img.height,
+                        components[c]["x0"],
+                        components[c]["y0"],
+                        components[c]["width"],
+                        components[c]["height"]
+                      );
+                      MASK_ARR[c] = newMask;
+                    } 
+                    else if (
+                      pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
                       pci_info["PCI Info"][i]["Card Model"] == "9361-16i"
                     ) {
                       peripherals.push(
@@ -915,7 +956,52 @@ export default {
                         components[c]["width"] / (99.0 / 886.0);
                       components[c].popup.content = components[
                         c
-                      ].popup.content.slice(0, -5);
+                      ].popup.content.slice(0, -4);
+                      let newMask = m.generateMask(
+                        background_img.width,
+                        background_img.height,
+                        components[c]["x0"],
+                        components[c]["y0"],
+                        components[c]["width"],
+                        components[c]["height"]
+                      );
+                      MASK_ARR[c] = newMask;
+                    } 
+                    else if (
+                      pci_info["PCI Info"][i]["Card Type"] == "Network Card" &&
+                      pci_info["PCI Info"][i]["Card Model"] == "MT27800"
+                    ) {
+                      peripherals.push(
+                        new peripheral(
+                          "PCI",
+                          components[c]["x0"] -
+                            components[c]["width"] * WIDTHOFFSET,
+                          0,
+                          components[c]["width"],
+                          components[c]["height"],
+                          "#FF800080",
+                          peripheralImages.length,
+                          components[c]["width"] * pciScale
+                        )
+                      );
+                      peripheralImages.push(
+                        m.loadImage(
+                          "img/motherboard/" +
+                            pci_info["PCI Info"][i]["Card Model"] +
+                            ".png"
+                        )
+                      );
+                      components[c]["x0"] =
+                        components[c]["x0"] -
+                        components[c]["width"] * WIDTHOFFSET;
+                      components[c]["y0"] = 0;
+                      components[c]["width"] =
+                        103.0 * components[c]["width"] * pciScale;
+                      components[c]["height"] =
+                        components[c]["width"] / (103.0 / 808.0);
+                      components[c].popup.content = components[
+                        c
+                      ].popup.content.slice(0, -4);
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,

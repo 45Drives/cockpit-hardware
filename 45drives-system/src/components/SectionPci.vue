@@ -25,6 +25,7 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Bus Address</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Card Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Card Model</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Firmware Version</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default">
@@ -35,6 +36,7 @@
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.busAddress }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.cardType }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.cardModel }}</td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.firmwareVersion }}</td>
                 </tr>
               </tbody>
             </table>
@@ -63,7 +65,7 @@ import ErrorMessage from "./ErrorMessage.vue";
 export default {
   setup() {
     const pcis = ref([
-      { slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...' }
+      { slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...', firmwareVersion: 'Loading...' }
     ]);
     const fatalError = ref(false);
     const fatalErrorMsg = ref([]);
@@ -73,7 +75,7 @@ export default {
     });
     const getPciInfo = async () => {
       pcis.value.length = 0;
-      pcis.value.push({ slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...' });
+      pcis.value.push({ slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...', firmwareVersion: 'Loading...' });
       try {
         const state = await useSpawn(
           ["/usr/share/cockpit/45drives-system/scripts/pci"],

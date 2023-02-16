@@ -1,4 +1,7 @@
-## cockpit-45drives-hardware 2.2.2-2
+## cockpit-45drives-hardware 2.3.0-1
 
-* Added support for F8X servers in Disks and System modules
-* updated 45Drives-tools dependency
+* updated 45Drives-tools dependency to minimum version 2.2.0
+* system tab will show HBA firmware version
+* disks tab will show HBA firmware version
+* added support for 9361-24i cards in all modules
+* added support for melanox MT27800 cards in all modules
