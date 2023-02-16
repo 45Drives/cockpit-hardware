@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Feb 16 2023 Mark Hooper <mhooper@45drives.com> 2.3.0-2
+- fixed 9600 series card scaling issue in 45Drives-motherboard
 * Thu Feb 16 2023 Mark Hooper <mhooper@45drives.com> 2.3.0-1
 - updated 45Drives-tools dependency to minimum version 2.2.0
 - system tab will show HBA firmware version

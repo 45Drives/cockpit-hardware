@@ -799,8 +799,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                          components[c]["y0"] -
-                            components[c]["width"] * VERTOFFSET,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -814,9 +813,7 @@ export default {
                       components[c]["x0"] =
                         components[c]["x0"] -
                         components[c]["width"] * WIDTHOFFSET;
-                      components[c]["y0"] =
-                        components[c]["y0"] -
-                        components[c]["width"] * VERTOFFSET;
+                      components[c]["y0"] = 0;
                       components[c]["width"] =
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
