@@ -42,9 +42,9 @@ def make_pci_footprints(pci):
 
     default_width = 24
     default_height = 152
-    default_x0 = 46
-    default_y0 = 154
-    default_h_gap = 53
+    default_x0 = 52
+    default_y0 = 150
+    default_h_gap = 60
     height_16x_extra = 89
 
 
