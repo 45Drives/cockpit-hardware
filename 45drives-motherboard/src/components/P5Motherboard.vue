@@ -74,15 +74,9 @@ export default {
         ".json";
 
       m.createComponentMasks = function (a) {
-        var img_path =
-          "img/motherboard/" +
-          String(
-            mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-          ) +
-          "/" +
-          mobo_json[a]["type"] +
-          String(mobo_json[a]["id"]) +
-          ".png";
+        var img_path = `img/motherboard/${String(
+          mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+        )}/${mobo_json[a]["filename"]}`;
         MASK_ARR.push(m.loadImage(img_path));
       };
 
@@ -573,9 +567,7 @@ export default {
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (108.0 / 884.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -594,7 +586,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                            0,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -613,9 +605,7 @@ export default {
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (108.0 / 884.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -625,8 +615,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
                       pci_info["PCI Info"][i]["Card Model"] == "9361-24i"
                     ) {
@@ -635,7 +624,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                            0,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -654,9 +643,7 @@ export default {
                         101.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (101.0 / 890.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -666,8 +653,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
                       pci_info["PCI Info"][i]["Card Model"] == "9361-16i"
                     ) {
@@ -676,7 +662,7 @@ export default {
                           "PCI",
                           components[c]["x0"] -
                             components[c]["width"] * WIDTHOFFSET,
-                            0,
+                          0,
                           components[c]["width"],
                           components[c]["height"],
                           "#FF800080",
@@ -695,9 +681,7 @@ export default {
                         101.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (101.0 / 890.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -707,8 +691,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
                       pci_info["PCI Info"][i]["Card Model"] == "HBA 9400-16i"
                     ) {
@@ -736,9 +719,7 @@ export default {
                         101.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (101.0 / 891.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -748,8 +729,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
                       pci_info["PCI Info"][i]["Card Model"] == "9600-16i"
                     ) {
@@ -777,9 +757,7 @@ export default {
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (108.0 / 967.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -789,8 +767,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "HBA" &&
                       pci_info["PCI Info"][i]["Card Model"] == "9600-24i"
                     ) {
@@ -818,9 +795,7 @@ export default {
                         108.0 * components[c]["width"] * pciScale;
                       components[c]["height"] =
                         components[c]["width"] / (108.0 / 967.0);
-                      components[c].popup.content = components[
-                        c
-                      ].popup.content;
+                      components[c].popup.content = components[c].popup.content;
                       let newMask = m.generateMask(
                         background_img.width,
                         background_img.height,
@@ -830,8 +805,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "Network Card" &&
                       pci_info["PCI Info"][i]["Card Model"] == "82599ES"
                     ) {
@@ -963,8 +937,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "Network Card" &&
                       pci_info["PCI Info"][i]["Card Model"] == "MT27800"
                     ) {
@@ -1008,8 +981,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    } 
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "Network Card" &&
                       pci_info["PCI Info"][i]["Card Model"] == "BCM57412"
                     ) {
@@ -1053,8 +1025,7 @@ export default {
                         components[c]["height"]
                       );
                       MASK_ARR[c] = newMask;
-                    }
-                    else if (
+                    } else if (
                       pci_info["PCI Info"][i]["Card Type"] == "Network Card" &&
                       pci_info["PCI Info"][i]["Card Model"] == "XXV710"
                     ) {
@@ -1438,7 +1409,8 @@ export default {
               } else {
                 //popup window is very wide, set its x position to ensure that the right most
                 //edge will fit on the canvas. assume that the left-most edge will be visible.
-                components[i].popup.x0 = background_img.width - components[i].popup.width - 20;
+                components[i].popup.x0 =
+                  background_img.width - components[i].popup.width - 20;
               }
               if (components[i].y0 - 20 > 0) {
                 if (

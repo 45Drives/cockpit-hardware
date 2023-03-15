@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+# For mapping out PCI slots, CPUs, SATA and Ram commections on a new motherboard
+# Will generate a template as well as file names with placeholder locations.
+# refine positions/check using this: 
+# https://editor.p5js.org/BarryFiskerman/full/nKxYQMLAL
+# To use this script to its full potential:
+# 1. Connect ssds to all onboard sata ports.
+# 2. Install a PCI card in each available PCI slot
+# 3. Install ram in every slot.
+
+import os
+import sys
+import re
+import subprocess
+import json
+
+
+def get_helper_script_json(script):
+    cmd = f"/usr/share/cockpit/45drives-motherboard/helper_scripts/{script}"
+    output = getProcessOutput(cmd)
+    return json.loads(output)
+
+def getProcessOutput(cmd):
+    process = subprocess.Popen(
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE)
+    process.wait()
+    data, err = process.communicate()
+    if process.returncode is 0:
+        return data.decode('utf-8')
+    else:
+        print("Error:", err)
+    return ""
+
+def printJson(data):
+    print(json.dumps(data,indent=4))
+
+def make_pci_footprints(pci):
+    pci_slots = pci["PCI Info"]
+    footprints = []
+
+    default_width = 24
+    default_height = 152
+    default_x0 = 46
+    default_y0 = 154
+    default_h_gap = 53
+    height_16x_extra = 89
+
+
+    for slot in pci_slots:
+        additional_height = height_16x_extra if "X16" in slot["Designation"] else 0
+        if "ID" in slot.keys():
+            footprints.append(
+                {
+                    "type": slot["Designation"],
+                    "id": slot["ID"],
+                    "shape": "rect",
+                    "x0": default_x0 + len(footprints)*default_h_gap,
+                    "y0": default_y0,
+                    "width": default_width,
+                    "height": default_height + additional_height,
+                    "diam": default_width,
+                    "filename": "{prefix}_{id}.{suffix}".format(prefix="PCI_SLOT",id=slot["ID"],suffix="png")
+                }
+            )
+    return footprints
+
+def make_cpu_footprints(motherboard):
+    cpus = motherboard["Motherboard Info"][1]["CPU"]
+    footprints = []
+
+    default_width = 226
+    default_height = 310
+    default_x0 = 512
+    default_y0 = 295
+
+    for cpu in cpus:
+        footprints.append(
+            {
+                "type": cpu["Socket Designation"],
+                "id": len(footprints)+1,
+                "shape": "rect",
+                "x0": default_x0 + len(footprints)*default_width,
+                "y0": default_y0,
+                "width": default_width,
+                "height": default_height,
+                "diam": 0,
+                "filename": "{prefix}.{suffix}".format(prefix=cpu["Socket Designation"],suffix="png")
+            }
+        )
+    return footprints
+        
+def make_sata_footprints(sata):
+    sata_connectors = sata["SATA Info"]
+    footprints = []
+
+    default_width = 22
+    default_height = 55
+    default_x0 = 66
+    default_y0 = 512
+    default_h_gap = 24
+
+    for connector in sata_connectors:
+            footprints.append(
+                {
+                    "type": connector["Connector"],
+                    "id": re.sub("\D", "", connector["Connector"]),
+                    "shape": "rect",
+                    "x0": default_x0 + len(footprints)*default_h_gap,
+                    "y0": default_y0,
+                    "width": default_width,
+                    "height": default_height,
+                    "diam": default_width,
+                    "filename": "{prefix}.{suffix}".format(prefix=connector["Connector"],suffix="png")
+                }
+            )
+    return footprints
+
+def make_ram_footprints(ram):
+    ram_locations = ram["Ram Info"]
+    footprints = []
+
+    default_width = 20
+    default_height = 386
+    default_x0 = 448
+    default_y0 = 113
+    default_h_gap = 24
+
+    for loc in ram_locations:
+            footprints.append(
+                {
+                    "type": loc["Locator"],
+                    "id": len(footprints)+1,
+                    "shape": "rect",
+                    "x0": default_x0 + len(footprints)*default_h_gap,
+                    "y0": default_y0,
+                    "width": default_width,
+                    "height": default_height,
+                    "diam": default_width,
+                    "filename": "{prefix}.{suffix}".format(prefix=loc["Locator"],suffix="png")
+                }
+            )
+    return footprints
+
+def make_mobo_json(sata,ram,pci,motherboard):
+    footprints = []
+    json_filename = motherboard["Motherboard Info"][0]["Motherboard"][0]["Product Name"] + ".json"
+    footprints.extend(make_cpu_footprints(motherboard))
+    footprints.extend(make_pci_footprints(pci))
+    footprints.extend(make_sata_footprints(sata))
+    footprints.extend(make_ram_footprints(ram))
+    printJson(footprints)
+
+def main():
+    sata = get_helper_script_json("sata")
+    # printJson(sata)
+    ram = get_helper_script_json("ram")
+    # printJson(ram)
+    pci = get_helper_script_json("pci")
+    # printJson(pci)
+    motherboard = get_helper_script_json("motherboard")
+    # printJson(motherboard)
+    make_mobo_json(sata,ram,pci,motherboard)
+
+
+if __name__ == "__main__":
+    main()

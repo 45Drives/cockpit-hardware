@@ -63,7 +63,9 @@ g_ipmitool_sensor_fields = {
 	"DDR4_C Temp": " (C)", #ASRockRack
 	"DDR4_D Temp": " (C)", #ASRockRack
 	"DDR4_E Temp": " (C)", #ASRockRack
-	"DDR4_F Temp": " (C)"  #ASRockRack
+	"DDR4_F Temp": " (C)", #ASRockRack
+	"DIMMABCD Temp": " (C)", #X12SPL-F
+	"DIMMEFGH Temp": " (C)"  #X12SPL-F
 }
 
 def ipmitool_sensor():
@@ -130,6 +132,14 @@ def dmidecode():
 		"CPU1_DIMM_D2":"DDR4_D",
 		"CPU1_DIMM_E1":"DDR4_E",
 		"CPU1_DIMM_F1":"DDR4_F",
+		"DIMMA1":"DIMMABCD",
+		"DIMMB1":"DIMMABCD",
+		"DIMMC1":"DIMMABCD",
+		"DIMMD1":"DIMMABCD",
+		"DIMME1":"DIMMEFGH",
+		"DIMMF1":"DIMMEFGH",
+		"DIMMG1":"DIMMEFGH",
+		"DIMMH1":"DIMMEFGH"
 	}
 
 	for slot in slot_entries:
