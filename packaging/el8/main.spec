@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue Mar 21 2023 Mark Hooper <mhooper@45drives.com> 2.3.1-1
+- added support for X12SPL-F Motherboards in all modules
 * Mon Feb 27 2023 Mark Hooper <mhooper@45drives.com> 2.3.0-3
 - updated 45Drives-tools dependency to minimum version 2.2.0
 - system tab will show HBA firmware version
