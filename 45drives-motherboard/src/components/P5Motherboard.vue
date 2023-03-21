@@ -520,7 +520,7 @@ export default {
               for (let c = 0; c < components.length; c++) {
                 if (
                   components[c]["id"] == pci_info["PCI Info"][i]["ID"] &&
-                  components[c]["type"].search("pci") != -1
+                  (components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1)
                 ) {
                   components[c].popup.content = JSON.stringify(
                     pci_info["PCI Info"][i],

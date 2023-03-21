@@ -41,11 +41,11 @@ def make_pci_footprints(pci):
     footprints = []
 
     default_width = 24
-    default_height = 152
+    default_height = 163
     default_x0 = 52
-    default_y0 = 150
+    default_y0 = 149
     default_h_gap = 60
-    height_16x_extra = 89
+    height_16x_extra = 94
 
 
     for slot in pci_slots:
@@ -70,10 +70,10 @@ def make_cpu_footprints(motherboard):
     cpus = motherboard["Motherboard Info"][1]["CPU"]
     footprints = []
 
-    default_width = 226
-    default_height = 310
-    default_x0 = 512
-    default_y0 = 295
+    default_width = 209
+    default_height = 342
+    default_x0 = 575
+    default_y0 = 228
 
     for cpu in cpus:
         footprints.append(
@@ -96,10 +96,10 @@ def make_sata_footprints(sata):
     footprints = []
 
     default_width = 22
-    default_height = 55
+    default_height = 51
     default_x0 = 66
-    default_y0 = 512
-    default_h_gap = 24
+    default_y0 = 573
+    default_h_gap = 28
 
     for connector in sata_connectors:
             footprints.append(
@@ -122,9 +122,9 @@ def make_ram_footprints(ram):
     footprints = []
 
     default_width = 20
-    default_height = 386
-    default_x0 = 448
-    default_y0 = 113
+    default_height = 434
+    default_x0 = 442
+    default_y0 = 161
     default_h_gap = 24
 
     for loc in ram_locations:

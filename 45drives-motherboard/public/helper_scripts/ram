@@ -122,7 +122,7 @@ def dmidecode():
 	if current_slot != None:
 		slot_entries.append(current_slot.copy())
 
-	# check slot_entries for translatable locator tags (ASRockRack Motherboards...)
+	# check slot_entries for translatable locator tags (ASRockRack Motherboards, and X12SPL-F)
 	locator_tags = {
 		"CPU1_DIMM_A1":"DDR4_A",
 		"CPU1_DIMM_A2":"DDR4_A",
