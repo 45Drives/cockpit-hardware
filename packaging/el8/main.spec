@@ -42,6 +42,10 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Mar 22 2023 Mark Hooper <mhooper@45drives.com> 2.3.1-3
+- added support for X12SPL-F Motherboards in all modules
+- updated dmidecode dependency to require 3.3 or later
+- updated motherboard layout files to include mask image paths
 * Wed Mar 22 2023 Mark Hooper <mhooper@45drives.com> 2.3.1-2
 - updated dmidecode dependency to require 3.3 or later
 * Tue Mar 21 2023 Mark Hooper <mhooper@45drives.com> 2.3.1-1

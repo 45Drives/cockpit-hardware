@@ -1,3 +1,11 @@
+cockpit-45drives-hardware (2.3.1-3focal) focal; urgency=medium
+
+  * added support for X12SPL-F Motherboards in all modules
+  * updated dmidecode dependency to require 3.3 or later
+  * updated motherboard layout files to include mask image paths
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 22 Mar 2023 09:59:04 -0300
+
 cockpit-45drives-hardware (2.3.1-2focal) focal; urgency=medium
 
   * updated dmidecode dependency to require 3.3 or later
