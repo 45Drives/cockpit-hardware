@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.3.1-2focal) focal; urgency=medium
+
+  * updated dmidecode dependency to require 3.3 or later
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 22 Mar 2023 07:18:04 -0300
+
 cockpit-45drives-hardware (2.3.1-1focal) focal; urgency=medium
 
   * added support for X12SPL-F Motherboards in all modules

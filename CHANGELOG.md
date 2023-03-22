@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.3.1-1
+## cockpit-45drives-hardware 2.3.1-2
 
-* added support for X12SPL-F Motherboards in all modules
+* updated dmidecode dependency to require 3.3 or later
