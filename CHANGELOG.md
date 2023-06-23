@@ -1,5 +1,3 @@
-## cockpit-45drives-hardware 2.3.1-3
+## cockpit-45drives-hardware 2.3.2-1
 
-* added support for X12SPL-F Motherboards in all modules
-* updated dmidecode dependency to require 3.3 or later
-* updated motherboard layout files to include mask image paths
+* Updated disks module to inform user that Ceph Gateways are not compatible

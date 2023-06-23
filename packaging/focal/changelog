@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.3.2-1focal) focal; urgency=medium
+
+  * Updated disks module to inform user that Ceph Gateways are not compatible
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 23 Jun 2023 08:43:38 -0300
+
 cockpit-45drives-hardware (2.3.1-3focal) focal; urgency=medium
 
   * added support for X12SPL-F Motherboards in all modules

@@ -4,8 +4,24 @@ import json
 import sys
 import re
 
-def getDiskInfo(path):
+def loadServerInfo():
+    json_path = "/etc/45drives/server_info/server_info.json"
+    server_info = {}
+    if os.path.exists(json_path):
+        f = open(json_path, "r")
+        server_info = json.load(f)
+        f.close()
+        return server_info
+    else:
+        print("/etc/45drives/server_info/server_info.json not found.")
+        sys.exit(1)
+
+def getDiskInfo(path,server_info):
     if not os.path.isfile(path):
+        if "Chassis Size" in server_info.keys() and server_info["Chassis Size"] in ["2UGW"]:
+            print(f"This program is intended to display disk information for servers with dedicated storage bays.",file=sys.stderr)
+            print(f"Use command line utilities such as lsblk to see disk information for Ceph Gateways.",file=sys.stderr)
+            sys.exit(1)
         print(f"Error opening {path}. Run `dmap`.",file=sys.stderr)
         sys.exit(1)
     
@@ -38,7 +54,8 @@ def disk_type(device_path):
 	return ("HDD" if is_rotational else "SSD")
 
 def main():
-    diskInfo = getDiskInfo("/etc/vdev_id.conf")
+    server_info = loadServerInfo()
+    diskInfo = getDiskInfo("/etc/vdev_id.conf",server_info)
     print(json.dumps(diskInfo,indent=4))
 
 

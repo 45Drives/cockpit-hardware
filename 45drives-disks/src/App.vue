@@ -575,7 +575,7 @@ export default {
             </h3>
           </div>
           <div class="card-body flex flex-col gap-4">
-            <h3>This module is designed to work with 45Drives servers.</h3>
+            <h3>This module is designed to work with 45Drives servers which feature dedicated storage bays.</h3>
             <div>Consult any notifications for potential fixes.</div>
             <div>
               If you are still experiencing issues, contact 45Drives Support or
