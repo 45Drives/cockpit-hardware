@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+
+import os
+import csv
+import json
+from optparse import OptionParser
+import re
+
+def input_csv_to_list(args):
+    csv_list = []
+    if not os.path.isfile(os.path.expanduser(args.input_file)):
+        print("invalid input file provided: ", args.input_file)
+        exit(1)
+    with open(os.path.abspath((os.path.expanduser(args.input_file))), newline='') as f:
+        reader = csv.reader(f)
+        csv_list = list(reader)
+    return csv_list
+
+def get_params():
+    params = {}
+    params["x_start"] = int(input("starting pixel (x): "))
+    params["y_start"] = int(input("starting pixel (y): "))
+    params["x_end"] = int(input("end pixel (x): "))
+    params["y_end"] = int(input("end pixel (y): "))
+    params["row_count"] = int(input("number of rows: "))
+    return params
+
+def generate_object_list(input_list):
+    obj_list = []
+    for item in input_list:
+        obj_list.append(
+            {
+              "x": 0,
+              "y": 0,
+              "BAY": str(item[0]),
+              "HDD": False,
+              "occupied": False,
+              "image": None,
+            }
+        )
+    return obj_list
+
+def generate_placements(params,object_list):
+    disks_per_row = int(len(object_list)/params["row_count"])
+    x_inc = (params["x_end"]-params["x_start"])/(disks_per_row-1)
+    y_inc = (params["y_end"]-params["y_start"])/params["row_count"]
+    print(f"Disks per Row: {disks_per_row}")
+    print(f"Pixel Increment (x): {x_inc}")
+    print(f"Pixel Increment (y): {y_inc}")
+    current_x = params["x_start"]
+    current_y = params["y_start"]
+    current_disk = 0
+    for obj in object_list:
+        obj["x"] = current_x
+        obj["y"] = current_y
+        current_disk = current_disk + 1
+        if current_disk%disks_per_row == 0:
+            current_x = params["x_start"]
+            current_y = current_y + y_inc
+        else:
+            current_x = current_x + x_inc
+    for obj in object_list:
+        obj["x"] = round(obj["x"])
+        obj["y"] = round(obj["y"])
+
+def dump_to_stdout(object_list):
+    regex = r'(?<!: )"(\S*?)"'
+    olist_str = json.dumps(object_list, indent=2)
+    strip_quotes = re.sub(regex,'\\1',olist_str)
+    print(strip_quotes)
+
+    
+def main():
+    parser = OptionParser()  # use optparse to handle command line arguments
+    parser.add_option("-i", "--input", action="store", type="string",
+                      dest="input_file", default="alias.csv", help="input file [default: %default]")
+    parser.add_option("-o", "--output", action="store", type="string",
+                      dest="output_file", default="out.json", help="output file [default: %default]")
+    (args, cli_args) = parser.parse_args()
+
+    input_list = input_csv_to_list(args)
+    object_list = generate_object_list(input_list)
+    params = get_params()
+    generate_placements(params,object_list)
+    dump_to_stdout(object_list)
+
+
+if __name__ == "__main__":
+    main()

@@ -65,7 +65,11 @@ g_ipmitool_sensor_fields = {
 	"DDR4_E Temp": " (C)", #ASRockRack
 	"DDR4_F Temp": " (C)", #ASRockRack
 	"DIMMABCD Temp": " (C)", #X12SPL-F
-	"DIMMEFGH Temp": " (C)"  #X12SPL-F
+	"DIMMEFGH Temp": " (C)",  #X12SPL-F
+	"P1_DIMMA~D Temp": " (C)", #X12DPi-N6
+	"P1_DIMME~H Temp": " (C)", #X12DPi-N6
+	"P2_DIMMA~D Temp": " (C)", #X12DPi-N6
+	"P2_DIMME~H Temp": " (C)", #X12DPi-N6
 }
 
 def ipmitool_sensor():
@@ -139,7 +143,25 @@ def dmidecode():
 		"DIMME1":"DIMMEFGH",
 		"DIMMF1":"DIMMEFGH",
 		"DIMMG1":"DIMMEFGH",
-		"DIMMH1":"DIMMEFGH"
+		"DIMMH1":"DIMMEFGH",
+		"P1-DIMMA1": "P1_DIMMA~D",
+		"P1-DIMMB1": "P1_DIMMA~D",
+		"P1-DIMMB2": "P1_DIMMA~D",
+		"P1-DIMMC1": "P1_DIMMA~D",
+		"P1-DIMMD1": "P1_DIMMA~D",
+		"P2-DIMMA1": "P2_DIMMA~D",
+		"P2-DIMMB1": "P2_DIMMA~D",
+		"P2-DIMMB2": "P2_DIMMA~D",
+		"P2-DIMMC1": "P2_DIMMA~D",
+		"P2-DIMMD1": "P2_DIMMA~D",
+		"P1-DIMME1": "P1_DIMME~H",
+		"P1-DIMMF1": "P1_DIMME~H",
+		"P1-DIMMG1": "P1_DIMME~H",
+		"P1-DIMMH1": "P1_DIMME~H",
+		"P2-DIMME1": "P1_DIMME~H",
+		"P2-DIMMF1": "P1_DIMME~H",
+		"P2-DIMMG1": "P1_DIMME~H",
+		"P2-DIMMH1": "P1_DIMME~H"
 	}
 
 	for slot in slot_entries:

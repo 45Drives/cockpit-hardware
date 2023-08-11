@@ -47,7 +47,8 @@ export default {
       "X11SSM-F",
       "X11SPi-TF",
       "EPC621D8A",
-      "X12SPL-F"
+      "X12SPL-F",
+      "X12DPi-N6"
     ]);
 
     const adminCheck = ref(false);

@@ -27,7 +27,7 @@ def getProcessOutput(cmd):
         stdout=subprocess.PIPE)
     process.wait()
     data, err = process.communicate()
-    if process.returncode is 0:
+    if process.returncode == 0:
         return data.decode('utf-8')
     else:
         print("Error:", err)
@@ -78,7 +78,7 @@ def make_cpu_footprints(motherboard):
     for cpu in cpus:
         footprints.append(
             {
-                "type": cpu["Socket Designation"],
+                "type": "cpu",
                 "id": len(footprints)+1,
                 "shape": "rect",
                 "x0": default_x0 + len(footprints)*default_width,
