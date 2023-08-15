@@ -124,7 +124,7 @@ def dmidecode():
 	if current_slot != None:
 		slot_entries.append(current_slot.copy())
 
-	# check slot_entries for translatable locator tags (ASRockRack Motherboards, and X12SPL-F)
+	# check slot_entries for translatable locator tags (ASRockRack Motherboards, X12 and H12 boards)
 	locator_tags = {
 		"CPU1_DIMM_A1":"DDR4_A",
 		"CPU1_DIMM_A2":"DDR4_A",
@@ -141,7 +141,25 @@ def dmidecode():
 		"DIMME1":"DIMMEFGH",
 		"DIMMF1":"DIMMEFGH",
 		"DIMMG1":"DIMMEFGH",
-		"DIMMH1":"DIMMEFGH"
+		"DIMMH1":"DIMMEFGH",
+		"P1-DIMMA1": "P1_DIMMA~D",
+		"P1-DIMMB1": "P1_DIMMA~D",
+		"P1-DIMMB2": "P1_DIMMA~D",
+		"P1-DIMMC1": "P1_DIMMA~D",
+		"P1-DIMMD1": "P1_DIMMA~D",
+		"P2-DIMMA1": "P2_DIMMA~D",
+		"P2-DIMMB1": "P2_DIMMA~D",
+		"P2-DIMMB2": "P2_DIMMA~D",
+		"P2-DIMMC1": "P2_DIMMA~D",
+		"P2-DIMMD1": "P2_DIMMA~D",
+		"P1-DIMME1": "P1_DIMME~H",
+		"P1-DIMMF1": "P1_DIMME~H",
+		"P1-DIMMG1": "P1_DIMME~H",
+		"P1-DIMMH1": "P1_DIMME~H",
+		"P2-DIMME1": "P1_DIMME~H",
+		"P2-DIMMF1": "P1_DIMME~H",
+		"P2-DIMMG1": "P1_DIMME~H",
+		"P2-DIMMH1": "P1_DIMME~H"
 	}
 
 	for slot in slot_entries:

@@ -40,18 +40,17 @@ def dmidecode():
 		print("Error running 'dmidecode -t 9'")
 		sys.exit(1)
 
-	slot_entries = []
+	cards = []
+	card_index = 0
+
 	for line in dmi_result:
+		if line.startswith("Handle "):
+			cards.append({})
+			card_index = len(cards) -1
 		for field in g_dmi_fields:
 			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
-				slot_entries.append((regex.group(1),regex.group(2)))
-
-	# Take the subset of fields in the list for each card and 
-	# append them as a dictionary into a new list. 
-	cards = []
-	for i in range(0,len(slot_entries),len(g_dmi_fields)):
-		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
+				cards[card_index][regex.group(1)] = regex.group(2)
 
 	BA_EPC612D8A = {
 		"ff00:16:00.0":"0000:17:00.0", #PCIE1
@@ -76,7 +75,7 @@ def lspci_hba():
 		return False
 	hba_cards = []
 	hba_dict = {}
-	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i|9361-24i).*\n",re.MULTILINE)
+	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i|9361-24i|9660-16i).*\n",re.MULTILINE)
 	for match in rx_pci.finditer(lspci_hba_result):
 		hba_dict["Model"] = match.group(2)
 		hba_dict["Bus Address"] = "0000:" + match.group(1)
