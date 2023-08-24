@@ -48,7 +48,8 @@ export default {
       "X11SPi-TF",
       "EPC621D8A",
       "X12SPL-F",
-      "X12DPi-N6"
+      "X12DPi-N6",
+      "H12SSL-i",
     ]);
 
     const adminCheck = ref(false);

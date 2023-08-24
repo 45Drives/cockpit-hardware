@@ -128,45 +128,45 @@ def dmidecode():
 
 	# check slot_entries for translatable locator tags (ASRockRack Motherboards, and X12SPL-F)
 	locator_tags = {
-		"CPU1_DIMM_A1":"DDR4_A",
-		"CPU1_DIMM_A2":"DDR4_A",
-		"CPU1_DIMM_B1":"DDR4_B",
-		"CPU1_DIMM_C1":"DDR4_C",
-		"CPU1_DIMM_D1":"DDR4_D",
-		"CPU1_DIMM_D2":"DDR4_D",
-		"CPU1_DIMM_E1":"DDR4_E",
-		"CPU1_DIMM_F1":"DDR4_F",
-		"DIMMA1":"DIMMABCD",
-		"DIMMB1":"DIMMABCD",
-		"DIMMC1":"DIMMABCD",
-		"DIMMD1":"DIMMABCD",
-		"DIMME1":"DIMMEFGH",
-		"DIMMF1":"DIMMEFGH",
-		"DIMMG1":"DIMMEFGH",
-		"DIMMH1":"DIMMEFGH",
-		"P1-DIMMA1": "P1_DIMMA~D",
-		"P1-DIMMB1": "P1_DIMMA~D",
-		"P1-DIMMB2": "P1_DIMMA~D",
-		"P1-DIMMC1": "P1_DIMMA~D",
-		"P1-DIMMD1": "P1_DIMMA~D",
-		"P2-DIMMA1": "P2_DIMMA~D",
-		"P2-DIMMB1": "P2_DIMMA~D",
-		"P2-DIMMB2": "P2_DIMMA~D",
-		"P2-DIMMC1": "P2_DIMMA~D",
-		"P2-DIMMD1": "P2_DIMMA~D",
-		"P1-DIMME1": "P1_DIMME~H",
-		"P1-DIMMF1": "P1_DIMME~H",
-		"P1-DIMMG1": "P1_DIMME~H",
-		"P1-DIMMH1": "P1_DIMME~H",
-		"P2-DIMME1": "P1_DIMME~H",
-		"P2-DIMMF1": "P1_DIMME~H",
-		"P2-DIMMG1": "P1_DIMME~H",
-		"P2-DIMMH1": "P1_DIMME~H"
+		"CPU1_DIMM_A1":["DDR4_A"],
+		"CPU1_DIMM_A2":["DDR4_A"],
+		"CPU1_DIMM_B1":["DDR4_B"],
+		"CPU1_DIMM_C1":["DDR4_C"],
+		"CPU1_DIMM_D1":["DDR4_D"],
+		"CPU1_DIMM_D2":["DDR4_D"],
+		"CPU1_DIMM_E1":["DDR4_E"],
+		"CPU1_DIMM_F1":["DDR4_F"],
+		"DIMMA1":["DIMMABCD","P1_DIMMA~D"],
+		"DIMMB1":["DIMMABCD","P1_DIMMA~D"],
+		"DIMMC1":["DIMMABCD","P1_DIMMA~D"],
+		"DIMMD1":["DIMMABCD","P1_DIMMA~D"],
+		"DIMME1":["DIMMEFGH","P1_DIMME~H"],
+		"DIMMF1":["DIMMEFGH","P1_DIMME~H"],
+		"DIMMG1":["DIMMEFGH","P1_DIMME~H"],
+		"DIMMH1":["DIMMEFGH","P1_DIMME~H"],
+		"P1-DIMMA1": ["P1_DIMMA~D"],
+		"P1-DIMMB1": ["P1_DIMMA~D"],
+		"P1-DIMMB2": ["P1_DIMMA~D"],
+		"P1-DIMMC1": ["P1_DIMMA~D"],
+		"P1-DIMMD1": ["P1_DIMMA~D"],
+		"P2-DIMMA1": ["P2_DIMMA~D"],
+		"P2-DIMMB1": ["P2_DIMMA~D"],
+		"P2-DIMMB2": ["P2_DIMMA~D"],
+		"P2-DIMMC1": ["P2_DIMMA~D"],
+		"P2-DIMMD1": ["P2_DIMMA~D"],
+		"P1-DIMME1": ["P1_DIMME~H"],
+		"P1-DIMMF1": ["P1_DIMME~H"],
+		"P1-DIMMG1": ["P1_DIMME~H"],
+		"P1-DIMMH1": ["P1_DIMME~H"],
+		"P2-DIMME1": ["P1_DIMME~H"],
+		"P2-DIMMF1": ["P1_DIMME~H"],
+		"P2-DIMMG1": ["P1_DIMME~H"],
+		"P2-DIMMH1": ["P1_DIMME~H"]
 	}
 
 	for slot in slot_entries:
 		if "Locator" in slot.keys() and slot["Locator"] in locator_tags.keys():
-			slot["Temperature Key"] = locator_tags[slot["Locator"]]
+			slot["Temperature Keys"] = locator_tags[slot["Locator"]]
 
 
 	return slot_entries
@@ -182,8 +182,10 @@ def main():
 					module[key] = "-"
 			if module["Locator"] in temps.keys():
 				module["Temperature"] = temps[module["Locator"]]
-			elif "Temperature Key" in module.keys() and module["Temperature Key"] in temps.keys():
-				module["Temperature"] = temps[module["Temperature Key"]]
+			elif "Temperature Keys" in module.keys():
+				for lookup_key in module["Temperature Keys"]:
+					if lookup_key in temps.keys():
+						module["Temperature"] = temps[lookup_key]
 			if module["Temperature"] == "na (C)":
 				module["Temperature"] = "-"
 			if module["Manufacturer"] == "NO DIMM":
