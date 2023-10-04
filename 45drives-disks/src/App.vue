@@ -150,6 +150,9 @@ export default {
             case "AV15":
               pageLayout.value = "B";
               break;
+            case "HL15":
+              pageLayout.value = "B";
+              break;
             case "C8":
               pageLayout.value = "A";
               break;
@@ -191,6 +194,9 @@ export default {
               pageLayout.value = "AZ";
               break;                       
             case "AV15":
+              pageLayout.value = "BZ";
+              break;
+            case "HL15":
               pageLayout.value = "BZ";
               break;
             case "C8":

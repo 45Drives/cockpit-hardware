@@ -43,6 +43,7 @@
       <P5StorinatorS45H16 v-else-if="activeSketchStr === 'StorinatorS45H16'" />
       <P5StorinatorQ30H16 v-else-if="activeSketchStr === 'StorinatorQ30H16'" />
       <P5StorinatorAV15 v-else-if="activeSketchStr === 'StorinatorAV15'" />
+      <P5HomeLabHL15 v-else-if="activeSketchStr === 'HomeLabHL15'" />
       <P5StorinatorQ30H32 v-else-if="activeSketchStr === 'StorinatorQ30H32'" />
       <P5StorinatorS45H32 v-else-if="activeSketchStr === 'StorinatorS45H32'" />
       <P5StorinatorXL60H32
@@ -75,6 +76,7 @@ import P5StorinatorS45H16 from "./P5StorinatorS45H16.vue";
 import P5StorinatorS45H32 from "./P5StorinatorS45H32.vue";
 import P5StorinatorQ30H16 from "./P5StorinatorQ30H16.vue";
 import P5StorinatorAV15 from "./P5StorinatorAV15.vue";
+import P5HomeLabHL15 from "./P5HomeLabHL15.vue";
 import P5StorinatorQ30H32 from "./P5StorinatorQ30H32.vue";
 import P5StorinatorXL60H32 from "./P5StorinatorXL60H32.vue";
 import P5StorinatorXL60 from "./P5StorinatorXL60.vue";
@@ -96,6 +98,7 @@ export default {
     P5StorinatorS45H16,
     P5StorinatorQ30H16,
     P5StorinatorAV15,
+    P5HomeLabHL15,
     P5StorinatorQ30H32,
     P5StorinatorS45H32,
     P5StorinatorXL60H32,
@@ -115,7 +118,7 @@ export default {
     const zfsInfo = inject("zfsInfo");
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado)-(H8)?(H16|H32)?-?(AV15|Q30|S45|XL60|2UTM|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
+        /(Storinator|Stornado|HomeLab)-(H8)?(H16|H32)?-?(HL15|AV15|Q30|S45|XL60|2UTM|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
           modelString
         );
       let enableString = testString
