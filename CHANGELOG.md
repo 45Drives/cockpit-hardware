@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.3.2-1
+## cockpit-45drives-hardware 2.3.3-1
 
-* Updated disks module to inform user that Ceph Gateways are not compatible
+* added support for HL15 servers in 45Drives-Disks and 45Drives-System
