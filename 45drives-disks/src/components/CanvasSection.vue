@@ -29,7 +29,7 @@
       ref="canvasCardBody"
       class="card-body flex-auto flex flex-col items-center content-center p-0 overflow-visible"
     >
-      <P5Stornado2UTM v-if="activeSketchStr === 'Stornado2UTM'" />
+      <P5StornadoF2 v-if="activeSketchStr === 'StornadoF2'" />
       <P5F8X1 v-if="activeSketchStr === 'StorinatorF8X1'" />
       <P5F8X2 v-if="activeSketchStr === 'StorinatorF8X2'" />
       <P5F8X3 v-if="activeSketchStr === 'StorinatorF8X3'" />
@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import P5Stornado2UTM from "./P5Stornado2UTM.vue";
+import P5StornadoF2 from "./P5StornadoF2.vue";
 import P5F8X1 from "./P5F8X1.vue";
 import P5F8X2 from "./P5F8X2.vue";
 import P5F8X3 from "./P5F8X3.vue";
@@ -86,7 +86,7 @@ import { Switch, SwitchGroup, SwitchLabel } from '@headlessui/vue'
 
 export default {
   components: {
-    P5Stornado2UTM,
+    P5StornadoF2,
     P5F8X1,
     P5F8X2,
     P5F8X3,
@@ -118,7 +118,7 @@ export default {
     const zfsInfo = inject("zfsInfo");
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab)-(H8)?(H16|H32)?-?(HL15|AV15|Q30|S45|XL60|2UTM|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
+        /(Storinator|Stornado|HomeLab)-(H8)?(H16|H32)?-?(HL15|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
           modelString
         );
       let enableString = testString

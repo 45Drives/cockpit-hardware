@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Nov 16 2023 Mark Hooper <mhooper@45drives.com> 2.3.3-2
+- changed all instances of 2UTM to F2 for new Stornado server
 * Wed Oct 04 2023 Mark Hooper <mhooper@45drives.com> 2.3.3-1
 - added support for HL15 servers in 45Drives-Disks and 45Drives-System
 * Fri Jun 23 2023 Mark Hooper <mhooper@45drives.com> 2.3.2-1

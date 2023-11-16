@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.3.3-1
+## cockpit-45drives-hardware 2.3.3-2
 
-* added support for HL15 servers in 45Drives-Disks and 45Drives-System
+* changed all instances of 2UTM to F2 for new Stornado server

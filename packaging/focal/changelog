@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.3.3-2focal) focal; urgency=medium
+
+  * changed all instances of 2UTM to F2 for new Stornado server
+
+ -- Mark Hooper <mhooper@45drives.com>  Thu, 16 Nov 2023 05:42:24 -0400
+
 cockpit-45drives-hardware (2.3.3-1focal) focal; urgency=medium
 
   * added support for HL15 servers in 45Drives-Disks and 45Drives-System

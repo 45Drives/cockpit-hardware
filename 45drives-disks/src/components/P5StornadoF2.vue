@@ -1,5 +1,5 @@
 <template>
-    <div id="p5-stornado2utm" class="self-stretch m-2 flex justify-center"></div>
+    <div id="p5-stornadof2" class="self-stretch m-2 flex justify-center"></div>
   </template>
   
   <script>
@@ -11,7 +11,7 @@
   
   const assets = {
     chassis: {
-      path: "img/chassis/2utm-stornado-chassis.png",
+      path: "img/chassis/f2-stornado-chassis.png",
       image: null,
     },
     disks: {
@@ -340,7 +340,7 @@
 ];
   
   export default {
-    name: "P5Stornado2UTM",
+    name: "P5StornadoF2",
     setup() {
       const diskInfoObj = ref({});
       const currentDisk = inject("currentDisk");
@@ -494,7 +494,7 @@
             assets.chassis.image.width,
             assets.chassis.image.height
           );
-          canvas.parent("p5-stornado2utm");
+          canvas.parent("p5-stornadof2");
           p5.frameRate(24);
           resizeHook(p5,canvas.id(),assets.chassis.image.width);
         };

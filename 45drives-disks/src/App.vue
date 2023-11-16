@@ -144,7 +144,7 @@ export default {
             case "2U":
               pageLayout.value = "A";
               break;
-            case "2UTM":
+            case "F2":
               pageLayout.value = "A";
               break;
             case "AV15":
@@ -190,7 +190,7 @@ export default {
             case "2U":
               pageLayout.value = "AZ";
               break;       
-            case "2UTM":
+            case "F2":
               pageLayout.value = "AZ";
               break;                       
             case "AV15":
