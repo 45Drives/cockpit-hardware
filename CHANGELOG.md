@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.3.3-2
+## cockpit-45drives-hardware 2.3.3-3
 
-* changed all instances of 2UTM to F2 for new Stornado server
+* updated name of chassis used for new NVME Stornado from 2UTM to F2
