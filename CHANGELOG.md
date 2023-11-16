@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.3.3-3
+## cockpit-45drives-hardware 2.3.3-4
 
-* updated name of chassis used for new NVME Stornado from 2UTM to F2
+* added chassis image to system tab for Stornado F2

@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Nov 16 2023 Mark Hooper <mhooper@45drives.com> 2.3.3-4
+- added chassis image to system tab for Stornado F2
 * Thu Nov 16 2023 Mark Hooper <mhooper@45drives.com> 2.3.3-3
 - updated name of chassis used for new NVME Stornado from 2UTM to F2
 * Thu Nov 16 2023 Mark Hooper <mhooper@45drives.com> 2.3.3-2
