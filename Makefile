@@ -61,8 +61,8 @@ endif
 
 OUTPUTS:=$(addsuffix /dist/index.html, $(PLUGIN_SRCS))
 
-NPM_PREFIX:=$(shell command -v yarn > /dev/null 2>&1 && echo 'yarn --cwd' || echo 'npm --prefix')
-NPM_UPDATE:=$(shell command -v yarn > /dev/null 2>&1 && echo 'yarn upgrade --cwd' || echo 'npm update --prefix')
+NPM_PREFIX:=$(shell echo 'npm --prefix')
+NPM_UPDATE:=$(shell echo 'npm update --prefix')
 
 VERSION_FILES:=$(addsuffix /src/version.js, $(PLUGIN_SRCS))
 OS_PACKAGE_RELEASE?=built_from_source
