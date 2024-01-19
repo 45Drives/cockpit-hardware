@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.3.5-1focal) focal; urgency=medium
+
+  * added support for X11SPH-nCTF and X11SPH-nCTPF motherboards in 45Drives Motherboard
+    Module.
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 19 Jan 2024 09:23:15 -0400
+
 cockpit-45drives-hardware (2.3.4-1focal) focal; urgency=medium
 
   * Releasing v2.3.4 to stable repo
