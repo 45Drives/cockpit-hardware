@@ -5,7 +5,7 @@ A cockpit module that displays hardware information for 45Drives storage server 
 - Rocky Linux
 - Ubuntu 20.04.1 LTS (Focal Fossa)
 
-## Features (Version 2.1.1)
+## Features (Version 2.1.1 & up)
 ### System
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-system.png">  
 Lists information about your 45Drives Storinator product including:
@@ -36,13 +36,20 @@ Shows the physical layout and placement of all PCI cards, Memory modules and SAT
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-motherboard.png">
 
 Currently supports the following motherboard models:
-* Supermicro X11DPL-i
-* Supermicro X11SPL-F
+* ASRockRack EPC621D8A
 * Supermicro H11SSL-i
+* Supermicro H12SSL-i
+* Supermicro X11DPL-i
+* Supermicro X11SPH-nCTF
+* Supermicro X11SPH-nCTPF
+* Supermicro X11SPL-F
+* Supermicro X11SPi-TF
 * Supermicro X11SSH-CTF
 * Supermicro X11SSM-F
-* Supermicro X11SPi-TF
-* ASRockRack EPC621D8A
+* Supermicro X12DPi-N6
+* Supermicro X12SPL-F
+
+Note: All of the interactive information displayed in this module is also available in the 45Drives System module. If your board is not in the list of supported motherboards, the information can be obtained there.
 
 
 # Installation
