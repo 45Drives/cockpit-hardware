@@ -112,7 +112,7 @@ const diskLocations = [
     {
         x: 17,
         y: 36,
-        BAY: "1-1",
+        BAY: "3-1",
         HDD: false,
         occupied: false,
         image: null,
@@ -120,7 +120,7 @@ const diskLocations = [
     {
         x: 17,
         y: 47,
-        BAY: "1-2",
+        BAY: "3-2",
         HDD: false,
         occupied: false,
         image: null,
@@ -128,7 +128,7 @@ const diskLocations = [
     {
         x: 17,
         y: 72,
-        BAY: "1-3",
+        BAY: "3-3",
         HDD: false,
         occupied: false,
         image: null,
@@ -136,7 +136,7 @@ const diskLocations = [
     {
         x: 17,
         y: 83,
-        BAY: "1-4",
+        BAY: "3-4",
         HDD: false,
         occupied: false,
         image: null,
@@ -144,7 +144,7 @@ const diskLocations = [
     {
         x: 17,
         y: 94,
-        BAY: "1-5",
+        BAY: "3-5",
         HDD: false,
         occupied: false,
         image: null,
@@ -152,7 +152,7 @@ const diskLocations = [
     {
         x: 17,
         y: 105,
-        BAY: "1-6",
+        BAY: "3-6",
         HDD: false,
         occupied: false,
         image: null,
@@ -160,7 +160,7 @@ const diskLocations = [
     {
         x: 17,
         y: 129,
-        BAY: "1-7",
+        BAY: "3-7",
         HDD: false,
         occupied: false,
         image: null,
@@ -168,7 +168,7 @@ const diskLocations = [
     {
         x: 17,
         y: 140,
-        BAY: "1-8",
+        BAY: "3-8",
         HDD: false,
         occupied: false,
         image: null,
@@ -176,7 +176,7 @@ const diskLocations = [
     {
         x: 107,
         y: 33,
-        BAY: "1-9",
+        BAY: "3-9",
         HDD: true,
         occupied: false,
         image: null,
@@ -184,7 +184,7 @@ const diskLocations = [
     {
         x: 139,
         y: 33,
-        BAY: "1-10",
+        BAY: "3-10",
         HDD: true,
         occupied: false,
         image: null,
@@ -192,7 +192,7 @@ const diskLocations = [
     {
         x: 171,
         y: 33,
-        BAY: "1-11",
+        BAY: "3-11",
         HDD: true,
         occupied: false,
         image: null,
@@ -200,7 +200,7 @@ const diskLocations = [
     {
         x: 203,
         y: 33,
-        BAY: "1-12",
+        BAY: "3-12",
         HDD: true,
         occupied: false,
         image: null,
@@ -208,7 +208,7 @@ const diskLocations = [
     {
         x: 235,
         y: 33,
-        BAY: "1-13",
+        BAY: "3-13",
         HDD: true,
         occupied: false,
         image: null,
@@ -216,7 +216,7 @@ const diskLocations = [
     {
         x: 267,
         y: 33,
-        BAY: "1-14",
+        BAY: "3-14",
         HDD: true,
         occupied: false,
         image: null,
@@ -224,7 +224,7 @@ const diskLocations = [
     {
         x: 299,
         y: 33,
-        BAY: "1-15",
+        BAY: "3-15",
         HDD: true,
         occupied: false,
         image: null,
@@ -232,7 +232,7 @@ const diskLocations = [
     {
         x: 331,
         y: 33,
-        BAY: "1-16",
+        BAY: "3-16",
         HDD: true,
         occupied: false,
         image: null,
@@ -240,7 +240,7 @@ const diskLocations = [
     {
         x: 363,
         y: 33,
-        BAY: "1-17",
+        BAY: "3-17",
         HDD: true,
         occupied: false,
         image: null,
@@ -248,7 +248,7 @@ const diskLocations = [
     {
         x: 395,
         y: 33,
-        BAY: "1-18",
+        BAY: "3-18",
         HDD: true,
         occupied: false,
         image: null,
@@ -256,7 +256,7 @@ const diskLocations = [
     {
         x: 428,
         y: 33,
-        BAY: "1-19",
+        BAY: "3-19",
         HDD: true,
         occupied: false,
         image: null,
@@ -264,7 +264,7 @@ const diskLocations = [
     {
         x: 460,
         y: 33,
-        BAY: "1-20",
+        BAY: "3-20",
         HDD: true,
         occupied: false,
         image: null,
@@ -432,7 +432,7 @@ const diskLocations = [
     {
         x: 17,
         y: 364,
-        BAY: "3-1",
+        BAY: "1-1",
         HDD: false,
         occupied: false,
         image: null
@@ -440,7 +440,7 @@ const diskLocations = [
     {
         x: 17,
         y: 375,
-        BAY: "3-2",
+        BAY: "1-2",
         HDD: false,
         occupied: false,
         image: null
@@ -448,7 +448,7 @@ const diskLocations = [
     {
         x: 17,
         y: 400,
-        BAY: "3-3",
+        BAY: "1-3",
         HDD: false,
         occupied: false,
         image: null
@@ -456,7 +456,7 @@ const diskLocations = [
     {
         x: 17,
         y: 411,
-        BAY: "3-4",
+        BAY: "1-4",
         HDD: false,
         occupied: false,
         image: null
@@ -464,7 +464,7 @@ const diskLocations = [
     {
         x: 17,
         y: 422,
-        BAY: "3-5",
+        BAY: "1-5",
         HDD: false,
         occupied: false,
         image: null
@@ -472,7 +472,7 @@ const diskLocations = [
     {
         x: 17,
         y: 433,
-        BAY: "3-6",
+        BAY: "1-6",
         HDD: false,
         occupied: false,
         image: null
@@ -480,7 +480,7 @@ const diskLocations = [
     {
         x: 17,
         y: 457,
-        BAY: "3-7",
+        BAY: "1-7",
         HDD: false,
         occupied: false,
         image: null
@@ -488,7 +488,7 @@ const diskLocations = [
     {
         x: 17,
         y: 468,
-        BAY: "3-8",
+        BAY: "1-8",
         HDD: false,
         occupied: false,
         image: null
@@ -496,7 +496,7 @@ const diskLocations = [
     {
         x: 107,
         y: 361,
-        BAY: "3-9",
+        BAY: "1-9",
         HDD: true,
         occupied: false,
         image: null
@@ -504,7 +504,7 @@ const diskLocations = [
     {
         x: 139,
         y: 361,
-        BAY: "3-10",
+        BAY: "1-10",
         HDD: true,
         occupied: false,
         image: null
@@ -512,7 +512,7 @@ const diskLocations = [
     {
         x: 171,
         y: 361,
-        BAY: "3-11",
+        BAY: "1-11",
         HDD: true,
         occupied: false,
         image: null
@@ -520,7 +520,7 @@ const diskLocations = [
     {
         x: 203,
         y: 361,
-        BAY: "3-12",
+        BAY: "1-12",
         HDD: true,
         occupied: false,
         image: null
@@ -528,7 +528,7 @@ const diskLocations = [
     {
         x: 235,
         y: 361,
-        BAY: "3-13",
+        BAY: "1-13",
         HDD: true,
         occupied: false,
         image: null
@@ -536,7 +536,7 @@ const diskLocations = [
     {
         x: 267,
         y: 361,
-        BAY: "3-14",
+        BAY: "1-14",
         HDD: true,
         occupied: false,
         image: null
@@ -544,7 +544,7 @@ const diskLocations = [
     {
         x: 299,
         y: 361,
-        BAY: "3-15",
+        BAY: "1-15",
         HDD: true,
         occupied: false,
         image: null
@@ -552,7 +552,7 @@ const diskLocations = [
     {
         x: 331,
         y: 361,
-        BAY: "3-16",
+        BAY: "1-16",
         HDD: true,
         occupied: false,
         image: null
@@ -560,7 +560,7 @@ const diskLocations = [
     {
         x: 363,
         y: 361,
-        BAY: "3-17",
+        BAY: "1-17",
         HDD: true,
         occupied: false,
         image: null
@@ -568,7 +568,7 @@ const diskLocations = [
     {
         x: 395,
         y: 361,
-        BAY: "3-18",
+        BAY: "1-18",
         HDD: true,
         occupied: false,
         image: null
@@ -576,7 +576,7 @@ const diskLocations = [
     {
         x: 428,
         y: 361,
-        BAY: "3-19",
+        BAY: "1-19",
         HDD: true,
         occupied: false,
         image: null
@@ -584,7 +584,7 @@ const diskLocations = [
     {
         x: 460,
         y: 361,
-        BAY: "3-20",
+        BAY: "1-20",
         HDD: true,
         occupied: false,
         image: null

@@ -42,6 +42,11 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Jan 25 2024 Mark Hooper <mhooper@45drives.com> 2.3.5-2
+- Added support for X11SPH-nCTF and X11SPH-nCTPF motherboards in 45Drives Motherboard
+  Module.
+- Fixed a bug which caused drives to render in the improper row for F8X2 and F8X3
+  Servers.
 * Fri Jan 19 2024 Mark Hooper <mhooper@45drives.com> 2.3.5-1
 - added support for X11SPH-nCTF and X11SPH-nCTPF motherboards in 45Drives Motherboard
   Module.
