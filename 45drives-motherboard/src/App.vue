@@ -112,6 +112,12 @@ export default {
         let result = JSON.parse(state.stdout);
         Object.assign(mobo_info, result);
         preloadChecks.mobo_info.content = result;
+        // Need to find a more elegant fix for this:
+        // Not all H12SSL- boards show with expected lowercase 'i'. 
+        // If motherboard script/dmidecode shows 'I', will force a change to lowercase so motherboard detection/drawing functions as intended
+        if (preloadChecks.mobo_info.content["Motherboard Info"][0]["Motherboard"][0]["Product Name"] === 'H12SSL-I') {
+          preloadChecks.mobo_info.content["Motherboard Info"][0]["Motherboard"][0]["Product Name"] = 'H12SSL-i';
+        }
         preloadChecks.mobo_info.finished = true;
         preloadChecks.mobo_info.failed = false;
       } catch (error) {
