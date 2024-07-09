@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.3.6-2focal) focal; urgency=medium
+
+  * Incrementing build to resolve conflict
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 09 Jul 2024 12:37:48 -0300
+
 cockpit-45drives-hardware (2.3.6-1focal) focal; urgency=medium
 
   * Fixes a bug with H12SSL-i motherboards ID's case sensitivity
