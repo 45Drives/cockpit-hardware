@@ -1,4 +1,3 @@
-## cockpit-45drives-hardware 2.3.5-2
+## cockpit-45drives-hardware 2.3.6-1
 
-* Added support for X11SPH-nCTF and X11SPH-nCTPF motherboards in 45Drives Motherboard Module.
-* Fixed a bug which caused drives to render in the improper row for F8X2 and F8X3 Servers.
+* Fixes a bug with H12SSL-i motherboards ID's case sensitivity

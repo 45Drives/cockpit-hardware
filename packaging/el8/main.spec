@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue Jul 09 2024 Jordan Keough <jkeough@45drives.com> 2.3.6-1
+- Fixes a bug with H12SSL-i motherboards ID's case sensitivity
 * Thu Jan 25 2024 Mark Hooper <mhooper@45drives.com> 2.3.5-2
 - Added support for X11SPH-nCTF and X11SPH-nCTPF motherboards in 45Drives Motherboard
   Module.
