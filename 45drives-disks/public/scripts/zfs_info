@@ -13,7 +13,7 @@ json_zfs = {
 def get_zfs_list():
     try:
         zfs_list_result = subprocess.Popen(
-            ["zfs", "list"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
+            ["zfs", "list", "-H"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
         # zfs_list_result = subprocess.Popen(
             # ["cat","/root/spoof/zfs_list"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
     except:
@@ -21,14 +21,16 @@ def get_zfs_list():
 
     zpools = []
     for line in zfs_list_result:
-        regex = re.search("^(\S+)\s+(\S+)\s+(\S+)\s+\S+\s+(\S+).*$", line)
-        if regex != None and regex.group(1) != "NAME" and not any(x in regex.group(1) for x in ["/","@"]):
+        #regex = re.search("^(\S+)\s+(\S+)\s+(\S+)\s+\S+\s+(\S+).*$", line)
+        parsed_line = line.rstrip("\n").split("\t")
+        if parsed_line != "" and not any(x in parsed_line[0] for x in ["/","@"]):
             zpools.append(
                 {
-                    "name": regex.group(1),
-                    "used": regex.group(2),
-                    "avail": regex.group(3),
-                    "mountpoint": regex.group(4)
+                    "name": parsed_line[0],
+                    "used": parsed_line[1],
+                    "avail": parsed_line[2],
+                    "refer": parsed_line[3],
+                    "mountpoint": parsed_line[4]
                 }
             )
     return zpools
@@ -36,7 +38,7 @@ def get_zfs_list():
 def get_zpool_list():
     try:
         zpool_list_result = subprocess.Popen(
-            ["zpool", "list"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
+            ["zpool", "list", "-H"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
         # zpool_list_result = subprocess.Popen(
             # ["cat","/root/spoof/zpool_list"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
     except:
@@ -48,21 +50,21 @@ def get_zpool_list():
 
     zpools = []
     for line in zpool_list_result:
-        regex = re.search("^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*$", line)
-        if regex != None and regex.group(1) != "NAME":
+        parsed_line = line.rstrip("\n").split("\t")
+        if parsed_line != "":
             zpools.append(
                 {
-                    "name": regex.group(1),
-                    "raw_size": regex.group(2),
-                    "raw_alloc": regex.group(3),
-                    "raw_free": regex.group(4),
-                    "ckpoint": regex.group(5),
-                    "expandsz": regex.group(6),
-                    "frag": regex.group(7),
-                    "cap": regex.group(8),
-                    "dedup": regex.group(9),
-                    "health": regex.group(10),
-                    "altroot": regex.group(11)
+                    "name": parsed_line[0],
+                    "raw_size": parsed_line[1],
+                    "raw_alloc": parsed_line[2],
+                    "raw_free": parsed_line[3],
+                    "ckpoint": parsed_line[4],
+                    "expandsz": parsed_line[5],
+                    "frag": parsed_line[6],
+                    "cap": parsed_line[7],
+                    "dedup": parsed_line[8],
+                    "health": parsed_line[9],
+                    "altroot": parsed_line[10]
                 }
             )
     zfs_list = get_zfs_list()
@@ -71,12 +73,13 @@ def get_zpool_list():
             if entry["name"] == pool["name"]:
                 pool["used"] = entry["used"]
                 pool["avail"] = entry["avail"]
+                pool["refer"] = entry["refer"]
                 pool["mountpoint"] = entry["mountpoint"]
         if not all (key in pool for key in ("used","avail","mountpoint")):
             pool["used"] = "-"
             pool["avail"] = "-"
+            pool["refer"] = "-"
             pool["mountpoint"] = "-"
-
     return zpools
 
 def zpool_status_flags(pool_name):
@@ -86,7 +89,7 @@ def zpool_status_flags(pool_name):
     except:
         print(f"failed to run 'zpool status {pool_name}'")
         exit(1)
-    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+|^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    groupings = [(pool_name,match.group(0)) for match in re.finditer(r"^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+|^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
     groupings.append( [("state",match.group(1)) for match in re.finditer(r"^.*state\:\s+(\S+)",zpool_status_result,flags=re.MULTILINE)][0])
     return dict(groupings)
 
@@ -97,7 +100,7 @@ def zpool_iostat_flags(pool_name):
     except:
         print(f"failed to run 'zpool iostat -v {pool_name}'")
         exit(1)
-    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    groupings = [(pool_name,match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
     return dict(groupings)
 
 def zpool_status(pool_name):
@@ -109,7 +112,7 @@ def zpool_status(pool_name):
     except:
         print(f"failed to run 'zpool status {pool_name}'")
         exit(1)
-    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+|^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    groupings = [(pool_name,match.group(0)) for match in re.finditer(r"^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+|^\t{1}(\S+).*$\n(?:^\t{1} +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
     groupings.append( [("state",match.group(1)) for match in re.finditer(r"^.*state\:\s+(\S+)",zpool_status_result,flags=re.MULTILINE)][0])
     return dict(groupings)
 
@@ -122,7 +125,7 @@ def zpool_iostat(pool_name):
     except:
         print(f"failed to run 'zpool iostat -v {pool_name}'")
         exit(1)
-    groupings = [(match.group(1),match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
+    groupings = [(pool_name,match.group(0)) for match in re.finditer(r"^(\S+).*$\n(?:^ +.*$\n)+|^(\S+).*$\n(?:^ +.*$\n)+",zpool_status_result,flags=re.MULTILINE)]
     return dict(groupings)
 
 def zpool_status_parse(zp_status_obj,key,pool_name):
