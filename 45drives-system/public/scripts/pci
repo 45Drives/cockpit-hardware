@@ -31,6 +31,26 @@ g_sata_controllers = [
 	"ASM1062"
 ]
 
+# ASRock Board 
+BA_EPC612D8A = {
+	"ff00:16:00.0":"0000:17:00.0", #PCIE1
+	"ff00:16:02.0":"0000:1c:00.0", #PCIE2
+	"ff00:64:00.0":"0000:65:00.0", #PCIE4
+	"ff00:64:02.0":"0000:66:00.0", #PCIE3
+	"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
+	"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
+}
+
+# Gigabyte Board  
+PCIE_SLOT_TYPE_ME03CE0 = {
+	"PCIE_1":"PCI Express 4 x16",
+	"PCIE_2":"PCI Express 4 x8",
+	"PCIE_3":"PCI Express 4 x16",
+	"PCIE_4":"PCI Express 5 x16",
+	"PCIE_5":"PCI Express 5 x16",
+	"PCIE_6":"PCI Express 5 x16",
+}
+
 
 def dmidecode():
 	try:
@@ -41,31 +61,100 @@ def dmidecode():
 		sys.exit(1)
 
 	cards = []
-	card_index = 0
+	current_slot = None
 
 	for line in dmi_result:
 		if line.startswith("Handle "):
-			cards.append({})
-			card_index = len(cards) -1
-		for field in g_dmi_fields:
-			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
-			if regex != None:
-				cards[card_index][regex.group(1)] = regex.group(2)
+			if current_slot:
+				# Before appending the current slot, check if it should be skipped
+				if current_slot.get("Designation") != "Y3...@ptal._..P" and current_slot.get("Bus Address") != "0000:00:00.0":
+					cards.append(current_slot)
+			current_slot = {}
 
-	BA_EPC612D8A = {
-		"ff00:16:00.0":"0000:17:00.0", #PCIE1
-		"ff00:16:02.0":"0000:1c:00.0", #PCIE2
-		"ff00:64:00.0":"0000:65:00.0", #PCIE4
-		"ff00:64:02.0":"0000:66:00.0", #PCIE3
-		"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
-		"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
-	}
+		if current_slot is not None:
+			for field in g_dmi_fields:
+				regex = re.search(r"^\s+({fld}):\s+(.*)".format(fld=field), line)
+				if regex:
+					current_slot[regex.group(1)] = regex.group(2)
+			
+			# Assign type based on Designation and add the actual type from dmidecode for M.2 slots
+			if "Designation" in current_slot:
+				designation = current_slot["Designation"]
+				if designation in PCIE_SLOT_TYPE_ME03CE0:
+					current_slot["Type"] = PCIE_SLOT_TYPE_ME03CE0[designation]
+				elif designation.startswith("U2_P0_G3"):
+					current_slot["Type"] = "MCIO Port"  # Assign type for MCIO ports
+				elif designation.startswith("M2_"):
+					# Only add the actual Type from dmidecode if not already included
+					actual_type = current_slot.get("Type", "<OUT OF SPEC>")
+					if not actual_type.startswith("M.2 Slot"):
+						current_slot["Type"] = f"M.2 Slot ({actual_type})"
+				else:
+					current_slot["Type"] = "<OUT OF SPEC>"
 
-	for slot in cards:
-		if "Bus Address" in slot.keys() and slot["Bus Address"] in BA_EPC612D8A.keys():
-			slot["Bus Address"] = BA_EPC612D8A[slot["Bus Address"]]
+			# Mark empty slots as Available
+			if "Current Usage" not in current_slot or current_slot["Current Usage"] != "In Use":
+				current_slot["Current Usage"] = "Available"
+
+			# Translate Bus Address if needed
+			if "Bus Address" in current_slot and current_slot["Bus Address"] in BA_EPC612D8A:
+				current_slot["Bus Address"] = BA_EPC612D8A[current_slot["Bus Address"]]
+
+	# Handle the last slot, if any
+	if current_slot:
+		if current_slot.get("Designation") != "Y3...@ptal._..P" and current_slot.get("Bus Address") != "0000:00:00.0":
+			cards.append(current_slot)
 
 	return cards
+
+def check_slot_availability(slots):
+    """
+    Check the availability of each slot based on its associated bus addresses.
+    """
+    for slot in slots:
+        bus_address = slot.get("Bus Address", "")
+        if bus_address:
+            # Extract the last part of the bus address after the last ':'
+            bus_segment = bus_address.split(":")[-1].split(".")[0]
+            # Check if the last digit is '0', which typically indicates the slot is in use
+            if bus_segment[-1] == "0":
+                slot["Current Usage"] = "In Use"
+            else:
+                slot["Current Usage"] = "Available"
+        else:
+            slot["Current Usage"] = "Available"
+
+    return slots
+
+
+def match_pci_slots_with_devices(pci_slots, devices):
+    """
+    Filter devices by matching bus addresses with PCI slots.
+    Ensure that only one entry per designation is added:
+    - If a slot is "In Use," it takes precedence.
+    - If no "In Use" slot exists, include only one "Available" entry.
+    """
+    matched_devices = {}
+    
+    for slot in pci_slots:
+        designation = slot["Designation"]
+        
+        if slot["Current Usage"] == "In Use":
+            # If the slot is "In Use," replace any existing entry for this designation
+            matched_devices[designation] = slot
+        elif designation not in matched_devices:
+            # Only add "Available" slots if no "In Use" slot exists for the designation
+            matched_devices[designation] = slot
+    
+    # Match devices with PCI slots
+    for device in devices:
+        for designation, slot in matched_devices.items():
+            if slot.get("Bus Address") == device.get("Bus Address"):
+                slot.update(device)
+                break
+    
+    return list(matched_devices.values())
+
 
 def lspci_hba():
 	try:
@@ -269,7 +358,15 @@ def main():
 					# TODO: Get the partition information for any connected drives.
 
 	result = []
-	for slot in pci_slots:
+ 
+	# Check availability of slots
+	pci_slots = check_slot_availability(pci_slots)
+	# Combine all devices into a single list for matching
+	all_devices = hba_cards + network_cards + sata_cards
+ 	# Match devices with PCI slots
+	matched_devices = match_pci_slots_with_devices(pci_slots, all_devices)
+ 
+	for slot in matched_devices:
 		hba_arr = get_hba_server_info()
 		for card in hba_arr:
 			if slot["Bus Address"] == card.get("Bus Address","00:00:00:00"):

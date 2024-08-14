@@ -2,7 +2,7 @@
 ################################################################################
 # motherboard:
 # 	used to return information about the motherboard in a .json
-#   format. This is a helper sctipt for use with the
+#   format. This is a helper script for use with the
 #   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
 #
 # Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
@@ -16,12 +16,11 @@
 import re
 import subprocess
 import os
-import sys
 import json
 
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
-	"Manufacturer":  ["Supermicro","ASRockRack"],
+	"Manufacturer":  ["Supermicro","ASRockRack","Giga Computing"],
 	"Product Name":  [
 		"X11DPL-i",
 		"X11SPL-F",
@@ -29,17 +28,19 @@ g_dmi_mobo_fields = {
 		"X11SSH-CTF",
 		"X11SSM-F",
 		"X11SPi-TF",
-		"EPC621D8A"
-		],
+		"EPC621D8A",
+		"ME03-CE0-000"
+	],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2"],
+	"Socket Designation":  ["CPU1","CPU2", "P0", "P1"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
+		"AMD EPYC 8324P 32-Core Processor",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz"
@@ -88,8 +89,17 @@ g_ipmitool_sensor_fields = {
 	"DDR4_C Temp": " (C)", #ASRockRack
 	"DDR4_D Temp": " (C)", #ASRockRack
 	"DDR4_E Temp": " (C)", #ASRockRack
-	"DDR4_F Temp": " (C)"  #ASRockRack
-
+	"DDR4_F Temp": " (C)",  #ASRockRack
+	"CPU0_TEMP": " (C)", #ME03-CE0
+	"DIMMG0_TEMP": " (C)", #ME03-CE0
+    "DIMMG1_TEMP": " (C)", #ME03-CE0
+    "CPU0_FAN": " (RPM)", #ME03-CE0
+    "SYS_FAN1": " (RPM)", #ME03-CE0
+    "SYS_FAN2": " (RPM)", #ME03-CE0
+    "SYS_FAN3": " (RPM)", #ME03-CE0
+    "SYS_FAN4": " (RPM)", #ME03-CE0
+    "SYS_FAN5": " (RPM)", #ME03-CE0
+	"SYS_POWER": " (W)", #ME03-CE0
 }
 
 ################################################################################
@@ -192,7 +202,7 @@ def get_sensor_readings():
 		for field in g_ipmitool_sensor_fields.keys():
 			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
 			if regex != None:
-				if regex.group(1) == "CPU Temp":
+				if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
 					# ipmitool does not use the socket name
 					# we need to manually intervene and store it as
 					# CPU1 Temp
@@ -200,8 +210,12 @@ def get_sensor_readings():
 					("CPU1 Temp",regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
 					)
 				else:
-					# All other readings are fine, use the field as captured.
-					sensor_readings.append((regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
+					# # skip empty entries
+					# if regex.group(2) == 'na':
+					# 	continue
+					# else:
+						# All other readings are fine, use the field as captured.
+						sensor_readings.append((regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
 	sensor_readings_json_str = "{\"Sensor Readings\":["+json.dumps(dict(sensor_readings))+"]}"
 	return sensor_readings_json_str
 

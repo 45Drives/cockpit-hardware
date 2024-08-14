@@ -7,15 +7,17 @@ import json
 
 # supported CPU types
 g_dmi_cpu_fields = {
-    "Socket Designation":  ["CPU1", "CPU2"],
-    "Version":  [
-        "Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
-        "AMD EPYC 7281 16-Core Processor",
-        "Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
-        "Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz"
-    ],
-    "Current Speed": None,
-    "Max Speed": None,
+	"Socket Designation":  ["CPU1","CPU2", "P0", "P1"],
+	"Version":  [
+		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
+		"AMD EPYC 7281 16-Core Processor",
+		"AMD EPYC 8324P 32-Core Processor",
+		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
+		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
+		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz"
+		],
+	"Current Speed": None,
+	"Max Speed": None,
 }
 
 g_ipmitool_sensor_fields = {
@@ -52,7 +54,23 @@ g_ipmitool_sensor_fields = {
     "DIMMF1 Temp": " (C)",
     "DIMMF2 Temp": " (C)",
     "DIMMG1 Temp": " (C)",
-    "DIMMH1 Temp": " (C)"
+    "DIMMH1 Temp": " (C)",
+    "DDR4_A Temp": " (C)", #ASRockRack 
+	"DDR4_B Temp": " (C)", #ASRockRack
+	"DDR4_C Temp": " (C)", #ASRockRack
+	"DDR4_D Temp": " (C)", #ASRockRack
+	"DDR4_E Temp": " (C)", #ASRockRack
+	"DDR4_F Temp": " (C)",  #ASRockRack
+	"CPU0_TEMP": " (C)", #ME03-CE0
+	"DIMMG0_TEMP": " (C)", #ME03-CE0
+    "DIMMG1_TEMP": " (C)", #ME03-CE0
+    "CPU0_FAN": " (RPM)", #ME03-CE0
+    "SYS_FAN1": " (RPM)", #ME03-CE0
+    "SYS_FAN2": " (RPM)", #ME03-CE0
+    "SYS_FAN3": " (RPM)", #ME03-CE0
+    "SYS_FAN4": " (RPM)", #ME03-CE0
+    "SYS_FAN5": " (RPM)", #ME03-CE0
+	"SYS_POWER": " (W)", #ME03-CE0
 }
 
 
@@ -102,7 +120,7 @@ def get_sensor_readings():
             regex = re.search(
                 "^({fld})\s+\|\s+(\S+).*".format(fld=field), line)
             if regex != None:
-                if regex.group(1) == "CPU Temp":
+                if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
                     # ipmitool does not use the socket name
                     # we need to manually intervene and store it as
                     # CPU1 Temp
@@ -120,17 +138,24 @@ def get_sensor_readings():
 def main():
     cpus = get_cpu_info()
     sensor_readings = get_sensor_readings()
-
+    
     if cpus:
         cpu_arr = []
         for cpu in cpus:
+            if (cpu["Socket Designation"]+" Temp") in sensor_readings.keys():
+                cpu_temp = sensor_readings[cpu["Socket Designation"]+" Temp"]
+            elif (cpu["Socket Designation"] == 'P0'):
+                cpu_temp = sensor_readings['CPU1 Temp']
+            else:
+                cpu_temp = '-'
+                    
             cpu_arr.append(
                 { 
                     'socket': cpu["Socket Designation"], 
                     'model': cpu["Version"],
                     'maxSpeed': cpu["Max Speed"],
                     'currentSpeed': cpu["Current Speed"],
-                    'temperature': sensor_readings[cpu["Socket Designation"]+" Temp"] if (cpu["Socket Designation"]+" Temp") in sensor_readings.keys() else "-"
+                    'temperature': cpu_temp
                 },
             )
         result = {

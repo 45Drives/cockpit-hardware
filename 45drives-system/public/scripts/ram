@@ -2,7 +2,7 @@
 ################################################################################
 # ram:
 # 	used to return information about the ram configuration in a .json
-#   format. This is a helper sctipt for use with the
+#   format. This is a helper script for use with the
 #   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
 #
 # Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
@@ -71,6 +71,8 @@ g_ipmitool_sensor_fields = {
 	"P1_DIMME~H Temp": " (C)", #X12DPi-N6
 	"P2_DIMMA~D Temp": " (C)", #X12DPi-N6
 	"P2_DIMME~H Temp": " (C)", #X12DPi-N6
+  	"DIMMG0_TEMP": " (C)", #ME03-CE0
+  	"DIMMG1_TEMP": " (C)", #ME03-CE0
 }
 
 def ipmitool_sensor():
@@ -128,7 +130,7 @@ def dmidecode():
 	if current_slot != None:
 		slot_entries.append(current_slot.copy())
 
-	# check slot_entries for translatable locator tags (ASRockRack Motherboards, X12 and H12 boards)
+	# check slot_entries for translatable locator tags (ASRockRack Motherboards, X12 and H12 boards, and GigaByte boards)
 	locator_tags = {
 		"CPU1_DIMM_A1":["DDR4_A"],
 		"CPU1_DIMM_A2":["DDR4_A"],
@@ -163,7 +165,19 @@ def dmidecode():
 		"P2-DIMME1": ["P1_DIMME~H"],
 		"P2-DIMMF1": ["P1_DIMME~H"],
 		"P2-DIMMG1": ["P1_DIMME~H"],
-		"P2-DIMMH1": ["P1_DIMME~H"]
+		"P2-DIMMH1": ["P1_DIMME~H"],
+  		"DIMM_P0_A0": ["DIMMG0"],
+		"DIMM_P0_A1": ["DIMMG0"],
+		"DIMM_P0_B0": ["DIMMG0"],
+		"DIMM_P0_B1": ["DIMMG0"],
+		"DIMM_P0_D0": ["DIMMG0"],
+		"DIMM_P0_D1": ["DIMMG0"],
+		"DIMM_P0_E0": ["DIMMG1"],
+		"DIMM_P0_E1": ["DIMMG1"],
+		"DIMM_P0_F0": ["DIMMG1"],
+		"DIMM_P0_F1": ["DIMMG1"],
+		"DIMM_P0_H0": ["DIMMG1"],
+		"DIMM_P0_H1": ["DIMMG1"],
 	}
 
 	for slot in slot_entries:

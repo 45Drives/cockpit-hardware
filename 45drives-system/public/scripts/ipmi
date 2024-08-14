@@ -2,7 +2,7 @@
 ################################################################################
 # ram:
 # 	used to return information about the ram configuration in a .json
-#   format. This is a helper sctipt for use with the
+#   format. This is a helper script for use with the
 #   cockpit-hardware package (https://github.com/45Drives/cockpit-hardware)
 #
 # Copyright (C) 2020, Mark Hooper   <mhooper@45drives.com>
@@ -15,6 +15,7 @@
 import subprocess
 import re
 import json
+import sys
 
 
 def ipmi_lan():
