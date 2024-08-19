@@ -48,7 +48,9 @@ g_motherboard_sata_addresses = {
 		["pci-0000:43:00.2-ata-5","I-SATA4"],
 		["pci-0000:43:00.2-ata-6","I-SATA5"],
 		["pci-0000:43:00.2-ata-7","I-SATA6"],
-		["pci-0000:43:00.2-ata-8","I-SATA7"]
+		["pci-0000:43:00.2-ata-8","I-SATA7"],
+		["pci-0000:44:00.0-ata-1","I-SATA0"],
+		["pci-0000:44:00.0-ata-2","I-SATA1"]
 	],
 	"X11SPL-F":[
 		["pci-0000:00:17.0-ata-1","I-SATA0"],
@@ -60,56 +62,174 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-7","I-SATA6"],
 		["pci-0000:00:17.0-ata-8","I-SATA7"]
 	],
-	"ME03-CE0":[
-		["pci-0000:00:05:00.0-ata-1","I-SATA1"],
-		["pci-0000:00:05:00.0-ata-2","I-SATA2"],
-	  	["pci-0000:00:05:00.0-ata-3","I-SATA3"],
-		["pci-0000:00:05:00.0-ata-4","I-SATA4"],
-  		["pci-0000:00:05:00.0-ata-5","I-SATA5"],
-		["pci-0000:00:05:00.0-ata-6","I-SATA6"],
-	  	["pci-0000:00:05:00.0-ata-7","I-SATA7"],
-		["pci-0000:00:05:00.0-ata-8","I-SATA8"],
-	  	["pci-0000:00:05:00.1-ata-1","I-SATA1"], # name conflict
-		["pci-0000:00:05:00.1-ata-2","I-SATA2"], # name conflict
-	  	["pci-0000:00:05:00.1-ata-3","I-SATA3"], # name conflict
-		["pci-0000:00:05:00.1-ata-4","I-SATA4"], # name conflict
+	"X11SPi-TF":[
+		["pci-0000:00:11.5-ata-1","S-SATA0"],
+		["pci-0000:00:11.5-ata-2","S-SATA1"],
+		["pci-0000:00:17.0-ata-1","I-SATA0"],
+		["pci-0000:00:17.0-ata-2","I-SATA1"],
+		["pci-0000:00:17.0-ata-3","I-SATA2"],
+		["pci-0000:00:17.0-ata-4","I-SATA3"],
+		["pci-0000:00:17.0-ata-5","I-SATA4"],
+		["pci-0000:00:17.0-ata-6","I-SATA5"],
+		["pci-0000:00:17.0-ata-7","I-SATA6"],
+		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+	"EPC621D8A":[
+		["pci-0000:00:11.5-ata-1","SSATA_0"],
+		["pci-0000:00:11.5-ata-2","SSATA_1"],
+		["pci-0000:00:11.5-ata-3","SSATA_2"],
+		["pci-0000:00:11.5-ata-4","SSATA_3"],
+		["pci-0000:00:11.5-ata-5","SSATA_4"],
+		["pci-0000:00:11.5-ata-6","SSATA_5"],
+		["pci-0000:00:17.0-ata-1","SATA_0"],
+		["pci-0000:00:17.0-ata-2","SATA_1"],
+		["pci-0000:00:17.0-ata-3","SATA_2"],
+		["pci-0000:00:17.0-ata-4","SATA_3"],
+		["pci-0000:00:17.0-ata-5","SATA_4"]
+	],
+	"X12SPL-F":[
+		["pci-0000:00:11.5-ata-1","S-SATA0"],
+		["pci-0000:00:11.5-ata-2","S-SATA1"],
+		["pci-0000:00:17.0-ata-1","I-SATA0"],
+		["pci-0000:00:17.0-ata-2","I-SATA1"],
+		["pci-0000:00:17.0-ata-3","I-SATA2"],
+		["pci-0000:00:17.0-ata-4","I-SATA3"],
+		["pci-0000:00:17.0-ata-5","I-SATA4"],
+		["pci-0000:00:17.0-ata-6","I-SATA5"],
+		["pci-0000:00:17.0-ata-7","I-SATA6"],
+		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+	"H12SSL-i":[
+		["pci-0000:4a:00.0-ata-1","I_SATA0"],
+		["pci-0000:4a:00.0-ata-2","I_SATA1"],
+		["pci-0000:4a:00.0-ata-3","I-SATA2"],
+		["pci-0000:4a:00.0-ata-4","I-SATA3"],
+		["pci-0000:4a:00.0-ata-5","I-SATA4"],
+		["pci-0000:4a:00.0-ata-6","I-SATA5"],
+		["pci-0000:4a:00.0-ata-7","I-SATA6"],
+		["pci-0000:4a:00.0-ata-8","I-SATA7"]
+	],
+	"X11SPH-nCTF":[
+		["pci-0000:00:11.5-ata-1","S-SATA0"],
+		["pci-0000:00:11.5-ata-2","S-SATA1"],
+		["pci-0000:00:17.0-ata-1","I-SATA0"],
+		["pci-0000:00:17.0-ata-2","I-SATA1"],
+		["pci-0000:00:17.0-ata-3","I-SATA2"],
+		["pci-0000:00:17.0-ata-4","I-SATA3"],
+		["pci-0000:00:17.0-ata-5","I-SATA4"],
+		["pci-0000:00:17.0-ata-6","I-SATA5"],
+		["pci-0000:00:17.0-ata-7","I-SATA6"],
+		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+	"X11SPH-nCTPF":[
+		["pci-0000:00:11.5-ata-1","S-SATA0"],
+		["pci-0000:00:11.5-ata-2","S-SATA1"],
+		["pci-0000:00:17.0-ata-1","I-SATA0"],
+		["pci-0000:00:17.0-ata-2","I-SATA1"],
+		["pci-0000:00:17.0-ata-3","I-SATA2"],
+		["pci-0000:00:17.0-ata-4","I-SATA3"],
+		["pci-0000:00:17.0-ata-5","I-SATA4"],
+		["pci-0000:00:17.0-ata-6","I-SATA5"],
+		["pci-0000:00:17.0-ata-7","I-SATA6"],
+		["pci-0000:00:17.0-ata-8","I-SATA7"]
+	],
+ 	"ME03-CE0-000":[ 
+	##   ["pci-0000:00:0{X}:00.0-ata-{i}","I-SATA{i}"]
+	# 	["pci-0000:00:05:00.0-ata-1","I-SATA1"],
+	# 	["pci-0000:00:05:00.0-ata-2","I-SATA2"],
+	#   	["pci-0000:00:05:00.0-ata-3","I-SATA3"],
+	# 	["pci-0000:00:05:00.0-ata-4","I-SATA4"],
+  	# 	["pci-0000:00:05:00.0-ata-5","I-SATA5"],
+	# 	["pci-0000:00:05:00.0-ata-6","I-SATA6"],
+	#   	["pci-0000:00:05:00.0-ata-7","I-SATA7"],
+	# 	["pci-0000:00:05:00.0-ata-8","I-SATA8"],
+	#   	["pci-0000:00:05:00.1-ata-1","I-SATA1"],
+	# 	["pci-0000:00:05:00.1-ata-2","I-SATA2"],
+	#   	["pci-0000:00:05:00.1-ata-3","I-SATA3"],
+	# 	["pci-0000:00:05:00.1-ata-4","I-SATA4"],
 	]
 }
+
+
+def generate_dynamic_paths():
+	dynamic_paths = []
+	for X in range(0, 10):  # Assuming X can be 0-9, adjust this range if needed
+		for i in range(1, 9):  # Assuming i can be 1-8, adjust if needed
+			path = f"pci-0000:00:0{X}:00.0-ata-{i}"
+			connector = f"I-SATA{i}"
+			dynamic_paths.append([path, connector])
+	return dynamic_paths
 
 def ls_by_path(motherboard):
 	try:
 		ls_result = subprocess.Popen(
-			["ls","-l","/dev/disk/by-path"],stdout=subprocess.PIPE, universal_newlines=True).stdout
-	except:
+			["ls", "-l", "/dev/disk/by-path"], stdout=subprocess.PIPE, universal_newlines=True
+		).stdout
+	except Exception as e:
+		print(f"Error executing ls command: {e}")
 		return False
 
 	sata_connections = []
-	if(motherboard in g_motherboard_sata_addresses.keys()):
-		paths = g_motherboard_sata_addresses[motherboard]	
-		for line in ls_result:
-			for path in paths:
-				regex = re.search("{pth}(\.\d)?\s->\s\W+(.*)".format(pth=path[0]),line)
-				if regex != None:
-					sata_connections.append(
-						{
-							"Path": path[0],
-							"Connector": path[1],
-							"Device":regex.group(2)
-						}
-					)
-		return sata_connections
+	paths_matched = set()
+
+	# print(f"Motherboard detected: {motherboard}")
+
+	if motherboard in g_motherboard_sata_addresses.keys():
+		paths = g_motherboard_sata_addresses[motherboard]
+		if motherboard == "ME03-CE0-000":
+			paths = generate_dynamic_paths()  # Generate dynamic paths for ME03-CE0
+			for line in ls_result:
+				line = line.strip()
+				if not any(pth[0] in line for pth in paths):  # Skip already matched paths
+					fallback_regex = re.search(r"(\S+-ata-\d+)\s->\s\W+(.*)", line)
+					if fallback_regex is not None:
+						device = fallback_regex.group(2).strip().replace("../../", "")
+						# print(f"Fallback matched: {fallback_regex.group(1)} -> {device}")
+						sata_connections.append(
+							{
+								"Path": fallback_regex.group(1),
+								"Connector": ("I-SATA" + fallback_regex.group(1).split('-ata-')[-1]),
+								"Device": device
+							}
+						)
+		else:
+			for line in ls_result:
+				line = line.strip()
+				for path in paths:
+					# Match the full generated path directly with the line
+					if path[0] in line:
+						device = line.split(" -> ")[-1].strip().replace("../../", "")
+						# print(f"Matched path: {path[0]} -> {device}")
+						sata_connections.append(
+							{
+								"Path": path[0],
+								"Connector": path[1],
+								"Device": device
+							}
+						)
+						paths_matched.add(path[0])
+
+		
 	else:
+		# Generic handling for unrecognized motherboards
+		# print("Motherboard not recognized. Using generic detection.")
 		for line in ls_result:
-			regex = re.search("(\S+)-ata-(\d)\s->\s\W+(.*)",line)
-			if regex != None:
+			line = line.strip()
+			regex = re.search(r"(\S+-ata-\d+)\s->\s\W+(.*)", line)
+			if regex is not None:
+				device = regex.group(2).strip().replace("../../", "")
+				# print(f"Generic matched: {regex.group(1)} -> {device}")
 				sata_connections.append(
-						{
-							"Path": regex.group(1),
-							"Connector":("I-SATA"+regex.group(2)),
-							"Device":regex.group(3)
-						}
-					)
-		return sata_connections
+					{
+						"Path": regex.group(1),
+						"Connector": ("I-SATA" + regex.group(1).split('-ata-')[-1]),
+						"Device": device
+					}
+				)
+
+	# print(f"Found SATA connections: {sata_connections}")
+	return sata_connections
+
 
 def lsblk(device):
 	try:
@@ -146,6 +266,7 @@ def get_motherboard_model():
 			if regex != None:
 				mobo_model = field
 				break
+	# print(mobo_model)
 	return mobo_model
 
 def main():
@@ -171,4 +292,4 @@ def main():
 	print(json.dumps(json.loads(output_str),indent=4))
 
 if __name__ == "__main__":
-    main()
+	main()

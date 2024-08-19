@@ -17,6 +17,7 @@
 import re
 import subprocess
 import json
+import sys
 from optparse import OptionParser
 
 g_dmi_fields = [
@@ -24,6 +25,26 @@ g_dmi_fields = [
 	"Designation",
 	"Type"
 ]
+
+# ASRock Board 
+BA_EPC612D8A = {
+	"ff00:16:00.0":"0000:17:00.0", #PCIE1
+	"ff00:16:02.0":"0000:1c:00.0", #PCIE2
+	"ff00:64:00.0":"0000:65:00.0", #PCIE4
+	"ff00:64:02.0":"0000:66:00.0", #PCIE3
+	"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
+	"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
+}
+
+# Gigabyte Board  
+PCIE_SLOT_TYPE_ME03CE0 = {
+	"PCIE_1":"PCI Express 4 x16",
+	"PCIE_2":"PCI Express 4 x8",
+	"PCIE_3":"PCI Express 4 x16",
+	"PCIE_4":"PCI Express 5 x16",
+	"PCIE_5":"PCI Express 5 x16",
+	"PCIE_6":"PCI Express 5 x16",
+}
 
 def get_ipv4(addr_info):
 	if not addr_info:
@@ -130,17 +151,9 @@ def get_network_info():
 	# Take the subset of fields in the list for each card and 
 	# append them as a dictionary into a new list. 
 	cards = []
+ 
 	for i in range(0,len(slot_entries),len(g_dmi_fields)):
 		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
-
-	BA_EPC612D8A = {
-		"ff00:16:00.0":"0000:17:00.0", #PCIE1
-		"ff00:16:02.0":"0000:1c:00.0", #PCIE2
-		"ff00:64:00.0":"0000:65:00.0", #PCIE4
-		"ff00:64:02.0":"0000:66:00.0", #PCIE3
-		"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
-		"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
-	}
 
 	for card in cards:
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
@@ -165,23 +178,36 @@ def get_network_info():
 	final_card_lst = []
 	for card in valid_cards:
 		card_duplicate = card.copy()
+		
+		# Check if the connection name ends with "0np0" and replace it with "1np1"
+		if card_duplicate["Connection Name"].endswith("0np0"):
+			card_duplicate["Connection Name"] = card_duplicate["Connection Name"][:-4] + "1np1"
+		else:
+			# Otherwise, just change the last digit from '0' to '1'
+			card_duplicate["Connection Name"] = card_duplicate["Connection Name"][:-1] + "1"
+		
+		# Modify the Bus Address
 		card_duplicate["Bus Address"] = card_duplicate["Bus Address"][:-1] + "1"
-		card_duplicate["Connection Name"] = card_duplicate["Connection Name"][:-1] + "1"
+		
+		# Append the original and duplicate card to the final list
 		final_card_lst.append(card)
 		final_card_lst.append(card_duplicate)
 
-
-	# add the relevant fields to the list of connections when we have a matching
+	# Add the relevant fields to the list of connections when we have a matching
 	# Connection Name
 	for obj in j_connections:
-		for card in final_card_lst:		
+		matched = False  # Track if we matched the connection
+		for card in final_card_lst:
 			if obj["Connection Name"] == card["Connection Name"]:
 				obj["Bus Address"] = card["Bus Address"]
 				obj["Designation"] = card["Designation"]
 				obj["PCI Type"] = card["Type"]
-				regex = re.search("^.*(?:SLOT|PCIE)(\d).*",card["Designation"])
-				if regex != None:
+
+				# Modify the regex to capture the entire PCIE_X format
+				regex = re.search(r"(PCIE_\d+|(?:SLOT|PCIE)\d+)", card["Designation"])
+				if regex is not None:
 					obj["PCI Slot"] = regex.group(1)
+
 
 	return j_connections
 

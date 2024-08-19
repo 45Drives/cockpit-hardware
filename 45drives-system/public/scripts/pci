@@ -24,11 +24,13 @@ g_network_card_models = [
 	"XXV710", 
 	"82599ES",
 	"BCM57412",
-	"MT27800"
+	"MT27800",
+	"BCM57416",
 ]
 
 g_sata_controllers = [
-	"ASM1062"
+	"ASM1062",
+	"ASM1164"
 ]
 
 # ASRock Board 
@@ -93,7 +95,7 @@ def dmidecode():
 					current_slot["Type"] = "<OUT OF SPEC>"
 
 			# Mark empty slots as Available
-			if "Current Usage" not in current_slot or current_slot["Current Usage"] != "In Use":
+			if "Current Usage" not in current_slot or (current_slot.get("Current Usage") != "In Use" and current_slot.get("Type") != "MCIO Port"):
 				current_slot["Current Usage"] = "Available"
 
 			# Translate Bus Address if needed
@@ -107,70 +109,58 @@ def dmidecode():
 
 	return cards
 
-def check_slot_availability(slots):
-    """
-    Check the availability of each slot based on its associated bus addresses.
-    """
-    for slot in slots:
-        bus_address = slot.get("Bus Address", "")
-        if bus_address:
-            # Extract the last part of the bus address after the last ':'
-            bus_segment = bus_address.split(":")[-1].split(".")[0]
-            # Check if the last digit is '0', which typically indicates the slot is in use
-            if bus_segment[-1] == "0":
-                slot["Current Usage"] = "In Use"
-            else:
-                slot["Current Usage"] = "Available"
-        else:
-            slot["Current Usage"] = "Available"
 
-    return slots
+def check_slot_availability(slots):
+	# Check the availability of each slot based on its associated bus addresses.
+	
+	for slot in slots:
+		bus_address = slot.get("Bus Address", "")
+		if bus_address:
+			# Extract the last part of the bus address after the last ':'
+			bus_segment = bus_address.split(":")[-1].split(".")[0]
+			# Check if the last digit is '0', which typically indicates the slot is in use
+			if bus_segment[-1] == "0":
+				slot["Current Usage"] = "In Use"
+			else:
+				if slot["Type"] != "MCIO Port":
+					slot["Current Usage"] = "Available"
+		else:
+			slot["Current Usage"] = "Available"
+
+	return slots
 
 
 def match_pci_slots_with_devices(pci_slots, devices):
-    """
-    Filter devices by matching bus addresses with PCI slots.
-    Ensure that only one entry per designation is added:
-    - If a slot is "In Use," it takes precedence.
-    - If no "In Use" slot exists, include only one "Available" entry.
-    """
-    matched_devices = {}
-    
-    for slot in pci_slots:
-        designation = slot["Designation"]
-        
-        if slot["Current Usage"] == "In Use":
-            # If the slot is "In Use," replace any existing entry for this designation
-            matched_devices[designation] = slot
-        elif designation not in matched_devices:
-            # Only add "Available" slots if no "In Use" slot exists for the designation
-            matched_devices[designation] = slot
-    
-    # Match devices with PCI slots
-    for device in devices:
-        for designation, slot in matched_devices.items():
-            if slot.get("Bus Address") == device.get("Bus Address"):
-                slot.update(device)
-                break
-    
-    return list(matched_devices.values())
+	# Filter devices by matching bus addresses with PCI slots.
+	# Ensure that only one entry per designation is added:
+	# - If a slot is "In Use," it takes precedence.
+	# - If no "In Use" slot exists, include only one "Available" entry.
+	
+	matched_devices = {}
+	
+	for slot in pci_slots:
+		# Skip any MCIO Ports
+		if slot.get("Type") == "MCIO Port":
+			continue
 
+		designation = slot["Designation"]
+		
+		if slot["Current Usage"] == "In Use":
+			# If the slot is "In Use," replace any existing entry for this designation
+			matched_devices[designation] = slot
+		elif designation not in matched_devices:
+			# Only add "Available" slots if no "In Use" slot exists for the designation
+			matched_devices[designation] = slot
+	
+	# Match devices with PCI slots
+	for device in devices:
+		for designation, slot in matched_devices.items():
+			if slot.get("Bus Address") == device.get("Bus Address"):
+				slot.update(device)
+				break
+	
+	return list(matched_devices.values())
 
-def lspci_hba():
-	try:
-		lspci_hba_result = subprocess.Popen(
-			["lspci", "-d", "1000:*","-vv", "-i", "/opt/45drives/tools/pci.ids"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,universal_newlines=True).stdout.read()
-	except:
-		return False
-	hba_cards = []
-	hba_dict = {}
-	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i|9361-24i|9660-16i).*\n",re.MULTILINE)
-	for match in rx_pci.finditer(lspci_hba_result):
-		hba_dict["Model"] = match.group(2)
-		hba_dict["Bus Address"] = "0000:" + match.group(1)
-		hba_cards.append(hba_dict.copy())
-
-	return hba_cards
 
 def storcli():
 	try:
@@ -193,23 +183,48 @@ def storcli():
 	
 	return hba_cards
 
+
+def lspci_hba():
+	try:
+		lspci_hba_result = subprocess.Popen(
+			["lspci", "-d", "1000:*","-vv", "-i", "/opt/45drives/tools/pci.ids"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,universal_newlines=True).stdout.read()
+	except:
+		return False
+	hba_cards = []
+	hba_dict = {}
+	rx_pci=re.compile(r"^(\w\w:\w\w\.\w).*\n.*(?:(?:(?:^\t).*\n)+^.*)?(9600-16i|9600-24i|SAS9305-16i|SAS9305-24i|HBA 9405W-16i|9361-16i|HBA 9400-16i|9361-24i|9660-16i).*\n",re.MULTILINE)
+	for match in rx_pci.finditer(lspci_hba_result):
+		hba_dict["Model"] = match.group(2)
+		hba_dict["Bus Address"] = "0000:" + match.group(1)
+		hba_cards.append(hba_dict.copy())
+
+	return hba_cards
+
+
 def network():
-	network_script_path = "/usr/share/cockpit/45drives-system/scripts/network"
 	try:
 		network_result = subprocess.Popen(
-			[network_script_path],stdout=subprocess.PIPE,universal_newlines=True).stdout
+			["/usr/share/cockpit/45drives-motherboard/helper_scripts/network"],
+			stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
-		print(f"Error running '{network_script_path}'")
-		sys.exit(1)
+		return False
 	
-	network_output = json.loads(network_result.read())
+	network_output_str = network_result.read()
+	# print("Raw network command output:\n", network_output_str)  # Add this line to see the raw output
+
+	try:
+		network_output = json.loads(network_output_str)
+	except json.JSONDecodeError as e:
+		print(f"JSON decoding failed: {e}")
+		return False
 
 	network_cards = []
-	for connection in network_output:
-		if "pciSlot" in connection.keys():
+	for connection in network_output["Network Info"]:
+		if "PCI Slot" in connection.keys():
 			network_cards.append(connection)
 
 	return network_cards
+
 
 def getNetworkCardModel(busAddress):
 	trimmedBusAddress = busAddress[5:]
@@ -302,15 +317,15 @@ def get_hba_server_info():
 	else:
 		return []
 
-def check_pci_network_card_match(slot,card):
-	if ("ID" in slot.keys() and card["pciSlot"] == slot["ID"]):
+def check_pci_network_card_match(slot, card):
+	if "ID" in slot and "PCI Slot" in card and card["PCI Slot"] == slot["ID"]:
 		return True
-	if "Designation" in slot.keys():
-		regex = r"(SLOT|PCIE)(\d+)"
+	if "Designation" in slot:
+		regex = r"(PCIE_\d+|(?:SLOT|PCIE)\d+)"
 		test_str = slot["Designation"]
 		match = re.match(regex, test_str, re.DOTALL)
 		if match:
-			return (match.group(2) == card["pciSlot"])
+			return (match.group(1) == card.get("PCI Slot", ""))
 	return False
 
 def main():
@@ -333,15 +348,17 @@ def main():
 	# /usr/share/cockpit/45drives-system/helper_scripts/network script's
 	# .json formatted output. Append this network connection 
 	# to a list of connections for that specific PCI slot
+
 	if pci_slots and network_cards:
 		for slot in pci_slots:
 			for card in network_cards:
-				if check_pci_network_card_match(slot,card):
+				if check_pci_network_card_match(slot, card):
 					slot["Card Type"] = "Network Card"
 					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]))
 					if "Connections" not in slot.keys():
 						slot["Connections"] = []
 					slot["Connections"].append(card)
+
 
 	# for each pci slot, see if there are any sata_cards with
 	# matching bus addresses. if so, append the following fields
@@ -373,7 +390,7 @@ def main():
 				slot["Firmware Version"] = card.get("Firmware Version","-")
 		result.append({
 			"slot": ' '.join(slot["Designation"].split()[0:2]), 
-			"type": slot["Type"], 
+			"type": slot.get("PCI Type", slot.get("Type", "-")),  # Use 'PCI Type' if exists, else 'Type'
 			"availibility": slot["Current Usage"], 
 			"busAddress": slot["Bus Address"], 
 			"cardType": slot["Card Type"] if "Card Type" in slot.keys() else "-", 
@@ -398,4 +415,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+	main()

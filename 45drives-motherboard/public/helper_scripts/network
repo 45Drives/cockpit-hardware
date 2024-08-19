@@ -25,6 +25,26 @@ g_dmi_fields = [
 	"Type"
 ]
 
+# ASRock Board 
+BA_EPC612D8A = {
+	"ff00:16:00.0":"0000:17:00.0", #PCIE1
+	"ff00:16:02.0":"0000:1c:00.0", #PCIE2
+	"ff00:64:00.0":"0000:65:00.0", #PCIE4
+	"ff00:64:02.0":"0000:66:00.0", #PCIE3
+	"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
+	"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
+}
+
+# Gigabyte Board  
+PCIE_SLOT_TYPE_ME03CE0 = {
+	"PCIE_1":"PCI Express 4 x16",
+	"PCIE_2":"PCI Express 4 x8",
+	"PCIE_3":"PCI Express 4 x16",
+	"PCIE_4":"PCI Express 5 x16",
+	"PCIE_5":"PCI Express 5 x16",
+	"PCIE_6":"PCI Express 5 x16",
+}
+
 def get_network_info():
 	# run the command: ip addr
 	# this will parse the output of this command to obtain the following:
@@ -121,17 +141,18 @@ def get_network_info():
 	# Take the subset of fields in the list for each card and 
 	# append them as a dictionary into a new list. 
 	cards = []
-	for i in range(0,len(slot_entries),len(g_dmi_fields)):
-		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
+	for i in range(0, len(slot_entries), len(g_dmi_fields)):
+		card = dict(slot_entries[i:i+len(g_dmi_fields)])
+		
+		# Assign PCIe Type based on the Designation
+		if "Designation" in card:
+			designation = card["Designation"]
+			if designation in PCIE_SLOT_TYPE_ME03CE0:
+				card["Type"] = PCIE_SLOT_TYPE_ME03CE0[designation]
+			else:
+				card["Type"] = "<OUT OF SPEC>"
 
-	BA_EPC612D8A = {
-		"ff00:16:00.0":"0000:17:00.0", #PCIE1
-		"ff00:16:02.0":"0000:1c:00.0", #PCIE2
-		"ff00:64:00.0":"0000:65:00.0", #PCIE4
-		"ff00:64:02.0":"0000:66:00.0", #PCIE3
-		"ff00:b2:00.0":"0000:b3:00.0", #PCIE6
-		"ff00:b2:02.0":"0000:b4:00.0" #PCIE5
-	}
+		cards.append(card)
 
 	for card in cards:
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
@@ -172,7 +193,7 @@ def get_network_info():
 				obj["Bus Address"] = card["Bus Address"]
 				obj["Designation"] = card["Designation"]
 				obj["PCI Type"] = card["Type"]
-				regex = re.search("^.*(?:SLOT|PCIE)(\d).*",card["Designation"])
+				regex = re.search(r"(PCIE_\d+|(?:SLOT|PCIE)\d+)",card["Designation"])
 				if regex != None:
 					obj["PCI Slot"] = regex.group(1)
 

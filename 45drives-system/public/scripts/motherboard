@@ -29,8 +29,12 @@ g_dmi_mobo_fields = {
 		"X11SSH-CTF",
 		"X11SSM-F",
 		"X11SPi-TF",
+		"X12SPL-F",
+		"H12SSL-i",
+		"X11SPH-nCTF",
+		"X11SPH-nCTPF",
 		"EPC621D8A",
-		"ME03-CE0-000"
+		"ME03-CE0-000",
 	],
 	"Serial Number": None
 }
@@ -44,7 +48,8 @@ g_dmi_cpu_fields = {
 		"AMD EPYC 8324P 32-Core Processor",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
-		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz"
+		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
+		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -85,6 +90,8 @@ g_ipmitool_sensor_fields = {
 	"DIMMF2 Temp": " (C)",
 	"DIMMG1 Temp": " (C)",
 	"DIMMH1 Temp": " (C)",
+	"DIMMABCD Temp": " (C)",
+	"DIMMEFGH Temp": " (C)",
 	"DDR4_A Temp": " (C)", #ASRockRack 
 	"DDR4_B Temp": " (C)", #ASRockRack
 	"DDR4_C Temp": " (C)", #ASRockRack
