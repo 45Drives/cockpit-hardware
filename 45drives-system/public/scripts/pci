@@ -25,12 +25,12 @@ g_network_card_models = [
 	"82599ES",
 	"BCM57412",
 	"MT27800",
-	"BCM57416",
+	# "BCM57416",
 ]
 
 g_sata_controllers = [
 	"ASM1062",
-	"ASM1164"
+	# "ASM1164"
 ]
 
 # ASRock Board 

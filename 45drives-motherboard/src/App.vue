@@ -51,7 +51,8 @@ export default {
       "X12DPi-N6",
       "H12SSL-i",
       "X11SPH-nCTF",
-      "X11SPH-nCTPF"
+      "X11SPH-nCTPF",
+      "ME03-CE0-000"
     ]);
 
     const adminCheck = ref(false);
