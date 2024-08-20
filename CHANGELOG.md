@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.4.0-1
+## cockpit-45drives-hardware 2.4.1-1
 
-* TESTING - Adds Gigabyte  ME03-CE0 Motherboard Support
+* Adds ME03 board support with finalized assets

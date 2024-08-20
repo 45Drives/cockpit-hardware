@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue Aug 20 2024 Jordan Keough <jkeough@45drives.com> 2.4.1-1
+- Adds ME03 board support with finalized assets
 * Tue Aug 20 2024 Jordan Keough <jkeough@45drives.com> 2.4.0-1
 - TESTING - Adds Gigabyte  ME03-CE0 Motherboard Support
 * Tue Jul 09 2024 Jordan Keough <jkeough@45drives.com> 2.3.6-2
