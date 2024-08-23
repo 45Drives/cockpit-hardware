@@ -220,7 +220,7 @@
         "filename": "DIMM_P0_H1.png"
     },
     {
-        "type": "mcio_4i",
+        "type": "U2_P0_G3A1",
         "id": 0,
         "shape": "rect",
         "x0": 443,
@@ -231,7 +231,7 @@
         "filename": "U2_P0_G3A1.png"
     },
     {
-        "type": "mcio_4i",
+        "type": "U2_P0_G3B0",
         "id": 1,
         "shape": "rect",
         "x0": 824,
@@ -242,7 +242,7 @@
         "filename": "U2_P0_G3B0.png"
     },
     {
-        "type": "mcio_4i",
+        "type": "U2_P0_G3A0",
         "id": 2,
         "shape": "rect",
         "x0": 856,

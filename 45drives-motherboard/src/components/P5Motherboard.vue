@@ -1307,19 +1307,27 @@ export default {
 
       m.getSATA = function () {
         if (sata_info) {
-          //sata info is a global variable in hardware.js
+          // Group devices by connector
+          let connectorMap = {};
           for (let i = 0; i < sata_info["SATA Info"].length; i++) {
-            for (let c = 0; c < components.length; c++) {
-              if (
-                sata_info["SATA Info"][i]["Connector"] == components[c].type
-              ) {
-                let popup_str = "";
-                let padding = 11;
-                popup_str +=
-                  "Connector: " + sata_info["SATA Info"][i]["Connector"] + "\n";
-                popup_str +=
-                  "Device: " + sata_info["SATA Info"][i]["Device"] + "\n";
+            let connector = sata_info["SATA Info"][i]["Connector"];
+            if (!connectorMap[connector]) {
+              connectorMap[connector] = [];
+            }
+            connectorMap[connector].push(sata_info["SATA Info"][i]);
+          }
+
+          for (let c = 0; c < components.length; c++) {
+            let connectorType = components[c].type;
+            if (connectorMap[connectorType]) {
+              let popup_str = "Connector: " + connectorType + "\n";
+
+              // Loop through each device connected to this connector
+              for (let i = 0; i < connectorMap[connectorType].length; i++) {
+                let deviceInfo = connectorMap[connectorType][i];
+                popup_str += "Device: " + deviceInfo["Device"] + "\n";
                 popup_str += "Partition Information: \n";
+                let padding = 11;
                 popup_str +=
                   "| " +
                   "Name".padEnd(padding, " ") +
@@ -1327,47 +1335,50 @@ export default {
                   "Type".padEnd(padding, " ") +
                   "Mount Point".padEnd(padding, " ") +
                   " |\n";
-                for (
-                  let p = 0;
-                  p < sata_info["SATA Info"][i]["Partitions"].length;
-                  p++
-                ) {
+
+                for (let p = 0; p < deviceInfo["Partitions"].length; p++) {
                   popup_str +=
                     "| " +
-                    sata_info["SATA Info"][i]["Partitions"][p]["Name"].padEnd(
+                    deviceInfo["Partitions"][p]["Name"].padEnd(
                       padding,
                       " "
                     );
-                  popup_str += sata_info["SATA Info"][i]["Partitions"][p][
-                    "Size"
-                  ].padEnd(padding, " ");
-                  popup_str += sata_info["SATA Info"][i]["Partitions"][p][
-                    "Type"
-                  ].padEnd(padding, " ");
+                  popup_str += deviceInfo["Partitions"][p]["Size"].padEnd(
+                    padding,
+                    " "
+                  );
+                  popup_str += deviceInfo["Partitions"][p]["Type"].padEnd(
+                    padding,
+                    " "
+                  );
                   popup_str +=
-                    sata_info["SATA Info"][i]["Partitions"][p][
-                      "Mount Point"
-                    ].padEnd(padding, " ") + " |\n";
+                    deviceInfo["Partitions"][p]["Mount Point"].padEnd(
+                      padding,
+                      " "
+                    ) + " |\n";
                 }
-                components[c].popup.content = popup_str.slice(0, -1);
-                peripherals.push(
-                  new peripheral(
-                    "SATA",
-                    components[c]["x0"],
-                    components[c]["y0"],
-                    components[c]["width"],
-                    components[c]["height"],
-                    "#FFFFFF00",
-                    -1,
-                    1.0
-                  )
-                );
-                break;
+                popup_str += "\n";  // Add a separator between devices
               }
+
+              // Assign the complete popup string to the component's popup content
+              components[c].popup.content = popup_str.trim();
+              peripherals.push(
+                new peripheral(
+                  "SATA",
+                  components[c]["x0"],
+                  components[c]["y0"],
+                  components[c]["width"],
+                  components[c]["height"],
+                  "#FFFFFF00",
+                  -1,
+                  1.0
+                )
+              );
             }
           }
         }
       };
+
 
       m.loadAssets = function () {
         background_img = m.loadImage(bgImgPath, (im) => {

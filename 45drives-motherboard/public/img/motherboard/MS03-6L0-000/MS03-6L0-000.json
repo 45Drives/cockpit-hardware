@@ -1,0 +1,200 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 497,
+        "y0": 287,
+        "width": 224,
+        "height": 324,
+        "diam": 0,
+        "filename": "CPU0.png"
+    },
+    {
+        "type": "PCIE_1",
+        "id": "1",
+        "shape": "rect",
+        "x0": 43,
+        "y0": 140,
+        "width": 24,
+        "height": 151,
+        "diam": 24,
+        "filename": "PCI_SLOT_1.png"
+    },
+    {
+        "type": "PCIE_2",
+        "id": "2",
+        "shape": "rect",
+        "x0": 98,
+        "y0": 140,
+        "width": 26,
+        "height": 253,
+        "diam": 24,
+        "filename": "PCI_SLOT_2.png"
+    },
+    {
+        "type": "PCIE_3",
+        "id": "3",
+        "shape": "rect",
+        "x0": 158,
+        "y0": 140,
+        "width": 26,
+        "height": 253,
+        "diam": 24,
+        "filename": "PCI_SLOT_3.png"
+    },
+    {
+        "type": "PCIE_4",
+        "id": "4",
+        "shape": "rect",
+        "x0": 219,
+        "y0": 140,
+        "width": 24,
+        "height": 253,
+        "diam": 24,
+        "filename": "PCI_SLOT_4.png"
+    },
+    {
+        "type": "PCIE_5",
+        "id": "5",
+        "shape": "rect",
+        "x0": 275,
+        "y0": 140,
+        "width": 24,
+        "height": 253,
+        "diam": 24,
+        "filename": "PCI_SLOT_5.png"
+    },
+    {
+        "type": "PCIE_6",
+        "id": "6",
+        "shape": "rect",
+        "x0": 333,
+        "y0": 140,
+        "width": 24,
+        "height": 253,
+        "diam": 24,
+        "filename": "PCI_SLOT_6.png"
+    },
+    {
+        "type": "DIMM_P0_A0",
+        "id": 1,
+        "shape": "rect",
+        "x0": 393,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_A0.png"
+    },
+    {
+        "type": "DIMM_P0_B0",
+        "id": 2,
+        "shape": "rect",
+        "x0": 417,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_B0.png"
+    },
+    {
+        "type": "DIMM_P0_C0",
+        "id": 3,
+        "shape": "rect",
+        "x0": 442,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_C0.png"
+    },
+    {
+        "type": "DIMM_P0_D0",
+        "id": 4,
+        "shape": "rect",
+        "x0": 466,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_D0.png"
+    },
+    {
+        "type": "DIMM_P0_E0",
+        "id": 5,
+        "shape": "rect",
+        "x0": 738,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_E0.png"
+    },
+    {
+        "type": "DIMM_P0_F0",
+        "id": 6,
+        "shape": "rect",
+        "x0": 762,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_F0.png"
+    },
+    {
+        "type": "DIMM_P0_G0",
+        "id": 7,
+        "shape": "rect",
+        "x0": 786,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_G0.png"
+    },
+    {
+        "type": "DIMM_P0_H0",
+        "id": 8,
+        "shape": "rect",
+        "x0": 811,
+        "y0": 243,
+        "width": 24,
+        "height": 405,
+        "diam": 20,
+        "filename": "DIMM_P0_H0.png"
+    },
+    {
+        "type": "M2_0",
+        "id": 0,
+        "shape": "rect",
+        "x0": 288,
+        "y0": 664,
+        "width": 65,
+        "height": 22,
+        "diam": 20,
+        "filename": "M2_SLOT.png"
+    },
+    {
+        "type": "SL_SATA1",
+        "id": 0,
+        "shape": "rect",
+        "x0": 149,
+        "y0": 652,
+        "width": 40,
+        "height": 43,
+        "diam": 20,
+        "filename": "SLIM_SAS.png"
+    },
+    {
+        "type": "SATA_4_5",
+        "id": 0,
+        "shape": "rect",
+        "x0": 192,
+        "y0": 653,
+        "width": 49,
+        "height": 42,
+        "diam": 20,
+        "filename": "SATA_90_DEG.png"
+    }
+]

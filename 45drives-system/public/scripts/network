@@ -37,7 +37,7 @@ BA_EPC612D8A = {
 }
 
 # Gigabyte Board  
-PCIE_SLOT_TYPE_ME03CE0 = {
+PCIE_SLOT_TYPE_GIGABYTE = {
 	"PCIE_1":"PCI Express 4 x16",
 	"PCIE_2":"PCI Express 4 x8",
 	"PCIE_3":"PCI Express 4 x16",

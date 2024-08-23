@@ -61,16 +61,16 @@ g_ipmitool_sensor_fields = {
 	"DDR4_D Temp": " (C)", #ASRockRack
 	"DDR4_E Temp": " (C)", #ASRockRack
 	"DDR4_F Temp": " (C)",  #ASRockRack
-	"CPU0_TEMP": " (C)", #ME03-CE0
-	"DIMMG0_TEMP": " (C)", #ME03-CE0
-    "DIMMG1_TEMP": " (C)", #ME03-CE0
-    "CPU0_FAN": " (RPM)", #ME03-CE0
-    "SYS_FAN1": " (RPM)", #ME03-CE0
-    "SYS_FAN2": " (RPM)", #ME03-CE0
-    "SYS_FAN3": " (RPM)", #ME03-CE0
-    "SYS_FAN4": " (RPM)", #ME03-CE0
-    "SYS_FAN5": " (RPM)", #ME03-CE0
-	"SYS_POWER": " (W)", #ME03-CE0
+	"CPU0_TEMP": " (C)", #Giga Computing (GIGABYTE)
+	"DIMMG0_TEMP": " (C)", #Giga Computing (GIGABYTE)
+    "DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
+    "CPU0_FAN": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN1": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN2": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN3": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
 }
 
 

@@ -52,7 +52,8 @@ export default {
       "H12SSL-i",
       "X11SPH-nCTF",
       "X11SPH-nCTPF",
-      "ME03-CE0-000"
+      "ME03-CE0-000",
+      "MS03-6L0-000"
     ]);
 
     const adminCheck = ref(false);

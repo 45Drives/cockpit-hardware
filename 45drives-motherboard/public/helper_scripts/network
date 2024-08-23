@@ -36,7 +36,7 @@ BA_EPC612D8A = {
 }
 
 # Gigabyte Board  
-PCIE_SLOT_TYPE_ME03CE0 = {
+PCIE_SLOT_TYPE_GIGABYTE = {
 	"PCIE_1":"PCI Express 4 x16",
 	"PCIE_2":"PCI Express 4 x8",
 	"PCIE_3":"PCI Express 4 x16",
@@ -147,10 +147,11 @@ def get_network_info():
 		# Assign PCIe Type based on the Designation
 		if "Designation" in card:
 			designation = card["Designation"]
-			if designation in PCIE_SLOT_TYPE_ME03CE0:
-				card["Type"] = PCIE_SLOT_TYPE_ME03CE0[designation]
+			actual_type = card.get("Type")
+			if designation in PCIE_SLOT_TYPE_GIGABYTE:
+				card["Type"] = PCIE_SLOT_TYPE_GIGABYTE[designation]
 			else:
-				card["Type"] = "<OUT OF SPEC>"
+				card["Type"] = actual_type
 
 		cards.append(card)
 

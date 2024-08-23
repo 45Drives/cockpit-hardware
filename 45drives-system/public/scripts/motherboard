@@ -35,13 +35,16 @@ g_dmi_mobo_fields = {
 		"X11SPH-nCTPF",
 		"EPC621D8A",
 		"ME03-CE0-000",
+		"MS03-6L0-000",
+  		# "MS73-HB0-000",
+    	# "MZ73-LM0-000"
 	],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2", "P0", "P1"],
+	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
@@ -50,6 +53,7 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
+  		"Intel(R) Xeon(R) Gold 6430"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -98,16 +102,16 @@ g_ipmitool_sensor_fields = {
 	"DDR4_D Temp": " (C)", #ASRockRack
 	"DDR4_E Temp": " (C)", #ASRockRack
 	"DDR4_F Temp": " (C)",  #ASRockRack
-	"CPU0_TEMP": " (C)", #ME03-CE0
-	"DIMMG0_TEMP": " (C)", #ME03-CE0
-    "DIMMG1_TEMP": " (C)", #ME03-CE0
-    "CPU0_FAN": " (RPM)", #ME03-CE0
-    "SYS_FAN1": " (RPM)", #ME03-CE0
-    "SYS_FAN2": " (RPM)", #ME03-CE0
-    "SYS_FAN3": " (RPM)", #ME03-CE0
-    "SYS_FAN4": " (RPM)", #ME03-CE0
-    "SYS_FAN5": " (RPM)", #ME03-CE0
-	"SYS_POWER": " (W)", #ME03-CE0
+	"CPU0_TEMP": " (C)", #Giga Computing (GIGABYTE)
+	"DIMMG0_TEMP": " (C)", #Giga Computing (GIGABYTE)
+    "DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
+    "CPU0_FAN": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN1": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN2": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN3": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
+    "SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
 }
 
 ################################################################################

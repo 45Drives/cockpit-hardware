@@ -71,8 +71,8 @@ g_ipmitool_sensor_fields = {
 	"P1_DIMME~H Temp": " (C)", #X12DPi-N6
 	"P2_DIMMA~D Temp": " (C)", #X12DPi-N6
 	"P2_DIMME~H Temp": " (C)", #X12DPi-N6
-  	"DIMMG0_TEMP": " (C)", #ME03-CE0
-  	"DIMMG1_TEMP": " (C)", #ME03-CE0
+  	"DIMMG0_TEMP": " (C)", #Giga Computing (GIGABYTE)
+  	"DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
 }
 
 def ipmitool_sensor():
@@ -170,6 +170,7 @@ def dmidecode():
 		"DIMM_P0_A1": ["DIMMG0"],
 		"DIMM_P0_B0": ["DIMMG0"],
 		"DIMM_P0_B1": ["DIMMG0"],
+  		"DIMM_P0_C0": ["DIMMG0"],
 		"DIMM_P0_D0": ["DIMMG0"],
 		"DIMM_P0_D1": ["DIMMG0"],
 		"DIMM_P0_E0": ["DIMMG1"],
@@ -178,6 +179,7 @@ def dmidecode():
 		"DIMM_P0_F1": ["DIMMG1"],
 		"DIMM_P0_H0": ["DIMMG1"],
 		"DIMM_P0_H1": ["DIMMG1"],
+		"DIMM_P0_G0": ["DIMMG1"],
 	}
 
 	for slot in slot_entries:

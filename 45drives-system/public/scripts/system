@@ -29,21 +29,25 @@ g_dmi_mobo_fields = {
 		"X11SSM-F",
 		"X11SPi-TF",
 		"EPC621D8A",
-		"ME03-CE0-000"
+		"ME03-CE0-000",
+		"MS03-6L0-000",
+  		# "MS73-HB0-000",
+    	# "MZ73-LM0-000"
 	],
 	"Serial Number": None
 }
-
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2", "P0", "P1"],
+	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
-		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz"
+		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
+		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
+  		"Intel(R) Xeon(R) Gold 6430"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
