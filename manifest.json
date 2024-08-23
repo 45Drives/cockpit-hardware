@@ -3,7 +3,7 @@
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
     "prerelease": true,
-    "version": "2.4.0",
+    "version": "2.4.2",
     "buildVersion": "1",
     "author": "Mark Hooper <mhooper@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-hardware",
@@ -58,13 +58,11 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "2.4.1",
+        "version": "2.4.2",
         "buildVersion": "1",
         "ignore": [],
-        "date": "2024-08-23T10:39:10.980812",
-        "packager": "Jordan Keough <jkeough@45drives.com>",
-        "changes": [
-            "Adds second new Gigabyte motherboard (MS03-6L0) and fixes error in SATA Helper script so all sata drives plugged into mobo ports show in 45Drives Motherboard module"
-        ]
+        "date": null,
+        "packager": "Mark Hooper <mhooper@45drives.com>",
+        "changes": []
     }
 }

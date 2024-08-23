@@ -1,3 +1,12 @@
+cockpit-45drives-hardware (2.4.2-1focal) focal; urgency=medium
+
+  * Adds second new Gigabyte motherboard (MS03-6L0) and fixes error in SATA Helper
+    script so all sata drives plugged into mobo ports show in 45Drives Motherboard
+    module
+  * Updating build number due to packaging tag conflict
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 23 Aug 2024 07:56:52 -0300
+
 cockpit-45drives-hardware (2.4.1-1focal) focal; urgency=medium
 
   * Adds ME03 board support with finalized assets
