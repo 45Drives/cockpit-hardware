@@ -134,11 +134,6 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-8","I-SATA7"]
 	],
 	"ME03-CE0-000":[
-	#   ["pci-0000:00:0{X}:00.0-ata-{i}","I-SATA{i}"]
- 
-	#	["pci-0000:00:0{X}:00.0-ata-{1-4}","U3_P0_G3A0"],
-	#	["pci-0000:00:0{X}:00.0-ata-{5-8}","U3_P0_G3A1"],
-	#	["pci-0000:00:0{X}:00.1-ata-{1-4}","U3_P0_G3B0"]
 	],
 	"MS03-6L0-000":[
 		# ["pci-0000:00:17.0-ata-1","I-SATA0"],
@@ -154,17 +149,40 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-5","SATA_4_5"],
 		["pci-0000:00:17.0-ata-6","SATA_4_5"],
 
+	],
+	"MS73-HB0-000":[
+		# ["pci-0000:00:18.0-ata-1", "I-SATA1"],
+		# ["pci-0000:00:18.0-ata-3", "I-SATA3"],
+  		["pci-0000:00:18.0-ata-1", "SSATA2"],
+		["pci-0000:00:18.0-ata-3", "SSATA0"],
+  		["pci-0000:00:50.0-nvme-1", "M2M_0"],
+		# ["pci-0000:00:50.0-nvme-2", "M2M_1"],
+	],
+	"MZ73-LM0-000":[
+		
 	]
 }
 
 def generate_dynamic_paths():
-	dynamic_paths = []
-	for X in range(0, 10):  # Assuming X can be 0-9, adjust this range if needed
-		for i in range(1, 9):  # Assuming i can be 1-8, adjust if needed
-			path = f"pci-0000:00:0{X}:00.0-ata-{i}"
-			connector = f"I-SATA{i}"
-			dynamic_paths.append([path, connector])
-	return dynamic_paths
+    dynamic_paths = []
+
+    # Define the base patterns without the range placeholders
+    base_patterns = [
+        ("pci-0000:0{X}:00.0-ata-", "U3_P0_G3A0", range(1, 5)),
+        ("pci-0000:0{X}:00.0-ata-", "U3_P0_G3A1", range(5, 9)),
+        ("pci-0000:0{X}:00.1-ata-", "U3_P0_G3B0", range(1, 5)),
+    ]
+
+    # Generate paths for X values 3 through 9, and possibly others
+    for X in range(1, 10):  # Adjust the range if needed
+        for base_pattern, connector, i_range in base_patterns:
+            for i in i_range:  # Loop through the range (1-4 or 5-8)
+                path = f"{base_pattern}{i}".format(X=X)
+                dynamic_paths.append([path, connector])
+
+    return dynamic_paths
+
+
 
 
 def ls_by_path(motherboard):
@@ -180,23 +198,30 @@ def ls_by_path(motherboard):
 		paths = g_motherboard_sata_addresses[motherboard]
   
 		if motherboard == "ME03-CE0-000":
-			paths = generate_dynamic_paths()
+			paths = generate_dynamic_paths()  # Generate all relevant paths dynamically
+
+			# Debug: Print the generated paths
+			# print("Generated Paths:")
+			# for pth in paths:
+				# print(pth[0], pth[1])
+			
 			for line in ls_result:
 				line = line.strip()
-				if not any(pth[0] in line for pth in paths):  # Skip already matched paths
-					fallback_regex = re.search(r"(\S+-ata-\d+)\s->\s\W+(.*)", line)
-					if fallback_regex is not None:
-						device = fallback_regex.group(2).strip().replace("../../", "")
-						# print(f"Fallback matched: {fallback_regex.group(1)} -> {device}")
-						if device not in sata_connections:
-							sata_connections[device] = {
-									"Path": fallback_regex.group(1),
-									"Connector": ("I-SATA" + fallback_regex.group(1).split('-ata-')[-1]),
+				for pth in paths:
+					# Debug: Print each line from ls_result and the path being checked
+					# print(f"Checking line: '{line}' against path: '{pth[0]}'")
+					if pth[0] in line:
+						device = line.split(" -> ")[-1].strip().replace("../../", "")
+						# Skip partitions (devices that end with digits like sda1, sda2, etc.)
+						if not re.search(r'\d+$', device):  
+							if device not in sata_connections:
+								sata_connections[device] = {
+									"Path": pth[0],
+									"Connector": pth[1],
 									"Device": device,
 									"Partitions": []
 								}
 						break
-  
 		else:
 			for line in ls_result:
 				line = line.strip()

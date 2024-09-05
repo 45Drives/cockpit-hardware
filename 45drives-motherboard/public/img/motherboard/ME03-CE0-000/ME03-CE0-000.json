@@ -220,7 +220,7 @@
         "filename": "DIMM_P0_H1.png"
     },
     {
-        "type": "U2_P0_G3A1",
+        "type": "U2_P0_G3B0",
         "id": 0,
         "shape": "rect",
         "x0": 443,
@@ -228,22 +228,11 @@
         "width": 21,
         "height": 46,
         "diam": 101.13357503816425,
-        "filename": "U2_P0_G3A1.png"
-    },
-    {
-        "type": "U2_P0_G3B0",
-        "id": 1,
-        "shape": "rect",
-        "x0": 824,
-        "y0": 659,
-        "width": 21,
-        "height": 46,
-        "diam": 101.13357503816425,
         "filename": "U2_P0_G3B0.png"
     },
     {
         "type": "U2_P0_G3A0",
-        "id": 2,
+        "id": 1,
         "shape": "rect",
         "x0": 856,
         "y0": 659,
@@ -251,5 +240,16 @@
         "height": 46,
         "diam": 101.13357503816425,
         "filename": "U2_P0_G3A0.png"
+    },
+    {
+        "type": "U2_P0_G3A1",
+        "id": 2,
+        "shape": "rect",
+        "x0": 824,
+        "y0": 659,
+        "width": 21,
+        "height": 46,
+        "diam": 101.13357503816425,
+        "filename": "U2_P0_G3A1.png"
     }
 ]

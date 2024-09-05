@@ -1265,17 +1265,19 @@ export default {
               "Max Speed: " +
               mobo_info["Motherboard Info"][1]["CPU"][0]["Max Speed"] +
               "\n";
-            contentStr +=
-              "Temperature: " +
-              mobo_info["Motherboard Info"][2]["Sensor Readings"][0][
-                "CPU1 Temp"
-              ] +
-              "\n";
+
+            // Access the first element of the Sensor Readings array
+            const sensorReadings = mobo_info["Motherboard Info"][2]["Sensor Readings"][0];
+
+            // Try both old and new key names
+            let cpu0Temp =
+              sensorReadings["CPU0_TEMP"] || // New format
+              sensorReadings["CPU Temp"] ||
+              sensorReadings["CPU1 Temp"] || // Original format
+              "N/A";
+
+            contentStr += "Temperature: " + cpu0Temp + "\n";
             components[i].popup.content = contentStr;
-            components[i].popup.content = components[i].popup.content.slice(
-              0,
-              -1
-            );
           } else if (components[i].type == "cpu" && components[i].id == 2) {
             contentStr = "";
             contentStr +=
@@ -1290,20 +1292,26 @@ export default {
               "Max Speed: " +
               mobo_info["Motherboard Info"][1]["CPU"][1]["Max Speed"] +
               "\n";
-            contentStr +=
-              "Temperature: " +
-              mobo_info["Motherboard Info"][2]["Sensor Readings"][0][
-                "CPU2 Temp"
-              ] +
-              "\n";
+
+            // Access the first element of the Sensor Readings array
+            const sensorReadings = mobo_info["Motherboard Info"][2]["Sensor Readings"][0];
+
+            // Try both old and new key names
+            let cpu1Temp =
+              sensorReadings["CPU1_TEMP"] || // New format
+              sensorReadings["CPU2 Temp"] || // Original format
+              "N/A";
+
+            contentStr += "Temperature: " + cpu1Temp + "\n";
             components[i].popup.content = contentStr;
-            components[i].popup.content = components[i].popup.content.slice(
-              0,
-              -1
-            );
           }
+
+          // Trim the last newline character from content
+          components[i].popup.content = components[i].popup.content.slice(0, -1);
         }
       };
+
+
 
       m.getSATA = function () {
         if (sata_info) {

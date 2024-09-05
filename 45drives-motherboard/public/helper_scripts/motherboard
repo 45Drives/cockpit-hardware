@@ -35,8 +35,8 @@ g_dmi_mobo_fields = {
 		"EPC621D8A",
 		"ME03-CE0-000",
 		"MS03-6L0-000",
-  		# "MS73-HB0-000",
-    	# "MZ73-LM0-000"
+  		"MS73-HB0-000",
+    	"MZ73-LM0-000"
 	],
 	"Serial Number": None
 }
@@ -48,9 +48,11 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
+		"AMD EPYC 9454 48-Core Processor",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
+		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430"
 		],
@@ -59,6 +61,7 @@ g_dmi_cpu_fields = {
 }
 
 g_ipmitool_sensor_fields = {
+    "CPU0 Temp": "(C)",
 	"CPU1 Temp": "(C)",
 	"CPU2 Temp": "(C)",
 	"PW Consumption": "(W)",
@@ -102,9 +105,13 @@ g_ipmitool_sensor_fields = {
 	"DDR4_E Temp": " (C)", #ASRockRack
 	"DDR4_F Temp": " (C)",  #ASRockRack
 	"CPU0_TEMP": " (C)", #Giga Computing (GIGABYTE)
+ 	"CPU1_TEMP": " (C)", #Giga Computing (GIGABYTE)
 	"DIMMG0_TEMP": " (C)", #Giga Computing (GIGABYTE)
     "DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
+    "DIMMG2_TEMP": " (C)", #Giga Computing (GIGABYTE)
+    "DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
     "CPU0_FAN": " (RPM)", #Giga Computing (GIGABYTE)
+	"CPU1_FAN": " (RPM)", #Giga Computing (GIGABYTE)
     "SYS_FAN1": " (RPM)", #Giga Computing (GIGABYTE)
     "SYS_FAN2": " (RPM)", #Giga Computing (GIGABYTE)
     "SYS_FAN3": " (RPM)", #Giga Computing (GIGABYTE)
@@ -213,18 +220,18 @@ def get_sensor_readings():
 		for field in g_ipmitool_sensor_fields.keys():
 			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
 			if regex != None:
-				if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
-					# ipmitool does not use the socket name
-					# we need to manually intervene and store it as
-					# CPU1 Temp
-					sensor_readings.append(
-					("CPU1 Temp",regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
-					)
-				else:
-					# # skip empty entries
-					# if regex.group(2) == 'na':
-					# 	continue
-					# else:
+				# if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
+				# 	# ipmitool does not use the socket name
+				# 	# we need to manually intervene and store it as
+				# 	# CPU1 Temp
+				# 	sensor_readings.append(
+				# 	("CPU1 Temp",regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
+				# 	)
+				# else:
+				# 	# # skip empty entries
+				# 	# if regex.group(2) == 'na':
+				# 	# 	continue
+				# 	# else:
 						# All other readings are fine, use the field as captured.
 						sensor_readings.append((regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
 	sensor_readings_json_str = "{\"Sensor Readings\":["+json.dumps(dict(sensor_readings))+"]}"
