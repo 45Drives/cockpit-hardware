@@ -88,28 +88,6 @@
         "filename": "PCI_SLOT_6.png"
     },
     {
-        "type": "M2M_1",
-        "id": "7",
-        "shape": "rect",
-        "x0": 69,
-        "y0": 680,
-        "width": 50,
-        "height": 12,
-        "diam": 24,
-        "filename": "M2_SLOT_1.png"
-    },
-    {
-        "type": "M2M_2",
-        "id": "8",
-        "shape": "rect",
-        "x0": 8,
-        "y0": 680,
-        "width": 50,
-        "height": 12,
-        "diam": 24,
-        "filename": "M2_SLOT_2.png"
-    },
-    {
         "type": "SL_SATA1",
         "id": 0,
         "shape": "rect",

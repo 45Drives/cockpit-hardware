@@ -151,7 +151,26 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-6","SATA_4_5"],
 	],
 	"MS73-HB0-000":[
-		
+  		["pci-0000:00:18.0-ata-1","SSATA2"],
+		["pci-0000:00:18.0-ata-3","SSATA0"],
+  
+  		["pci-0000:00:17.0-ata-1","SL_SATA1"],
+		["pci-0000:00:17.0-ata-2","SL_SATA1"],
+		["pci-0000:00:17.0-ata-3","SL_SATA1"],
+		["pci-0000:00:17.0-ata-4","SL_SATA1"],
+  
+  		["pci-0000:00:17.0-ata-5","SL_SATA2"],
+		["pci-0000:00:17.0-ata-6","SL_SATA2"],
+		["pci-0000:00:17.0-ata-7","SL_SATA2"],
+		["pci-0000:00:17.0-ata-8","SL_SATA2"],
+  
+  		["pci-0000:00:18.0-ata-5","SL_SATA3"],
+		["pci-0000:00:18.0-ata-6","SL_SATA3"],
+		["pci-0000:00:18.0-ata-7","SL_SATA3"],
+		["pci-0000:00:18.0-ata-8","SL_SATA3"],
+  
+  		# ["pci-0000:00:50.0-nvme-1","M2M_0"],
+		# ["pci-0000:00:51.0-nvme-1","M2M_1"],
 	],
 	"MZ73-LM0-000":[
 		

@@ -110,81 +110,81 @@ def dmidecode():
 	return cards
 
 def check_slot_availability(slots):
-    # Check the availability of each slot based on its associated bus addresses and Current Usage field.
-    for slot in slots:
-        # print(f"Before checking: {slot}")  # Debug print
+	# Check the availability of each slot based on its associated bus addresses and Current Usage field.
+	for slot in slots:
+		# print(f"Before checking: {slot}")  # Debug print
 
-        current_usage = slot.get("Current Usage", "")
-        bus_address = slot.get("Bus Address", "")
-        slot_type = slot.get("Type", "")
+		current_usage = slot.get("Current Usage", "")
+		bus_address = slot.get("Bus Address", "")
+		slot_type = slot.get("Type", "")
 
-        # Check the bus address to confirm if it's non-zero, and handle 'Unknown' or '<OUT OF SPEC>' cases
-        if current_usage == "Unknown" or slot_type == "<OUT OF SPEC>":
-            if bus_address and bus_address != "0000:00:00.0":
-                # Extract the last part of the bus address after the last ':'
-                bus_segment = bus_address.split(":")[-1].split(".")[0]
-                # Check if the last digit is '0', which typically indicates the slot is in use
-                if bus_segment[-1] == "0":
-                    slot["Current Usage"] = "In Use"
-                else:
-                    slot["Current Usage"] = "Available"
-            else:
-                slot["Current Usage"] = "Available"
-        else:
-            # In regular cases, leave the Current Usage as provided by dmidecode.
-            slot["Current Usage"] = current_usage
+		# Check the bus address to confirm if it's non-zero, and handle 'Unknown' or '<OUT OF SPEC>' cases
+		if current_usage == "Unknown" or slot_type == "<OUT OF SPEC>":
+			if bus_address and bus_address != "0000:00:00.0":
+				# Extract the last part of the bus address after the last ':'
+				bus_segment = bus_address.split(":")[-1].split(".")[0]
+				# Check if the last digit is '0', which typically indicates the slot is in use
+				if bus_segment[-1] == "0":
+					slot["Current Usage"] = "In Use"
+				else:
+					slot["Current Usage"] = "Available"
+			else:
+				slot["Current Usage"] = "Available"
+		else:
+			# In regular cases, leave the Current Usage as provided by dmidecode.
+			slot["Current Usage"] = current_usage
 
-        # print(f"After checking: {slot}")  # Debug print
+		# print(f"After checking: {slot}")  # Debug print
 
-    return slots
+	return slots
 
 
 
 def match_pci_slots_with_devices(pci_slots, devices):
-    # Filter devices by matching bus addresses with PCI slots.
-    # Ensure that only one entry per designation is added:
-    # - If a slot is "In Use," it takes precedence.
-    # - If no "In Use" slot exists, include only one "Available" entry.
+	# Filter devices by matching bus addresses with PCI slots.
+	# Ensure that only one entry per designation is added:
+	# - If a slot is "In Use," it takes precedence.
+	# - If no "In Use" slot exists, include only one "Available" entry.
 
-    matched_devices = {}
+	matched_devices = {}
 
-    for slot in pci_slots:
-        # Skip any MCIO Ports
-        if slot.get("Type") == "MCIO Port":
-            continue
+	for slot in pci_slots:
+		# Skip any MCIO Ports
+		if slot.get("Type") == "MCIO Port":
+			continue
 
-        designation = slot["Designation"]
-        current_usage = slot.get("Current Usage", "")
-        slot_type = slot.get("Type", "")
+		designation = slot["Designation"]
+		current_usage = slot.get("Current Usage", "")
+		slot_type = slot.get("Type", "")
 
-        if designation not in matched_devices:
-            # Directly add the slot if no slot has been matched for this designation yet
-            matched_devices[designation] = slot
-        else:
-            # Handle cases where there's a conflict between "In Use" and "Available"
-            existing_slot = matched_devices[designation]
+		if designation not in matched_devices:
+			# Directly add the slot if no slot has been matched for this designation yet
+			matched_devices[designation] = slot
+		else:
+			# Handle cases where there's a conflict between "In Use" and "Available"
+			existing_slot = matched_devices[designation]
 
-            if current_usage == "In Use" and existing_slot.get("Current Usage", "") != "In Use":
-                # If the current slot is "In Use" and the existing slot isn't, replace it
-                matched_devices[designation] = slot
-            elif current_usage == "Available" and existing_slot.get("Current Usage", "") == "Unknown":
-                # If the existing slot is "Unknown" but the current one is "Available", prefer "Available"
-                matched_devices[designation] = slot
-            # Special handling for "Unknown" usage and "<OUT OF SPEC>" type
-            elif current_usage == "Unknown" or slot_type == "<OUT OF SPEC>":
-                # Assume that "Unknown" and "<OUT OF SPEC>" slots should be "Available" unless proven otherwise
-                if existing_slot.get("Current Usage", "") != "In Use":
-                    matched_devices[designation] = slot
-            # Otherwise, keep the existing slot
+			if current_usage == "In Use" and existing_slot.get("Current Usage", "") != "In Use":
+				# If the current slot is "In Use" and the existing slot isn't, replace it
+				matched_devices[designation] = slot
+			elif current_usage == "Available" and existing_slot.get("Current Usage", "") == "Unknown":
+				# If the existing slot is "Unknown" but the current one is "Available", prefer "Available"
+				matched_devices[designation] = slot
+			# Special handling for "Unknown" usage and "<OUT OF SPEC>" type
+			elif current_usage == "Unknown" or slot_type == "<OUT OF SPEC>":
+				# Assume that "Unknown" and "<OUT OF SPEC>" slots should be "Available" unless proven otherwise
+				if existing_slot.get("Current Usage", "") != "In Use":
+					matched_devices[designation] = slot
+			# Otherwise, keep the existing slot
 
-    # Match devices with PCI slots
-    for device in devices:
-        for designation, slot in matched_devices.items():
-            if slot.get("Bus Address") == device.get("Bus Address"):
-                slot.update(device)
-                break
+	# Match devices with PCI slots
+	for device in devices:
+		for designation, slot in matched_devices.items():
+			if slot.get("Bus Address") == device.get("Bus Address"):
+				slot.update(device)
+				break
 
-    return list(matched_devices.values())
+	return list(matched_devices.values())
 
 
 
