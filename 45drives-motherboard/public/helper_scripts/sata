@@ -191,8 +191,6 @@ def generate_dynamic_paths():
     return dynamic_paths
 
 
-
-
 def ls_by_path(motherboard):
 	try:
 		ls_result = subprocess.Popen(
