@@ -57,7 +57,7 @@ BA_EPC612D8A = {
 }
 
 # Gigabyte Board  
-PCIE_SLOT_TYPE_GIGABYTE = {
+PCIE_SLOT_TYPE_GIGABYTE_ME03 = {
 	"PCIE_1":"PCI Express 4 x16",
 	"PCIE_2":"PCI Express 4 x8",
 	"PCIE_3":"PCI Express 4 x16",
@@ -66,6 +66,24 @@ PCIE_SLOT_TYPE_GIGABYTE = {
 	"PCIE_6":"PCI Express 5 x16",
 }
 
+PCIE_ADDR_LUT_GIGABYTE_MZ73GIGABYTE_MZ73 = {
+
+}
+
+
+# bifurcated_addresses = {
+#     "PCIE_1": ["0000:a0:02.1", "0000:a0:02.2", "0000:a0:02.3", "0000:a0:02.4"],
+#     "PCIE_2": ["0000:80:02.1", "0000:80:02.2", "0000:80:02.3", "0000:80:02.4"],
+#     "PCIE_3": ["0000:00:02.1", "0000:00:02.2", "0000:00:02.3", "0000:00:02.4"],
+#     "PCIE_4": ["0000:40:02.1", "0000:40:02.2", "0000:40:02.3", "0000:40:02.4"]
+# }
+
+# actual_addresses = {
+#     "PCIE_1": "0000:a2:00.0",
+#     "PCIE_2": "0000:84:00.0",
+#     "PCIE_3": "0000:01:00.0",
+#     "PCIE_4": "0000:41:00.0"
+# }
 
 def dmidecode():
 	try:
@@ -101,8 +119,8 @@ def dmidecode():
 			if "Designation" in current_slot:
 				designation = current_slot["Designation"]
 				actual_type = current_slot.get("Type")
-				if designation in PCIE_SLOT_TYPE_GIGABYTE:
-					current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE[designation]
+				if designation in PCIE_SLOT_TYPE_GIGABYTE_ME03:
+					current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[designation]
 				elif designation.startswith("U2_P0_G3"):
 					current_slot["Type"] = "MCIO Port"  # Assign type for MCIO ports
 				elif designation.startswith("M2_"):
@@ -190,25 +208,25 @@ def process_pci_slots_and_devices(pci_slots, devices):
 	return list(matched_devices.values())
 
 
-def storcli():
-	try:
-		storcli64_result = subprocess.Popen(
-			["/opt/45drives/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
-	except:
-		return False
-	hba_cards = []
-	hba_dict = {}
-	for line in storcli64_result.stdout:
-		for field in g_storcli64_fields:
-			# Model AdapterType VendId DevId SubVendId SubDevId PCIAddress 	
-			regex = re.search("({fld}).*(00:\w\w:\w\w:\w\w)\s+$".format(fld=field),line)
-			if regex != None:
-				hba_dict["Model"] = regex.group(1)
-				hba_dict["Bus Address"] = "00" + regex.group(2)
-				hba_dict["Bus Address"] = hba_dict["Bus Address"][:-3] + ".0"
-				hba_cards.append(hba_dict.copy())
+# def storcli():
+# 	try:
+# 		storcli64_result = subprocess.Popen(
+# 			["/opt/45drives/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
+# 	except:
+# 		return False
+# 	hba_cards = []
+# 	hba_dict = {}
+# 	for line in storcli64_result.stdout:
+# 		for field in g_storcli64_fields:
+# 			# Model AdapterType VendId DevId SubVendId SubDevId PCIAddress 	
+# 			regex = re.search("({fld}).*(00:\w\w:\w\w:\w\w)\s+$".format(fld=field),line)
+# 			if regex != None:
+# 				hba_dict["Model"] = regex.group(1)
+# 				hba_dict["Bus Address"] = "00" + regex.group(2)
+# 				hba_dict["Bus Address"] = hba_dict["Bus Address"][:-3] + ".0"
+# 				hba_cards.append(hba_dict.copy())
 	
-	return hba_cards
+# 	return hba_cards
 
 def lspci_hba():
 	try:

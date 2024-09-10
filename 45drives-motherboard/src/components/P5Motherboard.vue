@@ -1249,6 +1249,8 @@ export default {
       };
 
       m.getCPU = function () {
+        // console.log(mobo_info);
+        // console.log(components);
         let contentStr;
         for (let i = 0; i < components.length; i++) {
           if (components[i].type == "cpu" && components[i].id == 1) {
@@ -1314,6 +1316,7 @@ export default {
 
 
       m.getSATA = function () {
+        console.log(sata_info);
         if (sata_info) {
           // Group devices by connector
           let connectorMap = {};

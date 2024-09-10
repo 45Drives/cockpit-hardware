@@ -167,7 +167,12 @@ g_motherboard_sata_addresses = {
 		# ["pci-0000:00:51.0-nvme-1","M2M_1"],
 	],
 	"MZ73-LM0-000":[
-		
+  		["pci-0000:65:00.0-ata-1","SLSAS_0"],
+		["pci-0000:65:00.0-ata-2","SLSAS_0"],
+		["pci-0000:65:00.0-ata-3","SLSAS_0"],
+		["pci-0000:65:00.0-ata-4","SLSAS_0"],
+  
+	  	# ["pci-0000:61:00.0-nvme-1","M2_0"],
 	]
 }
 

@@ -157,8 +157,8 @@ export default {
         sysChassis.value = sysInfo["Chassis Size"];
         sysSerial.value = sysInfo["Serial"];
         moboModel.value =
-          sysInfo["Motherboard"]["Manufacturer"] +
-          " " +
+        //  sysInfo["Motherboard"]["Manufacturer"] +
+        //  " " +
           sysInfo["Motherboard"]["Product Name"];
         moboSerial.value = sysInfo["Motherboard"]["Serial Number"];
         serverImgPath.value = getSystemImgPath(sysInfo["Model"]);
