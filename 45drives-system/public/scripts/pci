@@ -44,7 +44,7 @@ BA_EPC612D8A = {
 }
 
 # Gigabyte Board  
-PCIE_SLOT_TYPE_GIGABYTE = {
+PCIE_SLOT_TYPE_GIGABYTE_ME03 = {
 	"PCIE_1":"PCI Express 4 x16",
 	"PCIE_2":"PCI Express 4 x8",
 	"PCIE_3":"PCI Express 4 x16",
@@ -52,6 +52,73 @@ PCIE_SLOT_TYPE_GIGABYTE = {
 	"PCIE_5":"PCI Express 5 x16",
 	"PCIE_6":"PCI Express 5 x16",
 }
+
+PCIE_SLOT_TYPE_GIGABYTE_MZ73 = {
+	"PCIE_1":"PCI Express 5 x16",
+	"PCIE_2":"PCI Express 5 x16",
+	"PCIE_3":"PCI Express 5 x16",
+	"PCIE_4":"PCI Express 5 x16",
+}
+
+BA_LUT_MZ73 = {
+	"PCIE_1": ["0000:a2:00.0"],
+	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],  # Multiple potential bus addresses
+	"PCIE_3": ["0000:01:00.0"],
+	"PCIE_4": ["0000:41:00.0"],
+	"M2_0": ["0000:61:00.0"]
+}
+
+def get_motherboard_model_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		mobo_obj = {
+			"Motherboard": [{
+				"Manufacturer": si["Motherboard"]["Manufacturer"],
+				"Product Name": si["Motherboard"]["Product Name"],
+				"Serial Number": si["Motherboard"]["Serial Number"]
+			}
+			]
+		}
+		return json.dumps(mobo_obj)
+	else:
+		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
+
+
+def parse_lspci_output():
+	"""
+	Parse the lspci machine-ready output and return a dictionary with bus addresses as keys
+	and an array of the rest of the line values as the value, excluding entries containing certain strings.
+	"""
+	try:
+		# Run the 'lspci -mm' command
+		lspci_output = subprocess.Popen(['lspci', '-mm'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
+	except Exception as e:
+		print(f"Error running 'lspci -mm': {e}")
+		sys.exit(1)
+	
+	# Update regex to capture full bus address in format xx:xx.x
+	bus_address_pattern = re.compile(r'^([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9])')
+	parsed_data = {}
+
+	# List of strings to exclude
+	exclusion_strings = ['BCM57416', 'Non-Essential Instrumentation']
+
+	for line in lspci_output.splitlines():
+		# Match the bus address using the regex
+		match = bus_address_pattern.match(line)
+		if match:
+			bus_address = '0000:' + match.group(1)
+			rest_of_line = re.findall(r'"[^"]*"|[\S]+', line)[1:]
+
+			# Check if any exclusion strings are present in rest_of_line
+			if not any(exclusion_string in ' '.join(rest_of_line) for exclusion_string in exclusion_strings):
+				# Only add to parsed_data if no exclusion string is found
+				parsed_data[bus_address] = rest_of_line
+
+	return parsed_data
 
 
 def dmidecode():
@@ -64,13 +131,25 @@ def dmidecode():
 
 	cards = []
 	current_slot = None
+	slot_seen = {}  # Dictionary to track which slots (PCIE_1, PCIE_2, etc.) have been seen
+	disk_map = get_disk_by_path() 
 
+	motherboard_info = json.loads(get_motherboard_model_server_info())
+	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
+ 
 	for line in dmi_result:
 		if line.startswith("Handle "):
 			if current_slot:
-				# Before appending the current slot, check if it should be skipped
-				if current_slot.get("Designation") != "Y3...@ptal._..P" and current_slot.get("Bus Address") != "0000:00:00.0":
-					cards.append(current_slot)
+				designation = current_slot.get("Designation", "")
+				base_designation = re.sub(r'_[A-Z]$', '', designation)  # Strip _A, _B, _C, etc. from the end
+	
+				# Only add this slot if it's the first time seeing this base designation
+				if motherboard_model.startswith("MZ73") and base_designation in slot_seen:
+					current_slot = None  # Skip if already seen
+				else:
+					slot_seen[base_designation] = True  # Mark the base designation as seen
+					if current_slot.get("Bus Address") != "0000:00:00.0":
+						cards.append(current_slot)
 			current_slot = {}
 
 		if current_slot is not None:
@@ -79,28 +158,51 @@ def dmidecode():
 				if regex:
 					current_slot[regex.group(1)] = regex.group(2)
 			
+			pcie_pattern = re.compile(r'(PCIE_\d+)')
+   
 			# Assign type based on Designation if needed or add the actual type from dmidecode
 			if "Designation" in current_slot:
 				designation = current_slot["Designation"]
-				actual_type = current_slot.get("Type")
-				if designation in PCIE_SLOT_TYPE_GIGABYTE:
-					current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE[designation]
-				elif designation.startswith("U2_P0_G3"):
+
+				if designation == 'N/A':
+					current_slot = None  # Stop processing this slot if designation is N/A
+					continue  # Move to the next line
+
+				# Strip any _A, _B, etc., from the designation
+				stripped_designation = re.sub(r'_[A-Z]$', '', designation)
+
+				# Update designation after stripping
+				current_slot["Designation"] = stripped_designation
+
+				match = pcie_pattern.search(stripped_designation)
+				if match:
+					designation = match.group(1)
+
+				# Safeguard: Ensure 'current_slot' is not None before attempting to access properties
+				actual_type = current_slot.get("Type", "Unknown")
+				if motherboard_model.startswith("ME03") and designation in PCIE_SLOT_TYPE_GIGABYTE_ME03:
+					current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[designation]
+				elif motherboard_model.startswith("MZ73") and designation in PCIE_SLOT_TYPE_GIGABYTE_MZ73:
+					current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE_MZ73[designation]
+				elif designation.startswith("U2_"):
 					current_slot["Type"] = "MCIO Port"  # Assign type for MCIO ports
 				elif designation.startswith("M2_"):
 					# Only add the actual Type from dmidecode if not already included
 					if actual_type and not actual_type.startswith("M.2 Slot"):
 						current_slot["Type"] = f"M.2 Slot ({actual_type})"
+					if BA_LUT_MZ73[current_slot["Designation"]] in disk_map.items():
+						current_slot["Current Usage"] = "In Use"
 				else:
 					current_slot["Type"] = actual_type
 
-			# Mark empty slots as Available
-			if "Current Usage" not in current_slot or (current_slot.get("Current Usage") != "In Use" and current_slot.get("Type") != "MCIO Port"):
+			# Mark empty slots as Available and ignore MCIO slots
+			if "Current Usage" not in current_slot or current_slot.get("Current Usage") != "In Use":
 				current_slot["Current Usage"] = "Available"
 
 			# Translate Bus Address if needed
 			if "Bus Address" in current_slot and current_slot["Bus Address"] in BA_EPC612D8A:
 				current_slot["Bus Address"] = BA_EPC612D8A[current_slot["Bus Address"]]
+
 
 	# Handle the last slot, if any
 	if current_slot:
@@ -108,6 +210,7 @@ def dmidecode():
 			cards.append(current_slot)
 
 	return cards
+
 
 def check_slot_availability(slots):
 	# Check the availability of each slot based on its associated bus addresses and Current Usage field.
@@ -188,26 +291,105 @@ def match_pci_slots_with_devices(pci_slots, devices):
 
 
 
-def storcli():
-	try:
-		storcli64_result = subprocess.Popen(
-			["/opt/45drives/tools/storcli64","show","all"],stdout=subprocess.PIPE,universal_newlines=True)
-	except:
-		print("Error running '/opt/45drives/tools/storcli64 show all'")
-		sys.exit(1)
-	hba_cards = []
-	hba_dict = {}
-	for line in storcli64_result.stdout:
-		for field in g_storcli64_fields:
-			# Model AdapterType VendId DevId SubVendId SubDevId PCIAddress 	
-			regex = re.search("({fld}).*(00:\w\w:\w\w:\w\w)\s+$".format(fld=field),line)
-			if regex != None:
-				hba_dict["Model"] = regex.group(1)
-				hba_dict["Bus Address"] = "00" + regex.group(2)
-				hba_dict["Bus Address"] = hba_dict["Bus Address"][:-3] + ".0"
-				hba_cards.append(hba_dict.copy())
-	
-	return hba_cards
+def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
+	"""
+	Process PCI slots and match them with devices, while handling errors like "<OUT OF SPEC>" and "Unknown" usage.
+	If the motherboard is MZ73, match the lspci bus addresses with dmidecode using the bus address lookup table (BA_LUT_MZ73).
+	"""
+	# print("DEBUG: Starting process_pci_slots_and_devices...")
+
+	matched_devices = {}
+	motherboard_info = json.loads(get_motherboard_model_server_info())
+	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
+	# print(f"DEBUG: Motherboard model: {motherboard_model}")
+
+	# Track which PCIe slots have been processed to avoid duplicates
+	processed_slots = {}
+
+	# Iterate over the pci_slots (from dmidecode)
+	for slot in pci_slots:
+		designation = slot.get("Designation", "")
+		slot_type = slot.get("Type", "")
+		bus_address = slot.get("Bus Address", "")
+
+		# print(f"DEBUG: Processing slot: {designation}, Type: {slot_type}, Bus Address: {bus_address}")
+
+		# Skip any MCIO Ports
+		if slot_type == "MCIO Port":
+			# print(f"DEBUG: Skipping MCIO Port: {designation}")
+			continue
+
+		# Strip bifurcated suffix (_A, _B, etc.) to identify the main PCIe slot
+		slot_key = re.sub(r'_[A-Z]$', '', designation)
+
+		# By default, set Current Usage to Available
+		slot["Current Usage"] = "Available"
+
+		# If motherboard is MZ73, use the lookup table for bus addresses
+		if motherboard_model.startswith("MZ73"):
+			if slot_key in BA_LUT_MZ73:
+				# print(f"DEBUG: MZ73 detected, checking lookup table for {slot_key}")
+				bus_address_candidates = BA_LUT_MZ73[slot_key]
+				# print(f"DEBUG: Bus address candidates for {slot_key}: {bus_address_candidates}")
+
+				# Compare bus addresses from the lookup table and the lspci devices
+				for candidate_address in bus_address_candidates:
+					for lspci_bus_address, device_info in lspci_devices.items():
+						if lspci_bus_address == candidate_address:
+							# print(f"DEBUG: Found matching bus address in lspci devices: {candidate_address}")
+							slot["Bus Address"] = candidate_address
+							slot["Current Usage"] = "In Use"
+
+							# Set Card Type and Card Model
+							if len(device_info) >= 2:
+								# Select specific groups from the device_info array for Card Type and Card Model
+								card_type = device_info[0].strip('"')
+								
+								# Handle the Card Type based on the device class
+								if card_type == 'Ethernet controller':
+									slot["Card Type"] = 'Network Card'
+
+									# Manufacturer (second group)
+									manufacturer = device_info[1].strip('"')
+								
+									# DEVICE INFO EXAMPLE:
+									# "Ethernet controller" "Intel Corporation" "Ethernet Controller 10-Gigabit X540-AT2" -r01 "Intel Corporation" "Ethernet Converged Network Adapter X540-T2"
+									# "Ethernet controller" "Mellanox Technologies" "MT27800 Family [ConnectX-5]" "Mellanox Technologies" "Mellanox ConnectX-5 MCX516A-CCAT"
+
+									# Define card models based on manufacturers
+									if manufacturer == "Intel Corporation":
+										slot["Card Model"] = device_info[2].replace('"', '')
+
+									elif manufacturer == "Mellanox Technologies":
+										slot["Card Model"] = device_info[4].replace('"', '')
+
+									else:
+										# Default behavior if the manufacturer doesn't match Intel or Mellanox
+										card_model_parts = [
+											device_info[1],  # Manufacturer
+											device_info[2]   # Generic card model information
+										]
+										slot["Card Model"] = ' '.join(card_model_parts).replace('"', '')
+
+									# print(f"Card Type: {slot['Card Type']}, Card Model: {slot['Card Model']}")
+								break  # Stop after finding the first match
+
+		# Ensure we only process each main PCIe slot (e.g., PCIE_1) once
+		if slot_key not in processed_slots:
+			# print(f"DEBUG: Adding new slot entry for {slot_key}")
+			matched_devices[slot_key] = slot
+			processed_slots[slot_key] = True
+
+	# Match devices (from hba_cards, network_cards, sata_cards) with PCI slots
+	for device in devices:
+		for designation, slot in matched_devices.items():
+			if slot.get("Bus Address") == device.get("Bus Address"):
+				# print(f"DEBUG: Matching device found for {designation}, Bus Address: {device['Bus Address']}")
+				slot.update(device)
+				break
+
+	# print("DEBUG: Finished processing pci_slots and devices")
+	return list(matched_devices.values())
 
 
 def lspci_hba():
@@ -354,18 +536,63 @@ def check_pci_network_card_match(slot, card):
 			return (match.group(1) == card.get("PCI Slot", ""))
 	return False
 
+def get_disk_by_path():
+    """
+    Parse the output of `ls -l /dev/disk/by-path` to extract PCI addresses and associated NVMe devices.
+    Returns a dictionary where keys are the PCI addresses and values are the devices (e.g., nvme0n1).
+    """
+    try:
+        # Run the `ls -l /dev/disk/by-path` command
+        result = subprocess.Popen(['ls', '-l', '/dev/disk/by-path'], stdout=subprocess.PIPE, universal_newlines=True).stdout
+    except Exception as e:
+        print(f"Error running `ls -l /dev/disk/by-path`: {e}")
+        return {}
+
+    disk_map = {}
+    # Regular expression to extract PCI addresses for NVMe devices
+    pci_nvme_regex = re.compile(r'pci-([0-9a-fA-F:.-]+)-nvme-\d+')
+
+    # Parse the output to extract PCI addresses and associated NVMe devices
+    # print("Parsing `ls -l /dev/disk/by-path` output:")
+    for line in result:
+        # print(f"Processing line: {line.strip()}")
+        match = pci_nvme_regex.search(line)
+        if match:
+            pci_address = match.group(1)
+            device = line.split(" -> ")[-1].strip().replace('../../', '')
+            if not device.endswith("part"):  # Ignore partition links
+                disk_map[pci_address] = device
+                # print(f"Found NVMe device: {device} with PCI address: {pci_address}")
+            # else:
+            #     print(f"Ignored partition: {device}")
+        # else:
+        #     print(f"No match for NVMe in line: {line.strip()}")
+    
+    # print(f"Disk map: {disk_map}")
+    return disk_map
+
+
 def main():
 	pci_slots = dmidecode()
 	hba_cards = lspci_hba()
 	network_cards = network()
 	sata_cards = sata()
+	mobo_info = json.loads(get_motherboard_model_server_info())
+	lspci_devices = parse_lspci_output()
 
 	# Look for hba cards and pci slots with matching bus addresses.
 	# and add a "Card Type" field to the list of pci slot dictionaries
 	if pci_slots and hba_cards:
 		for hba in hba_cards:
 			for slot in pci_slots:
-				if(hba["Bus Address"] == slot["Bus Address"]):
+				# Check if the slot's designation exists in the BA_LUT_MZ73 lookup table
+				if slot["Designation"] in BA_LUT_MZ73:
+					# Compare the HBA's bus address with the bus addresses in the lookup table
+					if hba["Bus Address"] in BA_LUT_MZ73[slot["Designation"]]:
+						slot["Card Type"] = "HBA"
+						slot["Card Model"] = hba["Model"]
+				# Fallback to direct comparison of bus addresses
+				elif hba["Bus Address"] == slot.get("Bus Address"):
 					slot["Card Type"] = "HBA"
 					slot["Card Model"] = hba["Model"]
 	
@@ -406,8 +633,12 @@ def main():
 	pci_slots = check_slot_availability(pci_slots)
 	# Combine all devices into a single list for matching
 	all_devices = hba_cards + network_cards + sata_cards
- 	# Match devices with PCI slots
-	matched_devices = match_pci_slots_with_devices(pci_slots, all_devices)
+ 
+	# Match devices with PCI slots
+	if mobo_info['Motherboard'][0]['Product Name'].startswith('MZ73'):
+		matched_devices = process_pci_slots_and_devices(pci_slots, all_devices, lspci_devices)
+	else:
+		matched_devices = match_pci_slots_with_devices(pci_slots, all_devices)
  
 	for slot in matched_devices:
 		hba_arr = get_hba_server_info()

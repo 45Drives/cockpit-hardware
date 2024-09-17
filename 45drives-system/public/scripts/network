@@ -37,7 +37,7 @@ BA_EPC612D8A = {
 }
 
 # Gigabyte Board  
-PCIE_SLOT_TYPE_GIGABYTE = {
+PCIE_SLOT_TYPE_GIGABYTE_ME03 = {
 	"PCIE_1":"PCI Express 4 x16",
 	"PCIE_2":"PCI Express 4 x8",
 	"PCIE_3":"PCI Express 4 x16",
@@ -45,6 +45,14 @@ PCIE_SLOT_TYPE_GIGABYTE = {
 	"PCIE_5":"PCI Express 5 x16",
 	"PCIE_6":"PCI Express 5 x16",
 }
+
+BA_LUT_MZ73 = {
+	"PCIE_1": ["0000:a2:00.0"],
+	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],  # Multiple potential bus addresses
+	"PCIE_3": ["0000:01:00.0"],
+	"PCIE_4": ["0000:41:00.0"],
+}
+
 
 def get_ipv4(addr_info):
 	if not addr_info:
@@ -152,12 +160,48 @@ def get_network_info():
 	# append them as a dictionary into a new list. 
 	cards = []
  
+ 	# Initialize a set to track unique designations
+	used_designations = set()
+ 
 	for i in range(0,len(slot_entries),len(g_dmi_fields)):
-		cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
+		# cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
+		card = dict(slot_entries[i:i+len(g_dmi_fields)])
+
+		if "Designation" in card:
+			designation = card.get("Designation")
+			if designation == 'N/A':
+				card = None
+				continue
+
+			# Ensure that the designation suffix (_A, _B, etc.) is removed
+			updated_designation = re.sub(r'_[A-Z]$', '', designation)  # This removes the trailing _A, _B, etc.
+			actual_slot = updated_designation  # Use the updated designation for slot comparison
+
+			if actual_slot in PCIE_SLOT_TYPE_GIGABYTE_ME03:
+				card["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[actual_slot]
+			else:
+				card["Type"] = card.get("Type")  # Keep the original type if no match is found
+
+			card['Designation'] = actual_slot  # Update the card with the cleaned-up slot designation
+			# print(f"Updated card with cleaned designation and type: {card}")
+			
+			# Check if the designation has already been used
+			if actual_slot not in used_designations:
+				cards.append(card)  # Append only if the designation is unique
+				used_designations.add(actual_slot)  # Mark the designation as used
+			# else:
+			# 	print(f"Skipping duplicate designation: {actual_slot}")
 
 	for card in cards:
+		# print(f"Checking bus address for card: {card}")
+  
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
 			card["Bus Address"] = BA_EPC612D8A[card["Bus Address"]]
+			# print(f"Updated bus address for card: {card}")
+		
+		if "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
+			card["Bus Address"] = BA_LUT_MZ73[card["Designation"]]
+			# print(f"Updated bus address for card: {card}")
 
 	# for each card in the list of dictionaries, append 
 	# dictionaries to a list that have the same Bus address
@@ -165,11 +209,28 @@ def get_network_info():
 	# the lshw command
 	valid_cards = []
 	for card in cards:
+		matched_bus_address = None
 		for hw_entry in lshw:
-			if card["Bus Address"] == hw_entry[0]:
-				card["Connection Name"] = hw_entry[1]
+			# Check if Bus Address is a list or a single address
+			card_bus_addresses = card["Bus Address"] if isinstance(card["Bus Address"], list) else [card["Bus Address"]]
+			
+			# Compare each address in card_bus_addresses to hw_entry[0]
+			for card_bus_address in card_bus_addresses:
+				# print(f"Comparing card bus address {card_bus_address} with hw_entry {hw_entry[0]}")
+				
+				# Normalize the formats for comparison (remove leading zeros, case insensitive)
+				normalized_card_bus_address = card_bus_address.lower().lstrip('0')
+				normalized_hw_entry_bus_address = hw_entry[0].lower().lstrip('0')
+
+				if normalized_card_bus_address == normalized_hw_entry_bus_address:
+					card["Connection Name"] = hw_entry[1]
+					matched_bus_address = card_bus_address  # Store the matching bus address
+					# print(f"Matched card with connection: {card}")
+					break  # Break inner loop if a match is found
+			if matched_bus_address:
+				card["Bus Address"] = matched_bus_address  # Set the card's bus address to the matching one
 				valid_cards.append(card)
-				break
+				break  # Break outer loop if a match is found
 
 	# Copy the dictionaries for each card and modify the last digit of
 	# both the Connection Name (ex enp24s0f0) and the bus address (ex. 0000:18:00.0)
@@ -236,4 +297,4 @@ def main():
 		sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+	main()
