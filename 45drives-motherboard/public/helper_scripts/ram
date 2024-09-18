@@ -14,6 +14,7 @@
 ################################################################################
 import subprocess
 import re
+import os
 import json
 
 g_dmi_fields = [
@@ -75,6 +76,25 @@ g_ipmitool_sensor_fields = {
    	"DIMMG2_TEMP": " (C)", #Giga Computing (GIGABYTE)
   	"DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
 }
+
+def get_motherboard_model_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		mobo_obj = {
+			"Motherboard": [{
+				"Manufacturer": si["Motherboard"]["Manufacturer"],
+				"Product Name": si["Motherboard"]["Product Name"],
+				"Serial Number": si["Motherboard"]["Serial Number"]
+			}
+			]
+		}
+		return json.dumps(mobo_obj)
+	else:
+		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
+
 
 def ipmitool_sensor():
 	try:
@@ -173,6 +193,7 @@ def dmidecode():
   		"DIMM_P0_C0": ["DIMMG0"],
 		"DIMM_P0_D0": ["DIMMG0"],
 		"DIMM_P0_D1": ["DIMMG0"],
+  
 		"DIMM_P0_E0": ["DIMMG1"],
 		"DIMM_P0_E1": ["DIMMG1"],
 		"DIMM_P0_F0": ["DIMMG1"],
@@ -189,11 +210,47 @@ def dmidecode():
 		"DIMM_P1_O0": ["DIMMG3"],
 		"DIMM_P1_P0": ["DIMMG3"],
 	}
+ 
+	MZ73_locator_tags = {
+		"DIMM_P0_A0": ["DIMMG0"],
+		"DIMM_P0_B0": ["DIMMG0"],
+  		"DIMM_P0_C0": ["DIMMG0"],
+		"DIMM_P0_D0": ["DIMMG0"],
+		"DIMM_P0_E0": ["DIMMG0"],
+		"DIMM_P0_F0": ["DIMMG0"],
+  
+		"DIMM_P0_H0": ["DIMMG1"],
+		"DIMM_P0_G0": ["DIMMG1"],
+  		"DIMM_P0_I0": ["DIMMG1"],
+		"DIMM_P0_J0": ["DIMMG1"],
+		"DIMM_P0_K0": ["DIMMG1"],
+		"DIMM_P0_L0": ["DIMMG1"],
+  
+		"DIMM_P1_M0": ["DIMMG2"],
+		"DIMM_P1_N0": ["DIMMG2"],
+		"DIMM_P1_O0": ["DIMMG2"],
+		"DIMM_P1_P0": ["DIMMG2"],
+  		"DIMM_P1_Q0": ["DIMMG2"],
+		"DIMM_P1_R0": ["DIMMG2"],
+  
+		"DIMM_P1_S0": ["DIMMG3"],
+		"DIMM_P1_T0": ["DIMMG3"],
+  		"DIMM_P1_U0": ["DIMMG3"],
+		"DIMM_P1_V0": ["DIMMG3"],
+		"DIMM_P1_W0": ["DIMMG3"],
+		"DIMM_P1_X0": ["DIMMG3"],
+	}
+
+	motherboard_info = json.loads(get_motherboard_model_server_info())
+	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
 
 	for slot in slot_entries:
-		if "Locator" in slot.keys() and slot["Locator"] in locator_tags.keys():
-			slot["Temperature Keys"] = locator_tags[slot["Locator"]]
-
+		if motherboard_model.startswith("MZ73"):
+			if "Locator" in slot.keys() and slot["Locator"] in MZ73_locator_tags.keys():
+				slot["Temperature Keys"] = MZ73_locator_tags[slot["Locator"]]
+		else:
+			if "Locator" in slot.keys() and slot["Locator"] in locator_tags.keys():
+				slot["Temperature Keys"] = locator_tags[slot["Locator"]]
 
 	return slot_entries
 
