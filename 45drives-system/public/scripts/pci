@@ -25,7 +25,6 @@ g_network_card_models = [
 	"82599ES",
 	"BCM57412",
 	"MT27800",
-	# "BCM57416",
 ]
 
 g_sata_controllers = [
@@ -62,7 +61,7 @@ PCIE_SLOT_TYPE_GIGABYTE_MZ73 = {
 
 BA_LUT_MZ73 = {
 	"PCIE_1": ["0000:a2:00.0"],
-	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],  # Multiple potential bus addresses
+	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],
 	"PCIE_3": ["0000:01:00.0"],
 	"PCIE_4": ["0000:41:00.0"],
 	"M2_0": ["0000:61:00.0"]
@@ -88,10 +87,6 @@ def get_motherboard_model_server_info():
 
 
 def parse_lspci_output():
-	"""
-	Parse the lspci machine-ready output and return a dictionary with bus addresses as keys
-	and an array of the rest of the line values as the value, excluding entries containing certain strings.
-	"""
 	try:
 		# Run the 'lspci -mm' command
 		lspci_output = subprocess.Popen(['lspci', '-mm'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
@@ -292,10 +287,6 @@ def match_pci_slots_with_devices(pci_slots, devices):
 
 
 def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
-	"""
-	Process PCI slots and match them with devices, while handling errors like "<OUT OF SPEC>" and "Unknown" usage.
-	If the motherboard is MZ73, match the lspci bus addresses with dmidecode using the bus address lookup table (BA_LUT_MZ73).
-	"""
 	# print("DEBUG: Starting process_pci_slots_and_devices...")
 
 	matched_devices = {}
@@ -346,7 +337,7 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
 								card_type = device_info[0].strip('"')
 								
 								# Handle the Card Type based on the device class
-								if card_type == 'Ethernet controller':
+								if card_type == 'Ethernet controller' and slot["Current Usage"] == "In Use":
 									slot["Card Type"] = 'Network Card'
 
 									# Manufacturer (second group)
@@ -436,11 +427,12 @@ def network():
 
 def getNetworkCardModel(busAddress):
 	trimmedBusAddress = busAddress[5:]
+	# print(f"trimming {busAddress}-> {trimmedBusAddress}")
 	try:
 		lspci_result = subprocess.Popen(
 			["lspci"],stdout=subprocess.PIPE,universal_newlines=True).stdout
 	except:
-		return "unknown"
+		return "-"
 
 	for line in lspci_result:
 		regex_addr = re.search("^{addr}\s(.*)$".format(addr=trimmedBusAddress),line)
@@ -450,7 +442,7 @@ def getNetworkCardModel(busAddress):
 				if regex_model != None:
 					return model
 
-	return "unknown"
+	return "-"
 
 def sata():
 	try:
@@ -537,10 +529,6 @@ def check_pci_network_card_match(slot, card):
 	return False
 
 def get_disk_by_path():
-    """
-    Parse the output of `ls -l /dev/disk/by-path` to extract PCI addresses and associated NVMe devices.
-    Returns a dictionary where keys are the PCI addresses and values are the devices (e.g., nvme0n1).
-    """
     try:
         # Run the `ls -l /dev/disk/by-path` command
         result = subprocess.Popen(['ls', '-l', '/dev/disk/by-path'], stdout=subprocess.PIPE, universal_newlines=True).stdout

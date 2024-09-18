@@ -18,6 +18,7 @@ import re
 import subprocess
 import json
 import sys
+import os
 from optparse import OptionParser
 
 g_dmi_fields = [
@@ -53,6 +54,26 @@ BA_LUT_MZ73 = {
 	"PCIE_4": ["0000:41:00.0"],
 }
 
+def get_motherboard_model_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		mobo_obj = {
+			"Motherboard": [{
+				"Manufacturer": si["Motherboard"]["Manufacturer"],
+				"Product Name": si["Motherboard"]["Product Name"],
+				"Serial Number": si["Motherboard"]["Serial Number"]
+			}
+			]
+		}
+		return json.dumps(mobo_obj)
+	else:
+		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
+
+def is_MZ73_onboard_ethernet(device_name):
+	return "BCM57416" in device_name
 
 def get_ipv4(addr_info):
 	if not addr_info:
@@ -122,9 +143,9 @@ def get_network_info():
 		return False
 	lshw = []
 	for line in lshw_result:
-		regex_lshw = re.search("^pci@(\S+)\s+(\S+)",line)
+		regex_lshw = re.search("^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
 		if regex_lshw != None:
-			lshw.append([regex_lshw.group(1),regex_lshw.group(2)])
+			lshw.append([regex_lshw.group(1),regex_lshw.group(2),regex_lshw.group(4)])
 
 	# DMIDECODE COMMAND:
 	# This runs the command: dmidecode -t 9
@@ -163,6 +184,9 @@ def get_network_info():
  	# Initialize a set to track unique designations
 	used_designations = set()
  
+	motherboard_info = json.loads(get_motherboard_model_server_info())
+	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
+ 
 	for i in range(0,len(slot_entries),len(g_dmi_fields)):
 		# cards.append(dict(slot_entries[i:i+len(g_dmi_fields)]))
 		card = dict(slot_entries[i:i+len(g_dmi_fields)])
@@ -177,7 +201,7 @@ def get_network_info():
 			updated_designation = re.sub(r'_[A-Z]$', '', designation)  # This removes the trailing _A, _B, etc.
 			actual_slot = updated_designation  # Use the updated designation for slot comparison
 
-			if actual_slot in PCIE_SLOT_TYPE_GIGABYTE_ME03:
+			if motherboard_model.startswith("ME03") and actual_slot in PCIE_SLOT_TYPE_GIGABYTE_ME03:
 				card["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[actual_slot]
 			else:
 				card["Type"] = card.get("Type")  # Keep the original type if no match is found
@@ -193,15 +217,11 @@ def get_network_info():
 			# 	print(f"Skipping duplicate designation: {actual_slot}")
 
 	for card in cards:
-		# print(f"Checking bus address for card: {card}")
-  
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
 			card["Bus Address"] = BA_EPC612D8A[card["Bus Address"]]
-			# print(f"Updated bus address for card: {card}")
 		
 		if "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
 			card["Bus Address"] = BA_LUT_MZ73[card["Designation"]]
-			# print(f"Updated bus address for card: {card}")
 
 	# for each card in the list of dictionaries, append 
 	# dictionaries to a list that have the same Bus address
@@ -211,12 +231,18 @@ def get_network_info():
 	for card in cards:
 		matched_bus_address = None
 		for hw_entry in lshw:
+			device_name = hw_entry[2]
+			
+			# Exclude onboard ethernet from PCI matching
+			if motherboard_model.startswith('MZ73'):
+				if is_MZ73_onboard_ethernet(device_name):
+					continue
+ 
 			# Check if Bus Address is a list or a single address
 			card_bus_addresses = card["Bus Address"] if isinstance(card["Bus Address"], list) else [card["Bus Address"]]
 			
 			# Compare each address in card_bus_addresses to hw_entry[0]
 			for card_bus_address in card_bus_addresses:
-				# print(f"Comparing card bus address {card_bus_address} with hw_entry {hw_entry[0]}")
 				
 				# Normalize the formats for comparison (remove leading zeros, case insensitive)
 				normalized_card_bus_address = card_bus_address.lower().lstrip('0')
@@ -225,7 +251,6 @@ def get_network_info():
 				if normalized_card_bus_address == normalized_hw_entry_bus_address:
 					card["Connection Name"] = hw_entry[1]
 					matched_bus_address = card_bus_address  # Store the matching bus address
-					# print(f"Matched card with connection: {card}")
 					break  # Break inner loop if a match is found
 			if matched_bus_address:
 				card["Bus Address"] = matched_bus_address  # Set the card's bus address to the matching one

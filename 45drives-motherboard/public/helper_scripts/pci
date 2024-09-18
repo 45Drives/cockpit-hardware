@@ -40,7 +40,6 @@ g_network_card_models = [
 	"82599ES",
 	"BCM57412",
 	"MT27800",
-	# "BCM57416",
 ]
 
 g_sata_controllers = [
@@ -77,7 +76,7 @@ PCIE_SLOT_TYPE_GIGABYTE_MZ73 = {
 
 BA_LUT_MZ73 = {
 	"PCIE_1": ["0000:a2:00.0"],
-	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],  # Multiple potential bus addresses
+	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],
 	"PCIE_3": ["0000:01:00.0"],
 	"PCIE_4": ["0000:41:00.0"],
 	"M2_0": ["0000:61:00.0"]
@@ -103,34 +102,25 @@ def get_motherboard_model_server_info():
 
 
 def parse_lspci_output():
-	"""
-	Parse the lspci machine-ready output and return a dictionary with bus addresses as keys
-	and an array of the rest of the line values as the value, excluding entries containing certain strings.
-	"""
 	try:
-		# Run the 'lspci -mm' command
 		lspci_output = subprocess.Popen(['lspci', '-mm'], stdout=subprocess.PIPE, universal_newlines=True).communicate()[0]
 	except Exception as e:
 		print(f"Error running 'lspci -mm': {e}")
 		sys.exit(1)
 	
-	# Update regex to capture full bus address in format xx:xx.x
 	bus_address_pattern = re.compile(r'^([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9])')
 	parsed_data = {}
 
-	# List of strings to exclude
+	# List of strings to exclude (onboard ethernet shows with same pci address as slot 3 in use)
 	exclusion_strings = ['BCM57416', 'Non-Essential Instrumentation']
 
 	for line in lspci_output.splitlines():
-		# Match the bus address using the regex
 		match = bus_address_pattern.match(line)
 		if match:
 			bus_address = '0000:' + match.group(1)
 			rest_of_line = re.findall(r'"[^"]*"|[\S]+', line)[1:]
 
-			# Check if any exclusion strings are present in rest_of_line
 			if not any(exclusion_string in ' '.join(rest_of_line) for exclusion_string in exclusion_strings):
-				# Only add to parsed_data if no exclusion string is found
 				parsed_data[bus_address] = rest_of_line
 
 	return parsed_data
@@ -188,10 +178,7 @@ def dmidecode():
 					current_slot = None  # Stop processing this slot if designation is N/A
 					continue  # Move to the next line
 
-				# Strip any _A, _B, etc., from the designation
 				stripped_designation = re.sub(r'_[A-Z]$', '', designation)
-
-				# Update designation after stripping
 				current_slot["Designation"] = stripped_designation
 
 				match = pcie_pattern.search(stripped_designation)
@@ -215,7 +202,7 @@ def dmidecode():
 				else:
 					current_slot["Type"] = actual_type
 
-			# Mark empty slots as Available and ignore MCIO slots
+			# Mark empty slots as Available
 			if "Current Usage" not in current_slot or current_slot.get("Current Usage") != "In Use":
 				current_slot["Current Usage"] = "Available"
 
@@ -223,7 +210,7 @@ def dmidecode():
 			if "Bus Address" in current_slot and current_slot["Bus Address"] in BA_EPC612D8A:
 				current_slot["Bus Address"] = BA_EPC612D8A[current_slot["Bus Address"]]
 
-	# Handle the last slot, if any
+	# Handle the last error slot, if any
 	if current_slot:
 		if current_slot.get("Designation") != "Y3...@ptal._..P" and current_slot.get("Bus Address") != "0000:00:00.0":
 			cards.append(current_slot)
@@ -232,16 +219,9 @@ def dmidecode():
 
 
 def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
-	"""
-	Process PCI slots and match them with devices, while handling errors like "<OUT OF SPEC>" and "Unknown" usage.
-	If the motherboard is MZ73, match the lspci bus addresses with dmidecode using the bus address lookup table (BA_LUT_MZ73).
-	"""
-	# print("DEBUG: Starting process_pci_slots_and_devices...")
-
 	matched_devices = {}
 	motherboard_info = json.loads(get_motherboard_model_server_info())
 	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
-	# print(f"DEBUG: Motherboard model: {motherboard_model}")
 
 	# Track which PCIe slots have been processed to avoid duplicates
 	processed_slots = {}
@@ -251,8 +231,6 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
 		designation = slot.get("Designation", "")
 		slot_type = slot.get("Type", "")
 		bus_address = slot.get("Bus Address", "")
-
-		# print(f"DEBUG: Processing slot: {designation}, Type: {slot_type}, Bus Address: {bus_address}")
 
 		# Skip any MCIO Ports
 		if slot_type == "MCIO Port":
@@ -444,10 +422,6 @@ def lsblk(device):
 	return partitions
 
 def get_disk_by_path():
-    """
-    Parse the output of `ls -l /dev/disk/by-path` to extract PCI addresses and associated NVMe devices.
-    Returns a dictionary where keys are the PCI addresses and values are the devices (e.g., nvme0n1).
-    """
     try:
         # Run the `ls -l /dev/disk/by-path` command
         result = subprocess.Popen(['ls', '-l', '/dev/disk/by-path'], stdout=subprocess.PIPE, universal_newlines=True).stdout
@@ -459,23 +433,14 @@ def get_disk_by_path():
     # Regular expression to extract PCI addresses for NVMe devices
     pci_nvme_regex = re.compile(r'pci-([0-9a-fA-F:.-]+)-nvme-\d+')
 
-    # Parse the output to extract PCI addresses and associated NVMe devices
-    # print("Parsing `ls -l /dev/disk/by-path` output:")
     for line in result:
         # print(f"Processing line: {line.strip()}")
         match = pci_nvme_regex.search(line)
         if match:
             pci_address = match.group(1)
             device = line.split(" -> ")[-1].strip().replace('../../', '')
-            if not device.endswith("part"):  # Ignore partition links
+            if not device.endswith("part"):
                 disk_map[pci_address] = device
-                # print(f"Found NVMe device: {device} with PCI address: {pci_address}")
-            # else:
-            #     print(f"Ignored partition: {device}")
-        # else:
-        #     print(f"No match for NVMe in line: {line.strip()}")
-    
-    # print(f"Disk map: {disk_map}")
     return disk_map
 
 

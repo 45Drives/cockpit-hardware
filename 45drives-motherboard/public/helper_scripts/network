@@ -17,6 +17,7 @@
 import re
 import subprocess
 import json
+import os
 
 g_dmi_fields = [
 	"Bus Address",
@@ -46,15 +47,34 @@ PCIE_SLOT_TYPE_GIGABYTE_ME03 = {
 
 BA_LUT_MZ73 = {
 	"PCIE_1": ["0000:a2:00.0"],
-	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],  # Multiple potential bus addresses
+	"PCIE_2": ["0000:81:00.0", "0000:84:00.0"],
 	"PCIE_3": ["0000:01:00.0"],
 	"PCIE_4": ["0000:41:00.0"],
 }
 
+def get_motherboard_model_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		mobo_obj = {
+			"Motherboard": [{
+				"Manufacturer": si["Motherboard"]["Manufacturer"],
+				"Product Name": si["Motherboard"]["Product Name"],
+				"Serial Number": si["Motherboard"]["Serial Number"]
+			}
+			]
+		}
+		return json.dumps(mobo_obj)
+	else:
+		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
+
+def is_MZ73_onboard_ethernet(device_name):
+    return "BCM57416" in device_name
 
 def get_network_info():
 	try:
-		# print("Running 'ip addr' command...")
 		ipaddr_result = subprocess.Popen(
 			["ip","addr"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except Exception as e:
@@ -68,31 +88,25 @@ def get_network_info():
 		regex_inet = re.search("^\s+inet\s(\S+).*$",line)
 		regex_inet6 = re.search("^\s+inet6\s(\S+).*$",line)
 		if regex_connection != None:
-			# print(f"Found connection: {regex_connection.groups()}")
 			network_json_str += (
 					"{\"Connection Name\":\"" + regex_connection.group(2)+"\"," +
 					"\"Connection State\":\"" + regex_connection.group(3)+"\"},"
 				)
 		if regex_link != None:
-			# print(f"Found link type and MAC: {regex_link.groups()}")
 			network_json_str = network_json_str[:-2]
 			network_json_str += (",\"Type\":\""+regex_link.group(1)+"\",")
 			network_json_str += ("\"MAC\":\""+regex_link.group(2)+"\"},")
 		if regex_inet != None:
-			# print(f"Found IPv4 address: {regex_inet.group(1)}")
 			network_json_str = network_json_str[:-2]
 			network_json_str += (",\"IPv4\":\""+regex_inet.group(1)+"\"},")
 		if regex_inet6 != None:
-			# print(f"Found IPv6 address: {regex_inet6.group(1)}")
 			network_json_str = network_json_str[:-2]
 			network_json_str += (",\"IPv6\":\""+regex_inet6.group(1)+"\"},")
 
 	network_json_str = network_json_str[:-1]
 	network_json_str += "]}"
-	# print(f"Network info collected: {network_json_str}")
 
 	try:
-		# print("Running 'lshw -C network' command...")
 		lshw_result = subprocess.Popen(
 			["lshw","-C","network","-businfo","-quiet"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except Exception as e:
@@ -101,14 +115,11 @@ def get_network_info():
 	
 	lshw = []
 	for line in lshw_result:
-		regex_lshw = re.search("^pci@(\S+)\s+(\S+)",line)
+		regex_lshw = re.search("^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
 		if regex_lshw != None:
-			# print(f"Found lshw entry: {regex_lshw.groups()}")
-			lshw.append([regex_lshw.group(1),regex_lshw.group(2)])
-	# print(f"lshw entries: {lshw}")
+			lshw.append([regex_lshw.group(1),regex_lshw.group(2),regex_lshw.group(4)])
 
 	try:
-		# print("Running 'dmidecode -t 9' command...")
 		dmi_result = subprocess.Popen(
 			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except Exception as e:
@@ -121,12 +132,14 @@ def get_network_info():
 			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
 				slot_entries.append((regex.group(1),regex.group(2)))
-	# print(f"Slot entries from dmidecode: {slot_entries}")
 
 	cards = []
  
 	# Initialize a set to track unique designations
 	used_designations = set()
+
+	motherboard_info = json.loads(get_motherboard_model_server_info())
+	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
 
 	for i in range(0, len(slot_entries), len(g_dmi_fields)):
 		card = dict(slot_entries[i:i+len(g_dmi_fields)])
@@ -141,7 +154,7 @@ def get_network_info():
 			updated_designation = re.sub(r'_[A-Z]$', '', designation)  # This removes the trailing _A, _B, etc.
 			actual_slot = updated_designation  # Use the updated designation for slot comparison
 
-			if actual_slot in PCIE_SLOT_TYPE_GIGABYTE_ME03:
+			if motherboard_model.startswith("ME03") and designation in PCIE_SLOT_TYPE_GIGABYTE_ME03:
 				card["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[actual_slot]
 			else:
 				card["Type"] = card.get("Type")  # Keep the original type if no match is found
@@ -156,28 +169,31 @@ def get_network_info():
 			# else:
 			# 	print(f"Skipping duplicate designation: {actual_slot}")
 
-
 	for card in cards:
-		# print(f"Checking bus address for card: {card}")
   
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
 			card["Bus Address"] = BA_EPC612D8A[card["Bus Address"]]
-			# print(f"Updated bus address for card: {card}")
 		
 		if "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
 			card["Bus Address"] = BA_LUT_MZ73[card["Designation"]]
-			# print(f"Updated bus address for card: {card}")
 
+	# Modify the valid_cards matching section
 	valid_cards = []
 	for card in cards:
 		matched_bus_address = None
 		for hw_entry in lshw:
+			device_name = hw_entry[2]
+			
+			# Exclude onboard ethernet from PCI matching
+			if motherboard_model.startswith('MZ73'):
+				if is_MZ73_onboard_ethernet(device_name):
+					continue
+
 			# Check if Bus Address is a list or a single address
 			card_bus_addresses = card["Bus Address"] if isinstance(card["Bus Address"], list) else [card["Bus Address"]]
 			
 			# Compare each address in card_bus_addresses to hw_entry[0]
 			for card_bus_address in card_bus_addresses:
-				# print(f"Comparing card bus address {card_bus_address} with hw_entry {hw_entry[0]}")
 				
 				# Normalize the formats for comparison (remove leading zeros, case insensitive)
 				normalized_card_bus_address = card_bus_address.lower().lstrip('0')
@@ -186,7 +202,6 @@ def get_network_info():
 				if normalized_card_bus_address == normalized_hw_entry_bus_address:
 					card["Connection Name"] = hw_entry[1]
 					matched_bus_address = card_bus_address  # Store the matching bus address
-					# print(f"Matched card with connection: {card}")
 					break  # Break inner loop if a match is found
 			if matched_bus_address:
 				card["Bus Address"] = matched_bus_address  # Set the card's bus address to the matching one
@@ -195,7 +210,6 @@ def get_network_info():
 
 	final_card_lst = []
 	for card in valid_cards:
-		# print(f"Duplicating card: {card}")
 		card_duplicate = card.copy()
 
     	# Check if the connection name ends with "0np0" and replace it with "1np1"
@@ -210,8 +224,6 @@ def get_network_info():
 
 		final_card_lst.append(card)  # Append the original card
 		final_card_lst.append(card_duplicate)  # Append the modified duplicate
-		# print(f"Added card and its duplicate: {card}, {card_duplicate}")
-
 
 	j_dict = json.loads(network_json_str)
 
@@ -225,7 +237,6 @@ def get_network_info():
 				regex = re.search(r"(PCIE_\d+|(?:SLOT|PCIE)\d+)",card["Designation"])
 				if regex != None:
 					obj["PCI Slot"] = regex.group(1)
-				# print(f"Updated network info with PCI data: {obj}")
 
 	return json.dumps(j_dict)
 
