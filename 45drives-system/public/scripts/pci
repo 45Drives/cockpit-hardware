@@ -574,7 +574,7 @@ def main():
 		for hba in hba_cards:
 			for slot in pci_slots:
 				# Check if the slot's designation exists in the BA_LUT_MZ73 lookup table
-				if slot["Designation"] in BA_LUT_MZ73:
+				if mobo_info['Motherboard'][0]['Product Name'].startswith('MZ73') and slot["Designation"] in BA_LUT_MZ73:
 					# Compare the HBA's bus address with the bus addresses in the lookup table
 					if hba["Bus Address"] in BA_LUT_MZ73[slot["Designation"]]:
 						slot["Card Type"] = "HBA"

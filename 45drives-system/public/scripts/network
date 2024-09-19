@@ -220,7 +220,7 @@ def get_network_info():
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
 			card["Bus Address"] = BA_EPC612D8A[card["Bus Address"]]
 		
-		if "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
+		if motherboard_model.startswith("MZ733") and "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
 			card["Bus Address"] = BA_LUT_MZ73[card["Designation"]]
 
 	# for each card in the list of dictionaries, append 
