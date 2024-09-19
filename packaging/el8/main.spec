@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Thu Sep 19 2024 Jordan Keough <jkeough@45drives.com> 2.4.4-1
+- Fully adds MZ73 board support
 * Fri Sep 06 2024 Jordan Keough <jkeough@45drives.com> 2.4.3-1
 - Adds Gigabyte MS73-HB0 motherboard support
 * Fri Aug 23 2024 Jordan Keough <jkeough@45drives.com> 2.4.2-1

@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.4.3-1
+## cockpit-45drives-hardware 2.4.4-1
 
-* Adds Gigabyte MS73-HB0 motherboard support
+* Fully adds MZ73 board support
