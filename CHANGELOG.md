@@ -1,3 +1,5 @@
-## cockpit-45drives-hardware 2.4.4-1
+## cockpit-45drives-hardware 2.4.5-1
 
-* Fully adds MZ73 board support
+* b
+* 1
+* Adds support for new 1UGW mobo (MC13-LE1)

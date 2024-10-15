@@ -1,3 +1,11 @@
+cockpit-45drives-hardware (2.4.5-1focal) focal; urgency=medium
+
+  * b
+  * 1
+  * Adds support for new 1UGW mobo (MC13-LE1)
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 15 Oct 2024 05:58:15 -0300
+
 cockpit-45drives-hardware (2.4.4-1focal) focal; urgency=medium
 
   * Fully adds MZ73 board support

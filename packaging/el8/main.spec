@@ -42,6 +42,10 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Tue Oct 15 2024 Jordan Keough <jkeough@45drives.com> 2.4.5-1
+- b
+- 1
+- Adds support for new 1UGW mobo (MC13-LE1)
 * Thu Sep 19 2024 Jordan Keough <jkeough@45drives.com> 2.4.4-1
 - Fully adds MZ73 board support
 * Fri Sep 06 2024 Jordan Keough <jkeough@45drives.com> 2.4.3-1
