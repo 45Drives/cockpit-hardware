@@ -137,14 +137,22 @@ def dmidecode():
 			if current_slot:
 				designation = current_slot.get("Designation", "")
 				base_designation = re.sub(r'_[A-Z]$', '', designation)  # Strip _A, _B, _C, etc. from the end
+				normalized_designation = designation.replace('_', '')
 	
 				# Only add this slot if it's the first time seeing this base designation
-				if motherboard_model.startswith("MZ73") and base_designation in slot_seen:
+				if motherboard_model.startswith("MZ73") or base_designation in slot_seen:
 					current_slot = None  # Skip if already seen
 				else:
 					slot_seen[base_designation] = True  # Mark the base designation as seen
 					if current_slot.get("Bus Address") != "0000:00:00.0":
 						cards.append(current_slot)
+				if normalized_designation in slot_seen:
+					current_slot = None  # Skip if already seen
+				else:
+					slot_seen[normalized_designation] = True  # Mark the base designation as seen
+					if current_slot.get("Bus Address") != "0000:00:00.0":
+						cards.append(current_slot)
+      
 			current_slot = {}
 
 		if current_slot is not None:
@@ -529,36 +537,26 @@ def check_pci_network_card_match(slot, card):
 	return False
 
 def get_disk_by_path():
-    try:
-        # Run the `ls -l /dev/disk/by-path` command
-        result = subprocess.Popen(['ls', '-l', '/dev/disk/by-path'], stdout=subprocess.PIPE, universal_newlines=True).stdout
-    except Exception as e:
-        print(f"Error running `ls -l /dev/disk/by-path`: {e}")
-        return {}
+	try:
+		# Run the `ls -l /dev/disk/by-path` command
+		result = subprocess.Popen(['ls', '-l', '/dev/disk/by-path'], stdout=subprocess.PIPE, universal_newlines=True).stdout
+	except Exception as e:
+		print(f"Error running `ls -l /dev/disk/by-path`: {e}")
+		return {}
 
-    disk_map = {}
-    # Regular expression to extract PCI addresses for NVMe devices
-    pci_nvme_regex = re.compile(r'pci-([0-9a-fA-F:.-]+)-nvme-\d+')
+	disk_map = {}
+	# Regular expression to extract PCI addresses for NVMe devices
+	pci_nvme_regex = re.compile(r'pci-([0-9a-fA-F:.-]+)-nvme-\d+')
 
-    # Parse the output to extract PCI addresses and associated NVMe devices
-    # print("Parsing `ls -l /dev/disk/by-path` output:")
-    for line in result:
-        # print(f"Processing line: {line.strip()}")
-        match = pci_nvme_regex.search(line)
-        if match:
-            pci_address = match.group(1)
-            device = line.split(" -> ")[-1].strip().replace('../../', '')
-            if not device.endswith("part"):  # Ignore partition links
-                disk_map[pci_address] = device
-                # print(f"Found NVMe device: {device} with PCI address: {pci_address}")
-            # else:
-            #     print(f"Ignored partition: {device}")
-        # else:
-        #     print(f"No match for NVMe in line: {line.strip()}")
-    
-    # print(f"Disk map: {disk_map}")
-    return disk_map
-
+	for line in result:
+		# print(f"Processing line: {line.strip()}")
+		match = pci_nvme_regex.search(line)
+		if match:
+			pci_address = match.group(1)
+			device = line.split(" -> ")[-1].strip().replace('../../', '')
+			if not device.endswith("part"):
+				disk_map[pci_address] = device
+	return disk_map
 
 def main():
 	pci_slots = dmidecode()

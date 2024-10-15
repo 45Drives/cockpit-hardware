@@ -1,0 +1,112 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 405,
+        "y0": 450,
+        "width": 185,
+        "height": 262,
+        "diam": 0,
+        "filename": "AM5.png"
+    },
+    {
+        "type": "PCIE_1",
+        "id": "1",
+        "shape": "rect",
+        "x0": 63,
+        "y0": 190,
+        "width": 25,
+        "height": 139,
+        "diam": 24,
+        "filename": "PCI_SLOT_1.png"
+    },
+    {
+        "type": "PCIE_3",
+        "id": "2",
+        "shape": "rect",
+        "x0": 200,
+        "y0": 190,
+        "width": 32,
+        "height": 312,
+        "diam": 24,
+        "filename": "PCI_SLOT_3.png"
+    },
+    {
+        "type": "M2_0",
+        "id": "1",
+        "shape": "rect",
+        "x0": 110,
+        "y0": 562,
+        "width": 70,
+        "height": 25,
+        "diam": 24,
+        "filename": "M2.png"
+    },
+    {
+        "type": "SATA_0_1",
+        "id": "01",
+        "shape": "rect",
+        "x0": 85,
+        "y0": 840,
+        "width": 60,
+        "height": 50,
+        "diam": 22,
+        "filename": "SATA_0_1.png"
+    },
+    {
+        "type": "SATA_2_3",
+        "id": "23",
+        "shape": "rect",
+        "x0": 150,
+        "y0": 840,
+        "width": 60,
+        "height": 50,
+        "diam": 22,
+        "filename": "SATA_2_3.png"
+    },
+    {
+        "type": "DIMM_P0_A0",
+        "id": 1,
+        "shape": "rect",
+        "x0": 685,
+        "y0": 323,
+        "width": 26,
+        "height": 512,
+        "diam": 20,
+        "filename": "DIMM_P0_A0.png"
+    },
+    {
+        "type": "DIMM_P0_A1",
+        "id": 2,
+        "shape": "rect",
+        "x0": 717,
+        "y0": 323,
+        "width": 26,
+        "height": 512,
+        "diam": 20,
+        "filename": "DIMM_P0_A1.png"
+    },
+    {
+        "type": "DIMM_P0_B0",
+        "id": 3,
+        "shape": "rect",
+        "x0": 749,
+        "y0": 323,
+        "width": 26,
+        "height": 512,
+        "diam": 20,
+        "filename": "DIMM_P0_B0.png"
+    },
+    {
+        "type": "DIMM_P0_B1",
+        "id": 4,
+        "shape": "rect",
+        "x0": 779,
+        "y0": 323,
+        "width": 26,
+        "height": 512,
+        "diam": 20,
+        "filename": "DIMM_P0_B1.png"
+    }
+]

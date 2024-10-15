@@ -55,7 +55,8 @@ export default {
       "ME03-CE0-000",
       "MS03-6L0-000",
       "MS73-HB0-000",
-      "MZ73-LM0-000"
+      "MZ73-LM0-000",
+      "MC13-LE1-000"
     ]);
 
     const adminCheck = ref(false);

@@ -167,8 +167,19 @@ g_motherboard_sata_addresses = {
 		# ["pci-0000:00:51.0-nvme-1","M2M_1"],
 	],
 	"MZ73-LM0-000":[
-		
-	]
+  		["pci-0000:65:00.0-ata-1","SLSAS_0"],
+		["pci-0000:65:00.0-ata-2","SLSAS_0"],
+		["pci-0000:65:00.0-ata-3","SLSAS_0"],
+		["pci-0000:65:00.0-ata-4","SLSAS_0"],
+  
+	  	# ["pci-0000:61:00.0-nvme-1","M2_0"],
+	],
+ 	"MC13-LE1-000":[
+  		["pci-0000:0c:00.0-ata-1","SATA_0_1"],
+		["pci-0000:0c:00.0-ata-2","SATA_0_1"],
+		["pci-0000:0c:00.0-ata-3","SATA_2_3"],
+		["pci-0000:0c:00.0-ata-4","SATA_2_3"],
+	],
 }
 
 def generate_dynamic_paths():

@@ -32,23 +32,25 @@ g_dmi_mobo_fields = {
 		"ME03-CE0-000",
 		"MS03-6L0-000",
   		"MS73-HB0-000",
-    	"MZ73-LM0-000"
+    	"MZ73-LM0-000",
+     	"MC13-LE1-000"
 	],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0", "CPU1"],
+	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0", "AM5"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
+  		"AMD Ryzen 9 7950X 16-Core Processor",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
-  		"Intel(R) Xeon(R) Silver 4410Y",
+		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430"
 		],
