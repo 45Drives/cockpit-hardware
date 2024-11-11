@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.4.6-1focal) focal; urgency=medium
+
+  * Push to stable with Hardware Refresh updates
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 11 Nov 2024 07:50:02 -0400
+
 cockpit-45drives-hardware (2.4.5-1focal) focal; urgency=medium
 
   * b

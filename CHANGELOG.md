@@ -1,5 +1,3 @@
-## cockpit-45drives-hardware 2.4.5-1
+## cockpit-45drives-hardware 2.4.6-1
 
-* b
-* 1
-* Adds support for new 1UGW mobo (MC13-LE1)
+* Push to stable with Hardware Refresh updates
