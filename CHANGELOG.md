@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.4.6-1
+## cockpit-45drives-hardware 2.4.6-2
 
-* Push to stable with Hardware Refresh updates
+* push to stable build
