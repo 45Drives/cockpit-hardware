@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+import os
+import json
+import sys
+def main():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path,"r")
+		print(f.read())
+		f.close()
+	else:
+		server_info = {
+			"error_msg": "/etc/45drives/server_info/server_info.json does not exist"
+		}
+		print(json.dumps(server_info,indent=4),file=sys.stderr)
+		sys.exit(1)
+
+if __name__ == "__main__":
+    main()

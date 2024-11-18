@@ -4,31 +4,22 @@
       <h3 class="text-header text-default">Disk Viewer</h3>
       <div class="grow"></div>
       <SwitchGroup v-if="zfsInfo.zfs_installed" as="div" class="flex items-center">
-        <Switch
-          v-model="enableZfsAnimations.flag"
-          :class="[
+        <Switch v-model="enableZfsAnimations.flag" :class="[
             enableZfsAnimations.flag ? '!bg-red-700 dark:!bg-red-800' : '!bg-neutral-200 dark:!bg-neutral-900',
             'relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none',
-          ]"
-        >
-          <span
-            aria-hidden="true"
-            :class="[
+          ]">
+          <span aria-hidden="true" :class="[
               enableZfsAnimations.flag ? 'translate-x-5' : 'translate-x-0',
               'pointer-events-none inline-block h-5 w-5 rounded-full shadow bg-default transform ring-0 transition ease-in-out duration-200',
-            ]"
-          />
+            ]" />
         </Switch>
         <SwitchLabel as="span" class="ml-3">
           <span class="text-sm font-medium text-default">Show ZFS Animations</span>
         </SwitchLabel>
       </SwitchGroup>
     </div>
-    <div
-      v-if="activeSketchStr"
-      ref="canvasCardBody"
-      class="card-body flex-auto flex flex-col items-center content-center p-0 overflow-visible"
-    >
+    <div v-if="activeSketchStr" ref="canvasCardBody"
+      class="card-body flex-auto flex flex-col items-center content-center p-0 overflow-visible">
       <P5StornadoF2 v-if="activeSketchStr === 'StornadoF2'" />
       <P5F8X1 v-if="activeSketchStr === 'StorinatorF8X1'" />
       <P5F8X2 v-if="activeSketchStr === 'StorinatorF8X2'" />
@@ -36,19 +27,17 @@
       <P5Stornado2U v-if="activeSketchStr === 'Stornado2U'" />
       <P5StorinatorQ30 v-else-if="activeSketchStr === 'StorinatorQ30'" />
       <P5Stornado v-else-if="activeSketchStr === 'StornadoAV15'" />
-      <P5StorinatorXL60H16
-        v-else-if="activeSketchStr === 'StorinatorXL60H16'"
-      />
+      <P5StorinatorXL60H16 v-else-if="activeSketchStr === 'StorinatorXL60H16'" />
       <P5StorinatorS45 v-else-if="activeSketchStr === 'StorinatorS45'" />
       <P5StorinatorS45H16 v-else-if="activeSketchStr === 'StorinatorS45H16'" />
       <P5StorinatorQ30H16 v-else-if="activeSketchStr === 'StorinatorQ30H16'" />
       <P5StorinatorAV15 v-else-if="activeSketchStr === 'StorinatorAV15'" />
       <P5HomeLabHL15 v-else-if="activeSketchStr === 'HomeLabHL15'" />
+      <P5HomeLabHL4 v-else-if="activeSketchStr === 'HomeLabHL4'" />
+      <P5HomeLabHL8 v-else-if="activeSketchStr === 'HomeLabHL8'" />
       <P5StorinatorQ30H32 v-else-if="activeSketchStr === 'StorinatorQ30H32'" />
       <P5StorinatorS45H32 v-else-if="activeSketchStr === 'StorinatorS45H32'" />
-      <P5StorinatorXL60H32
-        v-else-if="activeSketchStr === 'StorinatorXL60H32'"
-      />
+      <P5StorinatorXL60H32 v-else-if="activeSketchStr === 'StorinatorXL60H32'" />
       <P5StorinatorXL60 v-else-if="activeSketchStr === 'StorinatorXL60'" />
       <P5StorinatorC8 v-else-if="activeSketchStr === 'StorinatorC8'" />
       <P5StorinatorMI4 v-else-if="activeSketchStr === 'StorinatorMI4'" />
@@ -77,6 +66,8 @@ import P5StorinatorS45H32 from "./P5StorinatorS45H32.vue";
 import P5StorinatorQ30H16 from "./P5StorinatorQ30H16.vue";
 import P5StorinatorAV15 from "./P5StorinatorAV15.vue";
 import P5HomeLabHL15 from "./P5HomeLabHL15.vue";
+import P5HomeLabHL4 from "./P5HomeLabHL4.vue";
+import P5HomeLabHL8 from "./P5HomeLabHL8.vue";
 import P5StorinatorQ30H32 from "./P5StorinatorQ30H32.vue";
 import P5StorinatorXL60H32 from "./P5StorinatorXL60H32.vue";
 import P5StorinatorXL60 from "./P5StorinatorXL60.vue";
@@ -99,6 +90,8 @@ export default {
     P5StorinatorQ30H16,
     P5StorinatorAV15,
     P5HomeLabHL15,
+    P5HomeLabHL4,
+    P5HomeLabHL8,
     P5StorinatorQ30H32,
     P5StorinatorS45H32,
     P5StorinatorXL60H32,
@@ -118,7 +111,7 @@ export default {
     const zfsInfo = inject("zfsInfo");
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab)-(H8)?(H16|H32)?-?(HL15|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
+        /(Storinator|Stornado|HomeLab)-(H8)?(H16|H32)?-?(HL15|HL4|HL8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
           modelString
         );
       let enableString = testString

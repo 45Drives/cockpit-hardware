@@ -180,6 +180,17 @@ g_motherboard_sata_addresses = {
 		["pci-0000:0c:00.0-ata-3","SATA_2_3"],
 		["pci-0000:0c:00.0-ata-4","SATA_2_3"],
 	],
+	"B550I AORUS PRO AX":[
+		["pci-0000:01:00.1-ata-1", "S-SATA1"],
+		["pci-0000:01:00.1-ata-2", "S-SATA2"],
+		["pci-0000:01:00.1-ata-3", "S-SATA3"],
+		["pci-0000:01:00.1-ata-4", "S-SATA4"],
+  		["pci-0000:06:00.0-ata-1", "I-SATA1"],
+		["pci-0000:06:00.0-ata-2", "I-SATA2"],
+		["pci-0000:06:00.0-ata-3", "I-SATA3"],
+		["pci-0000:06:00.0-ata-4", "I-SATA4"],
+		["pci-0000:06:00.0-ata-5", "I-SATA5"],
+	]
 }
 
 def generate_dynamic_paths():

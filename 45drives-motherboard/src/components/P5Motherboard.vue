@@ -15,6 +15,7 @@ export default {
 		const ram_info = inject("ram_info");
 		const sata_info = inject("sata_info");
 		const network_info = inject("network_info");
+		const server_info = inject("server_info");
 		const darkMode = inject("darkModeInjectionKey");
 		const bg_color = darkMode.value ? ref("#171717") : ref("#e5e5e5");
 		const text_color = darkMode.value ? ref("#f3f4f6") : ref("#111827");
@@ -31,16 +32,36 @@ export default {
 			// - create components (including their masks)
 			// - gather component specific info
 			// - draw populated slots
-			let bgImgPath =
-				"img/motherboard/" +
-				String(
-					mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-				) +
-				"/" +
-				String(
-					mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-				) +
-				".png";
+
+
+			const translatedMoboNameExceptions = {
+				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX"
+			};
+
+			const raw_mobo_name = String(
+				mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+			);
+
+			const chassis_size = server_info["Chassis Size"];
+
+			// Append Chassis Size directly to the translated motherboard name
+			const mobo_name = raw_mobo_name in translatedMoboNameExceptions
+				? `${translatedMoboNameExceptions[raw_mobo_name]}_${chassis_size}`
+				: raw_mobo_name;
+
+			// let bgImgPath =
+			// 	"img/motherboard/" +
+			// 	String(
+			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+			// 	) +
+			// 	"/" +
+			// 	String(
+			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+			// 	) +
+			// 	".png";
+
+			let bgImgPath = `img/motherboard/${String(mobo_name)}/${String(mobo_name)}.png`;
+
 			let background_img;
 
 			let mobo_json;
@@ -62,21 +83,28 @@ export default {
 			let globalMask;
 			let APPLIED_COUNT = 0;
 
-			const mobo_json_path =
-				"img/motherboard/" +
-				String(
-					mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-				) +
-				"/" +
-				String(
-					mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-				) +
-				".json";
+			// const mobo_json_path =
+			// 	"img/motherboard/" +
+			// 	String(
+			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+			// 	) +
+			// 	"/" +
+			// 	String(
+			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+			// 	) +
+			// 	".json";
+
+			// m.createComponentMasks = function (a) {
+			// 	var img_path = `img/motherboard/${String(
+			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
+			// 	)}/${mobo_json[a]["filename"]}`;
+			// 	MASK_ARR.push(m.loadImage(img_path));
+			// };
+
+			const mobo_json_path = `img/motherboard/${mobo_name}/${mobo_name}.json`;
 
 			m.createComponentMasks = function (a) {
-				var img_path = `img/motherboard/${String(
-					mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-				)}/${mobo_json[a]["filename"]}`;
+				const img_path = `img/motherboard/${String(mobo_name)}/${mobo_json[a]["filename"]}`;
 				MASK_ARR.push(m.loadImage(img_path));
 			};
 
@@ -448,22 +476,59 @@ export default {
 				return mask;
 			};
 
+			// m.resizePopups = function () {
+			// 	for (let i = 0; i < components.length; i++) {
+			// 		var lines = components[i].popup.content.split(/\r\n|\r|\n/);
+			// 		var linecount =
+			// 			components[i].popup.content.split(/\r\n|\r|\n/).length;
+			// 		components[i].popup.height = 18 * linecount + 10;
+
+			// 		var max_chars = 0;
+			// 		for (let j = 0; j < lines.length; j++) {
+			// 			if (lines[j].length > max_chars) {
+			// 				max_chars = lines[j].length;
+			// 			}
+			// 		}
+			// 		components[i].popup.width = 9 * max_chars + 10;
+			// 	}
+			// };
+
 			m.resizePopups = function () {
+				const wrap_threshold = 60; // Only wrap lines that exceed 60 characters
+
 				for (let i = 0; i < components.length; i++) {
 					var lines = components[i].popup.content.split(/\r\n|\r|\n/);
-					var linecount =
-						components[i].popup.content.split(/\r\n|\r|\n/).length;
+					var processedLines = [];
+
+					// Process each line to add wrapping for long lines
+					lines.forEach(line => {
+						if (line.length > wrap_threshold) {
+							// Split long lines into chunks of `wrap_threshold` characters
+							let wrapped_line = line.match(new RegExp(`.{1,${wrap_threshold}}`, 'g')).join('\n');
+							processedLines.push(...wrapped_line.split('\n'));
+						} else {
+							processedLines.push(line);
+						}
+					});
+
+					// Update the height based on the number of lines after wrapping
+					var linecount = processedLines.length;
 					components[i].popup.height = 18 * linecount + 10;
 
+					// Calculate the maximum line length for setting popup width
 					var max_chars = 0;
-					for (let j = 0; j < lines.length; j++) {
-						if (lines[j].length > max_chars) {
-							max_chars = lines[j].length;
+					for (let j = 0; j < processedLines.length; j++) {
+						if (processedLines[j].length > max_chars) {
+							max_chars = processedLines[j].length;
 						}
 					}
 					components[i].popup.width = 9 * max_chars + 10;
+
+					// Update the content with processed lines
+					components[i].popup.content = processedLines.join('\n');
 				}
 			};
+
 
 			m.getRam = function () {
 				if (ram_info) {

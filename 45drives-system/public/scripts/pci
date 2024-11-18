@@ -67,6 +67,22 @@ BA_LUT_MZ73 = {
 	"M2_0": ["0000:61:00.0"]
 }
 
+PCIE_SLOT_LUT_B550I = {
+	"J10":"PCIEX16",
+	"J3700 M.2 Slot":"M2A_CPU",
+	"J3708 PCIE x4 slot from Promontory":"M2B_SB",
+}
+
+BA_LUT_B550I = {
+	# "0000:00:01.1":["0000:01:00.0", "0000:01:00.1"]
+ 	"PCIEX16":["0000:01:00.0", "0000:01:00.1"]
+}
+
+NETWORK_BA_LUT_B550I = {
+	"00:01.0": "01:00.0",  # Maps port 00:01.0 to main device 01:00.0
+    "00:01.1": "01:00.1",
+}
+
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
 	if os.path.exists(json_path):
@@ -98,7 +114,9 @@ def parse_lspci_output():
 	bus_address_pattern = re.compile(r'^([0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9])')
 	parsed_data = {}
 
-	# List of strings to exclude
+	motherboard_info = json.loads(get_motherboard_model_server_info())
+	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
+	# List of strings to exclude (for MZ73 board, onboard ethernet shows with same pci address as slot 3 in use)
 	exclusion_strings = ['BCM57416', 'Non-Essential Instrumentation']
 
 	for line in lspci_output.splitlines():
@@ -109,7 +127,7 @@ def parse_lspci_output():
 			rest_of_line = re.findall(r'"[^"]*"|[\S]+', line)[1:]
 
 			# Check if any exclusion strings are present in rest_of_line
-			if not any(exclusion_string in ' '.join(rest_of_line) for exclusion_string in exclusion_strings):
+			if motherboard_model.startswith("MZ73") and not any(exclusion_string in ' '.join(rest_of_line) for exclusion_string in exclusion_strings):
 				# Only add to parsed_data if no exclusion string is found
 				parsed_data[bus_address] = rest_of_line
 
@@ -135,7 +153,16 @@ def dmidecode():
 	for line in dmi_result:
 		if line.startswith("Handle "):
 			if current_slot:
-				designation = current_slot.get("Designation", "")
+				if motherboard_model == "B550I AORUS PRO AX":
+					pciDesignation = current_slot.get("Designation", "")
+					# print(f"Processing slot with designation: '{pciDesignation}' and ID: '{current_slot.get('ID')}'")
+					if pciDesignation in PCIE_SLOT_LUT_B550I:
+						# print(f"Match found for: {pciDesignation}")
+						current_slot["Designation"] = PCIE_SLOT_LUT_B550I[pciDesignation]
+					# else:
+						# print(f"No match for: {pciDesignation}")
+				else:
+					designation = current_slot.get("Designation", "")
 				base_designation = re.sub(r'_[A-Z]$', '', designation)  # Strip _A, _B, _C, etc. from the end
 				normalized_designation = designation.replace('_', '')
 	
@@ -211,7 +238,20 @@ def dmidecode():
 	if current_slot:
 		if current_slot.get("Designation") != "Y3...@ptal._..P" and current_slot.get("Bus Address") != "0000:00:00.0":
 			cards.append(current_slot)
+	# Ensure the last slot is processed
+	if current_slot:
+		if motherboard_model == "B550I AORUS PRO AX":
+			pciDesignation = current_slot.get("Designation", "")
+			# print(f"Processing last slot with designation: '{pciDesignation}' and ID: '{current_slot.get('ID')}'")
+			if pciDesignation in PCIE_SLOT_LUT_B550I:
+				# print(f"Match found for: {pciDesignation}")
+				current_slot["Designation"] = PCIE_SLOT_LUT_B550I[pciDesignation]
+			# else:
+				# print(f"No match for: {pciDesignation}")
 
+		if current_slot.get("Bus Address") != "0000:00:00.0":
+			cards.append(current_slot)
+   
 	return cards
 
 
@@ -433,24 +473,62 @@ def network():
 	return network_cards
 
 
+# def getNetworkCardModel(busAddress):
+# 	trimmedBusAddress = busAddress[5:]
+# 	# print(f"trimming {busAddress}-> {trimmedBusAddress}")
+# 	try:
+# 		lspci_result = subprocess.Popen(
+# 			["lspci"],stdout=subprocess.PIPE,universal_newlines=True).stdout
+# 	except:
+# 		return "-"
+
+# 	for line in lspci_result:
+# 		regex_addr = re.search("^{addr}\s(.*)$".format(addr=trimmedBusAddress),line)
+# 		if regex_addr != None:
+# 			for model in g_network_card_models:
+# 				regex_model = re.search("{mdl}".format(mdl=model),regex_addr.group(1))
+# 				if regex_model != None:
+# 					return model
+
+# 	return "-"
+
+def find_primary_bus_for_port(port_bus_address):
+    # Look up the primary device address from the lookup table
+    primary_bus_address = NETWORK_BA_LUT_B550I.get(port_bus_address, port_bus_address)
+    # print(f"Port bus address {port_bus_address} mapped to primary bus address {primary_bus_address}")
+    return primary_bus_address
+
 def getNetworkCardModel(busAddress):
-	trimmedBusAddress = busAddress[5:]
-	# print(f"trimming {busAddress}-> {trimmedBusAddress}")
-	try:
-		lspci_result = subprocess.Popen(
-			["lspci"],stdout=subprocess.PIPE,universal_newlines=True).stdout
-	except:
-		return "-"
+    # print(f"Received busAddress: {busAddress}")
+    trimmedBusAddress = busAddress[5:]
+    primary_bus_address = find_primary_bus_for_port(trimmedBusAddress)
+    # print(f"Using primary bus address for model lookup: {primary_bus_address}")
 
-	for line in lspci_result:
-		regex_addr = re.search("^{addr}\s(.*)$".format(addr=trimmedBusAddress),line)
-		if regex_addr != None:
-			for model in g_network_card_models:
-				regex_model = re.search("{mdl}".format(mdl=model),regex_addr.group(1))
-				if regex_model != None:
-					return model
+    try:
+        lspci_result = subprocess.Popen(
+            ["lspci"], stdout=subprocess.PIPE, universal_newlines=True).stdout
+        # print("Successfully executed lspci command")
+    except Exception as e:
+        print(f"Error executing lspci command: {e}")
+        return "-"
 
-	return "-"
+    for line in lspci_result:
+        # print(f"Processing line from lspci: {line.strip()}")
+        regex_addr = re.search("^{addr}\\s(.*)$".format(addr=primary_bus_address), line)
+        
+        if regex_addr is not None:
+            # print(f"Found matching address: {regex_addr.group(0)}")
+            
+            for model in g_network_card_models:
+                # print(f"Checking model: {model} against {regex_addr.group(1)}")
+                regex_model = re.search("{mdl}".format(mdl=model), regex_addr.group(1))
+                
+                if regex_model is not None:
+                    # print(f"Matched model: {model}")
+                    return model
+
+    # print("No matching model found, returning 'unknown'")
+    return "-"
 
 def sata():
 	try:
@@ -526,15 +604,25 @@ def get_hba_server_info():
 		return []
 
 def check_pci_network_card_match(slot, card):
-	if "ID" in slot and "PCI Slot" in card and card["PCI Slot"] == slot["ID"]:
-		return True
-	if "Designation" in slot:
-		regex = r"(PCIE_\d+|(?:SLOT|PCIE)\d+)"
-		test_str = slot["Designation"]
-		match = re.match(regex, test_str, re.DOTALL)
-		if match:
-			return (match.group(1) == card.get("PCI Slot", ""))
-	return False
+    mobo_info = json.loads(get_motherboard_model_server_info())
+    # Check if motherboard is B550I and designation is in BA_LUT_B550I
+    if mobo_info['Motherboard'][0]['Product Name'].startswith('B550I'):
+        if slot.get("Designation") in BA_LUT_B550I:
+            if card.get("Bus Address") in BA_LUT_B550I[slot["Designation"]]:
+                # print(f"Match found in BA_LUT_B550I for slot {slot['Designation']} and card {card['Bus Address']}")
+                return True
+    # Fallback check for ID and PCI Slot matching
+    if "ID" in slot and "PCI Slot" in card and card["PCI Slot"] == slot["ID"]:
+        # print(f"Match found by ID for slot ID {slot['ID']} and card PCI Slot {card['PCI Slot']}")
+        return True
+    # Optional regex matching for Designation
+    if "Designation" in slot:
+        regex = r"(PCIE_\d+|(?:SLOT|PCIE)\d+)"
+        test_str = slot["Designation"]
+        match = re.match(regex, test_str, re.DOTALL)
+        if match:
+            return (match.group(1) == card.get("PCI Slot", ""))
+    return False
 
 def get_disk_by_path():
 	try:
@@ -587,14 +675,13 @@ def main():
 	# /usr/share/cockpit/45drives-system/helper_scripts/network script's
 	# .json formatted output. Append this network connection 
 	# to a list of connections for that specific PCI slot
-
 	if pci_slots and network_cards:
 		for slot in pci_slots:
 			for card in network_cards:
 				if check_pci_network_card_match(slot, card):
 					slot["Card Type"] = "Network Card"
 					slot["Card Model"] = getNetworkCardModel(str(slot["Bus Address"]))
-					if "Connections" not in slot.keys():
+					if "Connections" not in slot:
 						slot["Connections"] = []
 					slot["Connections"].append(card)
 

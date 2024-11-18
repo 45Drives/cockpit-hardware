@@ -1,0 +1,145 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 322,
+        "y0": 95,
+        "width": 294,
+        "height": 462,
+        "diam": 0,
+        "filename": "AM4.png"
+    },
+    {
+        "type": "PCIEX16",
+        "id": "1",
+        "shape": "rect",
+        "x0": 261,
+        "y0": 812,
+        "width": 432,
+        "height": 38,
+        "diam": 24,
+        "filename": "PCIEX16.png"
+    },
+     {
+        "type": "S-SATA1",
+        "id": "1",
+        "shape": "rect",
+        "x0": 816,
+        "y0": 438,
+        "width": 32,
+        "height": 78,
+        "diam": 22,
+        "filename": "S-SATA1.png"
+    },
+    {
+        "type": "S-SATA2",
+        "id": "2",
+        "shape": "rect",
+        "x0": 816,
+        "y0": 518,
+        "width": 32,
+        "height": 78,
+        "diam": 22,
+        "filename": "S-SATA2.png"
+    },
+    {
+        "type": "S-SATA3",
+        "id": "3",
+        "shape": "rect",
+        "x0": 849,
+        "y0": 438,
+        "width": 32,
+        "height": 78,
+        "diam": 22,
+        "filename": "S-SATA3.png"
+    },
+    {
+        "type": "S-SATA4",
+        "id": "4",
+        "shape": "rect",
+        "x0": 849,
+        "y0": 518,
+        "width": 32,
+        "height": 78,
+        "diam": 22,
+        "filename": "S-SATA4.png"
+    },
+    {
+        "type": "I-SATA1",
+        "id": "5",
+        "shape": "rect",
+        "x0": 362,
+        "y0": 665,
+        "width": 78,
+        "height": 32,
+        "diam": 22,
+        "filename": "I-SATA1.png"
+    },
+    {
+        "type": "I-SATA2",
+        "id": "6",
+        "shape": "rect",
+        "x0": 275,
+        "y0": 665,
+          "width": 78,
+        "height": 32,
+        "diam": 22,
+        "filename": "I-SATA2.png"
+    },
+    {
+        "type": "I-SATA3",
+        "id": "7",
+        "shape": "rect",
+        "x0": 359,
+        "y0": 738,
+          "width": 78,
+        "height": 32,
+        "diam": 22,
+        "filename": "I-SATA3.png"
+    },
+    {
+        "type": "I-SATA4",
+        "id": "8",
+        "shape": "rect",
+        "x0": 270,
+        "y0": 738,
+           "width": 78,
+        "height": 32,
+        "diam": 22,
+        "filename": "I-SATA4.png"
+    },
+    {
+        "type": "I-SATA5",
+        "id": "9",
+        "shape": "rect",
+        "x0": 459,
+        "y0": 738,
+           "width": 78,
+        "height": 32,
+        "diam": 22,
+        "filename": "I-SATA5.png"
+    },
+    {
+        "type": "DIMM_A1",
+        "id": 1,
+        "shape": "rect",
+        "x0": 720,
+        "y0": 44,
+        "width": 37,
+        "height": 711,
+        "diam": 20,
+        "filename": "DIMM_A1.png"
+    },
+    {
+        "type": "DIMM_B1",
+        "id": 2,
+        "shape": "rect",
+        "x0": 763,
+        "y0": 44,
+        "width": 37,
+        "height": 711,
+        "diam": 20,
+        "filename": "DIMM_B1.png"
+    }
+]

@@ -37,6 +37,8 @@ export default {
     provide("ram_info", ram_info);
     const network_info = reactive({});
     provide("network_info", network_info);
+    const server_info = reactive({});
+    provide("server_info", server_info);
     const scriptsComplete = ref(false);
     const scriptsValid = ref(false);
     const supportedMotherboards = reactive([
@@ -56,7 +58,8 @@ export default {
       "MS03-6L0-000",
       "MS73-HB0-000",
       "MZ73-LM0-000",
-      "MC13-LE1-000"
+      "MC13-LE1-000",
+      "B550I AORUS PRO AX"
     ]);
 
     const adminCheck = ref(false);
@@ -100,6 +103,13 @@ export default {
         failed: false,
         errorMessage: [],
         errorHeader: "Failed to obtain Network Information",
+      },
+      server_info: {
+        content: reactive({}),
+        finished: false,
+        failed: false,
+        errorMessage: [],
+        errorHeader: "Failed to obtain Server Information",
       },
     });
 
@@ -241,6 +251,32 @@ export default {
       }
     };
 
+    const getServerInfo = async () => {
+      try {
+        const state = await useSpawn(
+          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/server_info"],
+          {
+            err: "out",
+            superuser: "require",
+          }
+        ).promise();
+        let result = JSON.parse(state.stdout);
+        Object.assign(server_info, result);
+        preloadChecks.server_info.content = result;
+        preloadChecks.server_info.finished = true;
+        preloadChecks.server_info.failed = false;
+      } catch (error) {
+        console.log(error);
+        preloadChecks.server_info.content = null;
+        preloadChecks.server_info.finished = true;
+        preloadChecks.server_info.failed = true;
+        if (error.stdout)
+          preloadChecks.server_info.errorMessage.push(error.stdout);
+        if (error.stderr)
+          preloadChecks.server_info.errorMessage.push(error.stderr);
+      }
+    }
+
     const verifyPreload = async () => {
       while (
         !Boolean(
@@ -275,6 +311,7 @@ export default {
       getSataInfo();
       getRamInfo();
       getNetworkInfo();
+      getServerInfo();
       await verifyPreload();
     };
 
@@ -310,6 +347,7 @@ export default {
       sata_info,
       ram_info,
       network_info,
+      server_info,
       supportedMotherboards,
     };
   },

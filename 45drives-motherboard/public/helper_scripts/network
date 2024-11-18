@@ -52,6 +52,18 @@ BA_LUT_MZ73 = {
 	"PCIE_4": ["0000:41:00.0"],
 }
 
+PCIE_SLOT_LUT_B550I = {
+	"J10":"PCIEX16",
+	"J3700 M.2 Slot":"M2A_CPU",
+	"J3708 PCIE x4 slot from Promontory":"M2B_SB",
+}
+
+BA_LUT_B550I = {
+	# "0000:00:01.1":["0000:01:00.0", "0000:01:00.1"]
+ 	"PCIEX16":["0000:01:00.0", "0000:01:00.1"]
+}
+
+
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
 	if os.path.exists(json_path):
@@ -71,7 +83,7 @@ def get_motherboard_model_server_info():
 		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
 
 def is_MZ73_onboard_ethernet(device_name):
-    return "BCM57416" in device_name
+	return "BCM57416" in device_name
 
 def get_network_info():
 	try:
@@ -118,7 +130,7 @@ def get_network_info():
 		regex_lshw = re.search("^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
 		if regex_lshw != None:
 			lshw.append([regex_lshw.group(1),regex_lshw.group(2),regex_lshw.group(4)])
-
+			# print(f"device: {regex_lshw.group(2)}, bus: {regex_lshw.group(1)}, description: {regex_lshw.group(4)}")
 	try:
 		dmi_result = subprocess.Popen(
 			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
@@ -132,7 +144,6 @@ def get_network_info():
 			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
 				slot_entries.append((regex.group(1),regex.group(2)))
-
 	cards = []
  
 	# Initialize a set to track unique designations
@@ -143,16 +154,18 @@ def get_network_info():
 
 	for i in range(0, len(slot_entries), len(g_dmi_fields)):
 		card = dict(slot_entries[i:i+len(g_dmi_fields)])
-		
 		if "Designation" in card:
 			designation = card.get("Designation")
 			if designation == 'N/A':
 				card = None
 				continue
-
-			# Ensure that the designation suffix (_A, _B, etc.) is removed
-			updated_designation = re.sub(r'_[A-Z]$', '', designation)  # This removes the trailing _A, _B, etc.
-			actual_slot = updated_designation  # Use the updated designation for slot comparison
+			if motherboard_model == 'B550I AORUS PRO AX':
+				updated_designation = PCIE_SLOT_LUT_B550I[designation];
+				actual_slot = updated_designation
+			else:
+				# Ensure that the designation suffix (_A, _B, etc.) is removed
+				updated_designation = re.sub(r'_[A-Z]$', '', designation)  # This removes the trailing _A, _B, etc.
+				actual_slot = updated_designation  # Use the updated designation for slot comparison
 
 			if motherboard_model.startswith("ME03") and designation in PCIE_SLOT_TYPE_GIGABYTE_ME03:
 				card["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[actual_slot]
@@ -167,16 +180,19 @@ def get_network_info():
 				cards.append(card)  # Append only if the designation is unique
 				used_designations.add(actual_slot)  # Mark the designation as used
 			# else:
-			# 	print(f"Skipping duplicate designation: {actual_slot}")
+				# print(f"Skipping duplicate designation: {actual_slot}")
 
 	for card in cards:
-  
+		# print('updatedCard:', card)
 		if "Bus Address" in card.keys() and card["Bus Address"] in BA_EPC612D8A.keys():
 			card["Bus Address"] = BA_EPC612D8A[card["Bus Address"]]
 		
-		if motherboard_model.startswith("MZ733") and "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
+		if motherboard_model.startswith("MZ73") and "Designation" in card.keys() and card['Designation'] in BA_LUT_MZ73.keys():
 			card["Bus Address"] = BA_LUT_MZ73[card["Designation"]]
-
+   
+		if motherboard_model == 'B550I AORUS PRO AX' and "Designation" in card.keys() and card['Designation'] in BA_LUT_B550I.keys():
+			card["Bus Address"] = BA_LUT_B550I[card["Designation"]]
+   
 	# Modify the valid_cards matching section
 	valid_cards = []
 	for card in cards:
@@ -212,7 +228,7 @@ def get_network_info():
 	for card in valid_cards:
 		card_duplicate = card.copy()
 
-    	# Check if the connection name ends with "0np0" and replace it with "1np1"
+		# Check if the connection name ends with "0np0" and replace it with "1np1"
 		if card_duplicate["Connection Name"].endswith("0np0"):
 			card_duplicate["Connection Name"] = card_duplicate["Connection Name"][:-4] + "1np1"
 		else:
@@ -233,12 +249,14 @@ def get_network_info():
 				obj["Bus Address"] = card["Bus Address"]
 				obj["Designation"] = card["Designation"]
 				obj["PCI Type"] = card["Type"]
-    
-				regex = re.search(r"(PCIE_\d+|(?:SLOT|PCIE)\d+)",card["Designation"])
+	
+				# regex = re.search(r"(PCIE_\d+|(?:SLOT|PCIE)\d+)",card["Designation"])
+				regex = re.search(r"(PCIE(?:X\d+|_\d+|\d+)|SLOT\d+)",card["Designation"])
 				if regex != None:
 					obj["PCI Slot"] = regex.group(1)
 
 	return json.dumps(j_dict)
+
 
 def main():
 	network = get_network_info()

@@ -7,13 +7,15 @@ import json
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0", "AM5"],
+	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0", "AM5", "AM4"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
         "AMD Ryzen 9 7950X 16-Core Processor",
+        "AMD Ryzen 5 5500GT with Radeon Graphics",
+		"AMD Ryzen 7 5700G with Radeon Graphics",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",

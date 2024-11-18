@@ -77,6 +77,102 @@ g_ipmitool_sensor_fields = {
   	"DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
 }
 
+# check slot_entries for translatable locator tags (ASRockRack Motherboards, X12SPL-F, and GigaByte boards)
+locator_tags = {
+	"CPU1_DIMM_A1":["DDR4_A"],
+	"CPU1_DIMM_A2":["DDR4_A"],
+	"CPU1_DIMM_B1":["DDR4_B"],
+	"CPU1_DIMM_C1":["DDR4_C"],
+	"CPU1_DIMM_D1":["DDR4_D"],
+	"CPU1_DIMM_D2":["DDR4_D"],
+	"CPU1_DIMM_E1":["DDR4_E"],
+	"CPU1_DIMM_F1":["DDR4_F"],
+	"DIMMA1":["DIMMABCD","P1_DIMMA~D"],
+	"DIMMB1":["DIMMABCD","P1_DIMMA~D"],
+	"DIMMC1":["DIMMABCD","P1_DIMMA~D"],
+	"DIMMD1":["DIMMABCD","P1_DIMMA~D"],
+	"DIMME1":["DIMMEFGH","P1_DIMME~H"],
+	"DIMMF1":["DIMMEFGH","P1_DIMME~H"],
+	"DIMMG1":["DIMMEFGH","P1_DIMME~H"],
+	"DIMMH1":["DIMMEFGH","P1_DIMME~H"],
+	"P1-DIMMA1": ["P1_DIMMA~D"],
+	"P1-DIMMB1": ["P1_DIMMA~D"],
+	"P1-DIMMB2": ["P1_DIMMA~D"],
+	"P1-DIMMC1": ["P1_DIMMA~D"],
+	"P1-DIMMD1": ["P1_DIMMA~D"],
+	"P2-DIMMA1": ["P2_DIMMA~D"],
+	"P2-DIMMB1": ["P2_DIMMA~D"],
+	"P2-DIMMB2": ["P2_DIMMA~D"],
+	"P2-DIMMC1": ["P2_DIMMA~D"],
+	"P2-DIMMD1": ["P2_DIMMA~D"],
+	"P1-DIMME1": ["P1_DIMME~H"],
+	"P1-DIMMF1": ["P1_DIMME~H"],
+	"P1-DIMMG1": ["P1_DIMME~H"],
+	"P1-DIMMH1": ["P1_DIMME~H"],
+	"P2-DIMME1": ["P1_DIMME~H"],
+	"P2-DIMMF1": ["P1_DIMME~H"],
+	"P2-DIMMG1": ["P1_DIMME~H"],
+	"P2-DIMMH1": ["P1_DIMME~H"],
+	"DIMM_P0_A0": ["DIMMG0"],
+	"DIMM_P0_A1": ["DIMMG0"],
+	"DIMM_P0_B0": ["DIMMG0"],
+	"DIMM_P0_B1": ["DIMMG0"],
+	"DIMM_P0_C0": ["DIMMG0"],
+	"DIMM_P0_D0": ["DIMMG0"],
+	"DIMM_P0_D1": ["DIMMG0"],
+
+	"DIMM_P0_E0": ["DIMMG1"],
+	"DIMM_P0_E1": ["DIMMG1"],
+	"DIMM_P0_F0": ["DIMMG1"],
+	"DIMM_P0_F1": ["DIMMG1"],
+	"DIMM_P0_H0": ["DIMMG1"],
+	"DIMM_P0_H1": ["DIMMG1"],
+	"DIMM_P0_G0": ["DIMMG1"],
+	"DIMM_P1_I0": ["DIMMG2"],
+	"DIMM_P1_J0": ["DIMMG2"],
+	"DIMM_P1_K0": ["DIMMG2"],
+	"DIMM_P1_L0": ["DIMMG2"],
+	"DIMM_P1_M0": ["DIMMG3"],
+	"DIMM_P1_N0": ["DIMMG3"],
+	"DIMM_P1_O0": ["DIMMG3"],
+	"DIMM_P1_P0": ["DIMMG3"],
+}
+
+MZ73_locator_tags = {
+	"DIMM_P0_A0": ["DIMMG0"],
+	"DIMM_P0_B0": ["DIMMG0"],
+	"DIMM_P0_C0": ["DIMMG0"],
+	"DIMM_P0_D0": ["DIMMG0"],
+	"DIMM_P0_E0": ["DIMMG0"],
+	"DIMM_P0_F0": ["DIMMG0"],
+
+	"DIMM_P0_H0": ["DIMMG1"],
+	"DIMM_P0_G0": ["DIMMG1"],
+	"DIMM_P0_I0": ["DIMMG1"],
+	"DIMM_P0_J0": ["DIMMG1"],
+	"DIMM_P0_K0": ["DIMMG1"],
+	"DIMM_P0_L0": ["DIMMG1"],
+
+	"DIMM_P1_M0": ["DIMMG2"],
+	"DIMM_P1_N0": ["DIMMG2"],
+	"DIMM_P1_O0": ["DIMMG2"],
+	"DIMM_P1_P0": ["DIMMG2"],
+	"DIMM_P1_Q0": ["DIMMG2"],
+	"DIMM_P1_R0": ["DIMMG2"],
+
+	"DIMM_P1_S0": ["DIMMG3"],
+	"DIMM_P1_T0": ["DIMMG3"],
+	"DIMM_P1_U0": ["DIMMG3"],
+	"DIMM_P1_V0": ["DIMMG3"],
+	"DIMM_P1_W0": ["DIMMG3"],
+	"DIMM_P1_X0": ["DIMMG3"],
+}
+
+B550I_AORUS_locator_tags = {
+	'P0 CHANNEL A': 'DIMM_A1',
+	'P0 CHANNEL B': 'DIMM_B1'
+}
+
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
 	if os.path.exists(json_path):
@@ -130,126 +226,59 @@ def dmidecode():
 		"Type": "-",
 		"Manufacturer": "-",
 		"Serial Number" : "-",
-		"Temperature" : "-"
+		"Temperature" : "-",
 	}
 
 	current_slot = None
-
-	for line in dmi_result:
-		if line.startswith("Handle "):
-			if current_slot != None:
-				slot_entries.append(current_slot.copy())
-			current_slot = slot_template.copy()
-		elif current_slot != None:
-			for field in g_dmi_fields:
-				regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
-				if regex != None and current_slot != None:
-					current_slot[regex.group(1)] = regex.group(2)
-					
-	#append the last entry
-	if current_slot != None:
-		slot_entries.append(current_slot.copy())
-
-	# check slot_entries for translatable locator tags (ASRockRack Motherboards, X12SPL-F, and GigaByte boards)
-	locator_tags = {
-		"CPU1_DIMM_A1":["DDR4_A"],
-		"CPU1_DIMM_A2":["DDR4_A"],
-		"CPU1_DIMM_B1":["DDR4_B"],
-		"CPU1_DIMM_C1":["DDR4_C"],
-		"CPU1_DIMM_D1":["DDR4_D"],
-		"CPU1_DIMM_D2":["DDR4_D"],
-		"CPU1_DIMM_E1":["DDR4_E"],
-		"CPU1_DIMM_F1":["DDR4_F"],
-		"DIMMA1":["DIMMABCD","P1_DIMMA~D"],
-		"DIMMB1":["DIMMABCD","P1_DIMMA~D"],
-		"DIMMC1":["DIMMABCD","P1_DIMMA~D"],
-		"DIMMD1":["DIMMABCD","P1_DIMMA~D"],
-		"DIMME1":["DIMMEFGH","P1_DIMME~H"],
-		"DIMMF1":["DIMMEFGH","P1_DIMME~H"],
-		"DIMMG1":["DIMMEFGH","P1_DIMME~H"],
-		"DIMMH1":["DIMMEFGH","P1_DIMME~H"],
-		"P1-DIMMA1": ["P1_DIMMA~D"],
-		"P1-DIMMB1": ["P1_DIMMA~D"],
-		"P1-DIMMB2": ["P1_DIMMA~D"],
-		"P1-DIMMC1": ["P1_DIMMA~D"],
-		"P1-DIMMD1": ["P1_DIMMA~D"],
-		"P2-DIMMA1": ["P2_DIMMA~D"],
-		"P2-DIMMB1": ["P2_DIMMA~D"],
-		"P2-DIMMB2": ["P2_DIMMA~D"],
-		"P2-DIMMC1": ["P2_DIMMA~D"],
-		"P2-DIMMD1": ["P2_DIMMA~D"],
-		"P1-DIMME1": ["P1_DIMME~H"],
-		"P1-DIMMF1": ["P1_DIMME~H"],
-		"P1-DIMMG1": ["P1_DIMME~H"],
-		"P1-DIMMH1": ["P1_DIMME~H"],
-		"P2-DIMME1": ["P1_DIMME~H"],
-		"P2-DIMMF1": ["P1_DIMME~H"],
-		"P2-DIMMG1": ["P1_DIMME~H"],
-		"P2-DIMMH1": ["P1_DIMME~H"],
-		"DIMM_P0_A0": ["DIMMG0"],
-		"DIMM_P0_A1": ["DIMMG0"],
-		"DIMM_P0_B0": ["DIMMG0"],
-		"DIMM_P0_B1": ["DIMMG0"],
-  		"DIMM_P0_C0": ["DIMMG0"],
-		"DIMM_P0_D0": ["DIMMG0"],
-		"DIMM_P0_D1": ["DIMMG0"],
-  
-		"DIMM_P0_E0": ["DIMMG1"],
-		"DIMM_P0_E1": ["DIMMG1"],
-		"DIMM_P0_F0": ["DIMMG1"],
-		"DIMM_P0_F1": ["DIMMG1"],
-		"DIMM_P0_H0": ["DIMMG1"],
-		"DIMM_P0_H1": ["DIMMG1"],
-		"DIMM_P0_G0": ["DIMMG1"],
-  		"DIMM_P1_I0": ["DIMMG2"],
-		"DIMM_P1_J0": ["DIMMG2"],
-		"DIMM_P1_K0": ["DIMMG2"],
-		"DIMM_P1_L0": ["DIMMG2"],
-		"DIMM_P1_M0": ["DIMMG3"],
-		"DIMM_P1_N0": ["DIMMG3"],
-		"DIMM_P1_O0": ["DIMMG3"],
-		"DIMM_P1_P0": ["DIMMG3"],
-	}
- 
-	MZ73_locator_tags = {
-		"DIMM_P0_A0": ["DIMMG0"],
-		"DIMM_P0_B0": ["DIMMG0"],
-  		"DIMM_P0_C0": ["DIMMG0"],
-		"DIMM_P0_D0": ["DIMMG0"],
-		"DIMM_P0_E0": ["DIMMG0"],
-		"DIMM_P0_F0": ["DIMMG0"],
-  
-		"DIMM_P0_H0": ["DIMMG1"],
-		"DIMM_P0_G0": ["DIMMG1"],
-  		"DIMM_P0_I0": ["DIMMG1"],
-		"DIMM_P0_J0": ["DIMMG1"],
-		"DIMM_P0_K0": ["DIMMG1"],
-		"DIMM_P0_L0": ["DIMMG1"],
-  
-		"DIMM_P1_M0": ["DIMMG2"],
-		"DIMM_P1_N0": ["DIMMG2"],
-		"DIMM_P1_O0": ["DIMMG2"],
-		"DIMM_P1_P0": ["DIMMG2"],
-  		"DIMM_P1_Q0": ["DIMMG2"],
-		"DIMM_P1_R0": ["DIMMG2"],
-  
-		"DIMM_P1_S0": ["DIMMG3"],
-		"DIMM_P1_T0": ["DIMMG3"],
-  		"DIMM_P1_U0": ["DIMMG3"],
-		"DIMM_P1_V0": ["DIMMG3"],
-		"DIMM_P1_W0": ["DIMMG3"],
-		"DIMM_P1_X0": ["DIMMG3"],
-	}
-
 	motherboard_info = json.loads(get_motherboard_model_server_info())
 	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
 
+	bank_locator = ""  # Variable to store the bank locator for each slot
+
+	for line in dmi_result:
+		if line.startswith("Handle "):
+			if current_slot:
+				# Filter: Only add if motherboard model is B550I AORUS PRO AX and the Locator is DIMM 1 with valid data
+				if motherboard_model == "B550I AORUS PRO AX":
+					if current_slot["Locator"] == "DIMM 1" and (
+						current_slot["Size"] != "No Module Installed" or current_slot["Size"] == "No Module Installed"
+					):
+						# Apply B550I_AORUS locator tag based on Bank Locator
+						if bank_locator in B550I_AORUS_locator_tags:
+							current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
+						slot_entries.append(current_slot.copy())
+				else:
+					slot_entries.append(current_slot.copy())
+			current_slot = slot_template.copy()
+			bank_locator = ""  # Reset bank locator for new entry
+		elif current_slot:
+			for field in g_dmi_fields:
+				regex = re.search(r"^\s+({fld}):\s+(.*)".format(fld=field), line)
+				if regex:
+					current_slot[regex.group(1)] = regex.group(2)
+			# Capture the Bank Locator
+			if line.strip().startswith("Bank Locator:"):
+				bank_locator = line.split(":", 1)[1].strip()
+
+	# Append the last entry if it meets criteria
+	if current_slot:
+		if motherboard_model == "B550I AORUS PRO AX":
+			if current_slot["Locator"] == "DIMM 1" and (
+				current_slot["Size"] != "No Module Installed" or current_slot["Size"] == "No Module Installed"
+			):
+				if bank_locator in B550I_AORUS_locator_tags:
+					current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
+					current_slot["Temperature"] = 'N/A'
+				slot_entries.append(current_slot.copy())
+		else:
+			slot_entries.append(current_slot.copy())
+
 	for slot in slot_entries:
 		if motherboard_model.startswith("MZ73"):
-			if "Locator" in slot.keys() and slot["Locator"] in MZ73_locator_tags.keys():
+			if "Locator" in slot and slot["Locator"] in MZ73_locator_tags:
 				slot["Temperature Keys"] = MZ73_locator_tags[slot["Locator"]]
 		else:
-			if "Locator" in slot.keys() and slot["Locator"] in locator_tags.keys():
+			if "Locator" in slot and slot["Locator"] in locator_tags:
 				slot["Temperature Keys"] = locator_tags[slot["Locator"]]
 
 	return slot_entries
