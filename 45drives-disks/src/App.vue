@@ -150,13 +150,22 @@ export default {
             case "AV15":
               pageLayout.value = "B";
               break;
-            case "HL15":
-              pageLayout.value = "B";
-              break;
             case "HL4":
               pageLayout.value = "B";
               break;
             case "HL8":
+              pageLayout.value = "B";
+              break;
+            case "HL15":
+              pageLayout.value = "B";
+              break;
+            case "PRO4":
+              pageLayout.value = "B";
+              break;
+            case "PRO8":
+              pageLayout.value = "B";
+              break;
+            case "PRO15":
               pageLayout.value = "B";
               break;
             case "C8":
@@ -202,13 +211,22 @@ export default {
             case "AV15":
               pageLayout.value = "BZ";
               break;
-            case "HL15":
-              pageLayout.value = "BZ";
-              break;
             case "HL4":
               pageLayout.value = "BZ";
               break; 
             case "HL8":
+              pageLayout.value = "BZ";
+              break;
+            case "HL15":
+              pageLayout.value = "BZ";
+              break;
+            case "PRO4":
+              pageLayout.value = "BZ";
+              break;
+            case "PRO8":
+              pageLayout.value = "BZ";
+              break;
+            case "PRO15":
               pageLayout.value = "BZ";
               break;
             case "C8":

@@ -13,77 +13,98 @@ g_dmi_cpu_fields = {
 		"AMD EPYC 7281 16-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
-        "AMD Ryzen 9 7950X 16-Core Processor",
-        "AMD Ryzen 5 5500GT with Radeon Graphics",
+		"AMD Ryzen 9 7950X 16-Core Processor",
+		"AMD Ryzen 5 5500GT with Radeon Graphics",
 		"AMD Ryzen 7 5700G with Radeon Graphics",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
-		"Intel(R) Xeon(R) Gold 6430"
+		"Intel(R) Xeon(R) Gold 6430",
+		"Intel(R) Xeon(R) E E-2434"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
 }
 
 g_ipmitool_sensor_fields = {
-    "CPU0 Temp": "(C)",
-    "CPU1 Temp": "(C)",
-    "CPU2 Temp": "(C)",
-    "PW Consumption": "(W)",
-    "FAN1": "(RPM)",
-    "FAN2": "(RPM)",
-    "FAN3": "(RPM)",
-    "FAN4": "(RPM)",
-    "FAN5": "(RPM)",
-    "FAN6": "(RPM)",
-    "FANA": "(RPM)",
-    "FANB": "(RPM)",
-    "P1-DIMMA1 Temp": " (C)",
-    "P1-DIMMB1 Temp": " (C)",
-    "P1-DIMMD1 Temp": " (C)",
-    "P1-DIMME1 Temp": " (C)",
-    "P2-DIMMA1 Temp": " (C)",
-    "P2-DIMMB1 Temp": " (C)",
-    "P2-DIMMD1 Temp": " (C)",
-    "P2-DIMME1 Temp": " (C)",
-    "CPU Temp": " (C)",
-    "DIMMA1 Temp": " (C)",
-    "DIMMA2 Temp": " (C)",
-    "DIMMB1 Temp": " (C)",
-    "DIMMB2 Temp": " (C)",
-    "DIMMC1 Temp": " (C)",
-    "DIMMC2 Temp": " (C)",
-    "DIMMD1 Temp": " (C)",
-    "DIMMD2 Temp": " (C)",
-    "DIMME1 Temp": " (C)",
-    "DIMME2 Temp": " (C)",
-    "DIMMF1 Temp": " (C)",
-    "DIMMF2 Temp": " (C)",
-    "DIMMG1 Temp": " (C)",
-    "DIMMH1 Temp": " (C)",
-    "DDR4_A Temp": " (C)", #ASRockRack 
+	"CPU0 Temp": "(C)",
+	"CPU1 Temp": "(C)",
+	"CPU2 Temp": "(C)",
+	"TEMP_CPU": "(C)",
+	"PW Consumption": "(W)",
+	"FAN1": "(RPM)",
+	"FAN2": "(RPM)",
+	"FAN3": "(RPM)",
+	"FAN4": "(RPM)",
+	"FAN5": "(RPM)",
+	"FAN6": "(RPM)",
+	"FANA": "(RPM)",
+	"FANB": "(RPM)",
+	"P1-DIMMA1 Temp": " (C)",
+	"P1-DIMMB1 Temp": " (C)",
+	"P1-DIMMD1 Temp": " (C)",
+	"P1-DIMME1 Temp": " (C)",
+	"P2-DIMMA1 Temp": " (C)",
+	"P2-DIMMB1 Temp": " (C)",
+	"P2-DIMMD1 Temp": " (C)",
+	"P2-DIMME1 Temp": " (C)",
+	"CPU Temp": " (C)",
+	"DIMMA1 Temp": " (C)",
+	"DIMMA2 Temp": " (C)",
+	"DIMMB1 Temp": " (C)",
+	"DIMMB2 Temp": " (C)",
+	"DIMMC1 Temp": " (C)",
+	"DIMMC2 Temp": " (C)",
+	"DIMMD1 Temp": " (C)",
+	"DIMMD2 Temp": " (C)",
+	"DIMME1 Temp": " (C)",
+	"DIMME2 Temp": " (C)",
+	"DIMMF1 Temp": " (C)",
+	"DIMMF2 Temp": " (C)",
+	"DIMMG1 Temp": " (C)",
+	"DIMMH1 Temp": " (C)",
+	"DDR4_A Temp": " (C)", #ASRockRack 
 	"DDR4_B Temp": " (C)", #ASRockRack
 	"DDR4_C Temp": " (C)", #ASRockRack
 	"DDR4_D Temp": " (C)", #ASRockRack
 	"DDR4_E Temp": " (C)", #ASRockRack
 	"DDR4_F Temp": " (C)",  #ASRockRack
 	"CPU0_TEMP": " (C)", #Giga Computing (GIGABYTE)
-    "CPU1_TEMP": " (C)", #Giga Computing (GIGABYTE)
+	"CPU1_TEMP": " (C)", #Giga Computing (GIGABYTE)
 	"DIMMG0_TEMP": " (C)", #Giga Computing (GIGABYTE)
-    "DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
-    "DIMMG2_TEMP": " (C)", #Giga Computing (GIGABYTE)
-    "DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
-    "CPU0_FAN": " (RPM)", #Giga Computing (GIGABYTE)
+	"DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
+	"DIMMG2_TEMP": " (C)", #Giga Computing (GIGABYTE)
+	"DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
+	"CPU0_FAN": " (RPM)", #Giga Computing (GIGABYTE)
 	"CPU1_FAN": " (RPM)", #Giga Computing (GIGABYTE)
-    "SYS_FAN1": " (RPM)", #Giga Computing (GIGABYTE)
-    "SYS_FAN2": " (RPM)", #Giga Computing (GIGABYTE)
-    "SYS_FAN3": " (RPM)", #Giga Computing (GIGABYTE)
-    "SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
-    "SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_FAN1": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_FAN2": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_FAN3": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
+	"SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
 }
+
+def get_motherboard_model_server_info():
+	json_path = "/etc/45drives/server_info/server_info.json"
+	if os.path.exists(json_path):
+		f = open(json_path, "r")
+		si = json.load(f)
+		f.close()
+		mobo_obj = {
+			"Motherboard": [{
+				"Manufacturer": si["Motherboard"]["Manufacturer"],
+				"Product Name": si["Motherboard"]["Product Name"],
+				"Serial Number": si["Motherboard"]["Serial Number"]
+			}
+			]
+		}
+		return json.dumps(mobo_obj)
+	else:
+		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
+
 
 def get_cpu_info():
 	cpu = []
@@ -117,98 +138,104 @@ def get_cpu_info():
 	return cpu_dict["CPU"]
 
 def get_sensor_readings():
-    try:
-        ipmitool_sensor_result = subprocess.Popen(
-            ["ipmitool", "sensor"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout
-    except:
-        print("Error running 'ipmitool sensor'")
-        sys.exit(1)
+	try:
+		ipmitool_sensor_result = subprocess.Popen(
+			["ipmitool", "sensor"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout
+	except:
+		print("Error running 'ipmitool sensor'")
+		sys.exit(1)
 
-    sensor_readings = []
-    for line in ipmitool_sensor_result:
-        for field in g_ipmitool_sensor_fields.keys():
-            regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field), line)
-            if regex != None:
-                # if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
-                #     # ipmitool does not use the socket name
-                #     # we need to manually intervene and store it as
-                #     # CPU1 Temp
-                #     sensor_readings.append(
-                #         ("CPU1 Temp", regex.group(2) +
-                #          g_ipmitool_sensor_fields[regex.group(1)])
-                #     )
-                # else:
-                    # All other readings are fine, use the field as captured.
-                    sensor_readings.append((regex.group(1), regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
-    return dict(sensor_readings)
+	sensor_readings = []
+	for line in ipmitool_sensor_result:
+		for field in g_ipmitool_sensor_fields.keys():
+			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field), line)
+			if regex != None:
+				# if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
+				#     # ipmitool does not use the socket name
+				#     # we need to manually intervene and store it as
+				#     # CPU1 Temp
+				#     sensor_readings.append(
+				#         ("CPU1 Temp", regex.group(2) +
+				#          g_ipmitool_sensor_fields[regex.group(1)])
+				#     )
+				# else:
+					# All other readings are fine, use the field as captured.
+					sensor_readings.append((regex.group(1), regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
+	return dict(sensor_readings)
 
 
 def main():
-    cpus = get_cpu_info()
-    sensor_readings = get_sensor_readings()
-    
-    if cpus:
-        cpu_arr = []
-        # for cpu in cpus:
-        #     if (cpu["Socket Designation"]+" Temp") in sensor_readings.keys():
-        #         cpu_temp = sensor_readings[cpu["Socket Designation"]+" Temp"]
-        #     elif (cpu["Socket Designation"] == 'P0'):
-        #         cpu_temp = sensor_readings['CPU1 Temp']
-        #     else:
-        #         cpu_temp = '-'
-                    
-        #     cpu_arr.append(
-        #         { 
-        #             'socket': cpu["Socket Designation"], 
-        #             'model': cpu["Version"],
-        #             'maxSpeed': cpu["Max Speed"],
-        #             'currentSpeed': cpu["Current Speed"],
-        #             'temperature': cpu_temp
-        #         },
-        #     )
-        for cpu in cpus:
-            socket_designation = cpu["Socket Designation"]
-            
-            # Normalize the socket designation to match the sensor output format
-            if socket_designation in ['CPU0', 'P0', 'AM5']:
-                temp_key = 'CPU0_TEMP'
-            elif socket_designation in ['CPU1', 'P1']:
-                temp_key = 'CPU1_TEMP'
-            else:
-                temp_key = None  # Handle other cases if needed
-            
-            # Assign temperature if the key is found in sensor readings
-            if temp_key and temp_key in sensor_readings:
-                cpu_temp = sensor_readings[temp_key]
-            else:
-                cpu_temp = '-'  # No sensor reading found
-            
-            cpu_arr.append(
-                { 
-                    'socket': socket_designation, 
-                    'model': cpu["Version"],
-                    'maxSpeed': cpu["Max Speed"],
-                    'currentSpeed': cpu["Current Speed"],
-                    'temperature': cpu_temp
-                },
-            )
+	cpus = get_cpu_info()
+	sensor_readings = get_sensor_readings()
+	server_info_json = get_motherboard_model_server_info()
+	server_info = json.loads(server_info_json)  # Parse the JSON string into a Python dictionary
+	mobo_model = server_info.get("Motherboard", [{}])[0].get("Product Name", "?")
+ 
+	if cpus:
+		cpu_arr = []
+		# for cpu in cpus:
+		#     if (cpu["Socket Designation"]+" Temp") in sensor_readings.keys():
+		#         cpu_temp = sensor_readings[cpu["Socket Designation"]+" Temp"]
+		#     elif (cpu["Socket Designation"] == 'P0'):
+		#         cpu_temp = sensor_readings['CPU1 Temp']
+		#     else:
+		#         cpu_temp = '-'
+					
+		#     cpu_arr.append(
+		#         { 
+		#             'socket': cpu["Socket Designation"], 
+		#             'model': cpu["Version"],
+		#             'maxSpeed': cpu["Max Speed"],
+		#             'currentSpeed': cpu["Current Speed"],
+		#             'temperature': cpu_temp
+		#         },
+		#     )
+		for cpu in cpus:
+			socket_designation = cpu["Socket Designation"]
+			
+			# Normalize the socket designation to match the sensor output format
+			if socket_designation in ['CPU0', 'P0', 'AM5']:
+				temp_key = 'CPU0_TEMP'
+			elif socket_designation in ['CPU1', 'P1']:
+				if mobo_model == 'EC266D2I-2T/AQC':
+					temp_key = 'TEMP_CPU'
+				else:
+					temp_key = 'CPU1_TEMP'
+			else:
+				temp_key = None  # Handle other cases if needed
+			
+			# Assign temperature if the key is found in sensor readings
+			if temp_key and temp_key in sensor_readings:
+				cpu_temp = sensor_readings[temp_key]
+			else:
+				cpu_temp = '-'  # No sensor reading found
+			
+			cpu_arr.append(
+				{ 
+					'socket': socket_designation, 
+					'model': cpu["Version"],
+					'maxSpeed': cpu["Max Speed"],
+					'currentSpeed': cpu["Current Speed"],
+					'temperature': cpu_temp
+				},
+			)
 
-        result = {
-            "cpus": cpu_arr
-        }
-    else:
-        result = {
-            "cpus": [
-                { 
-                    'socket': "UNKNOWN", 
-                    'model': "UNKNOWN",
-                    'maxSpeed': "-",
-                    'currentSpeed': "-",
-                    'temperature': "-"
-                }
-            ]
-        }
-    print(json.dumps(result, indent=4))
+		result = {
+			"cpus": cpu_arr
+		}
+	else:
+		result = {
+			"cpus": [
+				{ 
+					'socket': "UNKNOWN", 
+					'model': "UNKNOWN",
+					'maxSpeed': "-",
+					'currentSpeed': "-",
+					'temperature': "-"
+				}
+			]
+		}
+	print(json.dumps(result, indent=4))
 
 if __name__ == "__main__":
-    main()
+	main()

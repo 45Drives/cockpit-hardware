@@ -1,0 +1,79 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 340,
+        "y0": 290,
+        "width": 243,
+        "height": 364,
+        "diam": 0,
+        "filename": "CPU1.png"
+    },
+    {
+        "type": "PCIE7",
+        "id": "23",
+        "shape": "rect",
+        "x0": 16,
+        "y0": 248,
+        "width": 44,
+        "height": 448,
+        "diam": 24,
+        "filename": "PCIE7.png"
+    },
+    {
+        "type": "M2_1",
+        "id": "33",
+        "shape": "rect",
+        "x0": 663,
+        "y0": 721,
+        "width": 33,
+        "height": 112,
+        "diam": 24,
+        "filename": "M2_1.png"
+    },
+    {
+        "type": "OCU1",
+        "id": "65",
+        "shape": "rect",
+        "x0": 126,
+        "y0": 559,
+        "width": 15,
+        "height": 68,
+        "diam": 24,
+        "filename": "OCU1.png"
+    },
+    {
+        "type": "OCU2",
+        "id": "66",
+        "shape": "rect",
+        "x0": 130,
+        "y0": 472,
+        "width": 15,
+        "height": 68,
+        "diam": 24,
+        "filename": "OCU2.png"
+    },
+    {
+        "type": "Controller0-ChannelA-DIMM0",
+        "id": 1,
+        "shape": "rect",
+        "x0": 703,
+        "y0": 165,
+        "width": 35,
+        "height": 729,
+        "diam": 20,
+        "filename": "Controller0-ChannelA-DIMM0.png"
+    },
+    {
+        "type": "Controller1-ChannelA-DIMM0",
+        "id": 2,
+        "shape": "rect",
+        "x0": 745,
+        "y0": 165,
+        "width": 35,
+        "height": 729,
+        "diam": 20,
+        "filename": "Controller1-ChannelA-DIMM0.png"
+    }
+]

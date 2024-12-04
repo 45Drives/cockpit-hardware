@@ -66,6 +66,8 @@ g_ipmitool_sensor_fields = {
 	"DDR4_D Temp": " (C)", #ASRockRack
 	"DDR4_E Temp": " (C)", #ASRockRack
 	"DDR4_F Temp": " (C)",  #ASRockRack
+ 	"TEMP_DDR5_A1": " (C)", #ASRockRack
+	"TEMP_DDR5_B1": " (C)", #ASRockRack
 	"DIMMABCD Temp": " (C)", #X12SPL-F
 	"DIMMEFGH Temp": " (C)", #X12SPL-F
 	"P1_DIMMA~D Temp": " (C)", #X12DPi-N6
@@ -114,13 +116,13 @@ locator_tags = {
 	"P2-DIMMF1": ["P1_DIMME~H"],
 	"P2-DIMMG1": ["P1_DIMME~H"],
 	"P2-DIMMH1": ["P1_DIMME~H"],
-	"DIMM_P0_A0": ["DIMMG0"],
-	"DIMM_P0_A1": ["DIMMG0"],
-	"DIMM_P0_B0": ["DIMMG0"],
-	"DIMM_P0_B1": ["DIMMG0"],
-	"DIMM_P0_C0": ["DIMMG0"],
-	"DIMM_P0_D0": ["DIMMG0"],
-	"DIMM_P0_D1": ["DIMMG0"],
+	"DIMM_P0_A0": ["DIMMG0", "DIMMG0_TEMP"],
+	"DIMM_P0_A1": ["DIMMG0", "DIMMG0_TEMP"],
+	"DIMM_P0_B0": ["DIMMG0", "DIMMG0_TEMP"],
+	"DIMM_P0_B1": ["DIMMG0", "DIMMG0_TEMP"],
+	"DIMM_P0_C0": ["DIMMG0", "DIMMG0_TEMP"],
+	"DIMM_P0_D0": ["DIMMG0", "DIMMG0_TEMP"],
+	"DIMM_P0_D1": ["DIMMG0", "DIMMG0_TEMP"],
 	"DIMM_P0_E0": ["DIMMG1"],
 	"DIMM_P0_E1": ["DIMMG1"],
 	"DIMM_P0_F0": ["DIMMG1"],
@@ -173,6 +175,11 @@ B550I_AORUS_locator_tags = {
 	'P0 CHANNEL B': 'DIMM_B1'
 }
 
+EC266D2I_locator_tags = {
+   	"Controller0-ChannelA-DIMM0": "TEMP_DDR5_A1",
+ 	"Controller1-ChannelA-DIMM0": "TEMP_DDR5_B1",
+}
+
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
 	if os.path.exists(json_path):
@@ -193,23 +200,33 @@ def get_motherboard_model_server_info():
 
 
 def ipmitool_sensor():
-	try:
-		ipmitool_sensor_result = subprocess.Popen(
-			["ipmitool","sensor"],stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True).stdout
-	except:
-		print("Error running 'ipmitool sensor'")
-		sys.exit(1)
+    try:
+        ipmitool_sensor_result = subprocess.Popen(
+            ["ipmitool", "sensor"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+        ).stdout
+    except Exception as e:
+        print(f"ERROR: Unable to run ipmitool: {e}")
+        return {}
 
-	sensor_readings = []
-	for line in ipmitool_sensor_result:
-		for field in g_ipmitool_sensor_fields.keys():
-			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
-			if regex != None:
-				sensor_readings.append(
-				(regex.group(1)[:-5],regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
-				)
-	
-	return dict(sensor_readings)
+    sensor_readings = {}
+    for line in ipmitool_sensor_result:
+        # Match the sensor name and value using regex
+        regex = re.search(r"^(\S+(?:\s\S+)*?)\s+\|\s+(\S+)", line)
+        if regex:
+            sensor_name = regex.group(1).strip()
+            sensor_value = regex.group(2).strip()
+
+            # Directly use the sensor name if it's in the fields list
+            if sensor_name in g_ipmitool_sensor_fields:
+                sensor_readings[sensor_name] = sensor_value + g_ipmitool_sensor_fields[sensor_name]
+            else:
+                # Fallback to truncation logic for older cases
+                truncated_name = sensor_name[:-5] if len(sensor_name) > 5 else sensor_name
+                if truncated_name in g_ipmitool_sensor_fields:
+                    sensor_readings[truncated_name] = sensor_value + g_ipmitool_sensor_fields[truncated_name]
+    
+    return sensor_readings
+
 
 def dmidecode():
 	try:
@@ -233,11 +250,14 @@ def dmidecode():
 	current_slot = None
 	motherboard_info = json.loads(get_motherboard_model_server_info())
 	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
- 
+	# print(f"mobo:{motherboard_model}")
+	bank_locator = ""  # Variable to store the bank locator for each slot
+
 	for line in dmi_result:
 		if line.startswith("Handle "):
 			if current_slot:
-				# Filter: Only add if motherboard model is B550I AORUS PRO AX and the Locator is DIMM 1 with valid data
+				locator = current_slot.get("Locator", "")
+				# Filter: Handle if motherboard model is B550I AORUS PRO AX and the Locator is DIMM 1 with valid data
 				if motherboard_model == "B550I AORUS PRO AX":
 					if current_slot["Locator"] == "DIMM 1" and (
 						current_slot["Size"] != "No Module Installed" or current_slot["Size"] == "No Module Installed"
@@ -245,10 +265,9 @@ def dmidecode():
 						# Apply B550I_AORUS locator tag based on Bank Locator
 						if bank_locator in B550I_AORUS_locator_tags:
 							current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
-							current_slot["Temperature"] = 'N/A'
-						slot_entries.append(current_slot.copy())
-				else:
-					slot_entries.append(current_slot.copy())
+				if motherboard_model == "EC266D2I-2T/AQC" and locator in EC266D2I_locator_tags:
+					current_slot["Temperature Keys"] = [EC266D2I_locator_tags[locator]]
+				slot_entries.append(current_slot.copy())
 			current_slot = slot_template.copy()
 			bank_locator = ""  # Reset bank locator for new entry
 		elif current_slot:
@@ -262,6 +281,7 @@ def dmidecode():
 
 	# Append the last entry if it meets criteria
 	if current_slot:
+		locator = current_slot.get("Locator", "")
 		if motherboard_model == "B550I AORUS PRO AX":
 			if current_slot["Locator"] == "DIMM 1" and (
 				current_slot["Size"] != "No Module Installed" or current_slot["Size"] == "No Module Installed"
@@ -269,10 +289,10 @@ def dmidecode():
 				if bank_locator in B550I_AORUS_locator_tags:
 					current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
 					current_slot["Temperature"] = 'N/A'
-				slot_entries.append(current_slot.copy())
-		else:
-			slot_entries.append(current_slot.copy())
-
+		if motherboard_model == "EC266D2I-2T/AQC" and locator in EC266D2I_locator_tags:
+			current_slot["Temperature Keys"] = [EC266D2I_locator_tags[locator]]
+		slot_entries.append(current_slot.copy())
+  
 	for slot in slot_entries:
 		if motherboard_model.startswith("MZ73"):
 			if "Locator" in slot and slot["Locator"] in MZ73_locator_tags:

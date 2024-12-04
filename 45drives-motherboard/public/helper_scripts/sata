@@ -134,6 +134,28 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-8","I-SATA7"]
 	],
 	"ME03-CE0-000":[
+		["pci-0000:04:00.0-ata-1", "U2_P0_G3A0"],
+		["pci-0000:04:00.0-ata-2", "U2_P0_G3A0"],
+		["pci-0000:04:00.0-ata-3", "U2_P0_G3A0"],
+		["pci-0000:04:00.0-ata-4", "U2_P0_G3A0"],
+		# ["pci-0000:04:00.0-ata-5", "U2_P0_G3A0"],
+		# ["pci-0000:04:00.0-ata-6", "U2_P0_G3A0"],
+		# ["pci-0000:04:00.0-ata-7", "U2_P0_G3A0"],
+		# ["pci-0000:04:00.0-ata-8", "U2_P0_G3A0"],
+  
+		# ["pci-0000:04:00.0-ata-1", "U2_P0_G3A1"],
+		# ["pci-0000:04:00.0-ata-2", "U2_P0_G3A1"],
+		# ["pci-0000:04:00.0-ata-3", "U2_P0_G3A1"],
+		# ["pci-0000:04:00.0-ata-4", "U2_P0_G3A1"],
+		["pci-0000:04:00.0-ata-5", "U2_P0_G3A1"],
+		["pci-0000:04:00.0-ata-6", "U2_P0_G3A1"],
+		["pci-0000:04:00.0-ata-7", "U2_P0_G3A1"],
+		["pci-0000:04:00.0-ata-8", "U2_P0_G3A1"],
+  
+		["pci-0000:04:00.1-ata-1", "U2_P0_G3B0"],
+		["pci-0000:04:00.1-ata-2", "U2_P0_G3B0"],
+		["pci-0000:04:00.1-ata-3", "U2_P0_G3B0"],
+		["pci-0000:04:00.1-ata-4", "U2_P0_G3B0"],
 	],
 	"MS03-6L0-000":[
   		["pci-0000:00:17.0-ata-1","SL_SATA1"],
@@ -190,28 +212,20 @@ g_motherboard_sata_addresses = {
 		["pci-0000:06:00.0-ata-3", "I-SATA3"],
 		["pci-0000:06:00.0-ata-4", "I-SATA4"],
 		["pci-0000:06:00.0-ata-5", "I-SATA5"],
+	],
+	"EC266D2I-2T/AQC":[
+  		["pci-0000:00:17.0-ata-1", "OCU1"],
+		["pci-0000:00:17.0-ata-2", "OCU1"],
+		["pci-0000:00:17.0-ata-3", "OCU1"],
+		["pci-0000:00:17.0-ata-4", "OCU1"],
+  		["pci-0000:00:17.0-ata-5", "OCU2"],
+		["pci-0000:00:17.0-ata-6", "OCU2"],
+		["pci-0000:00:17.0-ata-7", "OCU2"],
+		["pci-0000:00:17.0-ata-8", "OCU2"],
+		# ["pci-0000:01:00.0-nvme-1", "M2_1"],
+		# ["pci-0000:02:00.0-nvme-1", "M2_1"]
 	]
 }
-
-def generate_dynamic_paths():
-    dynamic_paths = []
-
-    # Define the base patterns without the range placeholders
-    base_patterns = [
-        ("pci-0000:0{X}:00.0-ata-", "U3_P0_G3A0", range(1, 5)),
-        ("pci-0000:0{X}:00.0-ata-", "U3_P0_G3A1", range(5, 9)),
-        ("pci-0000:0{X}:00.1-ata-", "U3_P0_G3B0", range(1, 5)),
-    ]
-
-    # Generate paths for X values 3 through 9, and possibly others
-    for X in range(1, 10):  # Adjust the range if needed
-        for base_pattern, connector, i_range in base_patterns:
-            for i in i_range:  # Loop through the range (1-4 or 5-8)
-                path = f"{base_pattern}{i}".format(X=X)
-                dynamic_paths.append([path, connector])
-
-    return dynamic_paths
-
 
 def ls_by_path(motherboard):
 	try:
@@ -224,50 +238,23 @@ def ls_by_path(motherboard):
   
 	if motherboard in g_motherboard_sata_addresses.keys():
 		paths = g_motherboard_sata_addresses[motherboard]
-  
-		if motherboard == "ME03-CE0-000":
-			paths = generate_dynamic_paths()  # Generate all relevant paths dynamically
-
-			# Debug: Print the generated paths
-			# print("Generated Paths:")
-			# for pth in paths:
-				# print(pth[0], pth[1])
-			
-			for line in ls_result:
-				line = line.strip()
-				for pth in paths:
-					# Debug: Print each line from ls_result and the path being checked
-					# print(f"Checking line: '{line}' against path: '{pth[0]}'")
-					if pth[0] in line:
-						device = line.split(" -> ")[-1].strip().replace("../../", "")
-						# Skip partitions (devices that end with digits like sda1, sda2, etc.)
-						if not re.search(r'\d+$', device):  
-							if device not in sata_connections:
-								sata_connections[device] = {
-									"Path": pth[0],
-									"Connector": pth[1],
-									"Device": device,
-									"Partitions": []
-								}
-						break
-		else:
-			for line in ls_result:
-				line = line.strip()
-				for path in paths:
-					# Match the full generated path directly with the line
-					if path[0] in line:
-						device = line.split(" -> ")[-1].strip().replace("../../", "")
-						# Check if the device ends with a digit(s) using regex
-						if not re.search(r'\d+$', device):
-							# print(f"Matched path: {path[0]} -> {device}")
-							if device not in sata_connections:
-								sata_connections[device] = {
-									"Path": path[0],
-									"Connector": path[1],
-									"Device": device,
-									"Partitions": []
-								}
-						break
+		for line in ls_result:
+			line = line.strip()
+			for path in paths:
+				# Match the full generated path directly with the line
+				if path[0] in line:
+					device = line.split(" -> ")[-1].strip().replace("../../", "")
+					# Check if the device ends with a digit(s) using regex
+					if not re.search(r'\d+$', device):
+						# print(f"Matched path: {path[0]} -> {device}")
+						if device not in sata_connections:
+							sata_connections[device] = {
+								"Path": path[0],
+								"Connector": path[1],
+								"Device": device,
+								"Partitions": []
+							}
+					break
 
 		return sata_connections
 	else:

@@ -35,7 +35,8 @@ export default {
 
 
 			const translatedMoboNameExceptions = {
-				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX"
+				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX",
+				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC"
 			};
 
 			const raw_mobo_name = String(
@@ -44,9 +45,12 @@ export default {
 
 			const chassis_size = server_info["Chassis Size"];
 
-			// Append Chassis Size directly to the translated motherboard name
+			// Append Chassis Size directly to the translated motherboard name if HL4 or HL8, otherwise use translated name
+			// or if not in exceptions dict then use raw name
 			const mobo_name = raw_mobo_name in translatedMoboNameExceptions
-				? `${translatedMoboNameExceptions[raw_mobo_name]}_${chassis_size}`
+				? (chassis_size === 'HL4' || chassis_size === 'HL8'
+					? `${translatedMoboNameExceptions[raw_mobo_name]}_${chassis_size}`
+					: translatedMoboNameExceptions[raw_mobo_name])
 				: raw_mobo_name;
 
 			// let bgImgPath =
@@ -576,6 +580,7 @@ export default {
 			};
 
 			m.getPCI = function () {
+				console.log('pci_info:', pci_info)
 				let VERTOFFSET = 5.37;
 				let VERTSCALE = 19.0;
 				let WIDTHOFFSET = 1.24;
@@ -1200,34 +1205,34 @@ export default {
 												}
 												components[c].popup.content = contentStr.slice(0, -1);
 
-											} else {
-												// Generic card fallback if no specific card model found
-												peripherals.push(
-													new peripheral(
-														"PCI",
-														components[c]["x0"] -
-														components[c]["width"],
-														0,
-														components[c]["width"],
-														components[c]["height"],
-														"#FF800080",
-														peripheralImages.length,
-														components[c]["width"] * pciScale
-													)
-												);
-												peripheralImages.push(
-													m.loadImage("img/motherboard/generic_pci_card.png") // Path to your generic card image
-												);
-												components[c]["x0"] =
+											} 
+										} else {
+											// Generic card fallback if no specific card model found
+											peripherals.push(
+												new peripheral(
+													"PCI",
 													components[c]["x0"] -
-													components[c]["width"] * WIDTHOFFSET;
-												components[c]["y0"] = 0;
-												components[c]["width"] =
-													100.0 * components[c]["width"] * pciScale;
-												components[c]["height"] =
-													components[c]["width"] / (100.0 / 890.0);
-												components[c].popup.content = components[c].popup.content; // Keep the popup content
-											}
+													components[c]["width"],
+													0,
+													components[c]["width"],
+													components[c]["height"],
+													"#FF800080",
+													peripheralImages.length,
+													components[c]["width"] * pciScale
+												)
+											);
+											peripheralImages.push(
+												m.loadImage("img/motherboard/generic_pci_card.png") // Path to your generic card image
+											);
+											components[c]["x0"] =
+												components[c]["x0"] -
+												components[c]["width"] * WIDTHOFFSET;
+											components[c]["y0"] = 0;
+											components[c]["width"] =
+												100.0 * components[c]["width"] * pciScale;
+											components[c]["height"] =
+												components[c]["width"] / (100.0 / 890.0);
+											components[c].popup.content = components[c].popup.content; // Keep the popup content
 										}
 
 

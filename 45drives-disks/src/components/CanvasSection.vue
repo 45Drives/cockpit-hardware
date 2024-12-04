@@ -35,6 +35,9 @@
       <P5HomeLabHL15 v-else-if="activeSketchStr === 'HomeLabHL15'" />
       <P5HomeLabHL4 v-else-if="activeSketchStr === 'HomeLabHL4'" />
       <P5HomeLabHL8 v-else-if="activeSketchStr === 'HomeLabHL8'" />
+      <P5ProfessionalPRO15 v-else-if="activeSketchStr === 'ProfessionalPRO15'" />
+      <P5ProfessionalPRO4 v-else-if="activeSketchStr === 'ProfessionalPRO4'" />
+      <P5ProfessionalPRO8 v-else-if="activeSketchStr === 'ProfessionalPRO8'" />
       <P5StorinatorQ30H32 v-else-if="activeSketchStr === 'StorinatorQ30H32'" />
       <P5StorinatorS45H32 v-else-if="activeSketchStr === 'StorinatorS45H32'" />
       <P5StorinatorXL60H32 v-else-if="activeSketchStr === 'StorinatorXL60H32'" />
@@ -68,6 +71,9 @@ import P5StorinatorAV15 from "./P5StorinatorAV15.vue";
 import P5HomeLabHL15 from "./P5HomeLabHL15.vue";
 import P5HomeLabHL4 from "./P5HomeLabHL4.vue";
 import P5HomeLabHL8 from "./P5HomeLabHL8.vue";
+import P5ProfessionalPRO15 from "./P5ProfessionalPRO15.vue";
+import P5ProfessionalPRO4 from "./P5ProfessionalPRO4.vue";
+import P5ProfessionalPRO8 from "./P5ProfessionalPRO8.vue";
 import P5StorinatorQ30H32 from "./P5StorinatorQ30H32.vue";
 import P5StorinatorXL60H32 from "./P5StorinatorXL60H32.vue";
 import P5StorinatorXL60 from "./P5StorinatorXL60.vue";
@@ -92,6 +98,9 @@ export default {
     P5HomeLabHL15,
     P5HomeLabHL4,
     P5HomeLabHL8,
+    P5ProfessionalPRO15,
+    P5ProfessionalPRO4,
+    P5ProfessionalPRO8,
     P5StorinatorQ30H32,
     P5StorinatorS45H32,
     P5StorinatorXL60H32,
@@ -111,7 +120,7 @@ export default {
     const zfsInfo = inject("zfsInfo");
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab)-(H8)?(H16|H32)?-?(HL15|HL4|HL8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional)-(H8)?(H16|H32)?-?(HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
           modelString
         );
       let enableString = testString

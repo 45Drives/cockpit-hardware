@@ -133,6 +133,11 @@ export default {
           "HL4": "img/homelabHL4.png",
           "HL8": "img/homelabHL8.png",
         },
+        // "Professional": {
+        //   "PRO15": "img/professionalPRO15.png",
+        //   "PRO4": "img/professionalPRO4.png",
+        //   "PRO8": "img/professionalPRO8.png",
+        // }
       };
 
       if(!match) return "img/45dlogo.png";

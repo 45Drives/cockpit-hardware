@@ -34,14 +34,15 @@ g_dmi_mobo_fields = {
   		"MS73-HB0-000",
     	"MZ73-LM0-000",
      	"MC13-LE1-000",
-      	"B550I AORUS PRO AX"
+      	"B550I AORUS PRO AX",
+       	"EC266D2I-2T/AQC"
 	],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0", "AM5", "AM4"],
+	"Socket Designation":  ["CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
@@ -55,7 +56,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
-		"Intel(R) Xeon(R) Gold 6430"
+		"Intel(R) Xeon(R) Gold 6430",
+		"Intel(R) Xeon(R) E E-2434"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
