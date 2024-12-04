@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.4.7-1
+## cockpit-45drives-hardware 2.4.8-1
 
-* Adds HL4/HL8 support to hardware modules
+* Adds support for 45Professional line and fixes some issues with hardware scripts and data display

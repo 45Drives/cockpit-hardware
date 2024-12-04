@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.4.8-1focal) focal; urgency=medium
+
+  * Adds support for 45Professional line and fixes some issues with hardware scripts
+    and data display
+
+ -- Jordan Keough <jkeough@45drives.com>  Wed, 04 Dec 2024 10:56:11 -0400
+
 cockpit-45drives-hardware (2.4.7-1focal) focal; urgency=medium
 
   * Adds HL4/HL8 support to hardware modules

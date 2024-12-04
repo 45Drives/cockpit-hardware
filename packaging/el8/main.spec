@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Dec 04 2024 Jordan Keough <jkeough@45drives.com> 2.4.8-1
+- Adds support for 45Professional line and fixes some issues with hardware scripts
+  and data display
 * Wed Nov 20 2024 Jordan Keough <jkeough@45drives.com> 2.4.7-1
 - Adds HL4/HL8 support to hardware modules
 * Mon Nov 11 2024 Jordan Keough <jkeough@45drives.com> 2.4.6-2
