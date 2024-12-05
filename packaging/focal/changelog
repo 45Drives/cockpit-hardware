@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.4.9-1focal) focal; urgency=medium
+
+  * Fixes missing Professional chassis images in System page
+
+ -- Jordan Keough <jkeough@45drives.com>  Thu, 05 Dec 2024 09:32:24 -0400
+
 cockpit-45drives-hardware (2.4.8-1focal) focal; urgency=medium
 
   * Adds support for 45Professional line and fixes some issues with hardware scripts
