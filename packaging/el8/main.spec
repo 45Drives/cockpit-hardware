@@ -42,6 +42,8 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Fri Jan 10 2025 Jordan Keough <jkeough@45drives.com> 2.5.0-1
+- Adds Proxinator line to Hardware Modules
 * Thu Dec 05 2024 Jordan Keough <jkeough@45drives.com> 2.4.9-1
 - Fixes missing Professional chassis images in System page
 * Wed Dec 04 2024 Jordan Keough <jkeough@45drives.com> 2.4.8-1

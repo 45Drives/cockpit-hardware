@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.5.0-1focal) focal; urgency=medium
+
+  * Adds Proxinator line to Hardware Modules
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 10 Jan 2025 10:57:03 -0400
+
 cockpit-45drives-hardware (2.4.9-1focal) focal; urgency=medium
 
   * Fixes missing Professional chassis images in System page
