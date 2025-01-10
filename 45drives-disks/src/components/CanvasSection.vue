@@ -44,6 +44,9 @@
       <P5StorinatorXL60 v-else-if="activeSketchStr === 'StorinatorXL60'" />
       <P5StorinatorC8 v-else-if="activeSketchStr === 'StorinatorC8'" />
       <P5StorinatorMI4 v-else-if="activeSketchStr === 'StorinatorMI4'" />
+      <P5ProxinatorVM8 v-else-if="activeSketchStr === 'ProxinatorVM8'" />
+      <P5ProxinatorVM16 v-else-if="activeSketchStr === 'ProxinatorVM16'" />
+      <P5ProxinatorVM32 v-else-if="activeSketchStr === 'ProxinatorVM32'" />
     </div>
     <div v-else class="grow flex justify-center items-center">
       <div class="p-5 bg-accent rounded-lg text-muted">
@@ -79,6 +82,9 @@ import P5StorinatorXL60H32 from "./P5StorinatorXL60H32.vue";
 import P5StorinatorXL60 from "./P5StorinatorXL60.vue";
 import P5StorinatorC8 from "./P5StorinatorC8.vue";
 import P5StorinatorMI4 from "./P5StorinatorMI4.vue";
+import P5ProxinatorVM8 from "./P5ProxinatorVM8.vue";
+import P5ProxinatorVM16 from "./P5ProxinatorVM16.vue";
+import P5ProxinatorVM32 from "./P5ProxinatorVM32.vue";
 import { Switch, SwitchGroup, SwitchLabel } from '@headlessui/vue'
 
 export default {
@@ -107,6 +113,9 @@ export default {
     P5StorinatorXL60,
     P5StorinatorC8,
     P5StorinatorMI4,
+    P5ProxinatorVM8,
+    P5ProxinatorVM16,
+    P5ProxinatorVM32,
     Switch,
     SwitchGroup,
     SwitchLabel
@@ -120,12 +129,13 @@ export default {
     const zfsInfo = inject("zfsInfo");
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional)-(H8)?(H16|H32)?-?(HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator)-(H8)?(H16|H32)?-?(HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32)/m.exec(
           modelString
         );
       let enableString = testString
         ? testString[1] + testString[4] + (testString[3] ? testString[3] : "")
         : "";
+        // console.log('string:', enableString)
       return enableString;
     };
 
