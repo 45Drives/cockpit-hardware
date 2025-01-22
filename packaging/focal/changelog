@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.5.1-1focal) focal; urgency=medium
+
+  * Fixes bug with Disk module where zfs_info did not properly show all vdevs in
+    a pool
+
+ -- Jordan Keough <jkeough@45drives.com>  Wed, 22 Jan 2025 07:37:59 -0400
+
 cockpit-45drives-hardware (2.5.0-1focal) focal; urgency=medium
 
   * Adds Proxinator line to Hardware Modules

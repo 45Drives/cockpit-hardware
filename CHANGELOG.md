@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.0-1
+## cockpit-45drives-hardware 2.5.1-1
 
-* Adds Proxinator line to Hardware Modules
+* Fixes bug with Disk module where zfs_info did not properly show all vdevs in a pool

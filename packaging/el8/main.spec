@@ -42,6 +42,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
+* Wed Jan 22 2025 Jordan Keough <jkeough@45drives.com> 2.5.1-1
+- Fixes bug with Disk module where zfs_info did not properly show all vdevs in a
+  pool
 * Fri Jan 10 2025 Jordan Keough <jkeough@45drives.com> 2.5.0-1
 - Adds Proxinator line to Hardware Modules
 * Thu Dec 05 2024 Jordan Keough <jkeough@45drives.com> 2.4.9-1
