@@ -1,28 +1,23 @@
 {
-    "__version": "45D-R1",
+    "schema_version": "45D_AP_V2.0",
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
-    "prerelease": false,
+    "description": "A Cockpit Module for 45Drives Server Products",
     "version": "2.5.1",
-    "buildVersion": "1",
+    "build_number": "1",
+    "stable": true,
     "author": "Mark Hooper <mhooper@45drives.com>",
-    "url": "https://github.com/45Drives/cockpit-hardware",
-    "category": "utils",
-    "priority": "optional",
-    "licence": "GPL-3.0+",
+    "git_url": "https://github.com/45Drives/cockpit-hardware",
+    "license": "GPL-3.0+",
     "architecture": {
-        "deb": "all",
-        "el": "noarch"
-    },
-    "description": {
-        "long": "A Cockpit Module for 45Drives Server Products",
-        "short": "A Cockpit Module for 45Drives Server Products"
+        "rocky": "x86_64",
+        "ubuntu": "amd64"
     },
     "defaults": {
-        "urgency": "medium"
+        "change_urgency": "medium"
     },
     "dependencies": {
-        "deb": [
+        "ubuntu_common": [
             "cockpit",
             "python3",
             "cockpit-ws",
@@ -33,7 +28,7 @@
             "45drives-tools (>= 3.0.1)",
             "iproute2"
         ],
-        "el": [
+        "rocky_common": [
             "cockpit",
             "python3",
             "cockpit-ws",
@@ -44,17 +39,31 @@
             "45drives-tools >= 3.0.1"
         ]
     },
-    "releases": [
+    "builds": [
         {
-            "image": "node-ubuntu-focal-builder",
-            "codeName": "focal",
-            "type": "deb"
+            "group": "ubuntu",
+            "os_name": "ubuntu-focal",
+            "image": "ci.cr.45d.io/ci/simple/ubuntu-focal:1"
         },
         {
-            "image": "node-rocky-el8-builder",
-            "codeName": "el8",
-            "type": "el"
+            "group": "ubuntu",
+            "os_name": "ubuntu-jammy",
+            "image": "ci.cr.45d.io/ci/simple/ubuntu-jammy:1"
+        },
+        {
+            "group": "rocky",
+            "os_name": "rocky-el8",
+            "image": "ci.cr.45d.io/ci/simple/rocky-el8:1"
+        },
+        {
+            "group": "rocky",
+            "os_name": "rocky-el9",
+            "image": "ci.cr.45d.io/ci/simple/rocky-el9:1"
         }
+    ],
+    "repos": [
+        "community",
+        "enterprise"
     ],
     "changelog": {
         "urgency": "medium",

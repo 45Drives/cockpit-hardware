@@ -1,0 +1,5 @@
+cockpit-45drives-hardware (2.5.1-1jammy) jammy; urgency=medium
+
+  * Initial build for jammy
+
+ -- Brett Kelly <bkelly@45drives.com>  Tue, 11 Feb 2025 07:37:59 -0400
