@@ -43,6 +43,9 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-system/*
 
 %changelog
+* Mon Feb 24 2025 Jordan Keough <jkeough@45drives.com> 2.5.2-1
+- Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
+  popups having final character cut off
 * Wed Jan 22 2025 Jordan Keough <jkeough@45drives.com> 2.5.1-1
 - Fixes bug with Disk module where zfs_info did not properly show all vdevs in a
   pool

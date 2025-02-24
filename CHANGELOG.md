@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.1-1
+## cockpit-45drives-hardware 2.5.2-1
 
-* Fixes bug with Disk module where zfs_info did not properly show all vdevs in a pool
+* Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard popups having final character cut off
