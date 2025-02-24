@@ -207,7 +207,6 @@ def zpool_status_parse(zp_status_obj, key, pool_name):
     if key not in zp_status_obj.keys():
         return [], []
 
-    # perform zpool status <pool_name> -P command and return the separated object.
     zp_status_obj_path = zpool_status_flags(pool_name)
 
     zp_status_default = zp_status_obj[key].splitlines()

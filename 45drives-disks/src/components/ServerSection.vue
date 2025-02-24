@@ -174,9 +174,9 @@ export default {
       }
     }
 
-    const getCapacityGB = (capacityStr) => {
+    const getCapacityGiB = (capacityStr) => {
       let coeffLut = {
-        TB: 1000,
+        TB: 1024,
         GB: 1,
       };
       if (!capacityStr) return 0;
@@ -201,7 +201,7 @@ export default {
             ? lsdevJson.rows
                 .flat()
                 .filter((slot) => slot.occupied)
-                .map((disk) => getCapacityGB(disk.capacity))
+                .map((disk) => getCapacityGiB(disk.capacity))
                 .reduce((total, cap) => total + cap)
                 .toFixed(2)
             : 0;

@@ -53,17 +53,6 @@ export default {
 					: translatedMoboNameExceptions[raw_mobo_name])
 				: raw_mobo_name;
 
-			// let bgImgPath =
-			// 	"img/motherboard/" +
-			// 	String(
-			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-			// 	) +
-			// 	"/" +
-			// 	String(
-			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-			// 	) +
-			// 	".png";
-
 			let bgImgPath = `img/motherboard/${String(mobo_name)}/${String(mobo_name)}.png`;
 
 			let background_img;
@@ -86,24 +75,6 @@ export default {
 
 			let globalMask;
 			let APPLIED_COUNT = 0;
-
-			// const mobo_json_path =
-			// 	"img/motherboard/" +
-			// 	String(
-			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-			// 	) +
-			// 	"/" +
-			// 	String(
-			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-			// 	) +
-			// 	".json";
-
-			// m.createComponentMasks = function (a) {
-			// 	var img_path = `img/motherboard/${String(
-			// 		mobo_info["Motherboard Info"][0]["Motherboard"][0]["Product Name"]
-			// 	)}/${mobo_json[a]["filename"]}`;
-			// 	MASK_ARR.push(m.loadImage(img_path));
-			// };
 
 			const mobo_json_path = `img/motherboard/${mobo_name}/${mobo_name}.json`;
 
@@ -1203,8 +1174,6 @@ export default {
 														}
 													}
 												}
-												components[c].popup.content = contentStr.slice(0, -1);
-
 											} 
 										} else {
 											// Generic card fallback if no specific card model found
@@ -1304,9 +1273,6 @@ export default {
 						contentStr += "Temperature: " + cpu1Temp + "\n";
 						components[i].popup.content = contentStr;
 					}
-
-					// Trim the last newline character from content
-					components[i].popup.content = components[i].popup.content.slice(0, -1);
 				}
 			};
 

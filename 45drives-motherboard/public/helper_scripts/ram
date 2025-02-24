@@ -89,14 +89,14 @@ locator_tags = {
 	"CPU1_DIMM_D2":["DDR4_D"],
 	"CPU1_DIMM_E1":["DDR4_E"],
 	"CPU1_DIMM_F1":["DDR4_F"],
-	"DIMMA1":["DIMMABCD","P1_DIMMA~D"],
-	"DIMMB1":["DIMMABCD","P1_DIMMA~D"],
-	"DIMMC1":["DIMMABCD","P1_DIMMA~D"],
-	"DIMMD1":["DIMMABCD","P1_DIMMA~D"],
-	"DIMME1":["DIMMEFGH","P1_DIMME~H"],
-	"DIMMF1":["DIMMEFGH","P1_DIMME~H"],
-	"DIMMG1":["DIMMEFGH","P1_DIMME~H"],
-	"DIMMH1":["DIMMEFGH","P1_DIMME~H"],
+	"DIMMA1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
+	"DIMMB1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
+	"DIMMC1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
+	"DIMMD1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
+	"DIMME1":["DIMMEFGH","P1_DIMME~H","DIMMEFGH Temp"],
+	"DIMMF1":["DIMMEFGH","P1_DIMME~H","DIMMEFGH Temp"],
+	"DIMMG1":["DIMMEFGH","P1_DIMME~H","DIMMEFGH Temp"],
+	"DIMMH1":["DIMMEFGH","P1_DIMME~H","DIMMEFGH Temp"],
 	"P1-DIMMA1": ["P1_DIMMA~D"],
 	"P1-DIMMB1": ["P1_DIMMA~D"],
 	"P1-DIMMB2": ["P1_DIMMA~D"],
@@ -245,7 +245,7 @@ def dmidecode():
 		"Temperature" : "-",
 	}
 
-	current_slot = None
+	current_slot = {}
 	motherboard_info = json.loads(get_motherboard_model_server_info())
 	motherboard_model = motherboard_info['Motherboard'][0].get('Product Name', '')
 	# print(f"mobo:{motherboard_model}")
