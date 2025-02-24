@@ -46,7 +46,7 @@ g_dmi_mobo_fields = {
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
+	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",

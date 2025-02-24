@@ -7,7 +7,7 @@ import json
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2", "P0", "P1", "CPU0", "AM5", "AM4"],
+	"Socket Designation":  ["CPU","CPU1","CPU2", "P0", "P1", "CPU0", "AM5", "AM4"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
@@ -201,6 +201,8 @@ def main():
 					temp_key = 'TEMP_CPU'
 				else:
 					temp_key = 'CPU1_TEMP'
+			elif socket_designation == 'CPU':
+				temp_key = "CPU Temp"
 			else:
 				temp_key = None  # Handle other cases if needed
 			

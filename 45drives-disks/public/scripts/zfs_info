@@ -14,8 +14,6 @@ def get_zfs_list():
     try:
         zfs_list_result = subprocess.Popen(
             ["zfs", "list", "-H"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
-        # zfs_list_result = subprocess.Popen(
-        #     ["cat","/root/spoof/zfs_list"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
     except:
         return False
 
@@ -39,8 +37,6 @@ def get_zpool_list():
     try:
         zpool_list_result = subprocess.Popen(
             ["zpool", "list", "-H"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
-        # zpool_list_result = subprocess.Popen(
-        #     ["cat","/root/spoof/zpool_list"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout
     except:
         return False
 
@@ -78,11 +74,6 @@ def get_zpool_list():
             pool["mountpoint"] = "-"
     return zpools
 
-
-###############################################################################
-# These four functions now ACCUMULATE all matches into a single multi-line
-# string under pool_name, instead of overwriting on each iteration.
-###############################################################################
 
 def zpool_status_flags(pool_name):
     """Returns { pool_name: <combined multi-line vdev text>, 'state': <str> }."""
@@ -157,8 +148,6 @@ def zpool_status(pool_name):
             stderr=subprocess.DEVNULL,
             universal_newlines=True
         ).stdout.read()
-        # zpool_status_result = subprocess.Popen(
-        #     ["cat","/root/spoof/zpool_status"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout.read()
     except:
         print(f"failed to run 'zpool status {pool_name}'")
         exit(1)
@@ -196,8 +185,6 @@ def zpool_iostat(pool_name):
             stderr=subprocess.DEVNULL,
             universal_newlines=True
         ).stdout.read()
-        # zpool_status_result = subprocess.Popen(
-        #     ["cat","/root/spoof/zpool_iostat_v"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, universal_newlines=True).stdout.read()
     except:
         print(f"failed to run 'zpool iostat -v {pool_name}'")
         exit(1)
@@ -214,15 +201,10 @@ def zpool_iostat(pool_name):
 
     return { pool_name: combined_vdevs }
 
-###############################################################################
-# The rest of your original script is unchanged.
-###############################################################################
-
 def zpool_status_parse(zp_status_obj, key, pool_name):
     if key not in zp_status_obj.keys():
         return [], []
 
-    # perform zpool status <pool_name> -P command and return the separated object.
     zp_status_obj_path = zpool_status_flags(pool_name)
 
     zp_status_default = zp_status_obj[key].splitlines()
