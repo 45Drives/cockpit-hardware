@@ -1,12 +1,14 @@
-Name: ::package_name::
-Version: ::package_version::
-Release: ::package_build_version::%{?dist}
-Summary: ::package_description_short::
-License: ::package_licence::
-URL: ::package_url::
+%global debug_package %{nil}
+
+Name: {{ name }}
+Version: {{ version }}
+Release: {{ build_number }}%{?dist}
+Summary: {{ description }}
+License: {{ license }}
+URL: {{ git_url }}
 Source0: %{name}-%{version}.tar.gz
-BuildArch: ::package_architecture_el::
-Requires: ::package_dependencies_el::
+BuildArch: {{ architecture.rocky }}
+Requires: {{ dependencies.rocky_common | join(',') }}
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
@@ -19,8 +21,8 @@ Provides: cockpit-hardware
 Conflicts: cockpit-hardware
 
 %description
-::package_title::
-::package_description_long::
+{{ title }}
+{{ description }}
 
 %prep
 %setup -q
@@ -39,7 +41,6 @@ make DESTDIR=%{buildroot} install
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
 /usr/share/cockpit/45drives-system/*
-/usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 
 %changelog
 * Wed Jan 22 2025 Jordan Keough <jkeough@45drives.com> 2.5.1-1
