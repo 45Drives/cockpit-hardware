@@ -2,5 +2,3 @@
 
 * Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
     popups having final character cut off
-* Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
-    popups having final character cut off
