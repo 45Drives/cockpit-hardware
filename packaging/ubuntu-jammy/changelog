@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.5.3-1jammy) jammy; urgency=medium
+
+  * Adds support for ROMED8-2T/BCM motherboard
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 13 Jun 2025 07:35:19 -0300
+
 cockpit-45drives-hardware (2.5.2-1jammy) jammy; urgency=medium
 
   * Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard

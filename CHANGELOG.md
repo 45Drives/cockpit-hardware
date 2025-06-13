@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.2-1
+## cockpit-45drives-hardware 2.5.3-1
 
-* Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard popups having final character cut off
+* Adds support for ROMED8-2T/BCM motherboard
