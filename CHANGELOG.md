@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.3-1
+## cockpit-45drives-hardware 2.5.3-2
 
-* Adds support for ROMED8-2T/BCM motherboard
+* Fixes pci script to filter duplicate slot data from PCIE2 in M2 slot
