@@ -668,6 +668,23 @@ def main():
  
   	# Match devices with PCI slots
 	matched_devices = process_pci_slots_and_devices(pci_slots, all_devices, lspci_devices)
+	
+	# Post-process: strip Card Type/Model from M.2 slots that duplicate another slot's Bus Address
+	seen_bus_addresses = {}
+	for slot in matched_devices:
+		bus = slot.get("Bus Address", "")
+		desig = slot.get("Designation", "")
+		if not bus:
+			continue
+
+		# If we've seen this Bus Address before and this is an M.2 slot, wipe identifying fields
+		if bus in seen_bus_addresses and desig.startswith("M2"):
+			slot["Card Type"] = "-"
+			slot["Card Model"] = "-"
+			slot["Firmware Version"] = "-"
+		else:
+			seen_bus_addresses[bus] = desig  # Track this as first encounter
+
 
 	# # Sort matched devices by Designation
 	# matched_devices.sort(key=lambda x: x.get("Designation", ""))

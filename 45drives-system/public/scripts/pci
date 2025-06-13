@@ -650,6 +650,23 @@ def main():
         hba_cards + network_cards + sata_cards,
         lspci_devices
     )
+    
+    # Post-process: strip Card Type/Model from M.2 slots that duplicate another slot's Bus Address
+    seen_bus_addresses = {}
+    for slot in matched:
+        bus = slot.get("Bus Address", "")
+        desig = slot.get("Designation", "")
+        if not bus:
+            continue
+
+        # If we've seen this Bus Address before and this is an M.2 slot, wipe identifying fields
+        if bus in seen_bus_addresses and desig.startswith("M2"):
+            slot["Card Type"] = "-"
+            slot["Card Model"] = "-"
+            slot["Firmware Version"] = "-"
+        else:
+            seen_bus_addresses[bus] = desig  # Track this as first encounter
+
 
     # ---------- ME03 ordering tweak ----------
     if motherboard_model.startswith("ME03"):
