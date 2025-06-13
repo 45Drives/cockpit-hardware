@@ -175,14 +175,16 @@ export default {
     }
 
     const getCapacityGiB = (capacityStr) => {
-      let coeffLut = {
+      const coeffLut = {
         TB: 1024,
         GB: 1,
+        GiB: 1,
+        TiB: 1024,
       };
-      if (!capacityStr) return 0;
-      return (
-        Number(capacityStr.split(" ")[0]) * coeffLut[capacityStr.split(" ")[1]]
-      );
+      if (!capacityStr || typeof capacityStr !== "string") return 0;
+      const [value, unit] = capacityStr.split(" ");
+      const parsedValue = parseFloat(value);
+      return isNaN(parsedValue) ? 0 : parsedValue * (coeffLut[unit] ?? 0);
     };
 
     const storageCapacity = ref(0);
@@ -196,14 +198,22 @@ export default {
           .flat()
           .filter((slot) => slot.occupied).length;
 
+        // storageCapacity.value =
+        //   diskCount.value > 0
+        //     ? lsdevJson.rows
+        //         .flat()
+        //         .filter((slot) => slot.occupied)
+        //         .map((disk) => getCapacityGiB(disk.capacity))
+        //         .reduce((total, cap) => total + cap)
+        //         .toFixed(2)
+        //     : 0;
         storageCapacity.value =
           diskCount.value > 0
             ? lsdevJson.rows
-                .flat()
-                .filter((slot) => slot.occupied)
-                .map((disk) => getCapacityGiB(disk.capacity))
-                .reduce((total, cap) => total + cap)
-                .toFixed(2)
+              .flat()
+              .filter((slot) => slot.occupied)
+              .map((disk) => getCapacityGiB(disk.capacity))
+              .reduce((total, cap) => total + cap)
             : 0;
 
         storageCapacityStr.value =

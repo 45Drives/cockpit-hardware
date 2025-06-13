@@ -226,7 +226,7 @@ def dmidecode():
 				else:
 					slot_seen[designation] = True
 					if current_slot.get("Bus Address") != "0000:00:00.0":
-							cards.append(current_slot)
+						cards.append(current_slot)
 	
 			current_slot = {}  # Initialize a new slot dictionary
 
@@ -306,14 +306,25 @@ def dmidecode():
 				if pciDesignation in PCIE_SLOT_LUT_B550I:
 					current_slot["Designation"] = PCIE_SLOT_LUT_B550I[pciDesignation]
 
-		if motherboard_model == "B550I AORUS PRO AX":
+		elif motherboard_model == "B550I AORUS PRO AX":
 			pciDesignation = current_slot.get("Designation", "")
 			if pciDesignation in PCIE_SLOT_LUT_B550I:
 				current_slot["Designation"] = PCIE_SLOT_LUT_B550I[pciDesignation]
 				cards.append(current_slot)
-   
-	# print(f"DEBUG: Final card list: {json.dumps(cards, indent=4)}")
-	return cards
+    
+		else:
+			designation = current_slot.get("Designation", "")
+			bus_addr = current_slot.get("Bus Address", "")
+
+			# Skip obviously empty / invalid slots
+			if designation != "N/A" and bus_addr and bus_addr != "0000:00:00.0":
+				# De-duplicate by designation
+				if designation not in slot_seen:
+					slot_seen[designation] = True
+					cards.append(current_slot)
+		
+		# print(f"DEBUG: Final card list: {json.dumps(cards, indent=4)}")
+		return cards
 
 
 def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
@@ -644,7 +655,7 @@ def main():
 	if pci_slots and sata_cards:
 		for slot in pci_slots:
 			for card in sata_cards:
-				if(card["Bus Address"] == slot["Bus Address"]):
+				if "Bus Address" in card and "Bus Address" in slot and card["Bus Address"] == slot["Bus Address"]:
 					slot["Card Type"] = card["Card Type"]
 					slot["Card Model"] = card["Card Model"]
 					if "Connections" not in slot.keys():

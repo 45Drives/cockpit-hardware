@@ -60,7 +60,8 @@ export default {
       "MZ73-LM0-000",
       "MC13-LE1-000",
       "B550I AORUS PRO AX",
-      "EC266D2I-2T/AQC"
+      "EC266D2I-2T/AQC",
+      "ROMED8-2T/BCM"
     ]);
 
     const adminCheck = ref(false);

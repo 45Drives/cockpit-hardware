@@ -78,6 +78,16 @@ g_ipmitool_sensor_fields = {
   	"DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
    	"DIMMG2_TEMP": " (C)", #Giga Computing (GIGABYTE)
   	"DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
+   	"TEMP_DDR5_A1": " (C)", #ASRockRack
+	"TEMP_DDR5_B1": " (C)", #ASRockRack
+	"TEMP_CPU1_DDR4A": " (C)", #ASRockRack
+ 	"TEMP_CPU1_DDR4B": " (C)", #ASRockRack
+  	"TEMP_CPU1_DDR4C": " (C)", #ASRockRack
+   	"TEMP_CPU1_DDR4D": " (C)", #ASRockRack
+	"TEMP_CPU1_DDR4E": " (C)", #ASRockRack
+	"TEMP_CPU1_DDR4F": " (C)", #ASRockRack
+	"TEMP_CPU1_DDR4G": " (C)", #ASRockRack
+	"TEMP_CPU1_DDR4H": " (C)", #ASRockRack
 }
 
 # check slot_entries for translatable locator tags (ASRockRack Motherboards, X12 and H12 boards, and GigaByte boards)
@@ -180,6 +190,17 @@ EC266D2I_locator_tags = {
  	"Controller1-ChannelA-DIMM0": "TEMP_DDR5_B1",
 }
 
+ROMED8_locator_tags = {
+    "P0 CHANNEL A": "TEMP_CPU1_DDR4A",
+    "P0 CHANNEL B": "TEMP_CPU1_DDR4B",
+    "P0 CHANNEL C": "TEMP_CPU1_DDR4C",
+    "P0 CHANNEL D": "TEMP_CPU1_DDR4D",
+    "P0 CHANNEL E": "TEMP_CPU1_DDR4E",
+    "P0 CHANNEL F": "TEMP_CPU1_DDR4F",
+    "P0 CHANNEL G": "TEMP_CPU1_DDR4G",
+    "P0 CHANNEL H": "TEMP_CPU1_DDR4H",
+}
+
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
 	if os.path.exists(json_path):
@@ -267,6 +288,12 @@ def dmidecode():
 							current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
 				if motherboard_model == "EC266D2I-2T/AQC" and locator in EC266D2I_locator_tags:
 					current_slot["Temperature Keys"] = [EC266D2I_locator_tags[locator]]
+				elif motherboard_model.startswith("ROMED8") and bank_locator:
+                    # bank_locator looks like “P0 CHANNEL A”
+					chan = bank_locator.split()[-1]          # "A" … "H"
+					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
+					if bank_locator in ROMED8_locator_tags:
+						current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
 				slot_entries.append(current_slot.copy())
 			current_slot = slot_template.copy()
 			bank_locator = ""  # Reset bank locator for new entry
@@ -291,6 +318,20 @@ def dmidecode():
 					current_slot["Temperature"] = 'N/A'
 		if motherboard_model == "EC266D2I-2T/AQC" and locator in EC266D2I_locator_tags:
 			current_slot["Temperature Keys"] = [EC266D2I_locator_tags[locator]]
+		if motherboard_model.startswith("ROMED8") and bank_locator:
+			chan = bank_locator.split()[-1]
+			current_slot["Locator"] = f"DIMM {chan}"
+			if bank_locator in ROMED8_locator_tags:
+				current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
+			slot_entries.append(current_slot.copy())
+	
+		for slot in slot_entries:
+			if motherboard_model.startswith("MZ73"):
+				if "Locator" in slot and slot["Locator"] in MZ73_locator_tags:
+					slot["Temperature Keys"] = MZ73_locator_tags[slot["Locator"]]
+			else:
+				if "Locator" in slot and slot["Locator"] in locator_tags:
+					slot["Temperature Keys"] = locator_tags[slot["Locator"]]
 		slot_entries.append(current_slot.copy())
   
 	for slot in slot_entries:

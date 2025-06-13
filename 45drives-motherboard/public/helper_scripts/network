@@ -82,7 +82,7 @@ def get_motherboard_model_server_info():
 	else:
 		return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
 
-def is_MZ73_onboard_ethernet(device_name):
+def is_BCM57416_onboard_ethernet(device_name):
 	return "BCM57416" in device_name
 
 def get_network_info():
@@ -201,13 +201,17 @@ def get_network_info():
 			device_name = hw_entry[2]
 			
 			# Exclude onboard ethernet from PCI matching
-			if motherboard_model.startswith('MZ73'):
-				if is_MZ73_onboard_ethernet(device_name):
+			if motherboard_model.startswith('MZ73') or motherboard_model.startswith('ROMED8'):
+				if is_BCM57416_onboard_ethernet(device_name):
 					continue
 
 			# Check if Bus Address is a list or a single address
+			# card_bus_addresses = card["Bus Address"] if isinstance(card["Bus Address"], list) else [card["Bus Address"]]
+			if "Bus Address" not in card:
+				continue  # Skip cards with no bus address
+
 			card_bus_addresses = card["Bus Address"] if isinstance(card["Bus Address"], list) else [card["Bus Address"]]
-			
+
 			# Compare each address in card_bus_addresses to hw_entry[0]
 			for card_bus_address in card_bus_addresses:
 				
