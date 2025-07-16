@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.4-1
+## cockpit-45drives-hardware 2.5.4-2
 
-* added f16 disk image
+* build rev 2
