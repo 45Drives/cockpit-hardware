@@ -2,7 +2,7 @@ name: Build Packages
 on:
   push:
     branches: 
-      - master
+      - f16
     tags:
       - 'v*.*.*'
 jobs:
