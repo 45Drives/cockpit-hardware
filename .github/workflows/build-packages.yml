@@ -102,7 +102,7 @@ jobs:
       - build
       - sign
       - update_repositories
-      - create_release
+      # - create_release
     runs-on: buildinator-5
     steps:
       - id: push_remote
