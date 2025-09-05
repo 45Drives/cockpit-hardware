@@ -24,7 +24,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430",
-		"Intel(R) Xeon(R) E E-2434"
+		"Intel(R) Xeon(R) E E-2434",
+		"Intel(R) Xeon(R) E E-2478"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -87,6 +88,10 @@ g_ipmitool_sensor_fields = {
 	"SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
+	"TEMP_CPU": " (C)", 
+	"TEMP_DDR5_A1 ": " (C)",
+	"TEMP_DDR5_B1 ": " (C)",
+	"CPU1 Power": " (W)",
 }
 
 def get_motherboard_model_server_info():
@@ -207,7 +212,7 @@ def main():
 			if sock in ("CPU0", "P0", "AM5"):
 				cand_keys = ("CPU0_TEMP", "CPU Temp")          # try these in order
 			elif sock in ("CPU1", "P1"):
-				cand_keys = ("CPU1_TEMP", "CPU Temp")
+				cand_keys = ("CPU1_TEMP", "CPU Temp", "CPU1 Temp",)
 			else:                                              # fallback - anything that
 				cand_keys = ("CPU Temp",)                      # might exist
 			# ---------------------------------------------------------------

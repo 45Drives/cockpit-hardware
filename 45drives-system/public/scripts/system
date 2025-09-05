@@ -57,7 +57,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430",
-		"Intel(R) Xeon(R) E E-2434"
+		"Intel(R) Xeon(R) E E-2434",
+		"Intel(R) Xeon(R) E E-2478"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -103,9 +104,13 @@ g_ipmitool_fru_fields = {
 		"Storinator-H32-XL60-Enhanced",
 		"Storinator-AV15-Base",	
 		"Storinator-Q30-Base",	
-		"Storinator-S45-Base"	
+		"Storinator-S45-Base",
+		"Professional-PRO4",
+		"Professional-PRO8",
+		"Professional-PRO15",
+		"Studio-STUDIO8",
 		],
-	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60"],
+	"Product Part Number":["AV15","Q30","q30","av15","s45","S45","XL60","xl60","PRO4","pro4","PRO8","pro4","PRO15","pro15","STUDIO8","studio8"],
 	"Product Serial":None
 }
 
@@ -300,7 +305,14 @@ def get_product_info(mobo,hba,cpu,ipmi):
 		"Storinator-AV15-Base":			["X11SSH-CTF",1,0,0,"AV15",False,"Storinator (Base)"],
 		"Storinator-Q30-Base":			["X11SSH-CTF",1,0,2,"Q30",False,"Storinator (Base)"],
 
-		"Storinator-S45-Base":			["X11SSM-F",1,0,3,"S45",False,"Storinator (Base)"]
+		"Storinator-S45-Base":			["X11SSM-F",1,0,3,"S45",False,"Storinator (Base)"],
+  
+		"Professional-PRO4":			["EC266D2I-2T/AQC",1,0,0,"PRO4",False,"Professional"],
+		"Professional-PRO8":			["EC266D2I-2T/AQC",1,0,0,"PRO8",False,"Professional"],
+		"Professional-PRO15":			["EC266D2I-2T/AQC",1,0,0,"PRO15",False,"Professional"],
+		"Studio-STUDIO8":				["EC266D2I-2T/AQC",1,0,0,"STUDIO8",False,"Studio"],
+  
+  
 	}
 
 	mobo_to_product_lut = {
@@ -353,7 +365,13 @@ def get_product_info(mobo,hba,cpu,ipmi):
 							"Storinator-S45-Enhanced-AMD",
 							"Storinator-XL60-Enhanced-AMD",
 							"Stornado-AV15-Enhanced-AMD"
-						]
+						],
+		"EC266D2I-2T/AQC": [
+							"Professional-PRO4",
+							"Professional-PRO8",
+							"Professional-PRO15",
+							"Studio-STUDIO8",
+		]
 	}
 
 	cpu_count = len(jcpu["CPU"])
