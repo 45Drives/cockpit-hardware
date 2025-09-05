@@ -195,6 +195,9 @@ export default {
               case "F16":
               pageLayout.value = "A";
               break;
+            case "STUDIO8":
+              pageLayout.value = "A";
+              break;
             default:
               console.log("UNKNOWN CHASSIS SIZE");
           }
@@ -265,9 +268,12 @@ export default {
             case "XL60":
               pageLayout.value = "CZ";
               break;
-              case "F16":
+            case "F16":
               pageLayout.value = "AZ";
               break;  
+            case "STUDIO8":
+              pageLayout.value = "AZ";
+              break;
             default:
               console.log("UNKNOWN CHASSIS SIZE");
           }

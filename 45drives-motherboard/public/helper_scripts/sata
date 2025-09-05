@@ -20,7 +20,7 @@ import json
 # This contains the expected path(s), for 
 # sata connectors on supported motherboards
 g_motherboard_sata_addresses = {
-"X11SSH-CTF":[
+	"X11SSH-CTF":[
 		["pci-0000:00:17.0-ata-1","I-SATA0"],
 		["pci-0000:00:17.0-ata-2","I-SATA1"],
 		["pci-0000:00:17.0-ata-3","I-SATA2"],
