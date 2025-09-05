@@ -64,7 +64,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4410Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430",
-		"Intel(R) Xeon(R) E E-2434"
+		"Intel(R) Xeon(R) E E-2434",
+		"Intel(R) Xeon(R) E E-2478"
 		],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -129,6 +130,10 @@ g_ipmitool_sensor_fields = {
     "SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
     "SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
+	"TEMP_CPU": " (C)", 
+	"TEMP_DDR5_A1 ": " (C)",
+	"TEMP_DDR5_B1 ": " (C)",
+	"CPU1 Power": " (W)",
 }
 
 ################################################################################
