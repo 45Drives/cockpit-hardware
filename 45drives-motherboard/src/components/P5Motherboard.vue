@@ -36,7 +36,8 @@ export default {
 
 			const translatedMoboNameExceptions = {
 				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX",
-				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC"
+				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC",
+				"ROMED8-2T/BCM" : "ROMED8-2T_BCM"
 			};
 
 			const raw_mobo_name = String(

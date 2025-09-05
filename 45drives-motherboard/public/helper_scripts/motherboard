@@ -39,7 +39,8 @@ g_dmi_mobo_fields = {
     	"MZ73-LM0-000",
      	"MC13-LE1-000",
 		"B550I AORUS PRO AX",
-		"EC266D2I-2T/AQC"
+		"EC266D2I-2T/AQC",
+		"ROMED8-2T/BCM"
 	],
 	"Serial Number": None
 }
@@ -50,6 +51,7 @@ g_dmi_cpu_fields = {
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
+		"AMD EPYC 7252 8-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
 		"AMD EPYC 8224P 24-Core Processor",
@@ -247,13 +249,10 @@ def get_sensor_readings():
 						)
 					else:
 						reading = (regex.group(1), regex.group(2) + g_ipmitool_sensor_fields[regex.group(1)])
-						sensor_readings.append(reading)
-
-						# reading = (regex.group(1),regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)])
 						# print(reading)
       
 						# All other readings are fine, use the field as captured.
-						# sensor_readings.append(reading)
+						sensor_readings.append(reading)
 	sensor_readings_json_str = "{\"Sensor Readings\":["+json.dumps(dict(sensor_readings))+"]}"
 	return sensor_readings_json_str
 

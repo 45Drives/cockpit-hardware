@@ -7,14 +7,16 @@ import json
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU","CPU1","CPU2", "P0", "P1", "CPU0", "AM5", "AM4"],
+	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
+		"AMD EPYC 7252 8-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
-		"AMD Ryzen 9 7950X 16-Core Processor",
-		"AMD Ryzen 5 5500GT with Radeon Graphics",
+		"AMD EPYC 8224P 24-Core Processor",
+  		"AMD Ryzen 9 7950X 16-Core Processor",
+    	"AMD Ryzen 5 5500GT with Radeon Graphics",
 		"AMD Ryzen 7 5700G with Radeon Graphics",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
@@ -159,8 +161,16 @@ def get_sensor_readings():
 				#          g_ipmitool_sensor_fields[regex.group(1)])
 				#     )
 				# else:
+				if regex.group(1) == "TEMP_CPU":
+					sensor_readings.append(
+						("CPU1 Temp", regex.group(2) + g_ipmitool_sensor_fields[regex.group(1)])
+					)
+				else:
+					reading = (regex.group(1), regex.group(2) + g_ipmitool_sensor_fields[regex.group(1)])
+					# print(reading)
+	
 					# All other readings are fine, use the field as captured.
-					sensor_readings.append((regex.group(1), regex.group(2)+g_ipmitool_sensor_fields[regex.group(1)]))
+					sensor_readings.append(reading)
 	return dict(sensor_readings)
 
 
@@ -191,36 +201,35 @@ def main():
 		#         },
 		#     )
 		for cpu in cpus:
-			socket_designation = cpu["Socket Designation"]
-			
-			# Normalize the socket designation to match the sensor output format
-			if socket_designation in ['CPU0', 'P0', 'AM5']:
-				temp_key = 'CPU0_TEMP'
-			elif socket_designation in ['CPU1', 'P1']:
-				if mobo_model == 'EC266D2I-2T/AQC':
-					temp_key = 'TEMP_CPU'
-				else:
-					temp_key = 'CPU1_TEMP'
-			elif socket_designation == 'CPU':
-				temp_key = "CPU Temp"
+			sock = cpu["Socket Designation"]
+
+			# ----- map socket designation to the right IPMI sensor name -----
+			if sock in ("CPU0", "P0", "AM5"):
+				cand_keys = ("CPU0_TEMP", "CPU Temp")          # try these in order
+			elif sock in ("CPU1", "P1"):
+				cand_keys = ("CPU1_TEMP", "CPU Temp")
+			else:                                              # fallback - anything that
+				cand_keys = ("CPU Temp",)                      # might exist
+			# ---------------------------------------------------------------
+
+			# pick the first key that actually exists in ipmitool output
+			for k in cand_keys:
+				if k in sensor_readings:
+					cpu_temp = sensor_readings[k]
+					break
 			else:
-				temp_key = None  # Handle other cases if needed
-			
-			# Assign temperature if the key is found in sensor readings
-			if temp_key and temp_key in sensor_readings:
-				cpu_temp = sensor_readings[temp_key]
-			else:
-				cpu_temp = '-'  # No sensor reading found
-			
+				cpu_temp = "-"            # none of the candidates were present
+
 			cpu_arr.append(
-				{ 
-					'socket': socket_designation, 
-					'model': cpu["Version"],
-					'maxSpeed': cpu["Max Speed"],
-					'currentSpeed': cpu["Current Speed"],
-					'temperature': cpu_temp
-				},
+				{
+					"socket":        sock,
+					"model":         cpu["Version"],
+					"maxSpeed":      cpu["Max Speed"],
+					"currentSpeed":  cpu["Current Speed"],
+					"temperature":   cpu_temp,
+				}
 			)
+
 
 		result = {
 			"cpus": cpu_arr

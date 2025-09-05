@@ -1,4 +1,3 @@
-## cockpit-45drives-hardware 2.5.2-2
+## cockpit-45drives-hardware 2.5.4-2
 
-* Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
-    popups having final character cut off
+* Building new package + release as users were experiencing issues with scripts/possibly not updating

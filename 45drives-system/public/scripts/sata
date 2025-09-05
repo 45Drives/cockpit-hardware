@@ -313,20 +313,45 @@ def ls_by_path(motherboard):
 						break
 
 			return sata_connections
+		# else:
+		# 	for line in ls_result:
+		# 		line = line.strip()
+		# 		regex = re.search(r"(\S+-ata-\d+)\s->\s\W+(.*)", line)
+		# 		if regex is not None:
+		# 			device = regex.group(2).strip().replace("../../", "")
+		# 			# print(f"Generic matched: {regex.group(1)} -> {device}")
+		# 			if device not in sata_connections:
+		# 				sata_connections[device] = {
+		# 						"Path": regex.group(1),
+		# 						"Connector": ("I-SATA" + regex.group(1).split('-ata-')[-1]),
+		# 						"Device": device,
+		# 						"Partitions": []
+		# 					}
 		else:
+			# Fallback: Label SATA drives as SATA_0, SATA_1, SATA_2, ...
+			port_counter = 0
+
 			for line in ls_result:
 				line = line.strip()
-				regex = re.search(r"(\S+-ata-\d+)\s->\s\W+(.*)", line)
-				if regex is not None:
-					device = regex.group(2).strip().replace("../../", "")
-					# print(f"Generic matched: {regex.group(1)} -> {device}")
+				match = re.search(r"(pci-0000:\S+-ata-(\d+))\s->\s\W+(.*)", line)
+				if match:
+					path = match.group(1)
+					port = match.group(2)
+					device = match.group(3).replace("../../", "")
+
+					# Skip partitions
+					if re.search(r'\d+$', device):
+						continue
+
 					if device not in sata_connections:
 						sata_connections[device] = {
-								"Path": regex.group(1),
-								"Connector": ("I-SATA" + regex.group(1).split('-ata-')[-1]),
-								"Device": device,
-								"Partitions": []
-							}
+							"Path": path,
+							"Connector": f"SATA_{port_counter}",
+							"Device": device,
+							"Partitions": []
+						}
+						port_counter += 1
+
 						
 			return sata_connections
 
