@@ -8,7 +8,6 @@ on:
 jobs:
   prebuild:
     runs-on: buildinator-5
-    runs-on: buildinator-5
     outputs:
       manifest: ${{ steps.prebuild.outputs.manifest }}
       matrix: ${{ steps.prebuild.outputs.matrix }}
@@ -42,7 +41,6 @@ jobs:
       - prebuild
       - build
     runs-on: buildinator-5
-    runs-on: buildinator-5
     steps:
       - name: Run sign playbook
         uses: 45drives/actions/ansible-playbook@main
@@ -62,7 +60,6 @@ jobs:
       - prebuild
       - build
       - sign
-    runs-on: buildinator-5
     runs-on: buildinator-5
     steps:
       - id: push_local
