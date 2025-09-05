@@ -93,7 +93,7 @@ export default {
             { immediate: false, deep: true }
         );
 
-        // 🔧 SSD-only logic
+        // SSD-only logic for this server
         function getDiskImage(occupied, _modelName, _modelFamily, diskType) {
             // Always use SSD "empty" for empty bays
             if (!occupied) return assets.disks.ssd.empty.image;
@@ -114,7 +114,7 @@ export default {
             p5.preload = () => {
                 assets.chassis.image = p5.loadImage(assets.chassis.path);
 
-                // ✅ Only preload SSD assets
+                // Only preload SSD assets
                 Object.entries(assets.disks.ssd).forEach(([key, val]) => {
                     assets.disks.ssd[key].image = p5.loadImage(val.path);
                 });
