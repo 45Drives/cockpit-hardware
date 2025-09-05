@@ -33,6 +33,7 @@ g_network_card_models = [
 
 g_sata_controllers = [
     "ASM1062",
+    "Raptor Lake SATA AHCI Controller",
     # "ASM1164"
 ]
 
@@ -586,6 +587,42 @@ def get_disk_by_path():
                 disk_map[pci_addr] = device
     return disk_map
 
+def get_ocu_usage_from_by_path():
+    """
+    Infer OCU1/OCU2 usage from /dev/disk/by-path.
+    Assumes ports 1-4 are OCU1 and ports 5-8 are OCU2 on the board in question.
+    Ignores partition symlinks.
+    """
+    usage = {"OCU1": [], "OCU2": []}
+    bypath = "/dev/disk/by-path"
+
+    try:
+        entries = os.listdir(bypath)
+    except Exception:
+        return usage  # no change if the path doesn't exist
+
+    rx = re.compile(r"^pci-[0-9a-fA-F:.-]+-ata-(\d+)$")
+
+    for name in entries:
+        # only whole-disk ata links (skip parts and nvme)
+        if "-part" in name or "-nvme-" in name or "-sas-" in name:
+            continue
+        m = rx.match(name)
+        if not m:
+            continue
+
+        port = int(m.group(1))
+        # resolve target device (../../sdX)
+        target = os.path.realpath(os.path.join(bypath, name))
+        dev = os.path.basename(target).replace("../../", "")
+
+        if 1 <= port <= 4:
+            usage["OCU1"].append(dev)
+        elif 5 <= port <= 8:
+            usage["OCU2"].append(dev)
+
+    return usage
+
 
 # ---------------------------------------------------------------------------
 # MAIN
@@ -650,6 +687,15 @@ def main():
         hba_cards + network_cards + sata_cards,
         lspci_devices
     )
+    
+    if motherboard_model.startswith('EC266D2I'):
+        ocu_usage = get_ocu_usage_from_by_path()
+        for slot in matched:
+            desig = slot.get("Designation", "")
+            if desig in ("OCU1", "OCU2"):
+                devices = ocu_usage.get(desig, [])
+                if devices:
+                    slot["Current Usage"] = "In Use"
     
     # Post-process: strip Card Type/Model from M.2 slots that duplicate another slot's Bus Address
     seen_bus_addresses = {}
