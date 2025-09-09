@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ "$1" == "remove" ] || [ "$1" == "purge" ]; then
+	rm -rf /usr/share/cockpit/45drives-disks
+	rm -rf /usr/share/cockpit/45drives-motherboard
+	rm -rf /usr/share/cockpit/45drives-system
+	rm -f /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
+fi

@@ -121,11 +121,11 @@ export default {
     P5ProxinatorVM8,
     P5ProxinatorVM16,
     P5ProxinatorVM32,
+    P5StornadoF16,
     P5StudioSTUDIO8,
     Switch,
     SwitchGroup,
     SwitchLabel,
-    P5StornadoF16
   },
   props: {
     serverInfo: Object,

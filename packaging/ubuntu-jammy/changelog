@@ -1,27 +1,15 @@
+cockpit-45drives-hardware (2.5.5-1jammy) jammy; urgency=medium
+
+  * Adds support for new 45Studio 8-bay server
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 05 Sep 2025 12:13:52 -0300
+
 cockpit-45drives-hardware (2.5.4-2jammy) jammy; urgency=medium
 
   * Building new package + release as users were experiencing issues with scripts/possibly
     not updating
 
  -- Jordan Keough <jkeough@45drives.com>  Thu, 31 Jul 2025 09:41:55 -0300
-
-cockpit-45drives-hardware (2.5.4-3jammy) jammy; urgency=medium
-
-  * rev3
-
- -- Brett Kelly <bkelly@45drives.com>  Wed, 16 Jul 2025 11:40:00 -0300
-
-cockpit-45drives-hardware (2.5.4-2jammy) jammy; urgency=medium
-
-  * build rev 2
-
- -- Mark Hooper <mhooper@45drives.com>  Wed, 16 Jul 2025 11:20:05 -0300
-
-cockpit-45drives-hardware (2.5.4-1jammy) jammy; urgency=medium
-
-  * added f16 disk image
-
- -- Rachit Hans <rhans@45drives.com>  Wed, 16 Jul 2025 08:30:34 -0300
 
 cockpit-45drives-hardware (2.5.3-2jammy) jammy; urgency=medium
 
@@ -34,6 +22,14 @@ cockpit-45drives-hardware (2.5.3-1jammy) jammy; urgency=medium
   * Adds support for ROMED8-2T/BCM motherboard
 
  -- Jordan Keough <jkeough@45drives.com>  Fri, 13 Jun 2025 07:35:19 -0300
+
+cockpit-45drives-hardware (2.5.2-2jammy) jammy; urgency=medium
+
+  * Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
+
+       popups having final character cut off
+
+ -- Brett Kelly <bkelly@45drives.com>  Tue, 25 Mar 2025 13:14:04 -0300
 
 cockpit-45drives-hardware (2.5.2-1jammy) jammy; urgency=medium
 

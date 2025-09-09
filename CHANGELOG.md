@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.4-3
+## cockpit-45drives-hardware 2.5.5-1
 
-* rev3
+* Adds support for new 45Studio 8-bay server
