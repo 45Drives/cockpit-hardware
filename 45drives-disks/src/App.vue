@@ -192,6 +192,9 @@ export default {
             case "XL60":
               pageLayout.value = "C";
               break;
+              case "F16":
+              pageLayout.value = "A";
+              break;
             case "STUDIO8":
               pageLayout.value = "A";
               break;
@@ -265,6 +268,9 @@ export default {
             case "XL60":
               pageLayout.value = "CZ";
               break;
+            case "F16":
+              pageLayout.value = "AZ";
+              break;  
             case "STUDIO8":
               pageLayout.value = "AZ";
               break;

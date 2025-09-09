@@ -1,0 +1,18 @@
+cockpit-45drives-hardware (2.5.5-1bookworm) bookworm; urgency=medium
+
+  * Adds support for new 45Studio 8-bay server
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 05 Sep 2025 12:13:52 -0300
+
+cockpit-45drives-hardware (2.5.2-2bookworm) bookworm; urgency=medium
+
+  * Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
+    popups having final character cut off
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 24 Feb 2025 11:32:16 -0400
+
+cockpit-45drives-hardware (2.5.1-1bookworm) bookworm; urgency=medium
+
+  * Initial build for bookworm
+
+ -- Brett Kelly <bkelly@45drives.com>  Tue, 11 Feb 2025 07:37:59 -0400

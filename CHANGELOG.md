@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.4-2
+## cockpit-45drives-hardware 2.5.5-1
 
-* Building new package + release as users were experiencing issues with scripts/possibly not updating
+* Adds support for new 45Studio 8-bay server
