@@ -108,14 +108,14 @@
     { x: 7.5, y: 205, BAY: "1-15", HDD: true, occupied: false, image: null },
 
     // ----- ROW 2 (SSD-only) -----
-    { x: 382, y: 58, BAY: "2-1", HDD: false, occupied: false, image: null },
-    { x: 394, y: 58, BAY: "2-2", HDD: false, occupied: false, image: null },
-    { x: 419.5, y: 58, BAY: "2-3", HDD: false, occupied: false, image: null },
-    { x: 431.5, y: 58, BAY: "2-4", HDD: false, occupied: false, image: null },
-    { x: 443.5, y: 58, BAY: "2-5", HDD: false, occupied: false, image: null },
-    { x: 455.5, y: 58, BAY: "2-6", HDD: false, occupied: false, image: null },
-    { x: 481.7, y: 58, BAY: "2-7", HDD: false, occupied: false, image: null },
-    { x: 493.7, y: 58, BAY: "2-8", HDD: false, occupied: false, image: null },
+    { x: 382, y: 58, BAY: "1-16", HDD: false, occupied: false, image: null },
+    { x: 394, y: 58, BAY: "1-17", HDD: false, occupied: false, image: null },
+    { x: 419.5, y: 58, BAY: "1-18", HDD: false, occupied: false, image: null },
+    { x: 431.5, y: 58, BAY: "1-19", HDD: false, occupied: false, image: null },
+    { x: 443.5, y: 58, BAY: "1-20", HDD: false, occupied: false, image: null },
+    { x: 455.5, y: 58, BAY: "1-21", HDD: false, occupied: false, image: null },
+    { x: 481.7, y: 58, BAY: "1-22", HDD: false, occupied: false, image: null },
+    { x: 493.7, y: 58, BAY: "1-23", HDD: false, occupied: false, image: null },
   ];
 
   
