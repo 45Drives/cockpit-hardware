@@ -1,0 +1,135 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 500,
+        "y0": 315,
+        "width": 315,
+        "height": 200,
+        "diam": 0,
+        "filename": "AM5.png"
+    },
+    {
+        "type": "PCIEX16(G5)_1",
+        "id": "0",
+        "shape": "rect",
+        "x0": 360,
+        "y0": 153,
+        "width": 27,
+        "height": 280,
+        "diam": 24,
+        "filename": "PCI_SLOT_0.png"
+    },
+    {
+        "type": "PCIEX16(G5)_2",
+        "id": "1",
+        "shape": "rect",
+        "x0": 173,
+        "y0": 155,
+        "width": 27,
+        "height": 280,
+        "diam": 24,
+        "filename": "PCI_SLOT_1.png"
+    },
+    {
+        "type": "PCIEX16(G4)",
+        "id": "2",
+        "shape": "rect",
+        "x0": 47,
+        "y0": 151,
+        "width": 27,
+        "height": 280,
+        "diam": 24,
+        "filename": "PCI_SLOT_2.png"
+    },
+    {
+        "type": "M.2_1(SOCKET3)",
+        "id": "4",
+        "shape": "rect",
+        "x0": 399,
+        "y0": 200,
+        "width": 50,
+        "height": 20,
+        "diam": 24,
+        "filename": "PCI_SLOT_4.png"
+    },
+    {
+        "type": "M.2_2(SOCKET3)",
+        "id": "5",
+        "shape": "rect",
+        "x0": 190,
+        "y0": 525,
+        "width": 50,
+        "height": 20,
+        "diam": 24,
+        "filename": "PCI_SLOT_5.png"
+    },
+    {
+        "type": "M.2_3(SOCKET3)",
+        "id": "6",
+        "shape": "rect",
+        "x0": 102,
+        "y0": 425,
+        "width": 50,
+        "height": 20,
+        "diam": 24,
+        "filename": "PCI_SLOT_6.png"
+    },
+    {
+        "type": "M.2_4(SOCKET3)",
+        "id": "7",
+        "shape": "rect",
+        "x0": 102,
+        "y0": 452,
+        "width": 50,
+        "height": 20,
+        "diam": 24,
+        "filename": "PCI_SLOT_7.png"
+    },
+   
+    {
+        "type": "DIMM 0",
+        "id": 1,
+        "shape": "rect",
+        "x0": 440,
+        "y0": 584,
+        "width": 441,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMM_0.png"
+    },
+    {
+        "type": "DIMM 1",
+        "id": 2,
+        "shape": "rect",
+        "x0": 440,
+        "y0": 611,
+        "width": 441,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMM1.png"
+    },
+    {
+        "type": "DIMM 2",
+        "id": 3,
+        "shape": "rect",
+        "x0": 440,
+        "y0": 644,
+        "width": 441,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMM_2.png"
+    },
+        {
+        "type": "DIMM 3",
+        "id": 4,
+        "shape": "rect",
+        "x0": 440,
+        "y0": 670,
+        "width": 441,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMM_3.png"
+    }
+]
