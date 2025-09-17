@@ -1,9 +1,7 @@
 <!-- This example requires Tailwind CSS v2.0+ -->
 <template>
   <div class="card mt-2">
-    <div
-      class="card-header card-header flex flex-row items-center justify-between"
-    >
+    <div class="card-header card-header flex flex-row items-center justify-between">
       <h3 class="text-header text-default">System</h3>
       <div class="mt-3 sm:mt-0 sm:ml-4">
         <button type="button" class="card-refresh-btn" @click="getSystemInfo()">
@@ -16,41 +14,31 @@
         <div class="bg-default shadow overflow-hidden sm:rounded-lg">
           <div class="border-b border-default">
             <dl>
-              <div
-                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
-              >
+              <div class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium ">Model</dt>
                 <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ sysModel }}
                 </dd>
               </div>
-              <div
-                class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
-              >
+              <div class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium">Chassis Size</dt>
                 <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ sysChassis }}
                 </dd>
               </div>
-              <div
-                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
-              >
+              <div class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium ">Serial</dt>
                 <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ sysSerial }}
                 </dd>
               </div>
-              <div
-                class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
-              >
+              <div class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium ">Motherboard</dt>
                 <dd class="mt-1 text-sm text-muted sm:mt-0 sm:col-span-2">
                   {{ moboModel }}
                 </dd>
               </div>
-              <div
-                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
-              >
+              <div class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt class="text-sm font-medium">
                   Motherboard Serial
                 </dt>
@@ -62,17 +50,10 @@
           </div>
         </div>
 
-        <img
-          :src="serverImgPath"
-          class="object-contain md:h-72 h-48 rounded-none justify-self-center"
-        />
+        <img :src="serverImgPath" class="object-contain md:h-72 h-48 rounded-none justify-self-center" />
       </div>
       <div v-if="fatalError">
-        <ErrorMessage
-          :errorMsg="fatalErrorMsg"
-          :FixButton="showFixButton"
-          :FixButtonHandler="fixButtonHandler"
-        />
+        <ErrorMessage :errorMsg="fatalErrorMsg" :FixButton="showFixButton" :FixButtonHandler="fixButtonHandler" />
       </div>
     </div>
   </div>
@@ -107,9 +88,9 @@ export default {
       if (model == "" || model == "?") {
         return "img/45dlogo.png";
       }
-
+      console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio).*(HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|2U|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|F16|STUDIO8).*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio).*(C8_UBM|MI4_UBM|HL15_BEAST|HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|2U|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -119,6 +100,8 @@ export default {
           "XL60": "img/storinatorXL60.png",
           "C8": "img/storinatorC8.png",
           "MI4": "img/storinatorMI4.png",
+          "C8_UBM": "img/storinatorC8ubm.png",
+          "MI4_UBM": "img/storinatorMI4ubm.png",
           "F8X1": "img/F8X1.png",
           "F8X2": "img/F8X2.png",
           "F8X3": "img/F8X3.png"
@@ -126,30 +109,30 @@ export default {
         "Stornado": {
           "2U": "img/stornado2U.png",
           "AV15": "img/stornadoAV15.png",
-          "F2": "img/stornadoF2.png",
-          "F16": "img/stornadoF16.png",
+          "F2": "img/stornadoF2.png"
         },
         "HomeLab": {
           "HL15": "img/homelabHL15.png",
           "HL4": "img/homelabHL4.png",
           "HL8": "img/homelabHL8.png",
+          "HL15_BEAST": "img/homelabHL15BEAST.png"
         },
         "Professional": {
           "PRO15": "img/professionalPRO15.png",
           "PRO4": "img/professionalPRO4.png",
           "PRO8": "img/professionalPRO8.png",
         },
-        "Proxinator":{
+        "Proxinator": {
           "VM8": "img/proxinator.png",
           "VM16": "img/proxinator.png",
           "VM32": "img/proxinator.png",
         },
-        "Studio":{
+        "Studio": {
           "STUDIO8": "img/studioSTUDIO8.png"
         }
       };
 
-      if(!match) return "img/45dlogo.png";
+      if (!match) return "img/45dlogo.png";
       return imgPathLookup[match[1]][match[2]];
     };
 
@@ -173,8 +156,8 @@ export default {
         sysChassis.value = sysInfo["Chassis Size"];
         sysSerial.value = sysInfo["Serial"];
         moboModel.value =
-        //  sysInfo["Motherboard"]["Manufacturer"] +
-        //  " " +
+          //  sysInfo["Motherboard"]["Manufacturer"] +
+          //  " " +
           sysInfo["Motherboard"]["Product Name"];
         moboSerial.value = sysInfo["Motherboard"]["Serial Number"];
         serverImgPath.value = getSystemImgPath(sysInfo["Model"]);
@@ -195,13 +178,13 @@ export default {
             fixButtonHandler.value = async () => {
               try {
                 const fixState = await useSpawn(
-                ["/opt/45drives/tools/server_identifier"],
-                {
-                  err: "out",
-                  superuser: "require",
-                  promise: true,
-                }
-              );
+                  ["/opt/45drives/tools/server_identifier"],
+                  {
+                    err: "out",
+                    superuser: "require",
+                    promise: true,
+                  }
+                );
                 fatalError.value = false;
                 fatalErrorMsg.value.length = 0;
                 showFixButton.value = false;
@@ -215,7 +198,7 @@ export default {
                 showFixButton.value = false;
               }
             };
-          }else{
+          } else {
 
           }
         } catch (error) {

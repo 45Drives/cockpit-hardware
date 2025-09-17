@@ -61,7 +61,8 @@ export default {
       "MC13-LE1-000",
       "B550I AORUS PRO AX",
       "EC266D2I-2T/AQC",
-      "ROMED8-2T/BCM"
+      "ROMED8-2T/BCM",
+      "ProArt X870E-CREATOR WIFI"
     ]);
 
     const adminCheck = ref(false);
