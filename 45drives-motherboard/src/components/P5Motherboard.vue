@@ -81,7 +81,6 @@ export default {
 
 			m.createComponentMasks = function (a) {
 				const img_path = `img/motherboard/${String(mobo_name)}/${mobo_json[a]["filename"]}`;
-				console.log("Creating mask for", img_path);
 				MASK_ARR.push(m.loadImage(img_path));
 			};
 
@@ -287,7 +286,6 @@ export default {
 					m.push();
 					if (this.img_idx != -1) {
 						if (this.pType == "RAM") {
-							console.log("image", this.img_idx, peripheralImages[this.img_idx])
 							m.image(
 								peripheralImages[this.img_idx],
 								this.x0,
@@ -510,10 +508,8 @@ export default {
 
 			m.getRam = function () {
 				if (ram_info) {
-					console.log("ram_info" ,ram_info)
 					for (let i = 0; i < ram_info["Ram Info"].length; i++) {
 						for (let c = 0; c < components.length; c++) {
-							console.log("Comparing", ram_info["Ram Info"][i]["Locator"], "to", components[c]["type"])
 							if (ram_info["Ram Info"][i]["Locator"] == components[c]["type"]) {
 								var content_str = "";
 								content_str +=
@@ -548,8 +544,6 @@ export default {
 										)
 									);
 									peripheralImages.push(m.loadImage("img/motherboard/ram.png"));
-									console.log("Added RAM image for", components[c]["type"]);
-									console.log("peripheralImages:", peripheralImages);
 								}
 							}
 						}
@@ -558,7 +552,6 @@ export default {
 			};
 
 			m.getPCI = function () {
-				console.log('pci_info:', pci_info)
 				let VERTOFFSET = 5.37;
 				let VERTSCALE = 19.0;
 				let WIDTHOFFSET = 1.24;
