@@ -199,6 +199,22 @@ ROMED8_locator_tags = {
     "P0 CHANNEL H": "TEMP_CPU1_DDR4H",
 }
 
+# Replace your current PROART_X870E_locator_tags with:
+PROART_X870E_locator_tags = {
+    "P0 CHANNEL A": {
+        "DIMM 0": "DIMM 0",
+        "DIMM 1": "DIMM 1",
+    },
+    "P0 CHANNEL B": {
+        "DIMM 0": "DIMM 2",
+        "DIMM 1": "DIMM 3",
+    },
+}
+
+locator_tags.update({
+    "DIMMA2": ["DIMMA2", "DIMMA1", "DIMMA1 Temp"],
+    "DIMMB2": ["DIMMB2", "DIMMB1", "DIMMB1 Temp"],
+})
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
 	if os.path.exists(json_path):
@@ -274,6 +290,7 @@ def dmidecode():
 		if line.startswith("Handle "):
 			if current_slot:
 				locator = current_slot.get("Locator", "")
+
 				# Filter: Handle if motherboard model is B550I AORUS PRO AX and the Locator is DIMM 1 with valid data
 				if motherboard_model == "B550I AORUS PRO AX":
 					if current_slot["Locator"] == "DIMM 1" and (
@@ -282,6 +299,12 @@ def dmidecode():
 						# Apply B550I_AORUS locator tag based on Bank Locator
 						if bank_locator in B550I_AORUS_locator_tags:
 							current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
+				is_proart_x870e = ("PROART" in motherboard_model.upper()) and ("X870E" in motherboard_model.upper())
+				if is_proart_x870e and bank_locator:
+					bl = bank_locator.strip()  # "P0 CHANNEL A/B"
+					loc = current_slot.get("Locator", "").strip()  # "DIMM 0/1"
+					if bl in PROART_X870E_locator_tags and loc in PROART_X870E_locator_tags[bl]:
+						current_slot["Locator"] = PROART_X870E_locator_tags[bl][loc]			
 				if motherboard_model == "EC266D2I-2T/AQC" and locator in EC266D2I_locator_tags:
 					current_slot["Temperature Keys"] = [EC266D2I_locator_tags[locator]]
 				elif motherboard_model.startswith("ROMED8") and bank_locator:
@@ -311,7 +334,13 @@ def dmidecode():
 			):
 				if bank_locator in B550I_AORUS_locator_tags:
 					current_slot["Locator"] = B550I_AORUS_locator_tags[bank_locator]
-					current_slot["Temperature"] = 'N/A'
+					current_slot["Temperature"] = 'N/A'			
+		is_proart_x870e = ("PROART" in motherboard_model.upper()) and ("X870E" in motherboard_model.upper())
+		if is_proart_x870e and bank_locator:
+			bl = bank_locator.strip()
+			loc = current_slot.get("Locator", "").strip()
+			if bl in PROART_X870E_locator_tags and loc in PROART_X870E_locator_tags[bl]:
+				current_slot["Locator"] = PROART_X870E_locator_tags[bl][loc]			
 		if motherboard_model == "EC266D2I-2T/AQC" and locator in EC266D2I_locator_tags:
 			current_slot["Temperature Keys"] = [EC266D2I_locator_tags[locator]]
 		if motherboard_model.startswith("ROMED8") and bank_locator:
@@ -319,7 +348,7 @@ def dmidecode():
 			current_slot["Locator"] = f"DIMM {chan}"
 			if bank_locator in ROMED8_locator_tags:
 				current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
-			slot_entries.append(current_slot.copy())
+		slot_entries.append(current_slot.copy())
 	
 		for slot in slot_entries:
 			if motherboard_model.startswith("MZ73"):
@@ -332,39 +361,57 @@ def dmidecode():
 	return slot_entries
 
 def main():
-	ram = dmidecode()
-	# print(f'ram:{ram}')
-	temps = ipmitool_sensor()
-	# print(f'temps:{temps}')
-	output_str = "{\"Ram Info\":[]}"
-	if ram and temps:
-		for module in ram:
-			for key in g_dmi_fields:
-				if key not in module.keys():
-					module[key] = "-"
-			if module["Locator"] in temps.keys():
-				module["Temperature"] = temps[module["Locator"]]
-			elif "Temperature Keys" in module.keys():
-				for lookup_key in module["Temperature Keys"]:
-					if lookup_key in temps.keys():
-						module["Temperature"] = temps[lookup_key]
-			if module["Temperature"] == "na (C)":
-				module["Temperature"] = "-"
-			if module["Manufacturer"] == "NO DIMM":
-				module["Manufacturer"] = "-"
-			if module["Serial Number"] == "NO DIMM":
-				module["Serial Number"] = "-"
+    ram = dmidecode()
+    temps = ipmitool_sensor()
+    output_str = "{\"Ram Info\":[]}"
 
-	if ram:
-		output_str = "{\"Ram Info\":["
-		for module in ram:
-			output_str += json.dumps(module) + ","
-		output_str = output_str[:-1] + "]}"
-		# print output string to stdout
-		print(json.dumps(json.loads(output_str),indent=4))
-	else:
-		print(json.dumps(json.loads(output_str),indent=4))
+    if ram:
+        for module in ram:
+            # Ensure required DMI fields exist
+            for key in g_dmi_fields:
+                if key not in module:
+                    module[key] = "-"
 
+            # Resolve temperature
+            temp_found = False
+            if temps:
+                name = module.get("Locator", "")
+                # candidates: exact locator, "<locator> Temp"
+                candidates = [name, f"{name} Temp"] if name else []
+                # plus any Temperature Keys (both exact and "... Temp")
+                for lk in module.get("Temperature Keys", []):
+                    candidates.extend([lk, f"{lk} Temp"])
+
+                for c in candidates:
+                    if c in temps:
+                        module["Temperature"] = temps[c]
+                        temp_found = True
+                        break
+
+            # Normalize special/absent values
+            if module.get("Temperature") == "na (C)":
+                module["Temperature"] = "-"
+
+            # If a DIMM is installed but we still have no temperature, mark as N/A
+            if (module.get("Size") and module["Size"] != "No Module Installed" and
+                (not module.get("Temperature") or module["Temperature"] == "-")):
+                module["Temperature"] = "N/A"
+                module.setdefault("Temperature Keys", [])
+
+            # Clean up vendor "NO DIMM" placeholders
+            if module.get("Manufacturer") == "NO DIMM":
+                module["Manufacturer"] = "-"
+            if module.get("Serial Number") == "NO DIMM":
+                module["Serial Number"] = "-"
+
+        # Build output
+        output_str = "{\"Ram Info\":["
+        for module in ram:
+            output_str += json.dumps(module) + ","
+        output_str = output_str[:-1] + "]}"
+        print(json.dumps(json.loads(output_str), indent=4))
+    else:
+        print(json.dumps(json.loads(output_str), indent=4))
 
 if __name__ == "__main__":
     main()

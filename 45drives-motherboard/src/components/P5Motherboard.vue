@@ -37,7 +37,8 @@ export default {
 			const translatedMoboNameExceptions = {
 				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX",
 				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC",
-				"ROMED8-2T/BCM" : "ROMED8-2T_BCM"
+				"ROMED8-2T/BCM" : "ROMED8-2T_BCM",
+				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI"
 			};
 
 			const raw_mobo_name = String(
@@ -49,11 +50,10 @@ export default {
 			// Append Chassis Size directly to the translated motherboard name if HL4 or HL8, otherwise use translated name
 			// or if not in exceptions dict then use raw name
 			const mobo_name = raw_mobo_name in translatedMoboNameExceptions
-				? (chassis_size === 'HL4' || chassis_size === 'HL8'
+				? (chassis_size === 'HL4' || chassis_size === 'HL8' 
 					? `${translatedMoboNameExceptions[raw_mobo_name]}_${chassis_size}`
 					: translatedMoboNameExceptions[raw_mobo_name])
 				: raw_mobo_name;
-
 			let bgImgPath = `img/motherboard/${String(mobo_name)}/${String(mobo_name)}.png`;
 
 			let background_img;
@@ -81,6 +81,7 @@ export default {
 
 			m.createComponentMasks = function (a) {
 				const img_path = `img/motherboard/${String(mobo_name)}/${mobo_json[a]["filename"]}`;
+				console.log("Creating mask for", img_path);
 				MASK_ARR.push(m.loadImage(img_path));
 			};
 
@@ -286,6 +287,7 @@ export default {
 					m.push();
 					if (this.img_idx != -1) {
 						if (this.pType == "RAM") {
+							console.log("image", this.img_idx, peripheralImages[this.img_idx])
 							m.image(
 								peripheralImages[this.img_idx],
 								this.x0,
@@ -508,8 +510,10 @@ export default {
 
 			m.getRam = function () {
 				if (ram_info) {
+					console.log("ram_info" ,ram_info)
 					for (let i = 0; i < ram_info["Ram Info"].length; i++) {
 						for (let c = 0; c < components.length; c++) {
+							console.log("Comparing", ram_info["Ram Info"][i]["Locator"], "to", components[c]["type"])
 							if (ram_info["Ram Info"][i]["Locator"] == components[c]["type"]) {
 								var content_str = "";
 								content_str +=
@@ -544,6 +548,8 @@ export default {
 										)
 									);
 									peripheralImages.push(m.loadImage("img/motherboard/ram.png"));
+									console.log("Added RAM image for", components[c]["type"]);
+									console.log("peripheralImages:", peripheralImages);
 								}
 							}
 						}

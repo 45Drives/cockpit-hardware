@@ -68,7 +68,6 @@ export default {
     const adminCheck = ref(false);
     const adminFlag = ref(false);
 
-    const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
     const delay_ms = (ms) => new Promise((res) => setTimeout(res, ms));
 
     const preloadChecks = reactive({
