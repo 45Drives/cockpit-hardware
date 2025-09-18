@@ -48,6 +48,8 @@
       <P5ProxinatorVM8 v-else-if="activeSketchStr === 'ProxinatorVM8'" />
       <P5ProxinatorVM16 v-else-if="activeSketchStr === 'ProxinatorVM16'" />
       <P5ProxinatorVM32 v-else-if="activeSketchStr === 'ProxinatorVM32'" />
+      <P5StornadoF16 v-if="activeSketchStr === 'StornadoF16'" />
+
       <P5StudioSTUDIO8 v-else-if="activeSketchStr === 'StudioSTUDIO8'" />
     </div>
     <div v-else class="grow flex justify-center items-center">
@@ -88,6 +90,7 @@ import P5StorinatorMI4 from "./P5StorinatorMI4.vue";
 import P5ProxinatorVM8 from "./P5ProxinatorVM8.vue";
 import P5ProxinatorVM16 from "./P5ProxinatorVM16.vue";
 import P5ProxinatorVM32 from "./P5ProxinatorVM32.vue";
+import P5StornadoF16 from "./P5StornadoF16.vue";
 import P5StudioSTUDIO8 from "./P5StudioSTUDIO8.vue";
 import { Switch, SwitchGroup, SwitchLabel } from '@headlessui/vue'
 
@@ -121,10 +124,11 @@ export default {
     P5ProxinatorVM8,
     P5ProxinatorVM16,
     P5ProxinatorVM32,
+    P5StornadoF16,
     P5StudioSTUDIO8,
     Switch,
     SwitchGroup,
-    SwitchLabel
+    SwitchLabel,
   },
   props: {
     serverInfo: Object,
@@ -133,6 +137,7 @@ export default {
     const serverModel = ref(props.serverInfo.Model);
     const enableZfsAnimations = inject("enableZfsAnimations");
     const zfsInfo = inject("zfsInfo");
+
     const enableSketch = (modelString) => {
       let testString =
         /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32|STUDIO8)/m.exec(
@@ -141,7 +146,7 @@ export default {
       let enableString = testString
         ? testString[1] + testString[4] + (testString[3] ? testString[3] : "")
         : "";
-        console.log('string:', enableString)
+
       return enableString;
     };
 

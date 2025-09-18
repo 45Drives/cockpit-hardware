@@ -126,7 +126,8 @@ export default {
         "Stornado": {
           "2U": "img/stornado2U.png",
           "AV15": "img/stornadoAV15.png",
-          "F2": "img/stornadoF2.png"
+          "F2": "img/stornadoF2.png",
+          "F16": "img/stornadoF16.png",
         },
         "HomeLab": {
           "HL15": "img/homelabHL15.png",
