@@ -37,7 +37,8 @@ export default {
 			const translatedMoboNameExceptions = {
 				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX",
 				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC",
-				"ROMED8-2T/BCM" : "ROMED8-2T_BCM"
+				"ROMED8-2T/BCM" : "ROMED8-2T_BCM",
+				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI"
 			};
 
 			const raw_mobo_name = String(
@@ -49,11 +50,10 @@ export default {
 			// Append Chassis Size directly to the translated motherboard name if HL4 or HL8, otherwise use translated name
 			// or if not in exceptions dict then use raw name
 			const mobo_name = raw_mobo_name in translatedMoboNameExceptions
-				? (chassis_size === 'HL4' || chassis_size === 'HL8'
+				? (chassis_size === 'HL4' || chassis_size === 'HL8' 
 					? `${translatedMoboNameExceptions[raw_mobo_name]}_${chassis_size}`
 					: translatedMoboNameExceptions[raw_mobo_name])
 				: raw_mobo_name;
-
 			let bgImgPath = `img/motherboard/${String(mobo_name)}/${String(mobo_name)}.png`;
 
 			let background_img;
@@ -552,7 +552,6 @@ export default {
 			};
 
 			m.getPCI = function () {
-				console.log('pci_info:', pci_info)
 				let VERTOFFSET = 5.37;
 				let VERTSCALE = 19.0;
 				let WIDTHOFFSET = 1.24;

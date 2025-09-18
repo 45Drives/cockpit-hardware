@@ -32,6 +32,7 @@
       <P5StorinatorS45H16 v-else-if="activeSketchStr === 'StorinatorS45H16'" />
       <P5StorinatorQ30H16 v-else-if="activeSketchStr === 'StorinatorQ30H16'" />
       <P5StorinatorAV15 v-else-if="activeSketchStr === 'StorinatorAV15'" />
+      <P5HomeLabHL15BEAST v-else-if="activeSketchStr === 'HomeLabHL15_BEAST'" />
       <P5HomeLabHL15 v-else-if="activeSketchStr === 'HomeLabHL15'" />
       <P5HomeLabHL4 v-else-if="activeSketchStr === 'HomeLabHL4'" />
       <P5HomeLabHL8 v-else-if="activeSketchStr === 'HomeLabHL8'" />
@@ -74,6 +75,7 @@ import P5StorinatorS45H16 from "./P5StorinatorS45H16.vue";
 import P5StorinatorS45H32 from "./P5StorinatorS45H32.vue";
 import P5StorinatorQ30H16 from "./P5StorinatorQ30H16.vue";
 import P5StorinatorAV15 from "./P5StorinatorAV15.vue";
+import P5HomeLabHL15BEAST from "./P5HomeLabHL15BEAST.vue";
 import P5HomeLabHL15 from "./P5HomeLabHL15.vue";
 import P5HomeLabHL4 from "./P5HomeLabHL4.vue";
 import P5HomeLabHL8 from "./P5HomeLabHL8.vue";
@@ -106,6 +108,7 @@ export default {
     P5StorinatorS45H16,
     P5StorinatorQ30H16,
     P5StorinatorAV15,
+    P5HomeLabHL15BEAST,
     P5HomeLabHL15,
     P5HomeLabHL4,
     P5HomeLabHL8,
@@ -137,12 +140,13 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32|F16|STUDIO8)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32|STUDIO8)/m.exec(
           modelString
         );
       let enableString = testString
         ? testString[1] + testString[4] + (testString[3] ? testString[3] : "")
         : "";
+
       return enableString;
     };
 

@@ -198,6 +198,9 @@ export default {
             case "STUDIO8":
               pageLayout.value = "A";
               break;
+            case "HL15_BEAST":
+              pageLayout.value = "B";
+              break;
             default:
               console.log("UNKNOWN CHASSIS SIZE");
           }
@@ -273,6 +276,9 @@ export default {
               break;  
             case "STUDIO8":
               pageLayout.value = "AZ";
+              break;
+            case "HL15_BEAST":
+              pageLayout.value = "BZ";
               break;
             default:
               console.log("UNKNOWN CHASSIS SIZE");
