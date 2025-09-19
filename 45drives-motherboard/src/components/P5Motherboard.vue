@@ -37,7 +37,7 @@ export default {
 			const translatedMoboNameExceptions = {
 				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX",
 				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC",
-				"ROMED8-2T/BCM" : "ROMED8-2T_BCM",
+				"ROMED8-2T/BCM" : "ROMED8-2T",
 				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI"
 			};
 
