@@ -20,7 +20,7 @@ import json
 
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
-	"Manufacturer":  ["Supermicro","ASRockRack","Giga Computing","Gigabyte"],
+	"Manufacturer":  ["Supermicro","ASRockRack","Giga Computing","Gigabyte","ASUSTeK COMPUTER INC."],
 	"Product Name":  [
 		"X11DPL-i",
 		"X11SPL-F",
@@ -28,28 +28,37 @@ g_dmi_mobo_fields = {
 		"X11SSH-CTF",
 		"X11SSM-F",
 		"X11SPi-TF",
+		"X12SPL-F",
+		"H12SSL-i",
+		"X11SPH-nCTF",
+		"X11SPH-nCTPF",
 		"EPC621D8A",
 		"ME03-CE0-000",
 		"MS03-6L0-000",
   		"MS73-HB0-000",
     	"MZ73-LM0-000",
      	"MC13-LE1-000",
-      	"B550I AORUS PRO AX",
-       	"EC266D2I-2T/AQC"
+		"B550I AORUS PRO AX",
+		"EC266D2I-2T/AQC",
+		"ROMED8-2T/BCM",
+  		"ROMED8-2T",
+		"ProArt X870E-CREATOR WIFI"
 	],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
+	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7281 16-Core Processor",
+		"AMD EPYC 7252 8-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
-  		"AMD Ryzen 9 7950X 16-Core Processor",
-    	"AMD Ryzen 5 5500GT with Radeon Graphics",
+		"AMD EPYC 8224P 24-Core Processor",
+		"AMD Ryzen 9 7950X 16-Core Processor",
+		"AMD Ryzen 5 5500GT with Radeon Graphics",
 		"AMD Ryzen 7 5700G with Radeon Graphics",
 		"Intel(R) Xeon(R) CPU E3-1220 v6 @ 3.00GHz",
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
@@ -58,8 +67,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430",
 		"Intel(R) Xeon(R) E E-2434",
-		"Intel(R) Xeon(R) E E-2478"
-		],
+		"Intel(R) Xeon(R) E E-2478",
+	],
 	"Current Speed": None,
 	"Max Speed": None,
 }

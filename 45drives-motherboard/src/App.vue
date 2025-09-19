@@ -61,13 +61,14 @@ export default {
       "MC13-LE1-000",
       "B550I AORUS PRO AX",
       "EC266D2I-2T/AQC",
-      "ROMED8-2T/BCM"
+      "ROMED8-2T/BCM",
+      "ROMED8-2T",
+      "ProArt X870E-CREATOR WIFI"
     ]);
 
     const adminCheck = ref(false);
     const adminFlag = ref(false);
 
-    const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
     const delay_ms = (ms) => new Promise((res) => setTimeout(res, ms));
 
     const preloadChecks = reactive({

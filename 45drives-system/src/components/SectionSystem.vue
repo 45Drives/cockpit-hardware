@@ -107,9 +107,9 @@ export default {
       if (model == "" || model == "?") {
         return "img/45dlogo.png";
       }
-
+      console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio).*(HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|2U|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|F16|STUDIO8).*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio).*(HL15_BEAST|HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|2U|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -133,6 +133,7 @@ export default {
           "HL15": "img/homelabHL15.png",
           "HL4": "img/homelabHL4.png",
           "HL8": "img/homelabHL8.png",
+          "HL15_BEAST": "img/homelabHL15BEAST.png"
         },
         "Professional": {
           "PRO15": "img/professionalPRO15.png",
