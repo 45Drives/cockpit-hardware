@@ -62,6 +62,7 @@ export default {
       "B550I AORUS PRO AX",
       "EC266D2I-2T/AQC",
       "ROMED8-2T/BCM",
+      "ROMED8-2T",
       "ProArt X870E-CREATOR WIFI"
     ]);
 
