@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.6-1
+## cockpit-45drives-hardware 2.5.7-1
 
-* Adds HL15_BEAST support
+* update for f16 support

@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.5.7-1focal) focal; urgency=medium
+
+  * update for f16 support
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 03 Dec 2025 13:11:18 -0400
+
 cockpit-45drives-hardware (2.5.6-1focal) focal; urgency=medium
 
   * Adds HL15_BEAST support
