@@ -11,12 +11,16 @@ g_dmi_cpu_fields = {
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7282 16-Core Processor",
+  		"AMD EPYC 7281 16-Core Processor",
 		"AMD EPYC 7252 8-Core Processor",
 		"AMD EPYC 7272 12-Core Processor",
 		"AMD EPYC 7452 32-Core Processor",
 		"AMD EPYC 8324P 32-Core Processor",
 		"AMD EPYC 9454 48-Core Processor",
 		"AMD EPYC 8224P 24-Core Processor",
+		"AMD EPYC 8534P 64-Core Emb Processor",
+	  	"AMD EPYC 8124P 16-Core Processor",
+      	"AMD EPYC 8024P 8-Core Processor",
 		"AMD Ryzen 9 7950X 16-Core Processor",
 		"AMD Ryzen 5 5500GT with Radeon Graphics",
 		"AMD Ryzen 7 5700G with Radeon Graphics",
@@ -24,6 +28,7 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Silver 4210 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4310 CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Silver 4410Y",
+		"Intel(R) Xeon(R) Gold 5418Y",
 		"Intel(R) Xeon(R) Gold 6230R CPU @ 2.10GHz",
 		"Intel(R) Xeon(R) Gold 6430",
 		"Intel(R) Xeon(R) E E-2434",
@@ -32,6 +37,7 @@ g_dmi_cpu_fields = {
 	"Current Speed": None,
 	"Max Speed": None,
 }
+
 
 g_ipmitool_sensor_fields = {
 	"CPU0 Temp": "(C)",

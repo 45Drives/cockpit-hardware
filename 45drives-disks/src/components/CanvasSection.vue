@@ -140,7 +140,7 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32|STUDIO8)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32|STUDIO8|F16)/m.exec(
           modelString
         );
       let enableString = testString

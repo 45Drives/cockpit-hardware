@@ -3,7 +3,7 @@
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
     "description": "A Cockpit Module for 45Drives Server Products",
-    "version": "2.5.5",
+    "version": "2.5.7",
     "build_number": "1",
     "stable": true,
     "author": "Mark Hooper <mhooper@45drives.com>",
@@ -72,10 +72,10 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "2.5.5",
+        "version": "2.5.7",
         "build_number": "1",
         "date": null,
-        "packager": "Mark Hooper <mhooper@45drives.com>",
+        "packager": "Brett Kelly <bkelly@45drives.com>",
         "changes": []
     }
 }

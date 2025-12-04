@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.5-1
+## cockpit-45drives-hardware 2.5.7-1
 
-* Adds support for new 45Studio 8-bay server
+* update for f16 support
