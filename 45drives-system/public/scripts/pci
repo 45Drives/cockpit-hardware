@@ -713,6 +713,12 @@ def main():
         else:
             seen_bus_addresses[bus] = desig  # Track this as first encounter
 
+    # Ensure any slot with a detected add-in card is marked In Use
+    for slot in matched:
+        card_type = slot.get("Card Type", "-")
+        bus = slot.get("Bus Address", "")
+        if card_type not in ("", "-") and bus not in ("", "0000:00:00.0"):
+            slot["Current Usage"] = "In Use"
 
     # ---------- ME03 ordering tweak ----------
     if motherboard_model.startswith("ME03"):
