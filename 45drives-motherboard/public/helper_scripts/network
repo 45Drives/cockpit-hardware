@@ -95,10 +95,10 @@ def get_network_info():
 	
 	network_json_str = "{\"Network Info\":["
 	for line in ipaddr_result:
-		regex_connection = re.search("^(\w)\S+\s+(\w+).*state\s(\w+).*",line)
-		regex_link = re.search("^\s+link/(\S+)\s(\S+).*",line)
-		regex_inet = re.search("^\s+inet\s(\S+).*$",line)
-		regex_inet6 = re.search("^\s+inet6\s(\S+).*$",line)
+		regex_connection = re.search(r"^(\w)\S+\s+(\w+).*state\s(\w+).*",line)
+		regex_link = re.search(r"^\s+link/(\S+)\s(\S+).*",line)
+		regex_inet = re.search(r"^\s+inet\s(\S+).*$",line)
+		regex_inet6 = re.search(r"^\s+inet6\s(\S+).*$",line)
 		if regex_connection != None:
 			network_json_str += (
 					"{\"Connection Name\":\"" + regex_connection.group(2)+"\"," +
@@ -127,7 +127,7 @@ def get_network_info():
 	
 	lshw = []
 	for line in lshw_result:
-		regex_lshw = re.search("^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
+		regex_lshw = re.search(r"^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
 		if regex_lshw != None:
 			lshw.append([regex_lshw.group(1),regex_lshw.group(2),regex_lshw.group(4)])
 			# print(f"device: {regex_lshw.group(2)}, bus: {regex_lshw.group(1)}, description: {regex_lshw.group(4)}")
@@ -141,7 +141,7 @@ def get_network_info():
 	slot_entries = []
 	for line in dmi_result:
 		for field in g_dmi_fields:
-			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
+			regex = re.search(r"^\s+({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
 				slot_entries.append((regex.group(1),regex.group(2)))
 	cards = []

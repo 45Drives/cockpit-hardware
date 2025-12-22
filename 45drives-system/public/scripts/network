@@ -154,7 +154,7 @@ def get_network_info():
 		return False
 	lshw = []
 	for line in lshw_result:
-		regex_lshw = re.search("^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
+		regex_lshw = re.search(r"^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
 		if regex_lshw != None:
 			lshw.append([regex_lshw.group(1),regex_lshw.group(2),regex_lshw.group(4)])
 
@@ -184,7 +184,7 @@ def get_network_info():
 	slot_entries = []
 	for line in dmi_result:
 		for field in g_dmi_fields:
-			regex = re.search("^\s+({fld}):\s+(.*)".format(fld=field),line)
+			regex = re.search(r"^\s+({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
 				slot_entries.append((regex.group(1),regex.group(2)))
 

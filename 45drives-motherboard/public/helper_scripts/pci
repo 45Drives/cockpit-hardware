@@ -498,14 +498,14 @@ def getNetworkCardModel(busAddress):
 
     for line in lspci_result:
         # print(f"Processing line from lspci: {line.strip()}")
-        regex_addr = re.search("^{addr}\\s(.*)$".format(addr=primary_bus_address), line)
+        regex_addr = re.search(r"^{addr}\\s(.*)$".format(addr=primary_bus_address), line)
         
         if regex_addr is not None:
             # print(f"Found matching address: {regex_addr.group(0)}")
             
             for model in g_network_card_models:
                 # print(f"Checking model: {model} against {regex_addr.group(1)}")
-                regex_model = re.search("{mdl}".format(mdl=model), regex_addr.group(1))
+                regex_model = re.search(r"{mdl}".format(mdl=model), regex_addr.group(1))
                 
                 if regex_model is not None:
                     # print(f"Matched model: {model}")
@@ -525,7 +525,7 @@ def sata():
 	sata_dict = {}
 	for line in lspci_result:
 		for field in g_sata_controllers:
-			regex = re.search("^(\S+).*({fld}).*$".format(fld=field),line)
+			regex = re.search(r"^(\S+).*({fld}).*$".format(fld=field),line)
 			if regex != None:
 				sata_dict["Card Type"] = "Serial ATA Controller"
 				sata_dict["Card Model"] = regex.group(2)
@@ -544,7 +544,7 @@ def sata():
 	for card in sata:
 		for line in ls_result:
 			drive_dict = {}
-			regex = re.search("pci-({ba})-ata-(\d)\s->\s\W+(.*)".format(ba=card["Bus Address"]),line)
+			regex = re.search(r"pci-({ba})-ata-(\d)\s->\s\W+(.*)".format(ba=card["Bus Address"]),line)
 			if regex != None:
 				drive_dict["Device"] = regex.group(3)
 				drive_dict["Path"] = "pci-" + regex.group(1) + "-ata-" + regex.group(2)
@@ -562,7 +562,7 @@ def lsblk(device):
 
 	partitions = []
 	for line in lsblk_result:
-		regex = re.search("^(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s+(\S+)(.*)$",line)
+		regex = re.search(r"^(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s+(\S+)(.*)$",line)
 		if regex != None and regex.group(1) != "NAME":
 			partitions.append(
 					{

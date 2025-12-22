@@ -364,7 +364,7 @@ def lsblk(device):
 
 	partitions = []
 	for line in lsblk_result:
-		regex = re.search("^(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s+(\S+)(.*)$",line)
+		regex = re.search(r"^(\S+)\s+\S+\s+\S+\s+(\S+)\s+\S+\s+(\S+)(.*)$",line)
 		if regex != None and regex.group(1) != "NAME":
 			partitions.append(
 					{
@@ -386,7 +386,7 @@ def get_motherboard_model():
 		return False
 	for line in dmi_result:
 		for field in g_motherboard_sata_addresses.keys():
-			regex = re.search("^\sProduct Name:\s+({fld})".format(fld=field),line)
+			regex = re.search(r"^\sProduct Name:\s+({fld})".format(fld=field),line)
 			if regex != None:
 				mobo_model = field
 				break
