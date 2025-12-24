@@ -212,7 +212,7 @@
 ];
   
   export default {
-    name: "P5Stornadof16",
+    name: "P5StornadoF16",
     setup() {
       const diskInfoObj = ref({});
       const currentDisk = inject("currentDisk");
