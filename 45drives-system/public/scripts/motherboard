@@ -167,7 +167,7 @@ def get_motherboard_model():
 		return False
 	for line in dmi_result:
 		for field in g_dmi_mobo_fields.keys():
-			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
+			regex = re.search(r"^\s({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
 				if g_dmi_mobo_fields[regex.group(1)] != None:
 					if regex.group(2) in g_dmi_mobo_fields[regex.group(1)]:
@@ -209,7 +209,7 @@ def get_cpu_info():
 		return False
 	for line in dmi_result:
 		for field in g_dmi_cpu_fields.keys():
-			regex = re.search("^\s({fld}):\s+(.*)".format(fld=field),line)
+			regex = re.search(r"^\s({fld}):\s+(.*)".format(fld=field),line)
 			if regex != None:
 				regex_group1_str = str(regex.group(1)).rstrip()
 				regex_group2_str = str(regex.group(2)).rstrip()
@@ -243,7 +243,7 @@ def get_sensor_readings():
 	sensor_readings = []
 	for line in ipmitool_sensor_result:
 		for field in g_ipmitool_sensor_fields.keys():
-			regex = re.search("^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
+			regex = re.search(r"^({fld})\s+\|\s+(\S+).*".format(fld=field),line)
 			if regex != None:
 				# if regex.group(1) == "CPU Temp" or regex.group(1) == "CPU0_TEMP":
 				# 	# ipmitool does not use the socket name
