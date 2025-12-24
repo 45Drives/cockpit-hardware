@@ -147,6 +147,9 @@ export default {
             case "F2":
               pageLayout.value = "A";
               break;
+            case "VM2":
+              pageLayout.value = "C";
+              break;
             case "VM8":
               pageLayout.value = "B";
               break;
@@ -225,7 +228,10 @@ export default {
               break;       
             case "F2":
               pageLayout.value = "AZ";
-              break;                
+              break;      
+            case "VM2":
+              pageLayout.value = "CZ";
+              break;          
             case "VM8":
               pageLayout.value = "BZ";
               break;
