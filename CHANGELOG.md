@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.8-1
+## cockpit-45drives-hardware 2.5.9-1
 
-* Fixes F16 not showing in Disks + System tabs, Fixes PCIE slots showing Available when a HBA card was detected, removes unused system script from System module code
+* Adds VM2 support
