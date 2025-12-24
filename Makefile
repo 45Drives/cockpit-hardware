@@ -21,7 +21,7 @@ REMOTE_TEST_HOST=192.168.207.136
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install
-RESTART_COCKPIT?=0
+RESTART_COCKPIT?=1
 
 # When set to 1, JS is not minified
 DEBUG?=0
