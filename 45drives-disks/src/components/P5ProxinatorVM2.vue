@@ -309,7 +309,7 @@ export default {
                 });
                 
                 // DEBUG: Show X,Y coords in console on click for drive positioning
-                console.log("CLICK", { x: p5.mouseX, y: p5.mouseY });
+                // console.log("CLICK", { x: p5.mouseX, y: p5.mouseY });
 
             };
 
