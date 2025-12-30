@@ -11,7 +11,8 @@
     "license": "GPL-3.0+",
     "architecture": {
         "rocky": "x86_64",
-        "ubuntu": "amd64"
+        "ubuntu": "amd64",
+        "debian": "amd64"
     },
     "defaults": {
         "change_urgency": "medium"
