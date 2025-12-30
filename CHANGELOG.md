@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.9-1
+## cockpit-45drives-hardware 2.5.9-2
 
-* Adds VM2 support
+* added missing debian arch in manifest.json
