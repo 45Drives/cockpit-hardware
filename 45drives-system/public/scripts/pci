@@ -84,6 +84,42 @@ BA_LUT_MZ73 = {
     "M2_0": ["0000:61:00.0"]
 }
 
+PCIE_SLOT_TYPE_GIGABYTE_MH53 = {
+    "PCIE_1": "PCI Express 5 x16",
+    "PCIE_2": "PCI Express 5 x16",
+    "PCIE_3": "PCI Express 5 x16",
+    "PCIE_5": "PCI Express 5 x1",
+    "PCIE_6": "PCI Express 5 x16",
+    "PCIE_7": "PCI Express 5 x16",
+}
+
+MH53_AUX_SLOT_TYPE = {
+    "NVME0": "NVMe Slot (PCI Express 5 x8)",
+    "M2_0": "M.2 Slot (PCI Express 5 x4)",
+    "M2_1": "M.2 Slot (PCI Express 5 x4)",
+    "M2_2": "M.2 Slot (PCI Express 5 x4)",
+    "M2_3": "M.2 Slot (PCI Express 5 x4)",
+}
+
+MH53_SLOT_ORDER = [
+    "PCIE_1", "PCIE_2", "PCIE_3", "PCIE_5", "PCIE_6", "PCIE_7",
+    "NVME0", "M2_0", "M2_1", "M2_2", "M2_3",
+]
+
+BA_LUT_MH53 = {
+    "PCIE_1": ["0000:01:00.0", "0000:00:01.1", "0000:00:01.2", "0000:00:01.3", "0000:00:01.4"],
+    "PCIE_2": ["0000:41:00.0", "0000:40:01.2", "0000:40:01.3", "0000:40:01.4"],
+    "PCIE_3": ["0000:81:00.0", "0000:80:01.1", "0000:80:01.2", "0000:80:01.3", "0000:80:01.4"],
+    "PCIE_5": ["0000:21:00.0"],
+    "PCIE_6": ["0000:c1:00.0", "0000:c0:01.2", "0000:c0:01.3", "0000:c0:01.4"],
+    "PCIE_7": ["0000:e1:00.0", "0000:e0:01.2", "0000:e0:01.3", "0000:e0:01.4"],
+    "NVME0": ["0000:61:00.0", "0000:60:01.1", "0000:60:01.2"],
+    "M2_0": ["0000:a0:01.1"],
+    "M2_1": ["0000:a0:01.2"],
+    "M2_2": ["0000:a0:01.3"],
+    "M2_3": ["0000:a0:01.4"],
+}
+
 # Gigabyte B550I board
 PCIE_SLOT_LUT_B550I = {
     "J10": "PCIEX16",
@@ -158,6 +194,144 @@ def parse_lspci_output():
         parsed_data[bus_address] = rest_of_line
 
     return parsed_data
+
+
+def _is_lspci_endpoint(device_info):
+    if not device_info:
+        return False
+    cls = str(device_info[0]).strip('"').lower()
+    return "bridge" not in cls
+
+
+def _pcie_gen_from_speed(speed_gts):
+    try:
+        speed = float(speed_gts)
+    except (TypeError, ValueError):
+        return None
+    if speed >= 64:
+        return 6
+    if speed >= 32:
+        return 5
+    if speed >= 16:
+        return 4
+    if speed >= 8:
+        return 3
+    if speed >= 5:
+        return 2
+    if speed >= 2.5:
+        return 1
+    return None
+
+
+def infer_pcie_type_from_sysfs(bus_address):
+    if not bus_address or bus_address == "0000:00:00.0":
+        return None
+
+    base = f"/sys/bus/pci/devices/{bus_address}"
+    max_width_path = os.path.join(base, "max_link_width")
+    max_speed_path = os.path.join(base, "max_link_speed")
+    try:
+        with open(max_width_path, "r") as f:
+            width = f.read().strip()
+        with open(max_speed_path, "r") as f:
+            speed_raw = f.read().strip()
+    except Exception:
+        return None
+
+    speed_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", speed_raw)
+    if not width or not speed_match:
+        return None
+
+    gen = _pcie_gen_from_speed(speed_match.group(1))
+    if not gen:
+        return None
+    return f"PCI Express {gen} x{width}"
+
+
+def fix_slot_type(slot, motherboard_model):
+    designation = slot.get("Designation", "")
+    if motherboard_model == "MH53-G40-000":
+        static_type = PCIE_SLOT_TYPE_GIGABYTE_MH53.get(designation) or MH53_AUX_SLOT_TYPE.get(designation)
+        if static_type:
+            slot["Type"] = static_type
+            slot["PCI Type"] = static_type
+            return
+
+    slot_type = str(slot.get("Type", "")).strip()
+    if slot_type not in ("", "-", "Unknown", "<OUT OF SPEC>"):
+        return
+
+    inferred = infer_pcie_type_from_sysfs(slot.get("Bus Address", ""))
+    if inferred:
+        slot["Type"] = inferred
+        slot["PCI Type"] = inferred
+
+
+def normalize_mh53_pci_slots(cards, lspci_devices):
+    allowed = set(PCIE_SLOT_TYPE_GIGABYTE_MH53) | set(MH53_AUX_SLOT_TYPE)
+    grouped = {}
+    for slot in cards:
+        designation = slot.get("Designation", "")
+        bus = slot.get("Bus Address", "")
+        if designation not in allowed:
+            continue
+        if not bus or bus == "0000:00:00.0":
+            continue
+        grouped.setdefault(designation, []).append(slot)
+
+    endpoint_buses = {
+        bus for bus, devinfo in lspci_devices.items()
+        if _is_lspci_endpoint(devinfo)
+    }
+
+    normalized = []
+    for designation in MH53_SLOT_ORDER:
+        candidates = grouped.get(designation, [])
+        if not candidates:
+            continue
+
+        def rank(slot):
+            usage = str(slot.get("Current Usage", "")).strip().lower()
+            bus = slot.get("Bus Address", "")
+            return (
+                usage == "in use",
+                bus in endpoint_buses,
+                bool(bus and bus != "0000:00:00.0"),
+            )
+
+        chosen = max(candidates, key=rank).copy()
+        preferred_bus = ""
+        for ba in BA_LUT_MH53.get(designation, []):
+            if ba in endpoint_buses:
+                preferred_bus = ba
+                break
+        if not preferred_bus:
+            for ba in BA_LUT_MH53.get(designation, []):
+                if ba in lspci_devices:
+                    preferred_bus = ba
+                    break
+        if preferred_bus:
+            chosen["Bus Address"] = preferred_bus
+
+        chosen["Designation"] = designation
+        chosen["Type"] = PCIE_SLOT_TYPE_GIGABYTE_MH53.get(
+            designation, MH53_AUX_SLOT_TYPE.get(designation, chosen.get("Type", "Unknown"))
+        )
+        is_aux_slot = designation == "NVME0" or designation.startswith("M2_")
+        if is_aux_slot:
+            # For NVMe/M.2, bridge visibility is not enough; require a real endpoint.
+            in_use = any(c.get("Bus Address", "") in endpoint_buses for c in candidates)
+            if not in_use and preferred_bus:
+                in_use = preferred_bus in endpoint_buses
+        else:
+            in_use = any(rank(c)[0] or rank(c)[1] for c in candidates)
+            if not in_use and preferred_bus:
+                in_use = preferred_bus in endpoint_buses or preferred_bus in lspci_devices
+        chosen["Current Usage"] = "In Use" if in_use else "Available"
+        fix_slot_type(chosen, "MH53-G40-000")
+        normalized.append(chosen)
+
+    return normalized if normalized else cards
 
 
 # ---------------------------------------------------------------------------
@@ -333,6 +507,9 @@ def dmidecode():
                 if desig not in slot_seen:
                     cards.append(current_slot)
 
+    if motherboard_model == "MH53-G40-000":
+        return normalize_mh53_pci_slots(cards, parse_lspci_output())
+
     return cards
 
 
@@ -397,7 +574,10 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
     for device in devices:
         for designation, slot in matched_devices.items():
             if slot.get("Bus Address") == device.get("Bus Address", "00:00:00:00"):
-                slot.update(device)
+                for k, v in device.items():
+                    if k in ("Type", "PCI Type"):
+                        continue
+                    slot[k] = v
                 break
 
     return list(matched_devices.values())
@@ -687,6 +867,10 @@ def main():
         hba_cards + network_cards + sata_cards,
         lspci_devices
     )
+
+    # Final type cleanup for bad firmware strings (e.g. <OUT OF SPEC>)
+    for slot in matched:
+        fix_slot_type(slot, motherboard_model)
     
     if motherboard_model.startswith('EC266D2I'):
         ocu_usage = get_ocu_usage_from_by_path()
@@ -743,7 +927,7 @@ def main():
     for slot in matched:
         result.append({
             "slot": " ".join(slot.get("Designation", "-").split()[:2]),
-            "type": slot.get("PCI Type", slot.get("Type", "-")),
+            "type": slot.get("Type", slot.get("PCI Type", "-")),
             "availibility": slot.get("Current Usage", "-"),
             "busAddress": slot.get("Bus Address", "-"),
             "cardType": slot.get("Card Type", "-"),
