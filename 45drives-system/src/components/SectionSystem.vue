@@ -109,7 +109,7 @@ export default {
       }
       console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio).*(HL15_BEAST|HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|2U|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2).*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2|2UGW_REV2|1UGW|2U).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -148,6 +148,10 @@ export default {
         },
         "Studio":{
           "STUDIO8": "img/studioSTUDIO8.png"
+        },
+        "Gateway": {
+          "2UGW_REV2": "img/gateway2U.png",
+          "1UGW": "img/gateway1U.png"
         }
       };
 
