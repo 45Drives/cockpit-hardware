@@ -1,0 +1,249 @@
+[
+  {
+    "type": "cpu",
+    "id": 1,
+    "shape": "rect",
+    "x0": 595,
+    "y0": 406,
+    "width": 270,
+    "height": 333,
+    "diam": 0,
+    "filename": "SP6.png"
+  },
+
+  {
+    "type": "PCIE_1",
+    "id": "1",
+    "shape": "rect",
+    "x0": 45,
+    "y0": 170,
+    "width": 28,
+    "height": 300,
+    "diam": 0,
+    "filename": "PCIE_1.png"
+  },
+  {
+    "type": "PCIE_2",
+    "id": "2",
+    "shape": "rect",
+    "x0": 116,
+    "y0": 170,
+    "width": 28,
+    "height": 300,
+    "diam": 0,
+    "filename": "PCIE_2.png"
+  },
+  {
+    "type": "PCIE_3",
+    "id": "3",
+    "shape": "rect",
+    "x0": 177,
+    "y0": 170,
+    "width": 28,
+      "height": 300,
+    "diam": 0,
+    "filename": "PCIE_3.png"
+  },
+  {
+    "type": "PCIE_5",
+    "id": "4",
+    "shape": "rect",
+    "x0": 310,
+    "y0": 170,
+    "width": 28,
+       "height": 300,
+    "diam": 0,
+    "filename": "PCIE_5.png"
+  },
+  {
+    "type": "PCIE_6",
+    "id": "5",
+    "shape": "rect",
+    "x0": 378,
+    "y0": 170,
+    "width": 28,
+      "height": 300,
+    "diam": 0,
+    "filename": "PCIE_6.png"
+  },
+  {
+    "type": "PCIE_7",
+    "id": "6",
+    "shape": "rect",
+    "x0": 440,
+    "y0": 170,
+    "width": 28,
+      "height": 300,
+    "diam": 0,
+    "filename": "PCIE_7.png"
+  },
+
+  {
+    "type": "M2_0",
+    "id": "8",
+    "shape": "rect",
+    "x0": 578,
+    "y0": 922,
+    "width": 26,
+    "height": 70,
+    "diam": 0,
+    "filename": "M2_0.png"
+  },
+  {
+    "type": "M2_1",
+    "id": "9",
+    "shape": "rect",
+    "x0": 471,
+    "y0": 1021,
+    "width": 26,
+      "height": 70,
+    "diam": 0,
+    "filename": "M2_1.png"
+  },
+  {
+    "type": "M2_2",
+    "id": "10",
+    "shape": "rect",
+    "x0": 435,
+    "y0": 767,
+    "width": 26,
+      "height": 70,
+    "diam": 0,
+    "filename": "M2_2.png"
+  },
+  {
+    "type": "M2_3",
+    "id": "11",
+    "shape": "rect",
+    "x0": 433,
+    "y0": 682,
+    "width": 26,
+     "height": 70,
+    "diam": 0,
+    "filename": "M2_3.png"
+  },
+  {
+    "type": "NVME0",
+    "id": "7",
+    "shape": "rect",
+    "x0": 234,
+    "y0": 1021,
+    "width": 26,
+    "height": 70,
+    "diam": 0,
+    "filename": "NVME0.png"
+  },
+
+  {
+    "type": "SATA_0_1",
+    "id": "0",
+    "shape": "rect",
+    "x0": 115,
+    "y0": 1039,
+    "width": 60,
+    "height": 55,
+    "diam": 0,
+    "filename": "SATA_0_1.png"
+  },
+  {
+    "type": "SATA_2_3",
+    "id": "1",
+    "shape": "rect",
+    "x0": 47,
+    "y0": 1037,
+    "width": 60,
+    "height": 55,
+    "diam": 0,
+    "filename": "SATA_2_3.png"
+  },
+
+  {
+    "type": "DIMM_P0_D0",
+    "id": 1,
+    "shape": "rect",
+    "x0": 477,
+    "y0": 364,
+    "width": 22,
+  "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_D0.png"
+  },
+  {
+    "type": "DIMM_P0_C0",
+    "id": 2,
+    "shape": "rect",
+    "x0": 506,
+    "y0": 364,
+    "width": 22,
+  "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_C0.png"
+  },
+  {
+    "type": "DIMM_P0_B0",
+    "id": 3,
+    "shape": "rect",
+    "x0": 536,
+    "y0": 364,
+    "width": 22,
+  "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_B0.png"
+  },
+  {
+    "type": "DIMM_P0_A0",
+    "id": 4,
+    "shape": "rect",
+    "x0": 563,
+    "y0": 364,
+    "width": 22,
+  "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_A0.png"
+  },
+
+  {
+    "type": "DIMM_P0_E0",
+    "id": 5,
+    "shape": "rect",
+    "x0": 873,
+    "y0": 364,
+    "width": 22,
+     "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_E0.png"
+  },
+  {
+    "type": "DIMM_P0_F0",
+    "id": 6,
+    "shape": "rect",
+    "x0": 900,
+    "y0": 364,
+    "width": 22,
+      "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_F0.png"
+  },
+  {
+    "type": "DIMM_P0_G0",
+    "id": 7,
+    "shape": "rect",
+    "x0": 929,
+    "y0": 364,
+    "width": 22,
+  "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_G0.png"
+  },
+  {
+    "type": "DIMM_P0_H0",
+    "id": 8,
+    "shape": "rect",
+    "x0": 956,
+    "y0": 364,
+    "width": 22,
+   "height": 480,
+    "diam": 0,
+    "filename": "DIMM_P0_H0.png"
+  }
+]

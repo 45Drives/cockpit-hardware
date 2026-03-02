@@ -201,6 +201,12 @@ g_motherboard_sata_addresses = {
 		["pci-0000:0c:00.0-ata-3","SATA_2_3"],
 		["pci-0000:0c:00.0-ata-4","SATA_2_3"],
 	],
+  	"MH53-G40-000":[
+		["pci-0000:64:00.0-ata-1","SATA_0_1"],
+		["pci-0000:64:00.0-ata-2","SATA_0_1"],
+		["pci-0000:64:00.0-ata-3","SATA_2_3"],
+		["pci-0000:64:00.0-ata-4","SATA_2_3"],
+	],
 	"B550I AORUS PRO AX":[
 		# ["pci-0000:01:00.1-ata-1", "S-SATA1"],
 		# ["pci-0000:01:00.1-ata-2", "S-SATA2"],

@@ -323,6 +323,19 @@ def normalize_mh53_pci_slots(cards, lspci_devices):
 
 	return normalized if normalized else cards
 
+def reassign_mh53_slot_ids(slots):
+	order_rank = {name: i for i, name in enumerate(MH53_SLOT_ORDER)}
+	pcie_slots = [s for s in slots if s.get("Designation", "").startswith("PCIE_")]
+	aux_slots = [s for s in slots if not s.get("Designation", "").startswith("PCIE_")]
+
+	pcie_slots.sort(key=lambda s: order_rank.get(s.get("Designation", ""), 999))
+	aux_slots.sort(key=lambda s: order_rank.get(s.get("Designation", ""), 999))
+
+	ordered = pcie_slots + aux_slots
+	for idx, slot in enumerate(ordered, start=1):
+		slot["ID"] = str(idx)
+	return ordered
+
 def dmidecode():
 	try:
 		dmi_result = subprocess.Popen(
@@ -930,6 +943,9 @@ def main():
         # Reassign IDs based on the sorted order
         for idx, device in enumerate(matched_devices, start=0):
             device["ID"] = str(idx)
+
+    if motherboard_model == "MH53-G40-000":
+        matched_devices = reassign_mh53_slot_ids(matched_devices)
 
     # Create .json formatted output string
     output_str = json.dumps({"PCI Info": matched_devices}, indent=4)
