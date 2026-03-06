@@ -35,7 +35,7 @@ def ipmi_lan():
 
 	for line in ipmi_lan_result:
 		for field in ipmi_lan_dict.keys():
-			regex = re.search("^({fld})\s+:\s+(\S+)".format(fld=field),line)
+			regex = re.search(r"^({fld})\s+:\s+(\S+)".format(fld=field),line)
 			if regex != None:
 				ipmi_lan_dict[regex.group(1)] = regex.group(2)
 	return ipmi_lan_dict
