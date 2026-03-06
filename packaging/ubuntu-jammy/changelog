@@ -1,3 +1,15 @@
+cockpit-45drives-hardware (2.5.9-2jammy) jammy; urgency=medium
+
+  * added missing debian arch in manifest.json
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 30 Dec 2025 04:09:10 -0400
+
+cockpit-45drives-hardware (2.5.9-1jammy) jammy; urgency=medium
+
+  * Adds VM2 support
+
+ -- Jordan Keough <jkeough@45drives.com>  Wed, 24 Dec 2025 07:54:55 -0400
+
 cockpit-45drives-hardware (2.5.8-1jammy) jammy; urgency=medium
 
   * Fixes F16 not showing in Disks + System tabs, Fixes PCIE slots showing Available

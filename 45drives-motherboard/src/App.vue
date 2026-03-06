@@ -59,6 +59,7 @@ export default {
       "MS73-HB0-000",
       "MZ73-LM0-000",
       "MC13-LE1-000",
+      "MH53-G40-000",
       "B550I AORUS PRO AX",
       "EC266D2I-2T/AQC",
       "ROMED8-2T/BCM",
@@ -423,7 +424,7 @@ export default {
                 </a>
               </div>
             </div>
-            <div class="grid grid-cols-2">
+            <div class="grid grid-cols-2 overflow-y-auto">
               <div class="col-span-1">Supported Motherboards:</div>
               <ul
                 role="list"

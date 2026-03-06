@@ -217,7 +217,7 @@ def main():
 			sock = cpu["Socket Designation"]
 
 			# ----- map socket designation to the right IPMI sensor name -----
-			if sock in ("CPU0", "P0", "AM5"):
+			if sock in ("CPU0", "P0", "AM5", "SP6"):
 				cand_keys = ("CPU0_TEMP", "CPU Temp")          # try these in order
 			elif sock in ("CPU1", "P1"):
 				cand_keys = ("CPU1_TEMP", "CPU Temp", "CPU1 Temp",)
