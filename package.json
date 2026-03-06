@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "workspaces": [
+    "45drives-disks",
+    "45drives-motherboard",
+    "45drives-system",
+    "houston-common",
+    "houston-common/houston-common-*"
+  ],
+  "scripts": {
+    "build:common": "yarn workspace @45drives/houston-common run build:common",
+    "build:disks": "yarn workspace 45drives-disks run build",
+    "build:motherboard": "yarn workspace 45drives-motherboard run build",
+    "build:system": "yarn workspace 45drives-system run build",
+    "build": "yarn build:common && yarn build:disks && yarn build:motherboard && yarn build:system"
+  },
+  "packageManager": "yarn@4.13.0"
+}

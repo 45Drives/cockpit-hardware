@@ -5,6 +5,21 @@
 *.kdev4
 *.kate-swp
 
+# Yarn / PnP
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+dist
+dist-ssr
+*.local
+node_modules/
+.yarn/
+.yarnrc.yml
+
 # deb packaging
 debian/cockpit-45drives-hardware
 debian/cockpit-45drives-hardware.substvars
@@ -12,9 +27,6 @@ debian/cockpit-45drives-hardware.postrm.debhelper
 debian/debhelper-build-stamp
 debian/files
 debian/.debhelper
-
-# docker builds
-dist
 
 # version files
 version.js

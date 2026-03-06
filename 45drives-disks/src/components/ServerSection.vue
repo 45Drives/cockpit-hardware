@@ -147,30 +147,32 @@
 
 <script>
 import { ref, reactive, watch, inject } from "vue";
-import Notifications from "./Notifications.vue";
-import { errorStringHTML } from "@45drives/cockpit-helpers";
+import { legacy } from "@45drives/houston-common-lib";
+const { errorStringHTML } = legacy;
+import { pushNotification, Notification } from "@45drives/houston-common-ui";
 
 export default {
   props: {
     serverInfo: Object,
   },
   components: {
-    Notifications
   },
   setup(props) {
     const lsdevJson = inject("lsdevJson");
     const diskInfo = inject("diskInfo");
-    const notifications = inject("Notifications");
     const diskCount = ref(0);
 
     if(props.serverInfo.HBA){
       const has_hwraid = props.serverInfo.HBA.filter((card) => (["9361-16i","9361-24i"].includes(card.Model))).length != 0;
       if(has_hwraid){
-        notifications.value.constructNotification(
-        "Warning:",
-        errorStringHTML("Hardware RAID card(s) detected. \nDevice Mapping is subject to change on subsequent reboots. Run 'dmap' and refresh page to ensure reliable device mapping."),
-        "warning",
-        0);
+        pushNotification(
+          new Notification(
+            "Warning:",
+            errorStringHTML("Hardware RAID card(s) detected. \nDevice Mapping is subject to change on subsequent reboots. Run 'dmap' and refresh page to ensure reliable device mapping."),
+            "warning",
+            "never"
+          )
+        );
       }
     }
 
@@ -251,7 +253,6 @@ export default {
       lsdevJson,
       diskInfo,
       avgTempStr,
-      notifications
     };
   },
 };

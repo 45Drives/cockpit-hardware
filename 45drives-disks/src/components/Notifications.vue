@@ -87,7 +87,9 @@
 import { ref, watch, reactive, onUnmounted } from 'vue';
 import { InformationCircleIcon, ExclamationCircleIcon, MinusCircleIcon, CheckCircleIcon } from '@heroicons/vue/outline';
 import { XIcon } from '@heroicons/vue/solid';
-import { FIFO, UniqueIDGenerator } from '@45drives/cockpit-helpers';
+
+// NOTE: This component is deprecated in favor of houston-common-ui's NotificationView.
+// It is kept for reference but no longer used.
 
 /** Notification passed to showNotification
  * 

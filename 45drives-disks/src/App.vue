@@ -8,14 +8,10 @@ import ServerSection from "./components/ServerSection.vue";
 import DiskSection from "./components/DiskSection.vue";
 import CanvasSection from "./components/CanvasSection.vue";
 import ErrorMessage from "./components/ErrorMessage.vue";
-import {
-  useSpawn,
-  errorString,
-  errorStringHTML,
-  FIFO,
-} from "@45drives/cockpit-helpers";
+import { legacy } from "@45drives/houston-common-lib";
+const { useSpawn, errorStringHTML } = legacy;
+import { pushNotification, Notification, NotificationView } from "@45drives/houston-common-ui";
 import ZfsSection from "./components/ZfsSection.vue";
-import Notifications from "./components/Notifications.vue";
 
 export default {
   name: "App",
@@ -27,9 +23,8 @@ export default {
     CanvasSection,
     ErrorMessage,
     ZfsSection,
-    Notifications,
+    NotificationView,
   },
-  props: { notificationFIFO: FIFO },
   setup(props) {
     const currentDisk = ref("");
     provide("currentDisk", currentDisk);
@@ -45,9 +40,6 @@ export default {
     provide("enableZfsAnimations", enableZfsAnimations);
     const pageLayout = ref("AZ");
     provide("pageLayout", pageLayout);
-
-    const notifications = ref();
-    provide("Notifications", notifications);
 
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
 
@@ -94,11 +86,13 @@ export default {
       } catch (error) {
         preloadChecks.serverInfo.finished = true;
         preloadChecks.diskInfo.finished = true;
-        notifications.value.constructNotification(
-          "Error running dmap",
-          errorStringHTML(error.stdout),
-          "error",
-          0
+        pushNotification(
+          new Notification(
+            "Error running dmap",
+            errorStringHTML(error.stdout),
+            "error",
+            "never"
+          )
         );
         return false;
       }
@@ -116,11 +110,13 @@ export default {
         return await runServerInfo();
       } catch (error) {
         console.log(error);
-        notifications.value.constructNotification(
-          "Error running server_identifier",
-          errorStringHTML(error.stdout),
-          "error",
-          0
+        pushNotification(
+          new Notification(
+            "Error running server_identifier",
+            errorStringHTML(error.stdout),
+            "error",
+            "never"
+          )
         );
         return false;
       }
@@ -320,14 +316,14 @@ export default {
             "/etc/45drives/server_info/server_info.json not found."
           )
         ) {
-          serverInfoFailNotification = notifications.value
-            .constructNotification(
+          serverInfoFailNotification = new Notification(
               "Error obtaining server model information",
               errorStringHTML(error.stdout),
               "error",
               30000
-            )
-            .addAction("fix", () => runServerIdentifier());
+            );
+          serverInfoFailNotification.addAction("fix", () => runServerIdentifier());
+          pushNotification(serverInfoFailNotification);
         }
       }
     };
@@ -357,11 +353,13 @@ export default {
         preloadChecks.lsdev.content = null;
         preloadChecks.lsdev.finished = true;
         preloadChecks.lsdev.failed = true;
-        notifications.value.constructNotification(
-          "Error obtaining disk information",
-          errorStringHTML(error.stdout),
-          "error",
-          0
+        pushNotification(
+          new Notification(
+            "Error obtaining disk information",
+            errorStringHTML(error.stdout),
+            "error",
+            "never"
+          )
         );
         return false;
       }
@@ -396,23 +394,25 @@ export default {
           error.stdout &&
           error.stdout.includes("Error opening /etc/vdev_id.conf. Run `dmap`.")
         ) {
-          notifications.value
-            .constructNotification(
+          const diskErrorNotif = new Notification(
               "Error obtaining disk information",
               errorStringHTML(error.stdout),
               "error",
-              0
-            )
-            .addAction("fix", () => {
+              "never"
+            );
+          diskErrorNotif.addAction("fix", () => {
               if (serverInfoFailNotification)
-                serverInfoFailNotification.show = false;
+                serverInfoFailNotification.remove();
               runDmap();
             });
+          pushNotification(diskErrorNotif);
         } else {
-          notifications.value.constructNotification(
-            "Error obtaining disk information",
-            errorStringHTML(error.stdout),
-            "error"
+          pushNotification(
+            new Notification(
+              "Error obtaining disk information",
+              errorStringHTML(error.stdout),
+              "error"
+            )
           );
           return false;
         }
@@ -431,12 +431,14 @@ export default {
         let result = JSON.parse(state.stdout);
         Object.assign(zfsInfo, result);
         if (result.warnings && result.warnings.length > 0){
-          notifications.value.constructNotification(
-          "Warning:",
-          errorStringHTML(result.warnings.join("")),
-          "warning",
-          0
-        );
+          pushNotification(
+            new Notification(
+              "Warning:",
+              errorStringHTML(result.warnings.join("")),
+              "warning",
+              "never"
+            )
+          );
         }
         preloadChecks.zfs.content = result;
         preloadChecks.zfs.finished = true;
@@ -446,11 +448,13 @@ export default {
         preloadChecks.zfs.content = null;
         preloadChecks.zfs.finished = true;
         preloadChecks.zfs.failed = true;
-        notifications.value.constructNotification(
-          "Unable to gather zfs information",
-          errorStringHTML(error.stdout),
-          "warning",
-          0
+        pushNotification(
+          new Notification(
+            "Unable to gather zfs information",
+            errorStringHTML(error.stdout),
+            "warning",
+            "never"
+          )
         );
         return false;
       }
@@ -526,14 +530,13 @@ export default {
       zfsInfo,
       enableZfsAnimations,
       pageLayout,
-      notifications,
     };
   },
 };
 </script>
 
 <template>
-  <Notifications :notificationFIFO="notificationFIFO" ref="notifications" />
+  <NotificationView />
   <div id="App" class="flex flex-col h-full">
     <FfdHeader moduleName="Disks" centerName />
     <div
@@ -709,7 +712,7 @@ export default {
 </template>
 
 <style>
-@import "@45drives/cockpit-css/src/index.css";
+@import "@45drives/houston-common-css/src/index.css";
 #app {
   /*font-family: "Red Hat Text";*/
   -webkit-font-smoothing: antialiased;
