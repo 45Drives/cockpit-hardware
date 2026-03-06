@@ -218,8 +218,8 @@ def zpool_status_parse(zp_status_obj, key, pool_name):
     disk_count = 0
     initial_disk = True
     for i in range(0,len(zp_status_default)):
-        re_vdev_default = re.search("^\t  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_default[i])
-        re_vdev_path = re.search("^\t  (/dev/\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_path[i])
+        re_vdev_default = re.search(r"^\t  (\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_default[i])
+        re_vdev_path = re.search(r"^\t  (/dev/\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_path[i])
         re_disk_path = re.search(f"^\t    (/dev/\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_path[i])
         re_disk_default = re.search(f"^\t    (\S+)(?:-part[0-9])?\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*",zp_status_default[i])
         if re_vdev_default != None:
