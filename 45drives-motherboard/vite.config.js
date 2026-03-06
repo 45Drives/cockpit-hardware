@@ -7,14 +7,6 @@ import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
 
-// Strip crossorigin attributes from HTML - Cockpit doesn't support them
-const cockpitCompat = () => ({
-  name: 'cockpit-compat',
-  transformIndexHtml(html) {
-    return html.replace(/ crossorigin/g, '');
-  },
-});
-
 // Redirect p5 imports to window.p5 global - p5 is loaded via <script> tag
 // to avoid CSP unsafe-eval violations when bundled
 const p5Global = () => ({
@@ -41,7 +33,7 @@ const copyP5 = () => ({
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue(), cockpitCompat(), p5Global(), copyP5()],
+  plugins: [vue(), p5Global(), copyP5()],
   base: "./",
   resolve: {
     dedupe: ['vue'],
