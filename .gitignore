@@ -4,18 +4,10 @@
 .kdev4/
 *.kdev4
 *.kate-swp
-
-# Yarn / PnP
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
 dist
 dist-ssr
 *.local
+node_modules
 node_modules/
 .yarn/
 .yarnrc.yml
