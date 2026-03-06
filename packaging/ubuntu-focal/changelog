@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.5.10-2focal) focal; urgency=medium
+
+  * Updates write perms and rebuilding
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 06 Mar 2026 05:33:45 -0400
+
 cockpit-45drives-hardware (2.5.10-1focal) focal; urgency=medium
 
   * Adds support for new mobo 'MH53-G40-000' used in 2UGW

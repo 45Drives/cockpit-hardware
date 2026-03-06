@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.10-1
+## cockpit-45drives-hardware 2.5.10-2
 
-* Adds support for new mobo 'MH53-G40-000' used in 2UGW
+* Updates write perms and rebuilding
