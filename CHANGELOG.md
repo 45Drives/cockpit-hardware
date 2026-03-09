@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.10-2
+## cockpit-45drives-hardware 2.5.11-1
 
-* Updates write perms and rebuilding
+* Updates build to latest version using houston-common libraries
