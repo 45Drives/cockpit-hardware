@@ -31,7 +31,7 @@ def getDiskInfo(path,server_info):
         c_lines = vdev_id.readlines()
     
     for line in c_lines:
-        regex = re.search("^alias\s+(\d+-\d+)\s+(\S+)",line)
+        regex = re.search(r"^alias\s+(\d+-\d+)\s+(\S+)",line)
         if regex != None:
             disks.append({"dev-by-path":regex.group(2),"bay-id":regex.group(1)})
         

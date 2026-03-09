@@ -4,6 +4,13 @@
 .kdev4/
 *.kdev4
 *.kate-swp
+dist
+dist-ssr
+*.local
+node_modules
+node_modules/
+.yarn/
+.yarnrc.yml
 
 # deb packaging
 debian/cockpit-45drives-hardware
@@ -12,9 +19,6 @@ debian/cockpit-45drives-hardware.postrm.debhelper
 debian/debhelper-build-stamp
 debian/files
 debian/.debhelper
-
-# docker builds
-dist
 
 # version files
 version.js
