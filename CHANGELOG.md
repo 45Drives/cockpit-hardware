@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.9-2
+## cockpit-45drives-hardware 2.5.10-2
 
-* added missing debian arch in manifest.json
+* Updates write perms and rebuilding
