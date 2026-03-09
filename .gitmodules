@@ -1,0 +1,3 @@
+[submodule "houston-common"]
+	path = houston-common
+	url = ../houston-common.git

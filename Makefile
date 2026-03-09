@@ -14,10 +14,10 @@
 
 # PLUGIN_SRCS is space-delimited list of subdirectories containg a plugin project.
 # You can leave it empty for automatic detection based on directories containing a package.json file.
-PLUGIN_SRCS=
+PLUGIN_SRCS=45drives-disks 45drives-motherboard 45drives-system
 
 # For installing to a remote machine for testing with `make install-remote`
-REMOTE_TEST_HOST=192.168.208.56
+REMOTE_TEST_HOST=192.168.123.5
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install
@@ -55,14 +55,7 @@ ifeq ($(DEBUG),1)
 BUILD_FLAGS=-- --minify false
 endif
 
-ifndef PLUGIN_SRCS
-PLUGIN_SRCS:=$(patsubst %/package.json,%,$(wildcard */package.json))
-endif
-
 OUTPUTS:=$(addsuffix /dist/index.html, $(PLUGIN_SRCS))
-
-NPM_PREFIX:=$(shell echo 'npm --prefix')
-NPM_UPDATE:=$(shell echo 'npm update --prefix')
 
 VERSION_FILES:=$(addsuffix /src/version.js, $(PLUGIN_SRCS))
 OS_PACKAGE_RELEASE?=built_from_source
@@ -71,19 +64,31 @@ default: $(VERSION_FILES) $(OUTPUTS)
 
 all: default
 
-.PHONY: default all install clean help install-local install-remote install
+.PHONY: default all install clean clean-all help install-local install-remote install houston-common bootstrap-yarn
+
+bootstrap-yarn: .yarnrc.yml
+
+.yarnrc.yml:
+	./bootstrap.sh
+
+houston-common/Makefile:
+	git submodule update --init
+
+houston-common: houston-common/Makefile bootstrap-yarn
+	$(MAKE) -C houston-common
 
 $(VERSION_FILES): ./manifest.json
 	echo 'export const pluginVersion = "$(shell jq -r '.version' ./manifest.json)-$(shell jq -r '.build_number' ./manifest.json)$(OS_PACKAGE_RELEASE)";' > $@
 
 # build outputs
 .SECONDEXPANSION:
-$(OUTPUTS): %/dist/index.html: $$(shell find $$*/src -type f) $$(shell find $$*/public -type f) $$(shell find $$* -name 'yarn.lock' -o -name 'package.json' -not -path '*node_modules*') $$*/*.html  $$*/*.js
-	$(NPM_PREFIX) $* install --skip-integrity-check
+$(OUTPUTS): %/dist/index.html: bootstrap-yarn houston-common $$(shell find '$$*' -type d \( -name node_modules -o -path '$$*/dist' -o -path '*node_modules*' \) -prune -o -type f -not \( -name .gitignore \) -print)
+	@echo -e $(call cyantext,Building $*)
+	yarn --cwd $* install
 ifeq ($(AUTO_UPGRADE_DEPS),1)
-	$(NPM_UPDATE) $* --skip-integrity-check
+	yarn upgrade --cwd $*
 endif
-	$(NPM_PREFIX) $* run build $(BUILD_FLAGS)
+	yarn --cwd $* run build $(BUILD_FLAGS)
 	@echo -e $(call greentext,Done building $*)
 	@echo
 
@@ -135,6 +140,10 @@ system-files-install-remote:
 
 clean: FORCE
 	rm $(dir $(OUTPUTS)) -rf
+
+clean-all: clean FORCE
+	rm .yarnrc.yml .yarn/ -rf
+	find . -name node_modules -type d -exec rm -rf {} \; -prune
 
 help:
 	@echo 'make usage'

@@ -57,7 +57,7 @@ onMounted(()=>{
 </template>
 
 <style>
-@import "@45drives/cockpit-css/src/index.css";
+@import "@45drives/houston-common-css/src/index.css";
 #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

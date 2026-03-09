@@ -82,7 +82,8 @@
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
-import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
+import { legacy } from "@45drives/houston-common-lib";
+const { useSpawn } = legacy;
 
 export default {
   components: {

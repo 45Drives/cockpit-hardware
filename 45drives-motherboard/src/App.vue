@@ -4,7 +4,8 @@ import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import P5Motherboard from "./components/P5Motherboard.vue";
 import { ref, reactive, provide, onMounted } from "vue";
-import { useSpawn } from "@45drives/cockpit-helpers/src/useSpawn";
+import { legacy } from "@45drives/houston-common-lib";
+const { useSpawn } = legacy;
 import {
   CheckIcon,
   ExclamationIcon,
@@ -592,7 +593,7 @@ export default {
 </template>
 
 <style>
-@import "@45drives/cockpit-css/src/index.css";
+@import "@45drives/houston-common-css/src/index.css";
 #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

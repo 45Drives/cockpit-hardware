@@ -1,5 +1,6 @@
 import { reactive, watch } from "vue";
-import { useSpawn } from "@45drives/cockpit-helpers";
+import { legacy } from "@45drives/houston-common-lib";
+const { useSpawn } = legacy;
 
 export default async function getServerInfo() {
   try {
