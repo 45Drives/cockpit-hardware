@@ -403,7 +403,7 @@ export default {
           diskErrorNotif.addAction("fix", () => {
               if (serverInfoFailNotification)
                 serverInfoFailNotification.remove();
-              runDmap();
+              return runDmap();
             });
           pushNotification(diskErrorNotif);
         } else {
