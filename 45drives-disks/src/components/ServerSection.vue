@@ -168,7 +168,7 @@ export default {
         pushNotification(
           new Notification(
             "Warning:",
-            errorStringHTML("Hardware RAID card(s) detected. \nDevice Mapping is subject to change on subsequent reboots. Run 'dmap' and refresh page to ensure reliable device mapping."),
+            "Hardware RAID card(s) detected. \nDevice Mapping is subject to change on subsequent reboots. Run 'dmap' and refresh page to ensure reliable device mapping.",
             "warning",
             "never"
           )
