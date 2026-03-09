@@ -147,8 +147,6 @@
 
 <script>
 import { ref, reactive, watch, inject } from "vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { errorStringHTML } = legacy;
 import { pushNotification, Notification } from "@45drives/houston-common-ui";
 
 export default {
