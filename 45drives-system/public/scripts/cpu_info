@@ -128,6 +128,8 @@ def get_cpu_info():
 	except:
 		#print("ERROR: dmidecode is not installed")
 		return False
+	if dmi_result is None:
+		return False
 	for line in dmi_result:
 		for field in g_dmi_cpu_fields.keys():
 			regex = re.search(r"^\s({fld}):\s+(.*)".format(fld=field),line)
@@ -158,6 +160,8 @@ def get_sensor_readings():
 			["ipmitool", "sensor"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True).stdout
 	except:
 		print("Error running 'ipmitool sensor'")
+		sys.exit(1)
+	if ipmitool_sensor_result is None:
 		sys.exit(1)
 
 	sensor_readings = []

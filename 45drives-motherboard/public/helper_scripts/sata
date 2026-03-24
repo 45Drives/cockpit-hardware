@@ -243,6 +243,8 @@ def get_sata_pci_addresses():
     except Exception as e:
         print(f"Error running lshw: {e}")
         return []
+    if lshw_result is None:
+        return []
 
     pci_addresses = []
     sata_found = False  # Flag to track if we are in a SATA section
@@ -268,6 +270,8 @@ def ls_by_path(motherboard):
 		ls_result = subprocess.Popen(
 			["ls", "-l", "/dev/disk/by-path"], stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
+		return False
+	if ls_result is None:
 		return False
 
 	sata_connections = {}
@@ -368,6 +372,8 @@ def lsblk(device):
 			["lsblk", "-l", "/dev/" + device],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
 		return False
+	if lsblk_result is None:
+		return False
 
 	partitions = []
 	for line in lsblk_result:
@@ -390,6 +396,8 @@ def get_motherboard_model():
 		dmi_result = subprocess.Popen(["dmidecode","-t","2"],stdout=subprocess.PIPE,universal_newlines=True).stdout
 	except:
 		#print("ERROR: dmidecode is not installed")
+		return False
+	if dmi_result is None:
 		return False
 	for line in dmi_result:
 		for field in g_motherboard_sata_addresses.keys():

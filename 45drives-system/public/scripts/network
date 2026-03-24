@@ -114,6 +114,8 @@ def ip_addr():
 		errorMessage = {"msg": "error running 'ip -j addr' command. "}
 		print(json.dumps(errorMessage))
 		exit(1)
+	if ipaddr_result is None:
+		exit(1)
 	#ipaddr_json = json.loads(ipaddr_result.read())
 	try:
 		ipaddr_json = json.loads(ipaddr_result.read())
@@ -152,6 +154,8 @@ def get_network_info():
 			["lshw","-C","network","-businfo","-quiet"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
 		return False
+	if lshw_result is None:
+		return False
 	lshw = []
 	for line in lshw_result:
 		regex_lshw = re.search(r"^pci@(\S+)\s+(\S+)\s+(\S+)\s+(\S+)",line)
@@ -179,6 +183,8 @@ def get_network_info():
 			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except:
 		return False
+	if dmi_result is None:
+		return False
 
 	# get the relevant fields from the dmidecode output and store them in a list. 
 	slot_entries = []
@@ -203,8 +209,8 @@ def get_network_info():
 		card = dict(slot_entries[i:i+len(g_dmi_fields)])
 
 		if "Designation" in card:
-			designation = card.get("Designation")
-			if designation == 'N/A':
+			designation = card.get("Designation", "")
+			if designation == 'N/A' or not designation:
 				card = None
 				continue
 			if motherboard_model == 'B550I AORUS PRO AX':
