@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.11-2
+## cockpit-45drives-hardware 2.5.12-1
 
-* Rebuilding with proper reference to submodule
+* Fixes potential none-type errors in python scripts (motherboard helpers and system scripts)
