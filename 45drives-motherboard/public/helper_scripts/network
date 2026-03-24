@@ -92,6 +92,8 @@ def get_network_info():
 	except Exception as e:
 		print(f"Failed to run 'ip addr' command: {e}")
 		return False
+	if ipaddr_result is None:
+		return False
 	
 	network_json_str = "{\"Network Info\":["
 	for line in ipaddr_result:
@@ -124,6 +126,8 @@ def get_network_info():
 	except Exception as e:
 		print(f"Failed to run 'lshw' command: {e}")
 		return False
+	if lshw_result is None:
+		return False
 	
 	lshw = []
 	for line in lshw_result:
@@ -136,6 +140,8 @@ def get_network_info():
 			["dmidecode","-t","9"],stdout=subprocess.PIPE, universal_newlines=True).stdout
 	except Exception as e:
 		print(f"Failed to run 'dmidecode' command: {e}")
+		return False
+	if dmi_result is None:
 		return False
 
 	slot_entries = []
@@ -155,8 +161,8 @@ def get_network_info():
 	for i in range(0, len(slot_entries), len(g_dmi_fields)):
 		card = dict(slot_entries[i:i+len(g_dmi_fields)])
 		if "Designation" in card:
-			designation = card.get("Designation")
-			if designation == 'N/A':
+			designation = card.get("Designation", "")
+			if designation == 'N/A' or not designation:
 				card = None
 				continue
 			if motherboard_model == 'B550I AORUS PRO AX':

@@ -25,6 +25,8 @@ def ipmi_lan():
 	except:
 		print("Error running 'ipmitool lan print 1'")
 		sys.exit(1)
+	if ipmi_lan_result is None:
+		sys.exit(1)
 
 	ipmi_lan_dict = {
 		"IP Address": "-",

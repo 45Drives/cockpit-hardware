@@ -228,6 +228,8 @@ def ipmitool_sensor():
     except Exception as e:
         print(f"ERROR: Unable to run ipmitool: {e}")
         return {}
+    if ipmitool_sensor_result is None:
+        return {}
 
     sensor_readings = {}
     for line in ipmitool_sensor_result:
@@ -256,6 +258,8 @@ def dmidecode():
 	except:
 		print("Error running 'dmidecode -t 17'")
 		sys.exit(1)
+	if dmi_result is None:
+		sys.exit(1)
 
 	slot_entries = []
 	slot_template = {
@@ -265,7 +269,8 @@ def dmidecode():
 		"Type": "-",
 		"Manufacturer": "-",
 		"Serial Number" : "-",
-		"Temperature" : "-"
+		"Temperature" : "-",
+		"Temperature Keys": [],
 	}
 
 	current_slot = {}

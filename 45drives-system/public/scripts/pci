@@ -361,6 +361,8 @@ def dmidecode():
         ).stdout
     except Exception:
         return []
+    if dmi_result is None:
+        return []
 
     cards = []
     id_counter = 1
@@ -482,7 +484,8 @@ def dmidecode():
                 if actual_type and not actual_type.startswith("M.2 Slot"):
                     current_slot["Type"] = f"M.2 Slot ({actual_type})"
                 if motherboard_model.startswith("MZ73"):
-                    if BA_LUT_MZ73.get(current_slot["Designation"]) in disk_map.items():
+                    candidate_buses = BA_LUT_MZ73.get(current_slot["Designation"], [])
+                    if any(bus in disk_map for bus in candidate_buses):
                         current_slot["Current Usage"] = "In Use"
             else:
                 current_slot["Type"] = actual_type
@@ -603,15 +606,18 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
 
 def lspci_hba():
     try:
-        out = subprocess.Popen(
+        stdout = subprocess.Popen(
             ["lspci", "-d", "1000:*", "-vv",
              "-i", "/opt/45drives/tools/pci.ids"],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True
-        ).stdout.read()
+        ).stdout
     except Exception:
         return []
+    if stdout is None:
+        return []
+    out = stdout.read()
 
     hba_cards = []
     rx = re.compile(
@@ -631,13 +637,16 @@ def lspci_hba():
 
 def network():
     try:
-        network_result = subprocess.Popen(
+        stdout = subprocess.Popen(
             ["/usr/share/cockpit/45drives-motherboard/helper_scripts/network"],
             stdout=subprocess.PIPE,
             universal_newlines=True
-        ).stdout.read()
+        ).stdout
     except Exception:
         return []
+    if stdout is None:
+        return []
+    network_result = stdout.read()
 
     try:
         net_out = json.loads(network_result)
@@ -654,7 +663,7 @@ def find_primary_bus_for_port(port_bus_address):
 
 def getNetworkCardModel(busAddress):
     trimmed = busAddress[5:]
-    primary = find_primary_bus_for_port(trimmed)
+    primary = find_primary_bus_for_port(trimmed) or ""
 
     try:
         lspci = subprocess.Popen(
@@ -663,6 +672,8 @@ def getNetworkCardModel(busAddress):
             universal_newlines=True
         ).stdout
     except Exception:
+        return "-"
+    if lspci is None:
         return "-"
 
     for line in lspci:
@@ -685,6 +696,8 @@ def sata():
     except Exception:
         print("Error running 'lspci'")
         sys.exit(1)
+    if lspci_result is None:
+        sys.exit(1)
 
     sata = []
     for line in lspci_result:
@@ -706,6 +719,8 @@ def sata():
         ).stdout
     except Exception:
         print("Error running 'ls -l /dev/disk/by-path'")
+        sys.exit(1)
+    if ls_result is None:
         sys.exit(1)
 
     drives = []
@@ -735,6 +750,8 @@ def lsblk(device):
         ).stdout
     except Exception:
         print(f"Error running 'lsblk -l /dev/{device}'")
+        return []
+    if lsblk_result is None:
         return []
 
     parts = []
@@ -768,6 +785,8 @@ def get_disk_by_path():
         ).stdout
     except Exception as e:
         print(f"Error running `ls -l /dev/disk/by-path`: {e}")
+        return {}
+    if result is None:
         return {}
 
     disk_map = {}
