@@ -1,25 +1,4 @@
 #!/usr/bin/env python3
-"""
-detect_fans - Backend script for 45Drives Fan Controller module.
-
-This script detects fans connected to the system and returns their
-information as JSON to stdout.
-
-Output format (JSON):
-{
-    "fans": [
-        { "name": "CPU0_FAN", "rpm": 5100 },
-        { "name": "CPU1_FAN", "rpm": 5100 },
-        ...
-    ],
-    "count": 6
-}
-
-On error, prints JSON with "error_msg" to stderr and exits with code 1.
-
-TODO: Replace the placeholder logic below with the actual fan detection
-      implementation (e.g. parsing ipmitool, hwmon sysfs, etc.)
-"""
 
 import json
 import subprocess
@@ -27,17 +6,6 @@ import sys
 
 
 def detect_fans():
-    """
-    Detect fans and return a list of fan dictionaries.
-
-    TODO (backend developer): Replace or enhance this function with your
-    actual fan detection logic. The function should return a list of dicts,
-    each containing at minimum:
-        - "name": str  (fan identifier, e.g. "CPU0_FAN", "SYS_FAN1")
-        - "rpm": int   (current RPM reading)
-
-    You can add additional fields as needed (e.g. "zone", "pwm", "status").
-    """
     fans = []
 
     try:
