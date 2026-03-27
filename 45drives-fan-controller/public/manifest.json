@@ -1,0 +1,11 @@
+{
+    "version": 0,
+
+    "menu": {
+        "45drives-fan-controller": {
+            "label": "45Drives Fan Controller",
+            "path": "index.html",
+        	"order": 113
+        }
+    }
+}

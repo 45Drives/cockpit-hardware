@@ -4,6 +4,7 @@
     "45drives-disks",
     "45drives-motherboard",
     "45drives-system",
+    "45drives-fan-controller",
     "houston-common",
     "houston-common/houston-common-*"
   ],
@@ -12,7 +13,8 @@
     "build:disks": "yarn workspace 45drives-disks run build",
     "build:motherboard": "yarn workspace 45drives-motherboard run build",
     "build:system": "yarn workspace 45drives-system run build",
-    "build": "yarn build:common && yarn build:disks && yarn build:motherboard && yarn build:system"
+    "build:fan-controller": "yarn workspace 45drives-fan-controller run build",
+    "build": "yarn build:common && yarn build:disks && yarn build:motherboard && yarn build:system && yarn build:fan-controller"
   },
   "packageManager": "yarn@4.13.0"
 }

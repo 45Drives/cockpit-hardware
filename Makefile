@@ -14,7 +14,7 @@
 
 # PLUGIN_SRCS is space-delimited list of subdirectories containg a plugin project.
 # You can leave it empty for automatic detection based on directories containing a package.json file.
-PLUGIN_SRCS=45drives-disks 45drives-motherboard 45drives-system
+PLUGIN_SRCS=45drives-disks 45drives-motherboard 45drives-system 45drives-fan-controller
 
 # For installing to a remote machine for testing with `make install-remote`
 REMOTE_TEST_HOST=192.168.123.5

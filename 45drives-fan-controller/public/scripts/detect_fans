@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""
+detect_fans - Backend script for 45Drives Fan Controller module.
+
+This script detects fans connected to the system and returns their
+information as JSON to stdout.
+
+Output format (JSON):
+{
+    "fans": [
+        { "name": "CPU0_FAN", "rpm": 5100 },
+        { "name": "CPU1_FAN", "rpm": 5100 },
+        ...
+    ],
+    "count": 6
+}
+
+On error, prints JSON with "error_msg" to stderr and exits with code 1.
+
+TODO: Replace the placeholder logic below with the actual fan detection
+      implementation (e.g. parsing ipmitool, hwmon sysfs, etc.)
+"""
+
+import json
+import subprocess
+import sys
+
+
+def detect_fans():
+    """
+    Detect fans and return a list of fan dictionaries.
+
+    TODO (backend developer): Replace or enhance this function with your
+    actual fan detection logic. The function should return a list of dicts,
+    each containing at minimum:
+        - "name": str  (fan identifier, e.g. "CPU0_FAN", "SYS_FAN1")
+        - "rpm": int   (current RPM reading)
+
+    You can add additional fields as needed (e.g. "zone", "pwm", "status").
+    """
+    fans = []
+
+    try:
+        # Attempt detection via ipmitool
+        result = subprocess.run(
+            ["ipmitool", "sdr", "type", "Fan"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"ipmitool exited with code {result.returncode}: {result.stderr.strip()}"
+            )
+
+        for line in result.stdout.strip().splitlines():
+            # Example line:
+            # CPU0_FAN         | B8h | ok  | 29.1 | 5100 RPM
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 5 and "RPM" in parts[4]:
+                name = parts[0]
+                rpm_str = parts[4].replace("RPM", "").strip()
+                try:
+                    rpm = int(float(rpm_str))
+                except ValueError:
+                    rpm = 0
+                fans.append({"name": name, "rpm": rpm})
+
+    except FileNotFoundError:
+        # ipmitool not installed – fall back or error
+        raise RuntimeError(
+            "ipmitool is not installed. Please install ipmitool to detect fans."
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("ipmitool command timed out.")
+
+    return fans
+
+
+def main():
+    try:
+        fans = detect_fans()
+        output = {
+            "fans": fans,
+            "count": len(fans),
+        }
+        print(json.dumps(output, indent=4))
+    except Exception as e:
+        error = {"error_msg": str(e)}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

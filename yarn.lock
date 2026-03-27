@@ -28,6 +28,27 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"45drives-fan-controller@workspace:45drives-fan-controller":
+  version: 0.0.0-use.local
+  resolution: "45drives-fan-controller@workspace:45drives-fan-controller"
+  dependencies:
+    "@45drives/houston-common-css": "workspace:^"
+    "@45drives/houston-common-lib": "workspace:^"
+    "@45drives/houston-common-ui": "workspace:^"
+    "@fontsource/red-hat-text": "npm:^4.5.4"
+    "@headlessui/vue": "npm:^1.5.0"
+    "@heroicons/vue": "npm:^1.0.6"
+    "@tailwindcss/forms": "npm:^0.5.0"
+    "@vitejs/plugin-vue": "npm:^5.0.0"
+    autoprefixer: "npm:10.4.5"
+    postcss: "npm:^8"
+    source-sans-pro: "npm:^3.6.0"
+    tailwindcss: "npm:^3"
+    vite: "npm:^6.0.0"
+    vue: "npm:^3.2.25"
+  languageName: unknown
+  linkType: soft
+
 "45drives-motherboard@workspace:45drives-motherboard":
   version: 0.0.0-use.local
   resolution: "45drives-motherboard@workspace:45drives-motherboard"
