@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""
+apply_fan_profile - Apply a fan speed profile (temperature→duty mappings) to a fan.
+
+This script receives a JSON profile on stdin and sets the PWM duty for the
+specified fan based on the current temperature reading.
+
+Usage:
+    echo '{"fan_num":1,"board_num":1,"duty_percent":75}' | apply_fan_profile
+
+Input JSON (stdin):
+{
+    "fan_num": 1,
+    "board_num": 1,
+    "duty_percent": 75
+}
+
+For batch mode (set multiple fans at once):
+{
+    "commands": [
+        { "fan_num": 1, "board_num": 1, "duty_percent": 75 },
+        { "fan_num": 2, "board_num": 1, "duty_percent": 50 }
+    ]
+}
+
+Output (JSON to stdout):
+{
+    "results": [
+        { "board": 1, "fan": 1, "duty_percent": 75, "success": true },
+        ...
+    ],
+    "success": true
+}
+"""
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    FANS_PER_BOARD,
+    probe_boards,
+    get_board_addr,
+    get_fan_registers,
+    check_and_enable_tach,
+    set_pwm_duty,
+)
+
+
+def apply_single(fan_num, board_num, duty_percent):
+    """Apply duty to a single fan."""
+    if fan_num < 1 or fan_num > FANS_PER_BOARD:
+        return {"board": board_num, "fan": fan_num, "error": f"fan_num must be 1-{FANS_PER_BOARD}", "success": False}
+    boards = probe_boards()
+    if board_num not in boards:
+        return {"board": board_num, "fan": fan_num, "error": f"board {board_num} not found, available: {sorted(boards.keys())}", "success": False}
+    if duty_percent < 0 or duty_percent > 100:
+        return {"board": board_num, "fan": fan_num, "error": f"duty_percent must be 0-100", "success": False}
+
+    try:
+        dev_addr = get_board_addr(board_num)
+        config_reg, _tach_reg, pwm_reg = get_fan_registers(fan_num)
+        check_and_enable_tach(dev_addr, config_reg)
+        pwm_raw = set_pwm_duty(dev_addr, pwm_reg, duty_percent)
+        return {
+            "board": board_num,
+            "fan": fan_num,
+            "duty_percent": duty_percent,
+            "pwm_raw": pwm_raw,
+            "success": True,
+        }
+    except Exception as e:
+        return {
+            "board": board_num,
+            "fan": fan_num,
+            "error": str(e),
+            "success": False,
+        }
+
+
+def main():
+    try:
+        raw = sys.stdin.read()
+        data = json.loads(raw)
+
+        results = []
+
+        if "commands" in data:
+            # Batch mode
+            for cmd in data["commands"]:
+                result = apply_single(
+                    cmd.get("fan_num", 1),
+                    cmd.get("board_num", 1),
+                    cmd.get("duty_percent", 50),
+                )
+                results.append(result)
+        else:
+            # Single mode
+            result = apply_single(
+                data.get("fan_num", 1),
+                data.get("board_num", 1),
+                data.get("duty_percent", 50),
+            )
+            results.append(result)
+
+        all_ok = all(r.get("success") for r in results)
+        output = {"results": results, "success": all_ok}
+        print(json.dumps(output, indent=4))
+
+        if not all_ok:
+            sys.exit(1)
+
+    except json.JSONDecodeError as e:
+        print(json.dumps({"error_msg": f"Invalid JSON input: {e}", "success": False}),
+              file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(json.dumps({"error_msg": str(e), "success": False}),
+              file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""
+set_fan_duty - Set PWM duty cycle for a specific fan on a MAX31790 board.
+
+Usage:
+    set_fan_duty <fan_num> <duty_percent> [board_num]
+
+Arguments:
+    fan_num       : Fan channel number (1-6)
+    duty_percent  : Desired duty cycle (0-100)
+    board_num     : Board number (1 or 2, default 1)
+
+Output (JSON to stdout):
+{
+    "board": 1,
+    "fan": 1,
+    "duty_percent": 75,
+    "pwm_raw": 383,
+    "success": true
+}
+"""
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    FANS_PER_BOARD,
+    get_board_addr,
+    get_fan_registers,
+    check_and_enable_tach,
+    set_pwm_duty,
+)
+
+
+def main():
+    if len(sys.argv) < 3:
+        print(json.dumps({
+            "error_msg": "Usage: set_fan_duty <fan_num> <duty_percent> [board_num]"
+        }), file=sys.stderr)
+        sys.exit(1)
+
+    fan_num = int(sys.argv[1])
+    duty_percent = float(sys.argv[2])
+    board_num = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+
+    # Validate inputs
+    if fan_num < 1 or fan_num > FANS_PER_BOARD:
+        print(json.dumps({"error_msg": f"fan_num must be 1-{FANS_PER_BOARD}, got {fan_num}"}),
+              file=sys.stderr)
+        sys.exit(1)
+
+    if duty_percent < 0 or duty_percent > 100:
+        print(json.dumps({"error_msg": f"duty_percent must be 0-100, got {duty_percent}"}),
+              file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        dev_addr = get_board_addr(board_num)  # validates board exists on I2C
+        config_reg, _tach_reg, pwm_reg = get_fan_registers(fan_num)
+
+        check_and_enable_tach(dev_addr, config_reg)
+        pwm_raw = set_pwm_duty(dev_addr, pwm_reg, duty_percent)
+
+        output = {
+            "board": board_num,
+            "fan": fan_num,
+            "duty_percent": duty_percent,
+            "pwm_raw": pwm_raw,
+            "success": True,
+        }
+        print(json.dumps(output, indent=4))
+
+    except Exception as e:
+        error = {"error_msg": str(e), "success": False}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

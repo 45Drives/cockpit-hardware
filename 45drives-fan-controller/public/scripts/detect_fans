@@ -1,55 +1,62 @@
 #!/usr/bin/env python3
+"""
+detect_fans - Auto-detect all real fans across all MAX31790 boards.
+
+Boards are discovered by probing known I2C addresses.
+Fans are detected by reading tach counts — empty channels (near-max tach
+values) and sub-threshold RPM readings are filtered out automatically.
+
+Output (JSON to stdout):
+{
+    "boards": [1],
+    "fans": [
+        { "board": 1, "fan": 1, "name": "Board1_Fan1", "rpm": 5100 },
+        ...
+    ],
+    "count": 2
+}
+"""
 
 import json
-import subprocess
+import os
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    FANS_PER_BOARD,
+    probe_boards,
+    get_fan_registers,
+    is_fan_present,
+    get_transport,
+)
 
-def detect_fans():
+
+def detect_all_fans():
+    """Scan every discovered board, every channel, return only real fans."""
+    boards = probe_boards()
     fans = []
 
-    try:
-        # Attempt detection via ipmitool
-        result = subprocess.run(
-            ["ipmitool", "sdr", "type", "Fan"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+    for board_num, dev_addr in sorted(boards.items()):
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
+            present, rpm = is_fan_present(dev_addr, config_reg, tach_reg)
+            if present:
+                fans.append({
+                    "board": board_num,
+                    "fan": fan_num,
+                    "name": f"Board{board_num}_Fan{fan_num}",
+                    "rpm": rpm,
+                })
 
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"ipmitool exited with code {result.returncode}: {result.stderr.strip()}"
-            )
-
-        for line in result.stdout.strip().splitlines():
-            # Example line:
-            # CPU0_FAN         | B8h | ok  | 29.1 | 5100 RPM
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) >= 5 and "RPM" in parts[4]:
-                name = parts[0]
-                rpm_str = parts[4].replace("RPM", "").strip()
-                try:
-                    rpm = int(float(rpm_str))
-                except ValueError:
-                    rpm = 0
-                fans.append({"name": name, "rpm": rpm})
-
-    except FileNotFoundError:
-        # ipmitool not installed – fall back or error
-        raise RuntimeError(
-            "ipmitool is not installed. Please install ipmitool to detect fans."
-        )
-    except subprocess.TimeoutExpired:
-        raise RuntimeError("ipmitool command timed out.")
-
-    return fans
+    return sorted(boards.keys()), fans
 
 
 def main():
     try:
-        fans = detect_fans()
+        board_list, fans = detect_all_fans()
         output = {
+            "transport": get_transport(),
+            "boards": board_list,
             "fans": fans,
             "count": len(fans),
         }
