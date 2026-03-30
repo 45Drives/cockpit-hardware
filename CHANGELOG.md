@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.12-1
+## cockpit-45drives-hardware 2.5.13-1
 
-* Fixes potential none-type errors in python scripts (motherboard helpers and system scripts)
+* Fixes some pci script issues (previous change was not backwards compatible)

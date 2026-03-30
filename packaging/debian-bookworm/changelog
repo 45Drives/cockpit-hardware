@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.5.13-1bookworm) bookworm; urgency=medium
+
+  * Fixes some pci script issues (previous change was not backwards compatible)
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 30 Mar 2026 09:52:23 -0300
+
 cockpit-45drives-hardware (2.5.12-1bookworm) bookworm; urgency=medium
 
   * Fixes potential none-type errors in python scripts (motherboard helpers and system
