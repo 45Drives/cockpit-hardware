@@ -1,0 +1,35 @@
+{
+    "board_name": "MC13-LE1-000",
+    "manufacturer": "Giga Computing",
+    "pci": {
+        "address_fixups": {},
+        "slot_types": {},
+        "address_to_slot": {},
+        "slot_order": [],
+        "deduplicate_by_designation": true
+    },
+    "sata": {
+        "port_mappings": [
+            ["pci-0000:0c:00.0-ata-1", "SATA_0_1"],
+            ["pci-0000:0c:00.0-ata-2", "SATA_0_1"],
+            ["pci-0000:0c:00.0-ata-3", "SATA_2_3"],
+            ["pci-0000:0c:00.0-ata-4", "SATA_2_3"]
+        ]
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["CPU0_TEMP"],
+        "dimm_temp_fields": [
+            "DIMMG0_TEMP", "DIMMG1_TEMP"
+        ],
+        "fan_fields": ["CPU0_FAN", "SYS_FAN1", "SYS_FAN2"],
+        "power_fields": ["SYS_POWER"]
+    },
+    "ram": {
+        "locator_tags": {}
+    },
+    "network": {
+        "onboard_nics_to_skip": [],
+        "designation_remap": {},
+        "address_to_slot": {}
+    }
+}

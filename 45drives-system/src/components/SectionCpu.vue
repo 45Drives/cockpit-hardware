@@ -75,13 +75,13 @@ export default {
       cpus.value.push({ socket: 'Loading...', model: 'Loading...', maxSpeed: 'Loading...', currentSpeed: 'Loading...', temperature: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/cpu_info"],
+          ["/usr/share/cockpit/45drives-system/hardware/collect.py", "cpu"],
           {
             err: "out",
             superuser: "require",
           }
         ).promise();
-        let cpuInfo = JSON.parse(state.stdout);
+        let cpuInfo = JSON.parse(state.stdout).cpu;
         cpus.value.length = 0;
         cpuInfo.cpus.forEach(cpu => {
           cpus.value.push(cpu);
@@ -94,7 +94,7 @@ export default {
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
           fatalErrorMsg.value.push(error.stderr);
-          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/cpu_info");
+          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/hardware/collect.py cpu");
           showFixButton.value = false;
         }
     };

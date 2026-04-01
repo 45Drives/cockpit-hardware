@@ -1,0 +1,36 @@
+{
+    "board_name": "MS03-6L0-000",
+    "manufacturer": "Giga Computing",
+    "pci": {
+        "address_fixups": {},
+        "slot_types": {},
+        "address_to_slot": {},
+        "slot_order": []
+    },
+    "sata": {
+        "port_mappings": [
+            ["pci-0000:00:17.0-ata-1", "SL_SATA1"],
+            ["pci-0000:00:17.0-ata-2", "SL_SATA1"],
+            ["pci-0000:00:17.0-ata-3", "SL_SATA1"],
+            ["pci-0000:00:17.0-ata-4", "SL_SATA1"],
+            ["pci-0000:00:17.0-ata-5", "SATA_4_5"],
+            ["pci-0000:00:17.0-ata-6", "SATA_4_5"]
+        ]
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["CPU0_TEMP"],
+        "dimm_temp_fields": [
+            "DIMMG0_TEMP", "DIMMG1_TEMP"
+        ],
+        "fan_fields": ["CPU0_FAN", "SYS_FAN1", "SYS_FAN2", "SYS_FAN3"],
+        "power_fields": ["SYS_POWER"]
+    },
+    "ram": {
+        "locator_tags": {}
+    },
+    "network": {
+        "onboard_nics_to_skip": [],
+        "designation_remap": {},
+        "address_to_slot": {}
+    }
+}

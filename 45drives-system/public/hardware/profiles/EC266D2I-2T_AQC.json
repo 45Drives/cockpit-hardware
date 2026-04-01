@@ -1,0 +1,42 @@
+{
+    "board_name": "EC266D2I-2T/AQC",
+    "manufacturer": "ASRockRack",
+    "pci": {
+        "address_fixups": {},
+        "slot_types": {},
+        "address_to_slot": {},
+        "slot_order": [],
+        "ocu_inference": true
+    },
+    "sata": {
+        "port_mappings": [
+            ["pci-0000:00:17.0-ata-1", "OCU1"],
+            ["pci-0000:00:17.0-ata-2", "OCU1"],
+            ["pci-0000:00:17.0-ata-3", "OCU1"],
+            ["pci-0000:00:17.0-ata-4", "OCU1"],
+            ["pci-0000:00:17.0-ata-5", "OCU2"],
+            ["pci-0000:00:17.0-ata-6", "OCU2"],
+            ["pci-0000:00:17.0-ata-7", "OCU2"],
+            ["pci-0000:00:17.0-ata-8", "OCU2"]
+        ]
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["TEMP_CPU"],
+        "dimm_temp_fields": [
+            "TEMP_DDR5_A1", "TEMP_DDR5_B1"
+        ],
+        "fan_fields": ["FAN1", "FAN2", "FAN3", "FAN4"],
+        "power_fields": []
+    },
+    "ram": {
+        "locator_tags": {
+            "Controller0-ChannelA-DIMM0": ["TEMP_DDR5_A1"],
+            "Controller1-ChannelA-DIMM0": ["TEMP_DDR5_B1"]
+        }
+    },
+    "network": {
+        "onboard_nics_to_skip": [],
+        "designation_remap": {},
+        "address_to_slot": {}
+    }
+}

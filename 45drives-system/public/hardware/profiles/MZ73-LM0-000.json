@@ -1,0 +1,73 @@
+{
+    "board_name": "MZ73-LM0-000",
+    "manufacturer": "Giga Computing",
+    "pci": {
+        "address_fixups": {},
+        "slot_types": {
+            "PCIE_1": "PCI Express 5 x16",
+            "PCIE_2": "PCI Express 5 x16",
+            "PCIE_3": "PCI Express 5 x16",
+            "PCIE_4": "PCI Express 5 x16"
+        },
+        "address_to_slot": {
+            "PCIE_1": ["0000:a2:00.0"],
+            "PCIE_2": ["0000:81:00.0", "0000:84:00.0"],
+            "PCIE_3": ["0000:01:00.0"],
+            "PCIE_4": ["0000:41:00.0"],
+            "M2_0": ["0000:61:00.0"]
+        },
+        "slot_order": [],
+        "strip_designation_suffix": true,
+        "deduplicate_by_designation": true,
+        "lspci_exclusions": ["BCM57416", "Non-Essential Instrumentation"]
+    },
+    "sata": {
+        "port_mappings": [
+            ["pci-0000:65:00.0-ata-1", "SLSAS_0"],
+            ["pci-0000:65:00.0-ata-2", "SLSAS_0"],
+            ["pci-0000:65:00.0-ata-3", "SLSAS_0"],
+            ["pci-0000:65:00.0-ata-4", "SLSAS_0"]
+        ]
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["CPU0_TEMP", "CPU1_TEMP"],
+        "dimm_temp_fields": [
+            "DIMMG0_TEMP", "DIMMG1_TEMP", "DIMMG2_TEMP", "DIMMG3_TEMP"
+        ],
+        "fan_fields": ["CPU0_FAN", "CPU1_FAN", "SYS_FAN1", "SYS_FAN2", "SYS_FAN3", "SYS_FAN4", "SYS_FAN5"],
+        "power_fields": ["SYS_POWER"]
+    },
+    "ram": {
+        "locator_tags": {
+            "DIMM_P0_A0": ["DIMMG0"],
+            "DIMM_P0_B0": ["DIMMG0"],
+            "DIMM_P0_C0": ["DIMMG0"],
+            "DIMM_P0_D0": ["DIMMG0"],
+            "DIMM_P0_E0": ["DIMMG0"],
+            "DIMM_P0_F0": ["DIMMG0"],
+            "DIMM_P0_H0": ["DIMMG1"],
+            "DIMM_P0_G0": ["DIMMG1"],
+            "DIMM_P0_I0": ["DIMMG1"],
+            "DIMM_P0_J0": ["DIMMG1"],
+            "DIMM_P0_K0": ["DIMMG1"],
+            "DIMM_P0_L0": ["DIMMG1"],
+            "DIMM_P1_M0": ["DIMMG2"],
+            "DIMM_P1_N0": ["DIMMG2"],
+            "DIMM_P1_O0": ["DIMMG2"],
+            "DIMM_P1_P0": ["DIMMG2"],
+            "DIMM_P1_Q0": ["DIMMG2"],
+            "DIMM_P1_R0": ["DIMMG2"],
+            "DIMM_P1_S0": ["DIMMG3"],
+            "DIMM_P1_T0": ["DIMMG3"],
+            "DIMM_P1_U0": ["DIMMG3"],
+            "DIMM_P1_V0": ["DIMMG3"],
+            "DIMM_P1_W0": ["DIMMG3"],
+            "DIMM_P1_X0": ["DIMMG3"]
+        }
+    },
+    "network": {
+        "onboard_nics_to_skip": ["BCM57416"],
+        "designation_remap": {},
+        "address_to_slot": {}
+    }
+}

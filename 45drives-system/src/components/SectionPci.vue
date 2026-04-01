@@ -79,13 +79,13 @@ export default {
       pcis.value.push({ slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...', firmwareVersion: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/pci"],
+          ["/usr/share/cockpit/45drives-system/hardware/collect.py", "pci"],
           {
             err: "out",
             superuser: "require",
           }
         ).promise();
-        let pciInfo = JSON.parse(state.stdout);
+        let pciInfo = JSON.parse(state.stdout).pci;
         pcis.value.length = 0;
         pciInfo.forEach(pci => {
           pcis.value.push(pci);
@@ -98,7 +98,7 @@ export default {
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
           fatalErrorMsg.value.push(error.stderr);
-          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/pci");
+          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/hardware/collect.py pci");
           showFixButton.value = false;
         }
     };

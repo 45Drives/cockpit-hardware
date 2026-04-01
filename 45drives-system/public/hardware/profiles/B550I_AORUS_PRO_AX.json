@@ -1,0 +1,51 @@
+{
+    "board_name": "B550I AORUS PRO AX",
+    "manufacturer": "Gigabyte",
+    "pci": {
+        "address_fixups": {},
+        "slot_types": {},
+        "address_to_slot": {
+            "PCIEX16": ["0000:01:00.0", "0000:01:00.1"]
+        },
+        "slot_order": [],
+        "designation_remap": {
+            "J10": "PCIEX16",
+            "J3700 M.2 Slot": "M2A_CPU",
+            "J3708 PCIE x4 slot from Promontory": "M2B_SB"
+        },
+        "network_address_fixups": {
+            "00:01.0": "01:00.0",
+            "00:01.1": "01:00.1"
+        }
+    },
+    "sata": {
+        "port_mappings": [],
+        "dynamic_sata_discovery": true
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["CPU Temp"],
+        "dimm_temp_fields": [],
+        "fan_fields": [],
+        "power_fields": []
+    },
+    "ram": {
+        "locator_tags": {},
+        "use_bank_locator": true,
+        "bank_locator_remap": {
+            "P0 CHANNEL A": "DIMM_A1",
+            "P0 CHANNEL B": "DIMM_B1"
+        },
+        "filter_locator": "DIMM 1"
+    },
+    "network": {
+        "onboard_nics_to_skip": [],
+        "designation_remap": {
+            "J10": "PCIEX16",
+            "J3700 M.2 Slot": "M2A_CPU",
+            "J3708 PCIE x4 slot from Promontory": "M2B_SB"
+        },
+        "address_to_slot": {
+            "PCIEX16": ["0000:01:00.0", "0000:01:00.1"]
+        }
+    }
+}

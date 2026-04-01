@@ -1,0 +1,58 @@
+{
+    "board_name": "EPC621D8A",
+    "manufacturer": "ASRockRack",
+    "pci": {
+        "address_fixups": {
+            "ff00:16:00.0": "0000:17:00.0",
+            "ff00:16:02.0": "0000:1c:00.0",
+            "ff00:64:00.0": "0000:65:00.0",
+            "ff00:64:02.0": "0000:66:00.0",
+            "ff00:b2:00.0": "0000:b3:00.0",
+            "ff00:b2:02.0": "0000:b4:00.0"
+        },
+        "slot_types": {},
+        "address_to_slot": {},
+        "slot_order": []
+    },
+    "sata": {
+        "port_mappings": [
+            ["pci-0000:00:11.5-ata-1", "SSATA_0"],
+            ["pci-0000:00:11.5-ata-2", "SSATA_1"],
+            ["pci-0000:00:11.5-ata-3", "SSATA_2"],
+            ["pci-0000:00:11.5-ata-4", "SSATA_3"],
+            ["pci-0000:00:11.5-ata-5", "SSATA_4"],
+            ["pci-0000:00:11.5-ata-6", "SSATA_5"],
+            ["pci-0000:00:17.0-ata-1", "SATA_0"],
+            ["pci-0000:00:17.0-ata-2", "SATA_1"],
+            ["pci-0000:00:17.0-ata-3", "SATA_2"],
+            ["pci-0000:00:17.0-ata-4", "SATA_3"],
+            ["pci-0000:00:17.0-ata-5", "SATA_4"]
+        ]
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["CPU Temp"],
+        "dimm_temp_fields": [
+            "DDR4_A Temp", "DDR4_B Temp", "DDR4_C Temp",
+            "DDR4_D Temp", "DDR4_E Temp", "DDR4_F Temp"
+        ],
+        "fan_fields": ["FAN1", "FAN2", "FAN3", "FAN4", "FAN5", "FAN6"],
+        "power_fields": ["PW Consumption"]
+    },
+    "ram": {
+        "locator_tags": {
+            "CPU1_DIMM_A1": ["DDR4_A"],
+            "CPU1_DIMM_A2": ["DDR4_A"],
+            "CPU1_DIMM_B1": ["DDR4_B"],
+            "CPU1_DIMM_C1": ["DDR4_C"],
+            "CPU1_DIMM_D1": ["DDR4_D"],
+            "CPU1_DIMM_D2": ["DDR4_D"],
+            "CPU1_DIMM_E1": ["DDR4_E"],
+            "CPU1_DIMM_F1": ["DDR4_F"]
+        }
+    },
+    "network": {
+        "onboard_nics_to_skip": [],
+        "designation_remap": {},
+        "address_to_slot": {}
+    }
+}

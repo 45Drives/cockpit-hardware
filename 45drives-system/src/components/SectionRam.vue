@@ -77,13 +77,13 @@ export default {
       rams.value.push({ locator: 'Loading...', type: 'Loading...', size: 'Loading...', manufacturer: 'Loading...', serialNumber: 'Loading...', temperature: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/ram"],
+          ["/usr/share/cockpit/45drives-system/hardware/collect.py", "ram"],
           {
             err: "out",
             superuser: "require",
           }
         ).promise();
-        let ramInfo = JSON.parse(state.stdout);
+        let ramInfo = JSON.parse(state.stdout).ram;
         rams.value.length = 0;
         ramInfo.forEach(ram => {
           rams.value.push(ram);
@@ -96,7 +96,7 @@ export default {
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
           fatalErrorMsg.value.push(error.stderr);
-          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/ram");
+          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/hardware/collect.py ram");
           showFixButton.value = false;
         }
     };

@@ -1,0 +1,41 @@
+{
+    "board_name": "X11SPH-nCTF",
+    "manufacturer": "Supermicro",
+    "pci": {
+        "address_fixups": {},
+        "slot_types": {},
+        "address_to_slot": {},
+        "slot_order": []
+    },
+    "sata": {
+        "port_mappings": [
+            ["pci-0000:00:11.5-ata-1", "S-SATA0"],
+            ["pci-0000:00:11.5-ata-2", "S-SATA1"],
+            ["pci-0000:00:17.0-ata-1", "I-SATA0"],
+            ["pci-0000:00:17.0-ata-2", "I-SATA1"],
+            ["pci-0000:00:17.0-ata-3", "I-SATA2"],
+            ["pci-0000:00:17.0-ata-4", "I-SATA3"],
+            ["pci-0000:00:17.0-ata-5", "I-SATA4"],
+            ["pci-0000:00:17.0-ata-6", "I-SATA5"],
+            ["pci-0000:00:17.0-ata-7", "I-SATA6"],
+            ["pci-0000:00:17.0-ata-8", "I-SATA7"]
+        ]
+    },
+    "ipmi_sensors": {
+        "cpu_temp": ["CPU Temp"],
+        "dimm_temp_fields": [
+            "DIMMA1 Temp", "DIMMB1 Temp", "DIMMC1 Temp", "DIMMD1 Temp",
+            "DIMME1 Temp", "DIMMF1 Temp", "DIMMG1 Temp", "DIMMH1 Temp"
+        ],
+        "fan_fields": ["FAN1", "FAN2", "FAN3", "FAN4", "FANA", "FANB"],
+        "power_fields": ["PW Consumption"]
+    },
+    "ram": {
+        "locator_tags": {}
+    },
+    "network": {
+        "onboard_nics_to_skip": [],
+        "designation_remap": {},
+        "address_to_slot": {}
+    }
+}

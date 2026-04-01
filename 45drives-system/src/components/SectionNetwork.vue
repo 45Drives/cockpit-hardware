@@ -81,13 +81,13 @@ export default {
       networks.value.push({ connectionName: 'Loading...', connectionState: 'Loading...', connectionType: 'Loading...', mac: 'Loading...', ipv4: 'Loading...', ipv6: 'Loading...', pciSlot: 'Loading...', busAddress: 'Loading...' });
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/network"],
+          ["/usr/share/cockpit/45drives-system/hardware/collect.py", "network"],
           {
             err: "out",
             superuser: "require",
           }
         ).promise();
-        let networkInfo = JSON.parse(state.stdout);
+        let networkInfo = JSON.parse(state.stdout).network;
         networks.value.length = 0;
         networkInfo.forEach(network => {
           networks.value.push(network);
@@ -100,7 +100,7 @@ export default {
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
           fatalErrorMsg.value.push(error.stderr);
-          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/network");
+          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/hardware/collect.py network");
           showFixButton.value = false;
         }
     };

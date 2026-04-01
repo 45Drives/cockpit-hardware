@@ -72,13 +72,13 @@ export default {
       ipmi.value={ ipAddress: 'Loading...', subnetMask: 'Loading...', macAddress: 'Loading...', defaultGatewayIp: 'Loading...' };
       try {
         const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/ipmi"],
+          ["/usr/share/cockpit/45drives-system/hardware/collect.py", "ipmi"],
           {
             err: "out",
             superuser: "require",
           }
         ).promise();
-        let ipmiInfo = JSON.parse(state.stdout);
+        let ipmiInfo = JSON.parse(state.stdout).ipmi;
         ipmi.value = ipmiInfo;
           fatalError.value = false;
           fatalErrorMsg.value.length = 0;
@@ -88,7 +88,7 @@ export default {
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
           fatalErrorMsg.value.push(error.stderr);
-          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/ipmi");
+          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/hardware/collect.py ipmi");
           showFixButton.value = false;
         }
     };
