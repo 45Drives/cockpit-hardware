@@ -1,7 +1,7 @@
 <template>
-  <div class="max-w-2xl bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 p-4">
-    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
-      Speed (RPM) vs Temperature — Fan {{ fanIndex }}
+  <div class="bg-white dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-700 p-4">
+    <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-3">
+      Speed (RPM) vs Temperature — Board {{ fanBoard }} · Fan {{ fanNumber }}
     </h4>
     <div class="relative">
       <svg
@@ -65,8 +65,9 @@
           :x="padding.left - 8"
           :y="padding.top + chartHeight - ((i - 1) / 10) * chartHeight + 4"
           text-anchor="end"
-          class="fill-gray-500 dark:fill-gray-400"
+          class="fill-gray-900 dark:fill-gray-100"
           font-size="11"
+          font-weight="normal"
         >
           {{ (i - 1) * 10 }}
         </text>
@@ -78,8 +79,9 @@
           :x="padding.left + ((i - 1) / 10) * chartWidth"
           :y="padding.top + chartHeight + 18"
           text-anchor="middle"
-          class="fill-gray-500 dark:fill-gray-400"
+          class="fill-gray-900 dark:fill-gray-100"
           font-size="11"
+          font-weight="normal"
         >
           {{ (i - 1) * 10 }}
         </text>
@@ -89,9 +91,9 @@
           :x="padding.left + chartWidth / 2"
           :y="svgHeight - 2"
           text-anchor="middle"
-          class="fill-gray-600 dark:fill-gray-300"
+          class="fill-gray-900 dark:fill-gray-100"
           font-size="12"
-          font-weight="600"
+          font-weight="700"
         >
           Temperature (°C)
         </text>
@@ -99,26 +101,26 @@
           :x="14"
           :y="padding.top + chartHeight / 2"
           text-anchor="middle"
-          class="fill-gray-600 dark:fill-gray-300"
+          class="fill-gray-900 dark:fill-gray-100"
           font-size="12"
-          font-weight="600"
+          font-weight="700"
           :transform="`rotate(-90, 14, ${padding.top + chartHeight / 2})`"
         >
-          Speed (RPM %)
+          Speed (PWM %)
         </text>
 
-        <!-- Line segments between sorted points -->
+        <!-- Step-function line segments (horizontal + vertical only) -->
         <polyline
           v-if="sortedPoints.length > 1"
-          :points="polylinePoints"
+          :points="stepPolylinePoints"
           fill="none"
           stroke="#dc2626"
           stroke-width="2"
-          stroke-linejoin="round"
+          stroke-linejoin="miter"
           stroke-linecap="round"
         />
 
-        <!-- Data points (hover only, no drag) -->
+        <!-- Data points (only for non-default points) -->
         <circle
           v-for="(pt, idx) in sortedPoints"
           :key="'pt-' + idx"
@@ -126,10 +128,10 @@
           :cy="speedToY(pt.speed)"
           r="6"
           class="cursor-default"
-          fill="#dc2626"
-          stroke="white"
-          stroke-width="2"
-          @mouseenter="hoveredPointIndex = idx"
+          :fill="pt.isDefault ? 'transparent' : '#dc2626'"
+          :stroke="pt.isDefault ? 'transparent' : 'white'"
+          :stroke-width="pt.isDefault ? 0 : 2"
+          @mouseenter="pt.isDefault ? null : (hoveredPointIndex = idx)"
           @mouseleave="hoveredPointIndex = null"
         />
 
@@ -154,6 +156,38 @@
             {{ sortedPoints[hoveredPointIndex].temp }}°C, {{ sortedPoints[hoveredPointIndex].speed }}%
           </text>
         </g>
+
+        <!-- Live temperature indicator line -->
+        <g v-if="liveTemp !== null && liveTemp !== undefined">
+          <line
+            :x1="tempToX(clampTemp(liveTemp))"
+            :y1="padding.top"
+            :x2="tempToX(clampTemp(liveTemp))"
+            :y2="padding.top + chartHeight"
+            stroke="#f59e0b"
+            stroke-width="2"
+            stroke-dasharray="6 3"
+            opacity="0.85"
+          />
+          <rect
+            :x="tempToX(clampTemp(liveTemp)) - 28"
+            :y="padding.top - 18"
+            width="56"
+            height="18"
+            rx="3"
+            fill="#f59e0b"
+          />
+          <text
+            :x="tempToX(clampTemp(liveTemp))"
+            :y="padding.top - 5"
+            text-anchor="middle"
+            fill="white"
+            font-size="10"
+            font-weight="600"
+          >
+            {{ liveTemp.toFixed(1) }}°C
+          </text>
+        </g>
       </svg>
     </div>
   </div>
@@ -163,14 +197,17 @@
 import { ref, computed } from "vue";
 
 const props = defineProps({
-  fanIndex: { type: Number, required: true },
+  fanBoard: { type: Number, required: true },
+  fanNumber: { type: Number, required: true },
   /** Array of { temp: number, speed: number } */
   points: { type: Array, required: true },
+  /** Current live temperature from bound sensors (null if none) */
+  liveTemp: { type: Number, default: null },
 });
 
-const svgWidth = 520;
-const svgHeight = 340;
-const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+const svgWidth = 640;
+const svgHeight = 420;
+const padding = { top: 24, right: 24, bottom: 44, left: 54 };
 const chartWidth = svgWidth - padding.left - padding.right;
 const chartHeight = svgHeight - padding.top - padding.bottom;
 
@@ -188,9 +225,28 @@ function speedToY(speed) {
   return padding.top + chartHeight - (speed / 100) * chartHeight;
 }
 
+function clampTemp(temp) {
+  return Math.max(0, Math.min(100, temp));
+}
+
 const polylinePoints = computed(() => {
   return sortedPoints.value
     .map((pt) => `${tempToX(pt.temp)},${speedToY(pt.speed)}`)
     .join(" ");
+});
+
+/** Step-function polyline: horizontal lines then vertical transitions */
+const stepPolylinePoints = computed(() => {
+  const pts = sortedPoints.value;
+  if (pts.length < 2) return "";
+  const coords = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (i > 0 && pts[i].speed !== pts[i - 1].speed) {
+      // Vertical step at the current point's x
+      coords.push(`${tempToX(pts[i].temp)},${speedToY(pts[i - 1].speed)}`);
+    }
+    coords.push(`${tempToX(pts[i].temp)},${speedToY(pts[i].speed)}`);
+  }
+  return coords.join(" ");
 });
 </script>

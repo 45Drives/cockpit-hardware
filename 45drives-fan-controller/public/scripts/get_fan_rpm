@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 """
-get_fan_rpm - Read the current RPM for a specific fan on a MAX31790 board.
+get_fan_rpm - Read the current RPM for a specific fan via hwmon sysfs.
 
 Usage:
     get_fan_rpm <fan_num> [board_num]
-    get_fan_rpm --all               (reads only physically-present fans)
-
-Arguments:
-    fan_num   : Fan channel number (1-6)
-    board_num : Board number (auto-discovered, default 1)
+    get_fan_rpm --all
 """
 
 import json
@@ -19,18 +15,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fan_common import (
     FANS_PER_BOARD,
     probe_boards,
-    get_board_addr,
-    get_fan_registers,
+    get_board_hwmon,
     is_fan_present,
-    read_tach_rpm,
+    read_fan_rpm,
 )
 
 
 def read_single_fan(fan_num, board_num):
-    """Read RPM for a single fan."""
-    dev_addr = get_board_addr(board_num)          # validates board exists
-    config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
-    present, rpm = is_fan_present(dev_addr, config_reg, tach_reg)
+    hwmon = get_board_hwmon(board_num)
+    present, rpm = is_fan_present(hwmon, fan_num)
     return {
         "board": board_num,
         "fan": fan_num,
@@ -41,26 +34,20 @@ def read_single_fan(fan_num, board_num):
 
 
 def read_all_fans():
-    """Read RPM for all physically-present fans on all discovered boards."""
     boards = probe_boards()
     fans = []
-    for board_num, dev_addr in sorted(boards.items()):
+    for board_num, hwmon in sorted(boards.items()):
         for fan_num in range(1, FANS_PER_BOARD + 1):
-            config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
-            present, rpm = is_fan_present(dev_addr, config_reg, tach_reg)
+            present, rpm = is_fan_present(hwmon, fan_num)
             if present:
-                fans.append({
-                    "board": board_num,
-                    "fan": fan_num,
-                    "rpm": rpm,
-                })
+                fans.append({"board": board_num, "fan": fan_num, "rpm": rpm})
     return {"fans": fans, "success": True}
 
 
 def main():
     if len(sys.argv) < 2:
         print(json.dumps({
-            "error_msg": "Usage: get_fan_rpm <fan_num> [board_num]  or  get_fan_rpm --all"
+            "error_msg": "Usage: get_fan_rpm <fan_num> [board_num]  or  --all"
         }), file=sys.stderr)
         sys.exit(1)
 
@@ -70,12 +57,10 @@ def main():
         else:
             fan_num = int(sys.argv[1])
             board_num = int(sys.argv[2]) if len(sys.argv) > 2 else 1
-
             if fan_num < 1 or fan_num > FANS_PER_BOARD:
-                print(json.dumps({"error_msg": f"fan_num must be 1-{FANS_PER_BOARD}, got {fan_num}"}),
+                print(json.dumps({"error_msg": f"fan_num must be 1-{FANS_PER_BOARD}"}),
                       file=sys.stderr)
                 sys.exit(1)
-
             output = read_single_fan(fan_num, board_num)
 
         print(json.dumps(output, indent=4))

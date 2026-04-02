@@ -212,3 +212,42 @@ export async function applyFanProfile(commands) {
   const payload = JSON.stringify({ commands });
   return cockpitSpawn([scriptPath("apply_fan_profile")], payload);
 }
+
+/* ─────────────────────────────────────────────
+ *  Temperature Sensor Detection
+ * ───────────────────────────────────────────── */
+
+/**
+ * Detect all temperature sensors from hwmon sysfs.
+ *
+ * @returns {Promise<{ sensors: Array, count: number }>}
+ */
+export async function detectSensors() {
+  await resolveScriptBase();
+  return cockpitSpawn([scriptPath("detect_sensors")]);
+}
+
+/* ─────────────────────────────────────────────
+ *  Temperature Sensor Readings
+ * ───────────────────────────────────────────── */
+
+/**
+ * Read the current temperature for all sensors.
+ *
+ * @returns {Promise<{ sensors: Array<{ id: string, value: number }>, success: boolean }>}
+ */
+export async function getAllSensorTemps() {
+  await resolveScriptBase();
+  return cockpitSpawn([scriptPath("get_sensor_temps")]);
+}
+
+/**
+ * Read the current temperature for a single sensor.
+ *
+ * @param {string} sensorId  - Sensor identifier (e.g. "hwmon0_temp1").
+ * @returns {Promise<{ id: string, value: number, success: boolean }>}
+ */
+export async function getSensorTemp(sensorId) {
+  await resolveScriptBase();
+  return cockpitSpawn([scriptPath("get_sensor_temps"), sensorId]);
+}

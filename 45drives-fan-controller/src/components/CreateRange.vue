@@ -4,10 +4,10 @@
   >
     <!-- Toggle header -->
     <button
-      class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-750 rounded-lg transition-colors"
+      class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-neutral-700 rounded-lg transition-colors"
       @click="open = !open"
     >
-      <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+      <span class="text-sm font-bold text-gray-900 dark:text-gray-100">
         Create Range
       </span>
       <ChevronDownIcon
@@ -21,8 +21,8 @@
       <div class="grid grid-cols-3 gap-2">
         <!-- Temperature Low -->
         <div class="flex flex-col gap-0.5">
-          <label class="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">
-            Temp Low (°C)
+          <label class="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+            Temperature Low (°C)
           </label>
           <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-md overflow-hidden">
             <input
@@ -30,7 +30,7 @@
               v-model.number="tempLow"
               min="0"
               max="100"
-              class="w-full px-1 py-1.5 text-sm text-center bg-white dark:bg-neutral-800 text-gray-800 dark:text-gray-100 border-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              class="w-full px-1 py-1.5 text-sm font-medium text-center bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 border-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <div class="flex flex-col border-l border-gray-300 dark:border-neutral-600">
               <button
@@ -51,8 +51,8 @@
 
         <!-- Temperature High -->
         <div class="flex flex-col gap-0.5">
-          <label class="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">
-            Temp High (°C)
+          <label class="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+            Temperature High (°C)
           </label>
           <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-md overflow-hidden">
             <input
@@ -60,7 +60,7 @@
               v-model.number="tempHigh"
               min="0"
               max="100"
-              class="w-full px-1 py-1.5 text-sm text-center bg-white dark:bg-neutral-800 text-gray-800 dark:text-gray-100 border-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              class="w-full px-1 py-1.5 text-sm font-medium text-center bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 border-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <div class="flex flex-col border-l border-gray-300 dark:border-neutral-600">
               <button
@@ -81,7 +81,7 @@
 
         <!-- Speed RPM -->
         <div class="flex flex-col gap-0.5">
-          <label class="text-[10px] font-medium text-gray-500 dark:text-gray-400 truncate">
+          <label class="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
             Speed (%)
           </label>
           <div class="flex items-center border border-gray-300 dark:border-neutral-600 rounded-md overflow-hidden">
@@ -90,7 +90,7 @@
               v-model.number="speedRpm"
               min="0"
               max="100"
-              class="w-full px-1 py-1.5 text-sm text-center bg-white dark:bg-neutral-800 text-gray-800 dark:text-gray-100 border-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              class="w-full px-1 py-1.5 text-sm font-medium text-center bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 border-none focus:ring-0 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <div class="flex flex-col border-l border-gray-300 dark:border-neutral-600">
               <button
@@ -113,7 +113,7 @@
       <!-- Validation message -->
       <p
         v-if="validationError"
-        class="text-xs text-red-600 dark:text-red-400"
+        class="text-xs font-medium text-red-600 dark:text-red-400"
       >
         {{ validationError }}
       </p>

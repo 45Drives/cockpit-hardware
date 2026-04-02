@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""
+detect_sensors - Discover all temperature sensors via hwmon sysfs.
+
+Scans /sys/class/hwmon for temp*_input files, skipping the MAX31790
+fan controller (which has no temperature sensors).
+
+Output (JSON to stdout):
+{
+    "sensors": [
+        {
+            "id": "hwmon0_temp1",
+            "chip": "k10temp",
+            "hwmon": "hwmon0",
+            "label": "Tctl",
+            "value": 61.1
+        },
+        ...
+    ],
+    "count": 10
+}
+"""
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import discover_temp_sensors, _discover_gpu_sensors, _discover_smartctl_drives, _discover_storcli_hba
+
+
+def main():
+    try:
+        sensors = discover_temp_sensors()
+        # Add GPU sensors (nvidia-smi)
+        sensors.extend(_discover_gpu_sensors())
+        # Add HBA sensors (storcli)
+        sensors.extend(_discover_storcli_hba())
+        # Add SAS/NVMe drives not covered by drivetemp (smartctl)
+        sensors.extend(_discover_smartctl_drives())
+
+        # Trim internal fields for the frontend
+        output_sensors = []
+        for s in sensors:
+            output_sensors.append({
+                "id":          s["id"],
+                "chip":        s["chip"],
+                "hwmon":       s["hwmon"],
+                "label":       s["label"],
+                "value":       s["value"],
+                "category":    s["category"],
+                "device_type": s["device_type"],
+                "model":       s["model"],
+            })
+        result = {
+            "sensors": output_sensors,
+            "count":   len(output_sensors),
+        }
+        print(json.dumps(result, indent=4))
+    except Exception as e:
+        error = {"error_msg": str(e)}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

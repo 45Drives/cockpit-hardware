@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""
+get_sensor_temps - Read current temperatures for one or all sensors.
+
+Usage:
+  get_sensor_temps              # read all sensors
+  get_sensor_temps <sensor_id>  # read one sensor (e.g. "hwmon0_temp1")
+
+Output (JSON to stdout):
+  All sensors:
+    { "sensors": [ { "id": "...", "value": 61.1 }, ... ], "success": true }
+
+  Single sensor:
+    { "id": "hwmon0_temp1", "value": 61.1, "success": true }
+"""
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import discover_temp_sensors, read_sensor_temp, _discover_gpu_sensors, _discover_smartctl_drives, _discover_storcli_hba
+
+
+def main():
+    try:
+        if len(sys.argv) >= 2:
+            sensor_id = sys.argv[1]
+            value = read_sensor_temp(sensor_id)
+            result = {"id": sensor_id, "value": value, "success": True}
+        else:
+            sensors = discover_temp_sensors()
+            sensors.extend(_discover_gpu_sensors())
+            sensors.extend(_discover_storcli_hba())
+            sensors.extend(_discover_smartctl_drives())
+            result = {
+                "sensors": [{"id": s["id"], "value": s["value"]} for s in sensors],
+                "success": True,
+            }
+        print(json.dumps(result, indent=4))
+    except Exception as e:
+        error = {"error_msg": str(e), "success": False}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

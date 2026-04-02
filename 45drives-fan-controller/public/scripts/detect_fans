@@ -2,15 +2,14 @@
 """
 detect_fans - Auto-detect all real fans across all MAX31790 boards.
 
-Boards are discovered by probing known I2C addresses.
-Fans are detected by reading tach counts — empty channels (near-max tach
-values) and sub-threshold RPM readings are filtered out automatically.
+Uses the hwmon sysfs interface (fan<N>_fault = 0 means fan is present).
 
 Output (JSON to stdout):
 {
+    "transport": "hwmon",
     "boards": [1],
     "fans": [
-        { "board": 1, "fan": 1, "name": "Board1_Fan1", "rpm": 5100 },
+        { "board": 1, "fan": 2, "name": "Board1_Fan2", "rpm": 6597 },
         ...
     ],
     "count": 2
@@ -25,7 +24,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fan_common import (
     FANS_PER_BOARD,
     probe_boards,
-    get_fan_registers,
     is_fan_present,
     get_transport,
 )
@@ -33,13 +31,12 @@ from fan_common import (
 
 def detect_all_fans():
     """Scan every discovered board, every channel, return only real fans."""
-    boards = probe_boards()
+    boards = probe_boards()   # { board_num: hwmon_path }
     fans = []
 
-    for board_num, dev_addr in sorted(boards.items()):
+    for board_num, hwmon_path in sorted(boards.items()):
         for fan_num in range(1, FANS_PER_BOARD + 1):
-            config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
-            present, rpm = is_fan_present(dev_addr, config_reg, tach_reg)
+            present, rpm = is_fan_present(hwmon_path, fan_num)
             if present:
                 fans.append({
                     "board": board_num,
