@@ -6,7 +6,8 @@ Wants=multi-user.target
 [Service]
 Type=simple
 ExecStart=/usr/share/cockpit/45drives-fan-controller/scripts/45d-fancontrollerd
-Restart=unless-stopped
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
@@ -14,7 +15,7 @@ SyslogIdentifier=45d-fancontroller
 
 # Hardening
 ProtectSystem=strict
-ReadWritePaths=/sys/class/hwmon /sys/bus/i2c/devices
+ReadWritePaths=/sys/class/hwmon /sys/bus/i2c/devices /etc/45drives/fan-controller /dev/ipmi0
 ProtectHome=yes
 NoNewPrivileges=no
 

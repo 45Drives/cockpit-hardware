@@ -34,10 +34,25 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-system
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
+%dir /usr/share/cockpit/45drives-fan-controller
+/usr/lib/systemd/system/45d-fancontroller.service
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
 /usr/share/cockpit/45drives-system/*
+/usr/share/cockpit/45drives-fan-controller/*
+
+%post
+systemctl daemon-reload
+systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
+
+%preun
+if [ $1 -eq 0 ]; then
+    systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
+fi
+
+%postun
+systemctl daemon-reload
 
 %changelog
 * Mon May 09 2022 Mark Hooper <mhooper@45drives.com> 2.1.0-1

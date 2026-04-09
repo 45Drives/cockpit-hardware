@@ -4,5 +4,12 @@ if [ "$1" == "remove" ] || [ "$1" == "purge" ]; then
 	rm -rf /usr/share/cockpit/45drives-disks
 	rm -rf /usr/share/cockpit/45drives-motherboard
 	rm -rf /usr/share/cockpit/45drives-system
+	rm -rf /usr/share/cockpit/45drives-fan-controller
 	rm -f /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
+	rm -f /usr/lib/systemd/system/45d-fancontroller.service
+	systemctl daemon-reload
+fi
+
+if [ "$1" == "purge" ]; then
+	rm -rf /etc/45drives/fan-controller
 fi

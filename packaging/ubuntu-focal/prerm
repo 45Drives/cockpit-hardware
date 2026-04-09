@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if [ "$1" == "remove" ] || [ "$1" == "purge" ]; then
+	systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
+fi

@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-6">
-    <!-- ───── Back + Save ───── -->
+    <!-- ───── Top Bar: Back · Profile Name · Save ───── -->
     <div class="flex items-center gap-3">
       <button
         class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
@@ -9,16 +9,53 @@
         <ArrowLeftIcon class="w-4 h-4" />
         Back
       </button>
+
+      <div class="flex-1" />
+
+      <!-- Editable profile name -->
+      <div class="flex items-center gap-2">
+        <template v-if="editingName">
+          <input
+            ref="nameInputRef"
+            v-model="profileNameDraft"
+            class="text-sm font-bold text-gray-900 dark:text-gray-100 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-md px-2 py-1 focus:border-red-500 focus:ring-red-500 w-48"
+            @keydown.enter="confirmNameEdit"
+            @keydown.escape="cancelNameEdit"
+            @blur="confirmNameEdit"
+          />
+        </template>
+        <template v-else>
+          <h2
+            class="text-sm font-bold text-gray-900 dark:text-gray-100 cursor-pointer hover:text-red-700 dark:hover:text-red-400 transition-colors"
+            @click="startNameEdit"
+            title="Click to rename"
+          >
+            {{ profileName }}
+          </h2>
+          <button
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            @click="startNameEdit"
+            title="Rename profile"
+          >
+            <PencilIcon class="w-3.5 h-3.5" />
+          </button>
+        </template>
+      </div>
+
+      <div class="flex-1" />
+
       <button
-        class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-red-700 hover:bg-red-800 text-white transition-colors"
+        class="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+        :class="saving
+          ? 'bg-gray-400 dark:bg-neutral-600 text-white cursor-wait'
+          : 'bg-red-700 hover:bg-red-800 text-white'"
+        :disabled="saving"
         @click="saveProfile"
       >
-        Save
+        <span v-if="saving">Saving…</span>
+        <span v-else>Save Profile</span>
       </button>
-      <span v-if="saveMsg" class="text-xs font-medium text-gray-900 dark:text-gray-100">{{ saveMsg }}</span>
-      <h2 class="text-sm font-bold text-gray-900 dark:text-gray-100 ml-auto">
-        {{ profileName }}
-      </h2>
+      <span v-if="saveMsg" class="text-xs font-medium" :class="saveMsgOk ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">{{ saveMsg }}</span>
     </div>
 
     <!-- ───── 1. Fan Detection / Confirmation Card ───── -->
@@ -498,18 +535,6 @@
             <p v-if="applyMsg" class="text-sm font-medium" :class="applyMsgOk ? 'text-gray-900 dark:text-gray-100' : 'text-red-600 dark:text-red-400'">
               {{ applyMsg }}
             </p>
-
-            <!-- Save Profile -->
-            <div class="flex items-center gap-2">
-              <button
-                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md bg-red-700 hover:bg-red-800 text-white transition-colors"
-                @click="saveProfile"
-              >
-                
-                Save
-              </button>
-              <span v-if="saveMsg" class="text-xs font-medium text-gray-900 dark:text-gray-100">{{ saveMsg }}</span>
-            </div>
           </div>
 
           <!-- Right column: Graph -->
@@ -527,8 +552,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
-import { CheckCircleIcon, TrashIcon, ChevronDownIcon, ArrowLeftIcon } from "@heroicons/vue/solid";
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { CheckCircleIcon, TrashIcon, ChevronDownIcon, ArrowLeftIcon, PencilIcon } from "@heroicons/vue/solid";
 import FanGraph from "./FanGraph.vue";
 import CreateRange from "./CreateRange.vue";
 import logoDark from "../assets/45drives-logo-dark.svg";
@@ -545,15 +570,20 @@ import {
 const props = defineProps({
   /** Existing profile data to restore (null = new profile). */
   profile: { type: Object, default: null },
+  /** Current profile ID from parent (null = new, unsaved). */
+  profileId: { type: [Number, null], default: null },
 });
 
-const emit = defineEmits(["go-back", "save"]);
+const emit = defineEmits(["go-back", "save", "update:profileId"]);
 
 /* ── Constants ── */
 const AUTO_POLL_INTERVAL = 5000; // ms
 
 /* ── Reactive state ── */
 const profileName = ref("New Profile");
+const editingName = ref(false);
+const profileNameDraft = ref("");
+const nameInputRef = ref(null);
 const detecting = ref(false);
 const detected = ref(false);
 const detectedCount = ref(0);
@@ -569,6 +599,7 @@ const refreshing = ref(false);
 const refreshingSensors = ref(false);
 const applyMsg = ref("");
 const applyMsgOk = ref(false);
+const saving = ref(false);
 let rangeIdCounter = 0;
 let applyMsgTimer = null;
 
@@ -668,13 +699,48 @@ function collectProfileState() {
 
 /* ── Save profile without leaving ── */
 const saveMsg = ref("");
+const saveMsgOk = ref(true);
 let saveMsgTimer = null;
 
-function saveProfile() {
-  emit("save", collectProfileState());
-  saveMsg.value = "Saved Successfully";
+async function saveProfile() {
+  saving.value = true;
+  saveMsg.value = "";
+  try {
+    const state = collectProfileState();
+    emit("save", state);
+    saveMsg.value = "✓ Saved";
+    saveMsgOk.value = true;
+  } catch (err) {
+    saveMsg.value = "✗ Save failed";
+    saveMsgOk.value = false;
+  }
+  saving.value = false;
   if (saveMsgTimer) clearTimeout(saveMsgTimer);
-  saveMsgTimer = setTimeout(() => { saveMsg.value = ""; }, 2000);
+  saveMsgTimer = setTimeout(() => { saveMsg.value = ""; }, 3000);
+}
+
+/* ── Profile rename ── */
+function startNameEdit() {
+  profileNameDraft.value = profileName.value;
+  editingName.value = true;
+  nextTick(() => {
+    if (nameInputRef.value) {
+      nameInputRef.value.focus();
+      nameInputRef.value.select();
+    }
+  });
+}
+
+function confirmNameEdit() {
+  const trimmed = profileNameDraft.value.trim();
+  if (trimmed) {
+    profileName.value = trimmed;
+  }
+  editingName.value = false;
+}
+
+function cancelNameEdit() {
+  editingName.value = false;
 }
 
 /* ── Go back: navigate without saving ── */
@@ -688,15 +754,6 @@ async function goBack() {
   }
   stopRPMPolling();
   stopSensorPolling();
-
-  // Reset all detected fans to the default 50% duty
-  for (const fan of detectedFans.value) {
-    try {
-      await setFanDutyAPI(fan.fan, 50, fan.board);
-    } catch {
-      // best-effort
-    }
-  }
 
   emit("go-back");
 }
@@ -731,7 +788,7 @@ const fansByBoard = computed(() => {
 
 const currentPoints = computed(() => {
   if (!selectedFanKey.value) return [];
-  return fanPoints.value[selectedFanKey.value] ?? [{ temp: 0, speed: 50, isDefault: true }, { temp: 100, speed: 50, isDefault: true }];
+  return fanPoints.value[selectedFanKey.value] ?? [{ temp: 0, speed: 100, isDefault: true }, { temp: 100, speed: 100, isDefault: true }];
 });
 
 const currentRanges = computed(() => {
@@ -1015,17 +1072,9 @@ async function detectAll() {
     detectedCount.value = result.count || 0;
     transport.value = result.transport || "unknown";
   } catch (err) {
-    detectError.value = `Fan detection error: ${err.message ?? err}. Using mock data.`;
-    transport.value = "mock";
-    const mockCount = Math.floor(Math.random() * 6) + 1;
-    detectedFans.value = Array.from({ length: mockCount }, (_, i) => ({
-      board: i < 3 ? 1 : 2,
-      fan: (i % 6) + 1,
-      name: `MOCK_Board${i < 3 ? 1 : 2}_Fan${(i % 6) + 1}`,
-      rpm: Math.floor(Math.random() * 4000) + 1000,
-      responding: true,
-    }));
-    detectedCount.value = mockCount;
+    detectError.value = `Fan detection error: ${err.message ?? err}`;
+    detectedFans.value = [];
+    detectedCount.value = 0;
   }
 
   // Detect sensors
@@ -1048,21 +1097,12 @@ async function detectAll() {
   // Initialise default point & RPM cache for each fan
   for (const fan of detectedFans.value) {
     if (!fanPoints.value[fan.name]) {
-      fanPoints.value[fan.name] = [{ temp: 0, speed: 50, isDefault: true }, { temp: 100, speed: 50, isDefault: true }];
+      fanPoints.value[fan.name] = [{ temp: 0, speed: 100, isDefault: true }, { temp: 100, speed: 100, isDefault: true }];
     }
     fanRPMs.value[fan.name] = fan.rpm;
     // Initialize empty sensor bindings if not already set
     if (!fanSensorBindings.value[fan.name]) {
       fanSensorBindings.value[fan.name] = [];
-    }
-  }
-
-  // Set all detected fans to the default 50 % duty
-  for (const fan of detectedFans.value) {
-    try {
-      await setFanDutyAPI(fan.fan, 50, fan.board);
-    } catch {
-      // best-effort; don't block detection on a single failure
     }
   }
 
@@ -1213,11 +1253,7 @@ function toggleAutoControl() {
     pollBoundSensorTemps();
   } else {
     activeRangeId.value = null;
-    // Reset fan to default 50 % duty when deactivating
-    const fan = selectedFan.value;
-    if (fan) {
-      setFanDutyAPI(fan.fan, 50, fan.board).catch(() => {});
-    }
+    // Keep fans at their current speed — don't reset
   }
 }
 
@@ -1393,14 +1429,6 @@ function onDeleteRange(rangeIdx) {
   newApplied.delete(range.id);
   appliedRangeIds.value = newApplied;
   fanRanges.value[key] = ranges.filter((_, i) => i !== rangeIdx);
-
-  // If no ranges remain, reset fan to default 50 % duty
-  if ((fanRanges.value[key] ?? []).length === 0) {
-    const fan = selectedFan.value;
-    if (fan) {
-      setFanDutyAPI(fan.fan, 50, fan.board).catch(() => {});
-    }
-  }
 }
 </script>
 

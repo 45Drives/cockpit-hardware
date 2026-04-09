@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-set_fan_duty - Set PWM duty cycle for a specific fan via hwmon sysfs.
+set_fan_duty - Set PWM duty cycle for a specific fan.
+
+Enables the tachometer, sets duty via both I2C and hwmon,
+and saves the speed persistently so it survives reboots.
 
 Usage:
     set_fan_duty <fan_num> <duty_percent> [board_num]
 
-duty_percent: 0-100 (mapped to hwmon 0-255)
+duty_percent: 0-100
 """
 
 import json
@@ -15,8 +18,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fan_common import (
     FANS_PER_BOARD,
+    BOARDS,
     get_board_hwmon,
     set_pwm_duty,
+    set_pwm_duty_i2c,
+    get_board_addr,
+    save_fan_speeds,
+    load_fan_speeds,
 )
 
 
@@ -42,14 +50,36 @@ def main():
         sys.exit(1)
 
     try:
-        hwmon = get_board_hwmon(board_num)
-        pwm_raw = set_pwm_duty(hwmon, fan_num, duty_percent)
+        # Set via I2C (enables tachometer + sets duty reliably)
+        dev_addr = get_board_addr(board_num)
+        set_pwm_duty_i2c(dev_addr, fan_num, duty_percent)
+
+        # Also set via hwmon for consistency
+        try:
+            hwmon = get_board_hwmon(board_num)
+            pwm_raw = set_pwm_duty(hwmon, fan_num, duty_percent)
+        except Exception:
+            pwm_raw = int(round(duty_percent * 255 / 100))
+
+        # Save speed persistently
+        speeds = load_fan_speeds()
+        # Update or add entry for this fan
+        updated = False
+        for entry in speeds:
+            if entry.get("board") == board_num and entry.get("fan") == fan_num:
+                entry["duty"] = int(duty_percent)
+                updated = True
+                break
+        if not updated:
+            speeds.append({"board": board_num, "fan": fan_num, "duty": int(duty_percent)})
+        save_fan_speeds(speeds)
 
         output = {
             "board": board_num,
             "fan": fan_num,
             "duty_percent": duty_percent,
             "pwm_raw": pwm_raw,
+            "saved": True,
             "success": True,
         }
         print(json.dumps(output, indent=4))

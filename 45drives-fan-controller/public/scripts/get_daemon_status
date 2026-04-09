@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+get_daemon_status - Check whether the fan controller daemon systemd service is running.
+
+Output (JSON to stdout):
+{
+  "running": true,
+  "enabled": true,
+  "activeState": "active",
+  "subState": "running",
+  "success": true
+}
+"""
+
+import json
+import subprocess
+import sys
+
+SERVICE_NAME = "45d-fancontroller.service"
+
+
+def main():
+    try:
+        result = {
+            "running": False,
+            "enabled": False,
+            "activeState": "unknown",
+            "subState": "unknown",
+            "success": True,
+        }
+
+        # Check if service is active
+        try:
+            r = subprocess.run(
+                ["systemctl", "is-active", SERVICE_NAME],
+                capture_output=True, text=True, timeout=5,
+            )
+            state = r.stdout.strip()
+            result["activeState"] = state
+            result["running"] = (state == "active")
+        except Exception:
+            pass
+
+        # Check sub-state
+        try:
+            r = subprocess.run(
+                ["systemctl", "show", SERVICE_NAME, "--property=SubState", "--value"],
+                capture_output=True, text=True, timeout=5,
+            )
+            result["subState"] = r.stdout.strip()
+        except Exception:
+            pass
+
+        # Check if service is enabled
+        try:
+            r = subprocess.run(
+                ["systemctl", "is-enabled", SERVICE_NAME],
+                capture_output=True, text=True, timeout=5,
+            )
+            result["enabled"] = (r.stdout.strip() == "enabled")
+        except Exception:
+            pass
+
+        print(json.dumps(result, indent=2))
+
+    except Exception as e:
+        error = {"error_msg": str(e), "success": False}
+        print(json.dumps(error), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

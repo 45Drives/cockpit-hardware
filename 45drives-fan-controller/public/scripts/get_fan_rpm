@@ -18,10 +18,20 @@ from fan_common import (
     get_board_hwmon,
     is_fan_present,
     read_fan_rpm,
+    enable_all_tachometers,
 )
 
 
+def _ensure_tach():
+    """Enable tachometers once per invocation."""
+    try:
+        enable_all_tachometers()
+    except Exception:
+        pass
+
+
 def read_single_fan(fan_num, board_num):
+    _ensure_tach()
     hwmon = get_board_hwmon(board_num)
     present, rpm = is_fan_present(hwmon, fan_num)
     return {
@@ -34,6 +44,7 @@ def read_single_fan(fan_num, board_num):
 
 
 def read_all_fans():
+    _ensure_tach()
     boards = probe_boards()
     fans = []
     for board_num, hwmon in sorted(boards.items()):

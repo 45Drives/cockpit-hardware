@@ -4,7 +4,13 @@ import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import FanControllerPanel from "./components/FanControllerPanel.vue";
 import ProfileList from "./components/ProfileList.vue";
-import { ref, watch, onMounted } from "vue";
+import { ref, onMounted } from "vue";
+import {
+  loadProfiles as loadProfilesAPI,
+  saveProfiles as saveProfilesAPI,
+  setActiveProfile as setActiveProfileAPI,
+  getDaemonStatus as getDaemonStatusAPI,
+} from "./api/fanControllerAPI.js";
 
 const adminCheck = ref(false);
 const adminFlag = ref(false);
@@ -22,23 +28,51 @@ const rootCheck = async () => {
   });
 };
 
-/* ── localStorage helpers ── */
-const STORAGE_KEY = "45drives-fan-profiles";
+/* ── File-backed profile storage ──
+ * Profiles are persisted at /etc/45drives/fan-controller/profiles.json
+ * via backend scripts so the daemon and UI share the same data.
+ */
+const activeProfileId = ref(null);  // ID of profile the daemon is running
+const daemonRunning = ref(false);
+const daemonEnabled = ref(false);
+const loading = ref(true);          // True while initial load is in flight
 
-function saveProfilesToStorage() {
+async function saveProfilesToStorage() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles.value));
-  } catch { /* quota exceeded — silently skip */ }
+    const config = {
+      version: 1,
+      activeProfileId: activeProfileId.value,
+      profiles: JSON.parse(JSON.stringify(profiles.value)),
+    };
+    await saveProfilesAPI(config);
+  } catch (err) {
+    console.error("Failed to save profiles:", err);
+  }
 }
 
-function loadProfilesFromStorage() {
+async function loadProfilesFromStorage() {
+  loading.value = true;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      profiles.value = JSON.parse(raw);
+    const result = await loadProfilesAPI();
+    if (result.success !== false) {
+      profiles.value = result.profiles || [];
+      activeProfileId.value = result.activeProfileId ?? null;
     }
+  } catch (err) {
+    console.error("Failed to load profiles:", err);
+  }
+  loading.value = false;
+}
 
-  } catch { /* corrupted data — start fresh */ }
+async function refreshDaemonStatus() {
+  try {
+    const status = await getDaemonStatusAPI();
+    daemonRunning.value = status.running || false;
+    daemonEnabled.value = status.enabled || false;
+  } catch {
+    daemonRunning.value = false;
+    daemonEnabled.value = false;
+  }
 }
 
 /* ── Profile management ── */
@@ -46,10 +80,12 @@ const currentView = ref("list");     // "list" | "editor"
 const profiles = ref([]);            // Array of saved profile objects
 const editingProfileId = ref(null);  // ID of profile being edited (null = new)
 const editingProfile = ref(null);    // Profile data passed to editor
+const editorSessionKey = ref(0);     // Incremented to force remount only on new editor sessions
 
 function onNewProfile() {
   editingProfileId.value = null;
   editingProfile.value = null;
+  editorSessionKey.value++;
   currentView.value = "editor";
 }
 
@@ -58,10 +94,11 @@ function onOpenProfile(id) {
   if (!found) return;
   editingProfileId.value = id;
   editingProfile.value = { ...found };
+  editorSessionKey.value++;
   currentView.value = "editor";
 }
 
-function upsertProfile(profileState) {
+async function upsertProfile(profileState) {
   const now = new Date().toISOString();
 
   if (editingProfileId.value !== null) {
@@ -90,31 +127,69 @@ function upsertProfile(profileState) {
       createdAt: now,
       updatedAt: now,
     });
-    // Track the newly created ID so subsequent saves update it
+    // Track the newly created ID so subsequent saves update it (no remount)
     editingProfileId.value = id;
   }
 
-  saveProfilesToStorage();
+  await saveProfilesToStorage();
+  return editingProfileId.value;
 }
 
-function onSave(profileState) {
-  upsertProfile(profileState);
+async function onSave(profileState) {
+  const id = await upsertProfile(profileState);
+  return id;
 }
 
-function onGoBack() {
+async function onGoBack() {
   editingProfileId.value = null;
   editingProfile.value = null;
   currentView.value = "list";
+  // Refresh daemon status when returning to list
+  await refreshDaemonStatus();
 }
 
-function onDeleteProfile(id) {
+async function onDeleteProfile(id) {
+  // If the deleted profile was active, deactivate it
+  if (activeProfileId.value === id) {
+    activeProfileId.value = null;
+    try {
+      await setActiveProfileAPI(null);
+    } catch {
+      // best-effort
+    }
+  }
   profiles.value = profiles.value.filter((p) => p.id !== id);
-  saveProfilesToStorage();
+  await saveProfilesToStorage();
 }
 
-onMounted(() => {
-  loadProfilesFromStorage();
+async function onActivateProfile(id) {
+  try {
+    const result = await setActiveProfileAPI(id);
+    if (result.success) {
+      activeProfileId.value = id;
+      daemonRunning.value = result.daemonRunning || false;
+    }
+  } catch (err) {
+    console.error("Failed to activate profile:", err);
+  }
+}
+
+async function onDeactivateProfile() {
+  try {
+    const result = await setActiveProfileAPI(null);
+    if (result.success) {
+      activeProfileId.value = null;
+      daemonRunning.value = false;
+    }
+  } catch (err) {
+    console.error("Failed to deactivate profile:", err);
+  }
+}
+
+onMounted(async () => {
   rootCheck();
+  await loadProfilesFromStorage();
+  await refreshDaemonStatus();
 });
 </script>
 
@@ -126,17 +201,24 @@ onMounted(() => {
       <ProfileList
         v-if="currentView === 'list'"
         :profiles="profiles"
+        :activeProfileId="activeProfileId"
+        :daemonRunning="daemonRunning"
+        :loading="loading"
         @new-profile="onNewProfile"
         @open-profile="onOpenProfile"
         @delete-profile="onDeleteProfile"
+        @activate-profile="onActivateProfile"
+        @deactivate-profile="onDeactivateProfile"
       />
       <!-- Profile editor (FanControllerPanel) -->
       <FanControllerPanel
         v-else
-        :key="editingProfileId ?? 'new'"
+        :key="editorSessionKey"
         :profile="editingProfile"
+        :profileId="editingProfileId"
         @go-back="onGoBack"
         @save="onSave"
+        @update:profileId="(id) => editingProfileId.value = id"
       />
     </div>
     <div

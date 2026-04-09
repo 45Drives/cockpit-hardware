@@ -20,6 +20,7 @@ Boards and fans are auto-discovered -- nothing is hardcoded:
   - Fans are detected by checking fan<N>_fault (0 = real fan present).
 """
 
+import json
 import os
 import re
 import subprocess
@@ -34,6 +35,24 @@ KNOWN_BOARD_ADDRS = {
 }
 
 FANS_PER_BOARD = 6
+
+# --- Board 8-bit I2C addresses for ipmitool commands ---
+BOARDS = {
+    1: 0x40,
+    2: 0x48,
+}
+
+# --- MAX31790 register map ---
+_FAN_CONFIG_BASE   = 0x02   # Fan Configuration (0x02-0x07)
+_FAN_DYNAMICS_BASE = 0x08   # Fan Dynamics (0x08-0x0D)
+_TACH_COUNT_BASE   = 0x18   # Tach Count (0x18-0x22, 2 bytes each)
+_PWM_TARGET_BASE   = 0x40   # PWM Duty Target (0x40-0x4A, 2 bytes each)
+_TACH_ENABLE_BIT   = 0x08   # Bit 3 in config register
+_PWMOUT_SCALE      = 511    # MAX31790 PWM scale (0-511)
+_SR_TABLE = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 32, 7: 32}
+
+# --- Persistent fan speed configuration ---
+SPEED_CONFIG_PATH = "/etc/45drives/fan-controller/fan-speeds.json"
 
 # --- Path to pre-built ipmb-bus kernel module ---
 _IPMB_MODULE_PATH = os.path.join(
@@ -298,6 +317,200 @@ def set_pwm_duty(hwmon_path, fan_num, duty_percent):
 
     _write_sysfs(pwm_path, pwm_raw)
     return pwm_raw
+
+
+# ====================================================
+#  I2C direct access via ipmitool (MAX31790 register-level)
+# ====================================================
+# These functions bypass the hwmon sysfs interface and talk directly
+# to the MAX31790 chip via ipmitool.  This is necessary for:
+#   - Enabling the tachometer (the hwmon driver does NOT do this)
+#   - Reliable fan detection (tach must be enabled for fault/RPM)
+#   - Setting PWM when hwmon is unavailable
+
+
+def get_board_addr(board_num):
+    """Return the 8-bit I2C address for a board number (for ipmitool)."""
+    if board_num not in BOARDS:
+        raise ValueError(
+            f"Unknown board: {board_num}. Known: {sorted(BOARDS.keys())}"
+        )
+    return BOARDS[board_num]
+
+
+def get_fan_registers(fan_num):
+    """
+    Return (config_reg, tach_reg, pwm_reg) for a fan channel (1-6).
+    """
+    if fan_num < 1 or fan_num > FANS_PER_BOARD:
+        raise ValueError(f"fan_num must be 1-{FANS_PER_BOARD}")
+    idx = fan_num - 1
+    return (
+        _FAN_CONFIG_BASE + idx,
+        _TACH_COUNT_BASE + (idx * 2),
+        _PWM_TARGET_BASE + (idx * 2),
+    )
+
+
+def _ipmitool_i2c_read(addr_8bit, num_bytes, register):
+    """Read bytes from MAX31790 via ipmitool I2C master read."""
+    cmd = [
+        "ipmitool", "i2c",
+        f"0x{addr_8bit:02x}" if isinstance(addr_8bit, int) else str(addr_8bit),
+        str(num_bytes),
+        f"0x{register:02x}" if isinstance(register, int) else str(register),
+    ]
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        raise RuntimeError(f"ipmitool read failed: {r.stderr.strip()}")
+    return r.stdout.strip()
+
+
+def _ipmitool_i2c_write(addr_8bit, register, *data_bytes):
+    """Write bytes to MAX31790 via ipmitool I2C master write."""
+    cmd = [
+        "ipmitool", "i2c",
+        f"0x{addr_8bit:02x}" if isinstance(addr_8bit, int) else str(addr_8bit),
+        "0",
+        f"0x{register:02x}" if isinstance(register, int) else str(register),
+    ]
+    cmd.extend(str(b) for b in data_bytes)
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        raise RuntimeError(f"ipmitool write failed: {r.stderr.strip()}")
+    return r.stdout.strip()
+
+
+def check_and_enable_tach(dev_addr, config_reg):
+    """
+    Enable the tachometer on a fan channel via I2C.
+    Returns True if the channel is responding, False otherwise.
+    """
+    try:
+        output = _ipmitool_i2c_read(dev_addr, 1, config_reg)
+        hex_str = output.split('\n')[0].strip()
+        if not hex_str:
+            return False
+        config_val = int(hex_str, 16)
+        if not (config_val & _TACH_ENABLE_BIT):
+            new_val = config_val | _TACH_ENABLE_BIT
+            _ipmitool_i2c_write(dev_addr, config_reg, new_val)
+        return True
+    except Exception:
+        return False
+
+
+def _read_speed_range(dev_addr, fan_num):
+    """Read the speed range multiplier from FAN_DYNAMICS register."""
+    dyn_reg = _FAN_DYNAMICS_BASE + (fan_num - 1)
+    try:
+        output = _ipmitool_i2c_read(dev_addr, 1, dyn_reg)
+        hex_str = output.split('\n')[0].strip()
+        dyn_val = int(hex_str, 16)
+        sr_bits = (dyn_val >> 5) & 0x07
+        return _SR_TABLE.get(sr_bits, 1)
+    except Exception:
+        return 1
+
+
+def read_tach_rpm(dev_addr, tach_reg, fan_num=None):
+    """
+    Read RPM from a 2-byte tachometer count register via I2C.
+    Returns int RPM or 0 if fan is stopped/missing.
+    """
+    try:
+        output = _ipmitool_i2c_read(dev_addr, 2, tach_reg)
+        parts = output.split('\n')[0].strip().split()
+        if len(parts) < 2:
+            return 0
+        byte1 = int(parts[0].replace("0x", ""), 16)
+        byte2 = int(parts[1].replace("0x", ""), 16)
+        reg = (byte1 << 8) | byte2
+        if reg == 0xFFE0:
+            return 0
+        tach_shifted = reg >> 4
+        if tach_shifted == 0:
+            return 0
+        sr = 1
+        if fan_num is not None:
+            sr = _read_speed_range(dev_addr, fan_num)
+        rpm = (60 * sr * 8192) // tach_shifted
+        return rpm
+    except Exception:
+        return 0
+
+
+def set_pwm_duty_i2c(dev_addr, fan_num, duty_percent):
+    """
+    Set PWM duty cycle via direct I2C (ipmitool).
+    Also enables the tachometer for the channel.
+    duty_percent: 0-100.
+    """
+    duty_percent = max(0, min(100, int(duty_percent)))
+    config_reg, _tach_reg, pwm_reg = get_fan_registers(fan_num)
+    # Enable tachometer first
+    check_and_enable_tach(dev_addr, config_reg)
+    # Convert 0-100% to 0-511 scale
+    v = (_PWMOUT_SCALE * duty_percent + 50) // 100
+    msb = (v >> 1) & 0xFF
+    lsb = (v & 1) << 7
+    _ipmitool_i2c_write(dev_addr, pwm_reg, msb, lsb)
+    return v
+
+
+def enable_all_tachometers():
+    """Enable tachometers on all fan channels for all discovered boards."""
+    boards = probe_boards()
+    for board_num in boards:
+        addr = BOARDS.get(board_num)
+        if addr is None:
+            continue
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            config_reg = _FAN_CONFIG_BASE + (fan_num - 1)
+            try:
+                check_and_enable_tach(addr, config_reg)
+            except Exception:
+                pass
+
+
+# ====================================================
+#  Persistent fan speed storage
+# ====================================================
+
+def save_fan_speeds(speeds):
+    """
+    Save fan speeds to persistent config file.
+    speeds: list of {"board": int, "fan": int, "duty": int}
+    """
+    from datetime import datetime
+
+    config_dir = os.path.dirname(SPEED_CONFIG_PATH)
+    os.makedirs(config_dir, exist_ok=True)
+
+    data = {
+        "speeds": speeds,
+        "updated": datetime.now().isoformat(),
+    }
+
+    tmp_path = SPEED_CONFIG_PATH + ".tmp"
+    with open(tmp_path, "w") as f:
+        json.dump(data, f, indent=2)
+    os.rename(tmp_path, SPEED_CONFIG_PATH)
+
+
+def load_fan_speeds():
+    """
+    Load saved fan speeds from persistent config file.
+    Returns list of {"board": int, "fan": int, "duty": int} or empty list.
+    """
+    if not os.path.isfile(SPEED_CONFIG_PATH):
+        return []
+    try:
+        with open(SPEED_CONFIG_PATH) as f:
+            data = json.load(f)
+        return data.get("speeds", [])
+    except (OSError, ValueError, json.JSONDecodeError):
+        return []
 
 
 # ====================================================

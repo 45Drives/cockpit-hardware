@@ -21,63 +21,21 @@
 /**
  * Resolve the absolute path to a backend script.
  *
- * In production the scripts live at:
+ * Scripts live at:
  *   /usr/share/cockpit/45drives-fan-controller/scripts/<name>
- *
- * During development (test installs via yarn deploy) they live at:
- *   ~/.local/share/cockpit/45drives-fan-controller-test/scripts/<name>
- *
- * We try the production path first. If cockpit.file can't stat it,
- * we fall back to the test path.  Both paths are absolute so
- * cockpit.spawn() can always find them regardless of CWD.
  */
 const MODULE_NAME = "45drives-fan-controller";
 const PROD_BASE   = `/usr/share/cockpit/${MODULE_NAME}/scripts`;
-const TEST_BASE   = `/usr/share/cockpit/${MODULE_NAME}-test/scripts`;
 
-/**
- * Detect which base path exists and cache it.
- * Falls back to production path if detection fails.
- */
 let _resolvedBase = null;
 
 async function resolveScriptBase() {
   if (_resolvedBase) return _resolvedBase;
-
-  // Try production path first
-  try {
-    await cockpitSpawnRaw(["test", "-d", PROD_BASE]);
-    _resolvedBase = PROD_BASE;
-    return _resolvedBase;
-  } catch {
-    // not found — try test path
-  }
-
-  try {
-    await cockpitSpawnRaw(["test", "-d", TEST_BASE]);
-    _resolvedBase = TEST_BASE;
-    return _resolvedBase;
-  } catch {
-    // not found either — try home-local path
-  }
-
-  // Last resort: try the user's home local share path
-  try {
-    const result = await cockpitSpawnRaw(["sh", "-c", `echo $HOME/.local/share/cockpit/${MODULE_NAME}-test/scripts`]);
-    const homePath = result.trim();
-    await cockpitSpawnRaw(["test", "-d", homePath]);
-    _resolvedBase = homePath;
-    return _resolvedBase;
-  } catch {
-    // give up, use production path
-  }
-
   _resolvedBase = PROD_BASE;
   return _resolvedBase;
 }
 
 function scriptPath(name) {
-  // Synchronous — uses cached value. Must call resolveScriptBase() first.
   return `${_resolvedBase || PROD_BASE}/${name}`;
 }
 
@@ -250,4 +208,53 @@ export async function getAllSensorTemps() {
 export async function getSensorTemp(sensorId) {
   await resolveScriptBase();
   return cockpitSpawn([scriptPath("get_sensor_temps"), sensorId]);
+}
+
+/* ─────────────────────────────────────────────
+ *  Persistent Profile Storage (file-backed)
+ * ───────────────────────────────────────────── */
+
+/**
+ * Load all profiles from /etc/45drives/fan-controller/profiles.json.
+ *
+ * @returns {Promise<{ version: number, activeProfileId: number|null, profiles: Array, success: boolean }>}
+ */
+export async function loadProfiles() {
+  await resolveScriptBase();
+  return cockpitSpawn([scriptPath("load_profiles")]);
+}
+
+/**
+ * Save all profiles to /etc/45drives/fan-controller/profiles.json.
+ *
+ * @param {{ version: number, activeProfileId: number|null, profiles: Array }} config
+ * @returns {Promise<{ success: boolean }>}
+ */
+export async function saveProfiles(config) {
+  await resolveScriptBase();
+  return cockpitSpawn([scriptPath("save_profiles")], JSON.stringify(config));
+}
+
+/**
+ * Set (or clear) the active profile and start/stop the daemon.
+ *
+ * @param {number|null} profileId  - Profile ID to activate, or null to deactivate.
+ * @returns {Promise<{ success: boolean, activeProfileId: number|null, daemonRunning: boolean }>}
+ */
+export async function setActiveProfile(profileId) {
+  await resolveScriptBase();
+  return cockpitSpawn(
+    [scriptPath("set_active_profile")],
+    JSON.stringify({ activeProfileId: profileId }),
+  );
+}
+
+/**
+ * Check whether the fan controller daemon systemd service is running.
+ *
+ * @returns {Promise<{ running: boolean, enabled: boolean, activeState: string, success: boolean }>}
+ */
+export async function getDaemonStatus() {
+  await resolveScriptBase();
+  return cockpitSpawn([scriptPath("get_daemon_status")]);
 }

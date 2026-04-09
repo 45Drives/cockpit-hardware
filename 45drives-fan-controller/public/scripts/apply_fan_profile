@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-apply_fan_profile - Apply fan speed profile via hwmon sysfs.
+apply_fan_profile - Apply fan speed profile.
+
+Enables tachometers, sets duty via I2C + hwmon, and saves persistently.
 
 Input JSON (stdin):
 Single:  { "fan_num": 2, "board_num": 1, "duty_percent": 75 }
@@ -14,9 +16,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fan_common import (
     FANS_PER_BOARD,
-    probe_boards,
     get_board_hwmon,
     set_pwm_duty,
+    set_pwm_duty_i2c,
+    get_board_addr,
+    save_fan_speeds,
+    load_fan_speeds,
 )
 
 
@@ -28,8 +33,15 @@ def apply_single(fan_num, board_num, duty_percent):
         return {"board": board_num, "fan": fan_num,
                 "error": "duty_percent must be 0-100", "success": False}
     try:
-        hwmon = get_board_hwmon(board_num)
-        pwm_raw = set_pwm_duty(hwmon, fan_num, duty_percent)
+        # Set via I2C (enables tachometer + sets duty)
+        dev_addr = get_board_addr(board_num)
+        set_pwm_duty_i2c(dev_addr, fan_num, duty_percent)
+        # Also set via hwmon
+        try:
+            hwmon = get_board_hwmon(board_num)
+            pwm_raw = set_pwm_duty(hwmon, fan_num, duty_percent)
+        except Exception:
+            pwm_raw = int(round(duty_percent * 255 / 100))
         return {
             "board": board_num, "fan": fan_num,
             "duty_percent": duty_percent, "pwm_raw": pwm_raw, "success": True,
@@ -43,20 +55,30 @@ def main():
     try:
         data = json.loads(sys.stdin.read())
         results = []
+        all_speeds = load_fan_speeds()
 
         if "commands" in data:
             for cmd in data["commands"]:
-                results.append(apply_single(
+                r = apply_single(
                     cmd.get("fan_num", 1),
                     cmd.get("board_num", 1),
-                    cmd.get("duty_percent", 50),
-                ))
+                    cmd.get("duty_percent", 100),
+                )
+                results.append(r)
+                if r["success"]:
+                    _update_speed_entry(all_speeds, r["board"], r["fan"], int(r["duty_percent"]))
         else:
-            results.append(apply_single(
+            r = apply_single(
                 data.get("fan_num", 1),
                 data.get("board_num", 1),
-                data.get("duty_percent", 50),
-            ))
+                data.get("duty_percent", 100),
+            )
+            results.append(r)
+            if r["success"]:
+                _update_speed_entry(all_speeds, r["board"], r["fan"], int(r["duty_percent"]))
+
+        # Save all speeds persistently
+        save_fan_speeds(all_speeds)
 
         overall = all(r["success"] for r in results)
         print(json.dumps({"results": results, "success": overall}, indent=4))
@@ -65,6 +87,15 @@ def main():
         print(json.dumps({"error_msg": str(e), "success": False}, indent=4),
               file=sys.stderr)
         sys.exit(1)
+
+
+def _update_speed_entry(speeds, board_num, fan_num, duty):
+    """Update or add a speed entry in the list."""
+    for entry in speeds:
+        if entry.get("board") == board_num and entry.get("fan") == fan_num:
+            entry["duty"] = duty
+            return
+    speeds.append({"board": board_num, "fan": fan_num, "duty": duty})
 
 
 if __name__ == "__main__":

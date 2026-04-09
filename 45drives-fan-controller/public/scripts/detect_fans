@@ -2,7 +2,8 @@
 """
 detect_fans - Auto-detect all real fans across all MAX31790 boards.
 
-Uses the hwmon sysfs interface (fan<N>_fault = 0 means fan is present).
+Enables tachometers via I2C, sets a detection duty, waits for spin-up,
+then checks RPM to identify channels with physical fans connected.
 
 Output (JSON to stdout):
 {
@@ -19,25 +20,50 @@ Output (JSON to stdout):
 import json
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fan_common import (
     FANS_PER_BOARD,
     probe_boards,
-    is_fan_present,
+    read_fan_rpm,
+    set_pwm_duty,
+    enable_all_tachometers,
     get_transport,
 )
 
 
 def detect_all_fans():
-    """Scan every discovered board, every channel, return only real fans."""
-    boards = probe_boards()   # { board_num: hwmon_path }
-    fans = []
+    """
+    Scan every discovered board, every channel, return only real fans.
 
+    Steps:
+      1. Enable tachometers on all channels (required for fault/RPM).
+      2. Set a moderate duty so fans spin up.
+      3. Wait for tachometer to register pulses.
+      4. Only fans with RPM > 0 are physically connected.
+    """
+    boards = probe_boards()
+
+    # Enable tachometers — the hwmon driver does NOT do this
+    enable_all_tachometers()
+
+    # Set all channels to 100% for detection spin-up
+    for board_num, hwmon_path in boards.items():
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            try:
+                set_pwm_duty(hwmon_path, fan_num, 100)
+            except Exception:
+                pass
+
+    # Wait for fans to spin up and tach to register
+    time.sleep(3)
+
+    fans = []
     for board_num, hwmon_path in sorted(boards.items()):
         for fan_num in range(1, FANS_PER_BOARD + 1):
-            present, rpm = is_fan_present(hwmon_path, fan_num)
-            if present:
+            rpm = read_fan_rpm(hwmon_path, fan_num)
+            if rpm > 0:
                 fans.append({
                     "board": board_num,
                     "fan": fan_num,
