@@ -19,11 +19,21 @@
       </SwitchGroup>
     </div>
     <div v-if="activeSketchStr" ref="canvasCardBody"
-      class="card-body flex-auto flex flex-col items-center content-center p-0 overflow-visible">
+      class="card-body flex-auto flex flex-col items-center content-center p-0 overflow-visible relative">
+      <div v-if="!canvasReady" class="absolute inset-0 flex flex-col items-center justify-center bg-well z-10">
+        <svg class="animate-spin h-8 w-8 text-muted mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-sm text-muted">Loading disk viewer...</span>
+      </div>
       <P5StornadoF2 v-if="activeSketchStr === 'StornadoF2'" />
       <P5F8X1 v-if="activeSketchStr === 'StorinatorF8X1'" />
       <P5F8X2 v-if="activeSketchStr === 'StorinatorF8X2'" />
       <P5F8X3 v-if="activeSketchStr === 'StorinatorF8X3'" />
+      <P5F8X1NVME v-if="activeSketchStr === 'StorinatorF8X1NVME'" />
+      <P5F8X2NVME v-if="activeSketchStr === 'StorinatorF8X2NVME'" />
+      <P5F8X3NVME v-if="activeSketchStr === 'StorinatorF8X3NVME'" />
       <P5Stornado2U v-if="activeSketchStr === 'Stornado2U'" />
       <P5StorinatorQ30 v-else-if="activeSketchStr === 'StorinatorQ30'" />
       <P5Stornado v-else-if="activeSketchStr === 'StornadoAV15'" />
@@ -65,10 +75,13 @@ import P5StornadoF2 from "./P5StornadoF2.vue";
 import P5F8X1 from "./P5F8X1.vue";
 import P5F8X2 from "./P5F8X2.vue";
 import P5F8X3 from "./P5F8X3.vue";
+import P5F8X1NVME from "./P5F8X1NVME.vue";
+import P5F8X2NVME from "./P5F8X2NVME.vue";
+import P5F8X3NVME from "./P5F8X3NVME.vue";
 import P5Stornado2U from "./P5Stornado2U.vue";
 import P5StorinatorQ30 from "./P5StorinatorQ30.vue";
 import P5Stornado from "./P5Stornado.vue";
-import { ref,inject,watch } from "vue";
+import { ref,inject,watch,onMounted } from "vue";
 import P5StorinatorXL60H16 from "./P5StorinatorXL60H16.vue";
 import P5StorinatorS45 from "./P5StorinatorS45.vue";
 import P5StorinatorS45H16 from "./P5StorinatorS45H16.vue";
@@ -101,6 +114,9 @@ export default {
     P5F8X1,
     P5F8X2,
     P5F8X3,
+    P5F8X1NVME,
+    P5F8X2NVME,
+    P5F8X3NVME,
     P5Stornado2U,
     P5StorinatorQ30,
     P5Stornado,
@@ -142,24 +158,42 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|NVME-F8X1|NVME-F8X2|NVME-F8X3|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
           modelString
         );
       let enableString = testString
         ? testString[1] + testString[4] + (testString[3] ? testString[3] : "")
         : "";
 
+      if (enableString.includes('NVME-')) {
+        enableString = enableString.replace('NVME-', '') + 'NVME';
+      }
+
       return enableString;
     };
 
     const canvasCardBody = ref();
+    const canvasReady = ref(false);
     const activeSketchStr = enableSketch(serverModel.value);
     watch(enableZfsAnimations,()=>{});
+
+    // Poll for the P5 canvas appearing in the DOM
+    onMounted(() => {
+      const checkCanvas = () => {
+        if (canvasCardBody.value && canvasCardBody.value.querySelector('canvas')) {
+          canvasReady.value = true;
+        } else {
+          requestAnimationFrame(checkCanvas);
+        }
+      };
+      requestAnimationFrame(checkCanvas);
+    });
 
 
     return {
       serverModel,
       canvasCardBody,
+      canvasReady,
       activeSketchStr,
       zfsInfo,
       enableZfsAnimations

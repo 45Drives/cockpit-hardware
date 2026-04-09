@@ -59,8 +59,7 @@
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn } = legacy;
+import { server, Command, unwrap } from "@45drives/houston-common-lib";
 import ErrorMessage from "./ErrorMessage.vue";
 
 export default {
@@ -78,14 +77,10 @@ export default {
       pcis.value.length = 0;
       pcis.value.push({ slot: 'Loading...', type: 'Loading...', availibility: 'Loading...', busAddress: 'Loading...', cardType: 'Loading...', cardModel: 'Loading...', firmwareVersion: 'Loading...' });
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/pci"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let pciInfo = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-system/scripts/pci"], { superuser: "require" })
+        ));
+        let pciInfo = JSON.parse(proc.getStdout());
         pcis.value.length = 0;
         pciInfo.forEach(pci => {
           pcis.value.push(pci);
@@ -97,7 +92,7 @@ export default {
           console.log(error);
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
-          fatalErrorMsg.value.push(error.stderr);
+          fatalErrorMsg.value.push(error.message);
           fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/pci");
           showFixButton.value = false;
         }
