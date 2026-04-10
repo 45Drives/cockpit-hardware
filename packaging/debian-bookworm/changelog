@@ -1,3 +1,16 @@
+cockpit-45drives-hardware (2.6.1-1bookworm) bookworm; urgency=medium
+
+  * building test package for fan controller
+
+ -- Mark Hooper <mhooper@45drives.com>  Fri, 10 Apr 2026 11:00:54 -0300
+
+cockpit-45drives-hardware (2.5.14-1bookworm) bookworm; urgency=medium
+
+  * Adds 45Drives Fan Controller module with persistent speed control and systemd
+    service
+
+ -- Harmin Patel <hpatel@45drives.com>  Fri, 10 Apr 2026 10:46:44 -0300
+
 cockpit-45drives-hardware (2.5.10-2bookworm) bookworm; urgency=medium
 
   * Updates write perms and rebuilding
