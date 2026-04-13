@@ -25,11 +25,18 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fan_common import (
     FANS_PER_BOARD,
+    BOARDS,
     probe_boards,
     read_fan_rpm,
+    read_fan_rpm_auto,
     set_pwm_duty,
+    set_pwm_duty_auto,
     enable_all_tachometers,
     get_transport,
+    check_and_enable_tach,
+    get_board_addr,
+    get_fan_registers,
+    read_tach_rpm,
 )
 
 
@@ -49,10 +56,10 @@ def detect_all_fans():
     enable_all_tachometers()
 
     # Set all channels to 100% for detection spin-up
-    for board_num, hwmon_path in boards.items():
+    for board_num in boards:
         for fan_num in range(1, FANS_PER_BOARD + 1):
             try:
-                set_pwm_duty(hwmon_path, fan_num, 100)
+                set_pwm_duty_auto(board_num, fan_num, 100)
             except Exception:
                 pass
 
@@ -60,9 +67,9 @@ def detect_all_fans():
     time.sleep(3)
 
     fans = []
-    for board_num, hwmon_path in sorted(boards.items()):
+    for board_num in sorted(boards.keys()):
         for fan_num in range(1, FANS_PER_BOARD + 1):
-            rpm = read_fan_rpm(hwmon_path, fan_num)
+            rpm = read_fan_rpm_auto(board_num, fan_num)
             if rpm > 0:
                 fans.append({
                     "board": board_num,

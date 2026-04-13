@@ -28,8 +28,10 @@ from fan_common import (
     probe_boards,
     get_board_hwmon,
     set_pwm_duty,
+    set_pwm_duty_auto,
     set_pwm_duty_i2c,
     read_fan_rpm,
+    read_fan_rpm_auto,
     discover_temp_sensors,
     read_sensor_temp,
     _discover_gpu_sensors,
@@ -41,6 +43,7 @@ from fan_common import (
     get_board_addr,
     save_fan_speeds,
     load_fan_speeds,
+    get_transport,
 )
 
 # ── Constants ──
@@ -199,10 +202,10 @@ def reset_all_fans_to_default(duty=DEFAULT_DUTY):
     """Set all discovered fans to the given duty (best-effort)."""
     try:
         boards = probe_boards()
-        for board_num, hwmon_path in boards.items():
+        for board_num in boards:
             for fan_num in range(1, FANS_PER_BOARD + 1):
                 try:
-                    set_pwm_duty(hwmon_path, fan_num, duty)
+                    set_pwm_duty_auto(board_num, fan_num, duty)
                 except Exception:
                     pass
         log.info("Reset all fans to %d%% duty.", duty)
@@ -353,8 +356,7 @@ def _control_cycle(fan_configs):
 
         # Apply PWM
         try:
-            hwmon = get_board_hwmon(board_num)
-            set_pwm_duty(hwmon, fan_num, duty)
+            set_pwm_duty_auto(board_num, fan_num, duty)
             log.debug(
                 "Fan %s: hottest=%.1f°C → %d%% duty",
                 fc["name"], hottest, duty,

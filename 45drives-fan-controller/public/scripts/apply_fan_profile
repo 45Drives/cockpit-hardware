@@ -19,6 +19,7 @@ from fan_common import (
     get_board_hwmon,
     set_pwm_duty,
     set_pwm_duty_i2c,
+    set_pwm_duty_auto,
     get_board_addr,
     save_fan_speeds,
     load_fan_speeds,
@@ -36,12 +37,13 @@ def apply_single(fan_num, board_num, duty_percent):
         # Set via I2C (enables tachometer + sets duty)
         dev_addr = get_board_addr(board_num)
         set_pwm_duty_i2c(dev_addr, fan_num, duty_percent)
-        # Also set via hwmon
+        # Also set via hwmon (skip gracefully in i2c-only mode)
+        pwm_raw = int(round(duty_percent * 255 / 100))
         try:
             hwmon = get_board_hwmon(board_num)
             pwm_raw = set_pwm_duty(hwmon, fan_num, duty_percent)
-        except Exception:
-            pwm_raw = int(round(duty_percent * 255 / 100))
+        except (Exception, ValueError):
+            pass
         return {
             "board": board_num, "fan": fan_num,
             "duty_percent": duty_percent, "pwm_raw": pwm_raw, "success": True,

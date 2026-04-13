@@ -21,10 +21,12 @@ from fan_common import (
     BOARDS,
     get_board_hwmon,
     set_pwm_duty,
+    set_pwm_duty_auto,
     set_pwm_duty_i2c,
     get_board_addr,
     save_fan_speeds,
     load_fan_speeds,
+    get_transport,
 )
 
 
@@ -54,12 +56,13 @@ def main():
         dev_addr = get_board_addr(board_num)
         set_pwm_duty_i2c(dev_addr, fan_num, duty_percent)
 
-        # Also set via hwmon for consistency
+        # Also set via hwmon for consistency (skip in i2c-only mode)
+        pwm_raw = int(round(duty_percent * 255 / 100))
         try:
             hwmon = get_board_hwmon(board_num)
             pwm_raw = set_pwm_duty(hwmon, fan_num, duty_percent)
-        except Exception:
-            pwm_raw = int(round(duty_percent * 255 / 100))
+        except (Exception, ValueError):
+            pass
 
         # Save speed persistently
         speeds = load_fan_speeds()

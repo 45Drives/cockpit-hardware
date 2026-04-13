@@ -190,31 +190,56 @@ def _instantiate_device(bus_num, addr_7bit):
 #  Board / hwmon discovery  (cached after first call)
 # ====================================================
 
-_discovered_boards = None    # { board_num: hwmon_path }
+_discovered_boards = None    # { board_num: hwmon_path -or- "i2c" sentinel }
 _ipmb_bus_num_cache = None
+_transport = None            # "hwmon" or "i2c"  (set by _ensure_setup)
 
 
 def _ensure_setup():
-    """Load kernel modules and find the IPMB bus.  Returns bus number or raises."""
-    global _ipmb_bus_num_cache
-    if _ipmb_bus_num_cache is not None:
-        return _ipmb_bus_num_cache
+    """
+    Load kernel modules and find the IPMB bus.
+
+    Returns the bus number when hwmon is available.
+    Falls back to ipmitool I2C-only transport when ipmb-bus.ko cannot
+    load (e.g. kernel version mismatch).  In that case *None* is returned
+    and ``_transport`` is set to ``"i2c"``.
+    """
+    global _ipmb_bus_num_cache, _transport
+    if _transport is not None:
+        return _ipmb_bus_num_cache          # may be None in i2c mode
 
     _load_ipmb_bus()
     bus = _find_ipmb_bus()
-    if bus is None:
-        raise RuntimeError(
-            "IPMB I2C adapter not found.  Is ipmb-bus.ko loaded?"
-        )
-    _load_max31790()
-    _ipmb_bus_num_cache = bus
-    return bus
+    if bus is not None:
+        _load_max31790()
+        _ipmb_bus_num_cache = bus
+        _transport = "hwmon"
+        return bus
+
+    # Fallback: verify that ipmitool I2C bridge works for at least one board
+    for addr in BOARDS.values():
+        try:
+            _ipmitool_i2c_read(addr, 1, _FAN_CONFIG_BASE)
+            _transport = "i2c"
+            _ipmb_bus_num_cache = None
+            return None
+        except Exception:
+            continue
+
+    raise RuntimeError(
+        "IPMB I2C adapter not found and ipmitool I2C bridge is not working. "
+        "Is ipmb-bus.ko loaded or ipmitool configured?"
+    )
 
 
 def probe_boards():
     """
     Probe all known addresses, instantiate any that don't already have hwmon,
     and return { board_num: hwmon_path } for those that respond.
+
+    In I2C-only mode the dict values are the string ``"i2c"`` (sentinel)
+    instead of a sysfs path.
+
     Result is cached.
     """
     global _discovered_boards
@@ -224,32 +249,52 @@ def probe_boards():
     bus = _ensure_setup()
     alive = {}
 
-    for board_num, addr in sorted(KNOWN_BOARD_ADDRS.items()):
-        hwmon = _find_hwmon_for(bus, addr)
-        if hwmon is None:
-            _instantiate_device(bus, addr)
+    if _transport == "hwmon" and bus is not None:
+        for board_num, addr in sorted(KNOWN_BOARD_ADDRS.items()):
             hwmon = _find_hwmon_for(bus, addr)
-        if hwmon is not None:
-            alive[board_num] = hwmon
+            if hwmon is None:
+                _instantiate_device(bus, addr)
+                hwmon = _find_hwmon_for(bus, addr)
+            if hwmon is not None:
+                alive[board_num] = hwmon
+    else:
+        # I2C-only: probe each board by trying an ipmitool read
+        for board_num, addr_8bit in sorted(BOARDS.items()):
+            try:
+                _ipmitool_i2c_read(addr_8bit, 1, _FAN_CONFIG_BASE)
+                alive[board_num] = "i2c"   # sentinel value
+            except Exception:
+                pass
 
     _discovered_boards = alive
     return _discovered_boards
 
 
 def get_board_hwmon(board_num):
-    """Get the hwmon sysfs path for a board number, validating it exists."""
+    """
+    Get the hwmon sysfs path for a board number.
+
+    In I2C-only mode this raises ValueError because there is no hwmon.
+    Callers should check ``get_transport()`` first or catch the error
+    and fall back to I2C helpers.
+    """
     boards = probe_boards()
     if board_num not in boards:
         available = sorted(boards.keys())
         raise ValueError(
             f"Board {board_num} not found.  Available boards: {available}"
         )
-    return boards[board_num]
+    path = boards[board_num]
+    if path == "i2c":
+        raise ValueError(
+            f"Board {board_num} available via I2C-only — no hwmon path."
+        )
+    return path
 
 
 def get_transport():
     """Return transport description for UI display."""
-    return "hwmon"
+    return _transport or "hwmon"
 
 
 # ====================================================
@@ -294,6 +339,67 @@ def read_fan_rpm(hwmon_path, fan_num):
         return int(_read_sysfs(input_path))
     except (OSError, ValueError):
         return 0
+
+
+# ── Transport-aware wrappers ──────────────────────────────────────────
+# These automatically choose hwmon or ipmitool I2C based on _transport.
+
+def read_fan_rpm_auto(board_num, fan_num):
+    """
+    Read RPM for a fan using whichever transport is available.
+    Returns int RPM or 0.
+    """
+    boards = probe_boards()
+    path = boards.get(board_num)
+    if path is None:
+        return 0
+    if path != "i2c":
+        return read_fan_rpm(path, fan_num)
+    # I2C-only path
+    addr = BOARDS.get(board_num)
+    if addr is None:
+        return 0
+    _config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
+    return read_tach_rpm(addr, tach_reg, fan_num)
+
+
+def is_fan_present_auto(board_num, fan_num):
+    """
+    Check fan presence using whichever transport is available.
+    Returns (present: bool, rpm: int).
+    """
+    boards = probe_boards()
+    path = boards.get(board_num)
+    if path is None:
+        return False, 0
+    if path != "i2c":
+        return is_fan_present(path, fan_num)
+    # I2C-only: check if the channel responds and has RPM > 0
+    addr = BOARDS.get(board_num)
+    if addr is None:
+        return False, 0
+    config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
+    responding = check_and_enable_tach(addr, config_reg)
+    if not responding:
+        return False, 0
+    rpm = read_tach_rpm(addr, tach_reg, fan_num)
+    return (rpm > 0), rpm
+
+
+def set_pwm_duty_auto(board_num, fan_num, duty_percent):
+    """
+    Set PWM duty using whichever transport is available.
+    Returns the raw PWM value written.
+    """
+    boards = probe_boards()
+    path = boards.get(board_num)
+    if path is not None and path != "i2c":
+        return set_pwm_duty(path, fan_num, duty_percent)
+    # I2C-only path
+    addr = BOARDS.get(board_num)
+    if addr is None:
+        raise ValueError(f"Board {board_num} not available.")
+    return set_pwm_duty_i2c(addr, fan_num, duty_percent)
 
 
 def set_pwm_duty(hwmon_path, fan_num, duty_percent):

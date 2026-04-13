@@ -17,8 +17,11 @@ from fan_common import (
     probe_boards,
     get_board_hwmon,
     is_fan_present,
+    is_fan_present_auto,
     read_fan_rpm,
+    read_fan_rpm_auto,
     enable_all_tachometers,
+    get_transport,
 )
 
 
@@ -32,8 +35,7 @@ def _ensure_tach():
 
 def read_single_fan(fan_num, board_num):
     _ensure_tach()
-    hwmon = get_board_hwmon(board_num)
-    present, rpm = is_fan_present(hwmon, fan_num)
+    present, rpm = is_fan_present_auto(board_num, fan_num)
     return {
         "board": board_num,
         "fan": fan_num,
@@ -47,9 +49,9 @@ def read_all_fans():
     _ensure_tach()
     boards = probe_boards()
     fans = []
-    for board_num, hwmon in sorted(boards.items()):
+    for board_num in sorted(boards.keys()):
         for fan_num in range(1, FANS_PER_BOARD + 1):
-            present, rpm = is_fan_present(hwmon, fan_num)
+            present, rpm = is_fan_present_auto(board_num, fan_num)
             if present:
                 fans.append({"board": board_num, "fan": fan_num, "rpm": rpm})
     return {"fans": fans, "success": True}
