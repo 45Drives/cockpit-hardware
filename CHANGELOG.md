@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.6.1-1
+## cockpit-45drives-hardware 2.6.2-1
 
-* building test package for fan controller
+* Test build

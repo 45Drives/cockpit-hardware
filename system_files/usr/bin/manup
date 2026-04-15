@@ -1,0 +1,590 @@
+#!/usr/bin/env python3
+
+VERSION = None
+
+import os
+import re
+import sys
+import time
+import json
+import tarfile
+import requests
+
+from dateutil import tz
+from datetime import datetime
+from optparse import OptionParser
+
+VALID_URGENCIES = ['low', 'medium', 'high']
+
+def get_default_system_config():
+    return {
+        'name': '',
+        'email': '@45drives.com'
+    }
+
+def get_system_config():
+    default_config = get_default_system_config()
+
+    if os.name == 'posix':
+        username = os.getlogin()
+        config_path = ''
+
+        if username == 'root':
+            config_path = '/root'
+        else:
+            config_path = f'/home/{username}'
+
+        config_path += '/.config/manup'
+
+        config_data = None
+
+        config_file = f'{config_path}/config.json'
+
+        try:
+            os.stat(config_path)
+        except:
+            can_create_config = input('You do not have a system config. Would you like to make one? (y/N) ')
+
+            if not can_create_config.lower().startswith('y'):
+                return default_config
+
+            os.makedirs(config_path)
+
+            with open(config_file, 'w') as file:
+                json.dump(default_config, file, indent=4)
+
+            print(f'Your system config has been created. The values can be changed in "{config_file}"!')
+
+        try:
+            with open(config_file, 'r') as file:
+                config_data = json.loads(file.read())
+        except:
+            print('The system config file could not be read, using defaults.')
+            return default_config
+
+        if config_data != None:
+            return config_data
+
+    return default_config
+
+def get_author_formatted(name, email):
+    return f'{name} <{email}>'
+
+def get_manifest():
+    try:
+        f = open('manifest.json')
+
+        manifest = json.load(f)
+
+        if not manifest['schema_version'].startswith('45D_AP_V2.'):
+            return None
+
+        return manifest
+    except:
+        return None
+
+def parse_date(utc_timestamp):
+    if not utc_timestamp.endswith('Z'):
+        utc_timestamp += 'Z'
+
+    utc = datetime.strptime(utc_timestamp, '%Y-%m-%dT%H:%M:%S.%fZ')
+
+    from_zone = tz.gettz('UTC')
+    to_zone = tz.gettz('America/Glace_Bay')
+
+    utc = utc.replace(tzinfo=from_zone)
+
+    return utc.astimezone(to_zone)
+
+def format_deb_changelog_entry(entry, manifest, indent, codename):
+    if not len(entry['changes']):
+        return None
+
+    timestamp = entry['date']
+
+    date = parse_date(timestamp)
+    
+    deb_date = date.strftime('%a, %d %b %Y %H:%M:%S %z')
+
+    deb_entry = f'{manifest["name"]} ({manifest["version"]}-{manifest["build_number"]}{codename}) {codename}; urgency={entry["urgency"]}\n'
+
+    for change in entry['changes']:
+        words = change.split(' ')
+
+        formatted_change = None
+
+        if not (len(change) < 80):
+            formatted_change = ''
+
+            lines = [['\n{indent}*'.format(indent=' ' * indent)]]
+            index = 0
+
+            for word in words:
+                if not lines[index]:
+                    lines[index] = []
+
+                tmp_line = lines[index].copy()
+
+                if len(' '.join(tmp_line)) > 80:
+                    index += 1
+                    indention = '\n' + (' ' * ((indent * 2) - 1))
+                    lines.append([indention, word])
+                else:
+                    lines[index].append(word)
+
+            for line in lines:
+                text = ' '.join(line)
+                formatted_change += text
+        else:
+            formatted_change = '\n{indent}* {c}'.format(indent=' ' * indent, c=change)
+
+        deb_entry += formatted_change
+
+    deb_entry += '\n\n -- {packager}  {date}\n'.format(packager=entry['packager'], date=deb_date)
+
+    return deb_entry
+
+def format_el_changelog_entry(entry, manifest, indent):
+    if not len(entry['changes']):
+        return None
+
+    timestamp = entry['date']
+
+    date = parse_date(timestamp)
+
+    spec_date = date.strftime('%a %b %d %Y')
+
+    spec_entry = f'* {spec_date} {entry["packager"]} {entry["version"]}-{entry["build_number"]}'
+
+    for change in entry['changes']:
+        words = change.split(' ')
+
+        formatted_change = None
+
+        if not (len(change) < 80):
+            formatted_change = ''
+
+            lines = [['\n-']]
+            index = 0
+
+            for word in words:
+                if not lines[index]:
+                    lines[index] = []
+
+                tmp_line = lines[index].copy()
+
+                if len(' '.join(tmp_line)) > 80:
+                    index += 1
+                    indention = '\n' + (' ' * (indent - 1))
+                    lines.append([indention, word])
+                else:
+                    lines[index].append(word)
+
+            for line in lines:
+                text = ' '.join(line)
+                formatted_change += text
+        else:
+            formatted_change = '\n- {c}'.format(c=change)
+
+        spec_entry += formatted_change
+
+    return spec_entry
+
+def format_changelog_md(entry, manifest):
+    md = f'## {manifest["title"]} {entry["version"]}-{entry["build_number"]}\n'
+
+    for change in entry['changes']:
+        md += '\n* {change}'.format(change=change)
+
+    return md
+
+def setup_template(skip_prompts):
+    url = 'http://192.168.35.107/template-v2.tar.gz'
+
+    default_system_config = get_default_system_config()
+
+    system_config = get_system_config()
+
+    path = os.getcwd()
+
+    cwd_name = path.split('/').pop()
+
+    archive_location = f'{path}/template.tar.gz'
+
+    name = ''
+    title = ''
+    version = ''
+    build_number = ''
+    author_name = ''
+    author_email = ''
+    author_formatted = ''
+    project_url = ''
+    desc = ''
+
+    try:
+        if not skip_prompts:
+            name = input(f'Package Name ({cwd_name}): ')
+
+        if name == '':
+            name = cwd_name
+
+        if not skip_prompts:
+            title = input(f'Package Title ({cwd_name.capitalize()}): ')
+        
+        if title == '':
+            title = cwd_name.capitalize()
+
+        if not skip_prompts:
+            version = input('Package Version (0.0.0): ')
+        
+        if version == '':
+            version = '0.0.0'
+
+        if not skip_prompts:
+            build_number = input('Build Number (1): ')
+
+        if build_number == '':
+            build_number = '1'
+
+        if not skip_prompts or default_system_config['name'] == system_config['name']:
+            author_name = input(f"Author Name ({system_config['name']}): ")
+
+        if author_name == '':
+            author_name = system_config['name']
+        
+        if not skip_prompts or default_system_config['email'] == system_config['email']:
+            author_email = input(f"Author Email ({system_config['email']}): ")
+
+        if author_email == '':
+            author_email = system_config['email']
+
+        author_formatted = get_author_formatted(author_name, author_email)
+
+        default_project_url = f'https://github.com/45Drives/{name}'
+
+        if not skip_prompts:
+            project_url = input(f'Project URL ({default_project_url}): ')
+
+        if project_url == '':
+            project_url = default_project_url
+
+        if not skip_prompts:
+            desc = input('Description: ')
+    except:
+        print('\n\nYou have cancelled the initialization process. Progression halted.\n')
+        sys.exit(1)
+
+    try:
+        req = requests.get(url)
+
+        file = open(archive_location, 'wb')
+
+        file.write(req.content)
+
+        file.close()
+
+        with tarfile.open(archive_location, 'r:gz') as tar:
+            tar.extractall(path=path)
+            tar.close()
+
+        os.remove(archive_location)
+    except Exception as error:
+        print(error)
+        sys.exit(1)
+
+    manifest = get_manifest()
+
+    manifest['name'] = name
+    manifest['title'] = title
+    manifest['description'] = desc
+    manifest['version'] = version
+    manifest['build_number'] = build_number
+    manifest['author'] = author_formatted
+    manifest['git_url'] = project_url
+    manifest['stable'] = False
+
+    manifest['changelog'] = {
+        'urgency': manifest['defaults']['change_urgency'],
+        'version': version,
+        'build_number': build_number,
+        'date': None,
+        'packager': author_formatted,
+        'changes': [],
+    }
+
+    with open('manifest.json', 'w') as file:
+        json.dump(manifest, file, indent=4)
+
+    print('''
+Your project has been successfully auto-packagified!
+This command has only updated the manifest.json. This means you have some more work.
+
+ * Edit packaging files to fit your project.
+ * Please check manifest to change any miscellaneous sections.
+ * Run "manup -u [...options]" to update the staging changelog.
+ * Lastly, run "manup -p" to push updates to the package changelogs.
+
+Enjoy auto-packaging!
+    ''')
+
+def check_latest_version():
+    if VERSION == None:
+        return
+
+    if re.search(r'/[a-fA-F0-9]{8}/g', VERSION):
+        print('You are currently running a version of manup installed from source! You should check for updates periodically.')
+        return
+
+    url = 'http://192.168.35.107/manup-version.txt'
+
+    req = requests.get(url)
+
+    latest_version = req.content.decode('utf-8').strip('\n')
+
+    if latest_version != VERSION:
+        print('You are currently running an old version of manup! You should update your repos and install the new version!')
+
+def main():
+    parser = OptionParser()
+    
+    parser.add_option('-V', '--software-version', action='store_true', dest='show_version', default=None, help='View the current installed version.')
+    # parser.add_option('-C', '--configure', action='store_true', dest='configuration_wizard', default=None, help='Update your global user settings.')
+    parser.add_option('--template', '--init', action='store_true', dest='template', default=False, help='Load the template and add it to the directory.')
+
+    parser.add_option('-u', '--update', action='store_true', dest='update', default=False, help='Update the changelog information in the manifest.')
+    parser.add_option('-p', '--push', action='store_true', dest='push', default=False, help='Push the changelog information in manifest to packaging details.')
+    parser.add_option('-r', '--reset', action='store_true', dest='reset', default=False, help='Reset the changelog information in the manifest.')
+    parser.add_option('-f', '--force', action='store_true', dest='force', default=False, help='Force updates when the program says no.')
+    parser.add_option('-y', '--yes', action='store_true', dest='yes', default=False, help='The default answer is yes to any questions.')
+
+    parser.add_option('-S', '--update-sources', action='store_true', dest='update_sources', default=False, help='Update the list of source files that will be included for compilation.')
+
+    parser.add_option('-v', '--version', action='store', dest='version', default=None, help='Update the version in the manifest.')
+    parser.add_option('-b', '--build-number', action='store', dest='revision', default=None, help='Update the build revision in the manifest.')
+    parser.add_option('-U', '--urgency', action='store', dest='urgency', default=None, help='Update the build urgency in the manifest.')
+
+    parser.add_option('-B', '--increment-build-number', action='store_true', dest='increment_revision', default=False, help='Increment the build revision in the manifest.')
+
+    parser.add_option('-i', '--indent', action='store', dest='indent', default=2, help='Indent for formatting of changelog files.')
+    
+    (options, args) = parser.parse_args()
+
+    check_latest_version()
+
+    default_system_config = get_default_system_config()
+
+    system_config = get_system_config()
+
+    if options.show_version:
+        print(f'manup version: {VERSION}')
+        sys.exit(0)
+
+    manifest = get_manifest()
+
+    if manifest == None and not options.template:
+        print('You must run this in a directory with a 45drives release manifest.')
+        sys.exit(1)
+
+    if options.template and manifest != None and not options.force:
+        print('You are about to override a valid manifest and auto release structure. Use the force flag if you want to continue.')
+        sys.exit(1)
+
+    if options.template:
+        setup_template(options.yes)
+        sys.exit(0)
+
+    if not options.update and not options.push and not options.reset:
+        print('Provide either -u, -p, or -r to the command.')
+        sys.exit(1)
+
+    if manifest['version'] == '':
+        print('The current version in the manifest is blank.')
+        sys.exit(1)
+
+    if manifest['build_number'] == '':
+        print('The current build version in the manifest is blank.')
+        sys.exit(1)
+
+    if options.update:
+        manifest['changelog']['changes'] += args
+
+    if options.update:
+        if default_system_config['name'] != system_config['name'] and default_system_config['email'] != system_config['email']:
+            author_formatted = get_author_formatted(system_config['name'], system_config['email'])
+
+            if manifest['changelog']['packager'] != author_formatted:
+                manifest['changelog']['packager'] = author_formatted
+        else:
+            print('You are using default system config settings. It is suggested that you update them! Using package author instead...')
+
+    if options.version != None and options.update:
+        if options.version == '':
+            print('The version provided is empty. Skipping...')
+            sys.exit(1)
+        else:
+            manifest['changelog']['version'] = options.version
+
+            if options.revision == None:
+                manifest['changelog']['build_number'] = '1'
+
+    if options.revision != None and options.update:
+        if options.revision == '':
+            print('The build version provided is empty. Skipping...')
+            sys.exit(1)
+        else:
+            manifest['changelog']['build_number'] = options.revision
+
+    if options.increment_revision and options.update:
+        manifest['changelog']['build_number'] = str(int(manifest['build_number']) + 1)
+
+    if manifest['defaults']['change_urgency'] not in VALID_URGENCIES:
+        print('Invalid urgency in default entry.')
+        sys.exit(1)
+
+    if options.urgency != None and options.update:
+        if options.urgency not in VALID_URGENCIES:
+            print('Invalid urgency provided. Skipping...')
+            sys.exit(1)
+        else:
+            manifest['changelog']['urgency'] = options.urgency
+
+    if options.update:
+        manifest['changelog']['date'] = datetime.now().isoformat()
+
+    if options.push:
+        manifest['version'] = manifest['changelog']['version']
+        manifest['build_number'] = manifest['changelog']['build_number']
+
+        build = manifest['builds'][0]
+
+        if build == None:
+            print('The current manifest does not have any system types that could be validated. Please try again.')
+            sys.exit(1)
+
+        changelog = None
+
+        build_id = build['id'] if 'id' in build else build['os_name']
+
+        if build['group'] in ['debian', 'ubuntu']:
+            changelog = f'./packaging/{build_id}/changelog'
+
+        if build['group'] in ['rocky']:
+            changelog = f'./packaging/{build_id}/main.spec'
+
+        if changelog == None:
+            print('There are no available changelogs that can be validated. Please try again.')
+            sys.exit(1)
+
+        if os.path.exists(changelog):
+            fr = open(changelog, 'r')
+            content = fr.read()
+            fr.close()
+            
+            if content != None:
+                searchable = '{v}-{r}'.format(v=manifest['changelog']['version'], r=manifest['changelog']['build_number'])
+    
+                if searchable in content:
+                    print('That version/build number combination has been mentioned in the changelog before. If force was not provided, this will exit.')
+
+                    if not options.force:
+                        sys.exit(1)
+
+    if options.push:
+        md_changelog = format_changelog_md(manifest['changelog'], manifest)
+
+        changelog_file = open('CHANGELOG.md', 'w')
+        changelog_file.write(md_changelog)
+        changelog_file.close()
+
+        for build_metadata in manifest['builds']:
+            build_id = build_metadata['id'] if 'id' in build_metadata else build_metadata['os_name']
+
+            if build_metadata['group'] in ['debian', 'ubuntu']:
+                deb_changelog = f'./packaging/{build_id}/changelog'
+
+                if os.path.exists(deb_changelog):
+                    fr = open(deb_changelog, 'r')
+                    content = fr.read()
+                    
+                    if content == None:
+                        content = ''
+
+                    fr.close()
+
+                    new_entry = format_deb_changelog_entry(manifest['changelog'], manifest, options.indent, build_metadata['os_name'].split('-').pop())
+
+                    if new_entry == None:
+                        print('You have no staged changes to push to the changelogs.')
+                        sys.exit(1)
+
+                    new_content = new_entry + '\n' + content
+
+                    fw = open(deb_changelog, 'w')
+
+                    fw.write(new_content.strip())
+
+                    fw.close()
+
+            if build_metadata['group'] in ['rocky']:
+                el_changelog = f'./packaging/{build_id}/main.spec.j2'
+
+                if os.path.exists(el_changelog):
+                    fr = open(el_changelog, 'r')
+                    content = fr.read()
+
+                    if content == None:
+                        content = ''
+
+                    fr.close()
+
+                    new_entry = format_el_changelog_entry(manifest['changelog'], manifest, options.indent)
+
+                    if new_entry == None:
+                        print('You have no staged changes to push to the changelogs.')
+                        sys.exit(1)
+
+                    new_content = content.replace('%changelog', '%changelog\n{entry}'.format(entry=new_entry), 1)
+
+                    fw = open(el_changelog, 'w')
+
+                    fw.write(new_content.strip())
+
+                    fw.close()
+
+        print('Updated all changelogs that apply.')
+
+    if manifest['defaults']['change_urgency'] not in VALID_URGENCIES:
+        print('Invalid default urgency present.')
+        sys.exit(1)
+
+    if (options.push and not options.reset) or (not options.push and options.reset):
+        manifest['changelog'] = {
+            'urgency': manifest['defaults']['change_urgency'],
+            'version': manifest['version'],
+            'build_number': manifest['build_number'],
+            'date': None,
+            'packager': manifest['author'],
+            'changes': [],
+        }
+
+    if options.update_sources:
+        sources = [f for f in os.listdir() if not is_ignored_file(f)]
+
+        manifest['sources'] = sources
+
+    with open('manifest.json', 'w') as f:
+        json.dump(manifest, f, indent=4)
+
+    print('All operations have been completed and the manifest has been updated.')
+
+def is_ignored_file(name: str) -> False:
+    if name.startswith('.git'):
+        return True
+    
+    if name in ['packaging', 'manifest.json']:
+        return True
+    
+    return False
+
+if __name__ == '__main__':
+    main()

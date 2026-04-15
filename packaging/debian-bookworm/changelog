@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.6.2-1bookworm) bookworm; urgency=medium
+
+  * Test build
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 15 Apr 2026 07:56:51 -0300
+
 cockpit-45drives-hardware (2.6.1-1bookworm) bookworm; urgency=medium
 
   * building test package for fan controller
