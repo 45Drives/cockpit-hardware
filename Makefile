@@ -17,7 +17,7 @@
 PLUGIN_SRCS=45drives-disks 45drives-motherboard 45drives-system 45drives-fan-controller
 
 # For installing to a remote machine for testing with `make install-remote`
-REMOTE_TEST_HOST=192.168.207.129
+REMOTE_TEST_HOST=192.168.207.11
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install

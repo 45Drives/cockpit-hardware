@@ -15,6 +15,34 @@ import {
 const adminCheck = ref(false);
 const adminFlag = ref(false);
 
+/* ── Chassis compatibility gate ──
+ * The fan controller is only supported on NVME-F8X3 chassis.
+ * We read /etc/45drives/server_info/server_info.json to decide.
+ */
+const chassisChecked = ref(false);   // true once the check has completed
+const chassisSupported = ref(false); // true only when Chassis Size === "NVME-F8X3"
+const chassisSize = ref("");         // actual value for the UI message
+
+async function checkChassisSize() {
+  try {
+    const raw = await new Promise((resolve, reject) => {
+      cockpit
+        .file("/etc/45drives/server_info/server_info.json")
+        .read()
+        .then((content) => resolve(content))
+        .catch((err) => reject(err));
+    });
+    const info = JSON.parse(raw);
+    chassisSize.value = info["Chassis Size"] || "Unknown";
+    chassisSupported.value = chassisSize.value === "NVME-F8X3";
+  } catch (err) {
+    console.error("Failed to read server info for chassis check:", err);
+    chassisSize.value = "Unknown";
+    chassisSupported.value = false;
+  }
+  chassisChecked.value = true;
+}
+
 const rootCheck = async () => {
   let root_check = cockpit.permission({ admin: true });
   root_check.addEventListener("changed", function () {
@@ -188,15 +216,52 @@ async function onDeactivateProfile() {
 
 onMounted(async () => {
   rootCheck();
-  await loadProfilesFromStorage();
-  await refreshDaemonStatus();
+  await checkChassisSize();
+  if (chassisSupported.value) {
+    await loadProfilesFromStorage();
+    await refreshDaemonStatus();
+  }
 });
 </script>
 
 <template>
   <div class="h-full flex flex-col overflow-hidden">
     <FfdHeader moduleName="Fan Controller" centerName />
-    <div v-if="adminCheck && adminFlag" class="grow flex flex-col well overflow-y-auto p-4">
+
+    <!-- Waiting for chassis check -->
+    <div
+      v-if="!chassisChecked"
+      class="grow flex flex-col well overflow-y-auto p-4 justify-center items-center"
+    >
+      <span class="text-muted">Checking chassis compatibility…</span>
+    </div>
+
+    <!-- Unsupported chassis -->
+    <div
+      v-else-if="!chassisSupported"
+      class="grow flex flex-col well overflow-y-auto p-4 justify-center items-center"
+    >
+      <div class="card">
+        <div class="card-header">
+          <h3 class="text-header text-default">
+            Unsupported Chassis
+          </h3>
+        </div>
+        <div class="card-body flex flex-col gap-4">
+          <div
+            class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
+          >
+            The 45Drives Fan Controller is only supported on the
+            <strong>NVME-F8X3</strong> chassis.
+            <br />
+            Detected chassis:&nbsp;<strong>{{ chassisSize }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supported chassis — normal flow -->
+    <div v-else-if="adminCheck && adminFlag" class="grow flex flex-col well overflow-y-auto p-4">
       <!-- Profile list (landing page) -->
       <ProfileList
         v-if="currentView === 'list'"
