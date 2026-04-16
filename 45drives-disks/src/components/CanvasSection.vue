@@ -158,7 +158,7 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|NVME-F8X1|NVME-F8X2|NVME-F8X3|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|NVME-F8X1|NVME-F8X2|NVME-F8X3|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
           modelString
         );
       let enableString = testString
@@ -167,6 +167,11 @@ export default {
 
       if (enableString.includes('NVME-')) {
         enableString = enableString.replace('NVME-', '') + 'NVME';
+      }
+
+      // HomeLab-X15 uses the same chassis as HL15
+      if (enableString === 'HomeLabX15') {
+        enableString = 'HomeLabHL15';
       }
 
       return enableString;

@@ -34,6 +34,7 @@ g_storcli64_fields = [
 
 g_network_card_models = [
     "X540-AT2",
+    "X550",
     "XL710",
     "XXV710",
     "82599ES",
@@ -146,6 +147,27 @@ BA_LUT_B550I = {
 NETWORK_BA_LUT_B550I = {
     "00:01.0": "01:00.0",
     "00:01.1": "01:00.1",
+}
+
+# Gigabyte MW34-SP0-00 (Intel W680 chipset)
+# dmidecode -t 9 bus addresses are completely wrong on this board.
+# Root port mapping confirmed across 5 lspci-tv runs:
+#   Run 1 (4 NVMe + HBA + NIC):         00:01.0→HBA, 00:1d.0→NIC, 00:1d.4→M2M_1
+#   Run 2 (3 NVMe + HBA + NIC):         00:01.1→HBA, 00:01.0→empty, no 00:1d.4
+#   Run 3 (only M2M_CPU):               no 00:01.x, no 00:1d.x, no 00:1a/1b
+#   Run 4 (NIC + HBA + M2M_CPU+M2M_3): 00:01.1→HBA, 00:01.0→empty, 00:1a.0→Sandisk
+#   Run 5 (NIC + 2×HBA + M2M_CPU):     00:01.0→MegaRAID, 00:01.1→SAS3416, 00:1d.0→NIC
+# All root ports vanish entirely when their slot is empty.
+# Only PCIE_3/PCIE_6 share the 00:01.x group (CPU lanes, dynamic numbering).
+# When both are populated, BIOS assigns 00:01.0 and 00:01.1 — order is not guaranteed.
+BA_LUT_MW34 = {
+    "PCIE_1":  ["0000:00:1d.0"],                    # PCH — dedicated root port
+    "M2M_1":   ["0000:00:1d.4"],                    # PCH — dedicated, absent when empty
+    "PCIE_3":  ["0000:00:01.0", "0000:00:01.1"],   # CPU — shares 00:01.x with PCIE_6
+    "PCIE_6":  ["0000:00:01.0", "0000:00:01.1"],   # CPU — shares 00:01.x with PCIE_3
+    "M2M_CPU": ["0000:00:06.0"],                    # CPU — dedicated root port
+    "M2M_2":   ["0000:00:1b.4"],                    # PCH — dedicated root port
+    "M2M_3":   ["0000:00:1a.0"],                    # PCH — dedicated root port
 }
 
 
@@ -270,6 +292,64 @@ def infer_pcie_type_from_sysfs(bus_address):
     if not gen:
         return None
     return f"PCI Express {gen} x{width}"
+
+
+_PCI_ADDR_RE = re.compile(
+    r'^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]$'
+)
+
+
+def is_pci_bridge(bus_address, lspci_devices):
+    """Check if a PCI device is a bridge (root port, switch port, etc.)."""
+    device_info = lspci_devices.get(bus_address)
+    if not device_info:
+        return False
+    cls = str(device_info[0]).strip('"').lower()
+    return "bridge" in cls
+
+
+def has_downstream_endpoint(bus_address, lspci_devices):
+    """Recursively check if a PCI bridge has any non-bridge endpoint downstream."""
+    real_path = os.path.realpath(f"/sys/bus/pci/devices/{bus_address}")
+    if not os.path.isdir(real_path):
+        return False
+    for entry in os.listdir(real_path):
+        if not _PCI_ADDR_RE.match(entry):
+            continue
+        if _is_lspci_endpoint(lspci_devices.get(entry)):
+            return True
+        if has_downstream_endpoint(entry, lspci_devices):
+            return True
+    return False
+
+
+def slot_has_pci_device(bus_address, lspci_devices):
+    """Return True if a real endpoint device exists at or behind *bus_address*."""
+    if not bus_address or bus_address == "0000:00:00.0":
+        return False
+    if _is_lspci_endpoint(lspci_devices.get(bus_address)):
+        return True
+    if is_pci_bridge(bus_address, lspci_devices):
+        return has_downstream_endpoint(bus_address, lspci_devices)
+    return False
+
+
+def first_endpoint_addr(bus_address, lspci_devices):
+    """Return the PCI address of the first non-bridge endpoint at or behind *bus_address*."""
+    if not bus_address or bus_address == "0000:00:00.0":
+        return None
+    if _is_lspci_endpoint(lspci_devices.get(bus_address)):
+        return bus_address
+    real_path = os.path.realpath(f"/sys/bus/pci/devices/{bus_address}")
+    if not os.path.isdir(real_path):
+        return None
+    for entry in os.listdir(real_path):
+        if not _PCI_ADDR_RE.match(entry):
+            continue
+        result = first_endpoint_addr(entry, lspci_devices)
+        if result:
+            return result
+    return None
 
 
 def fix_slot_type(slot, motherboard_model):
@@ -533,6 +613,7 @@ def process_pci_slots_and_devices(
     matched_devices = {}
     motherboard_info = get_motherboard_model_server_info()
     motherboard_model = motherboard_info["Motherboard"][0].get("Product Name", "")
+    mw34_claimed = set()
 
     for slot in pci_slots:
         designation = slot.get("Designation", "")
@@ -565,6 +646,29 @@ def process_pci_slots_and_devices(
                             else:
                                 slot["Card Model"] = " ".join(device_info[1:3]).replace('"', "")
                     break
+
+        # ---------- MW34 special handling (claim-and-remove) ----------
+        if motherboard_model.startswith("MW34"):
+            slot["Current Usage"] = "Available"
+            candidates = BA_LUT_MW34.get(slot_key, [])
+            claimed = False
+            for cand in candidates:
+                if cand in mw34_claimed:
+                    continue
+                if slot_has_pci_device(cand, lspci_devices):
+                    endpoint = first_endpoint_addr(cand, lspci_devices)
+                    slot["Bus Address"] = endpoint or cand
+                    slot["Current Usage"] = "In Use"
+                    mw34_claimed.add(cand)
+                    claimed = True
+                    break
+            if not claimed:
+                # Pick first unclaimed candidate that exists, or clear
+                slot["Bus Address"] = ""
+                for cand in candidates:
+                    if cand not in mw34_claimed and cand in lspci_devices:
+                        slot["Bus Address"] = cand
+                        break
 
         if designation not in matched_devices:
             matched_devices[designation] = slot
@@ -818,6 +922,44 @@ def main():
 
     all_devices = hba_cards + network_cards + sata_cards
     matched_devices = process_pci_slots_and_devices(pci_slots, all_devices, lspci_devices)
+
+    # MW34: bus addresses are only correct after process_pci_slots_and_devices(),
+    # so re-run HBA / network / SATA matching against the fixed endpoint addresses.
+    if motherboard_model.startswith("MW34"):
+        for slot in matched_devices:
+            bus = slot.get("Bus Address", "")
+            if not bus or bus == "0000:00:00.0":
+                continue
+            for hba in hba_cards:
+                if hba["Bus Address"] == bus:
+                    slot["Card Type"] = "HBA"
+                    slot["Card Model"] = hba["Model"]
+                    break
+            # Try matching via network helper output first
+            net_matched = False
+            for card in network_cards:
+                if card.get("Bus Address") == bus:
+                    slot["Card Type"] = "Network Card"
+                    slot["Card Model"] = getNetworkCardModel(bus)
+                    slot.setdefault("Connections", []).append(card)
+                    net_matched = True
+                    break
+            # Fallback: detect network card from lspci_devices (like MZ73)
+            if not net_matched and slot.get("Card Type", "-") == "-":
+                devinfo = lspci_devices.get(bus)
+                if devinfo and "ethernet" in str(devinfo[0]).strip('"').lower():
+                    slot["Card Type"] = "Network Card"
+                    model = getNetworkCardModel(bus)
+                    if model not in ("-", "unknown"):
+                        slot["Card Model"] = model
+                    elif len(devinfo) > 2:
+                        slot["Card Model"] = devinfo[2].strip('"')
+            for card in sata_cards:
+                if card.get("Bus Address") == bus:
+                    slot["Card Type"] = card["Card Type"]
+                    slot["Card Model"] = card["Card Model"]
+                    slot["Connections"] = card.get("Connections", [])
+                    break
 
     for slot in matched_devices:
         fix_slot_type(slot, motherboard_model)

@@ -229,7 +229,17 @@ g_motherboard_sata_addresses = {
 		["pci-0000:00:17.0-ata-8", "OCU2"],
 		# ["pci-0000:01:00.0-nvme-1", "M2_1"],
 		# ["pci-0000:02:00.0-nvme-1", "M2_1"]
-	]
+	],
+"MW34-SP0-00":[
+    ["pci-0000:00:17.0-ata-1", "SATA_0_1"],
+    ["pci-0000:00:17.0-ata-2", "SATA_0_1"],
+    ["pci-0000:00:17.0-ata-3", "SATA_2_3"],
+    ["pci-0000:00:17.0-ata-4", "SATA_2_3"],
+    ["pci-0000:00:17.0-ata-5", "SATA_4_5"],
+    ["pci-0000:00:17.0-ata-6", "SATA_4_5"],
+    ["pci-0000:00:17.0-ata-7", "SATA_6_7"],
+    ["pci-0000:00:17.0-ata-8", "SATA_6_7"],
+],
 }
 
 # Helper function to dynamically fetch SATA PCI addresses

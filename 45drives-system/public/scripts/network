@@ -64,6 +64,25 @@ BA_LUT_B550I = {
  	"PCIEX16":["0000:01:00.0", "0000:01:00.1"]
 }
 
+# Gigabyte MW34-SP0-00 — dmidecode bus addresses are wrong.
+# Map slot names to root port addresses; endpoint bus numbers shift at each boot.
+BA_LUT_MW34_NET = {
+	"PCIE_1": ["0000:00:1d.0"],
+	"PCIE_3": ["0000:00:01.0", "0000:00:01.1"],
+	"PCIE_6": ["0000:00:01.0", "0000:00:01.1"],
+}
+
+_PCI_ADDR_RE_NET = re.compile(
+	r'^[0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F]$'
+)
+
+def _get_downstream_pci_addrs(root_port):
+	"""Return PCI device addresses directly downstream of a root port via sysfs."""
+	base = os.path.realpath(f"/sys/bus/pci/devices/{root_port}")
+	if not os.path.isdir(base):
+		return []
+	return [e for e in os.listdir(base) if _PCI_ADDR_RE_NET.match(e)]
+
 
 def get_motherboard_model_server_info():
 	json_path = "/etc/45drives/server_info/server_info.json"
@@ -245,6 +264,14 @@ def get_network_info():
    		
 		if motherboard_model == 'B550I AORUS PRO AX' and "Designation" in card.keys() and card['Designation'] in BA_LUT_B550I.keys():
 			card["Bus Address"] = BA_LUT_B550I[card["Designation"]]
+
+		if motherboard_model.startswith("MW34") and "Designation" in card and card["Designation"] in BA_LUT_MW34_NET:
+			root_ports = BA_LUT_MW34_NET[card["Designation"]]
+			endpoints = []
+			for rp in root_ports:
+				endpoints.extend(_get_downstream_pci_addrs(rp))
+			if endpoints:
+				card["Bus Address"] = endpoints
 
 	# for each card in the list of dictionaries, append 
 	# dictionaries to a list that have the same Bus address

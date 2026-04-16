@@ -64,7 +64,8 @@ export default {
       "EC266D2I-2T/AQC",
       "ROMED8-2T/BCM",
       "ROMED8-2T",
-      "ProArt X870E-CREATOR WIFI"
+      "ProArt X870E-CREATOR WIFI",
+      "MW34-SP0-00"
     ]);
 
     const adminCheck = ref(false);

@@ -109,7 +109,7 @@ export default {
       }
       console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2|2UGW_REV2|1UGW|2U).*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|X15|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2|2UGW_REV2|1UGW|2U).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -134,6 +134,7 @@ export default {
         },
         "HomeLab": {
           "HL15": "img/homelabHL15.png",
+          "X15": "img/homelabHL15.png",
           "HL4": "img/homelabHL4.png",
           "HL8": "img/homelabHL8.png",
           "HL15_BEAST": "img/homelabHL15BEAST.png"

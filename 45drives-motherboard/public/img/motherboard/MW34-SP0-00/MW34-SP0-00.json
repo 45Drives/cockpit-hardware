@@ -1,0 +1,179 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 602,
+        "y0": 442,
+        "width": 196,
+        "height": 260,
+        "diam": 0,
+        "filename": "CPU0.png"
+    },
+    {
+        "type": "PCIE_1",
+        "id": "0",
+        "shape": "rect",
+        "x0": 51,
+        "y0": 198,
+        "width": 30,
+        "height": 138,
+        "diam": 24,
+        "filename": "PCI_SLOT_1.png"
+    },
+    {
+        "type": "PCIE_3",
+        "id": "1",
+        "shape": "rect",
+        "x0": 190,
+        "y0": 196,
+        "width": 30,
+        "height": 305,
+        "diam": 24,
+        "filename": "PCI_SLOT_3.png"
+    },
+    {
+        "type": "PCIE_6",
+        "id": "2",
+        "shape": "rect",
+        "x0": 398,
+        "y0": 196,
+      	"width": 30,
+        "height": 305,
+        "diam": 24,
+        "filename": "PCI_SLOT_6.png"
+    },
+    {
+        "type": "M2M_1",
+        "id": "3",
+        "shape": "rect",
+        "x0": 104,
+        "y0": 546,
+        "width": 80,
+        "height": 25,
+        "diam": 24,
+        "filename": "M2M_1.png"
+    },
+    {
+        "type": "M2M_2",
+        "id": "4",
+        "shape": "rect",
+        "x0": 227,
+        "y0": 546,
+        "width": 80,
+        "height": 25,
+        "diam": 24,
+        "filename": "M2M_2.png"
+    },
+    {
+        "type": "M2M_3",
+        "id": "5",
+        "shape": "rect",
+        "x0": 315,
+        "y0": 546,
+        "width": 80,
+        "height": 25,
+        "diam": 24,
+        "filename": "M2M_3.png"
+    },
+    {
+        "type": "M2M_CPU",
+        "id": "6",
+        "shape": "rect",
+        "x0": 440,
+        "y0": 735,
+        "width": 80,
+        "height": 25,
+        "diam": 24,
+        "filename": "M2M_CPU.png"
+    },
+    {
+        "type": "SATA_0_1",
+        "id": "0",
+        "shape": "rect",
+        "x0": 157,
+        "y0": 832,
+        "width": 54,
+        "height": 56,
+        "diam": 22,
+        "filename": "SATA_0_1.png"
+    },
+     {
+        "type": "SATA_2_3",
+        "id": "1",
+        "shape": "rect",
+        "x0": 217,
+        "y0": 832,
+        "width": 54,
+        "height": 56,
+        "diam": 22,
+        "filename": "SATA_2_3.png"
+    },
+     {
+        "type": "SATA_4_5",
+        "id": "2",
+        "shape": "rect",
+        "x0": 277,
+        "y0": 832,
+        "width": 54,
+        "height": 56,
+        "diam": 22,
+        "filename": "SATA_4_5.png"
+    },
+     {
+        "type": "SATA_6_7",
+        "id": "3",
+        "shape": "rect",
+        "x0": 337,
+        "y0": 832,
+        "width": 54,
+        "height": 56,
+        "diam": 22,
+        "filename": "SATA_6_7.png"
+    },
+    {
+        "type": "DIMM_P0_A0",
+        "id": 1,
+        "shape": "rect",
+        "x0": 875,
+        "y0": 328,
+        "width": 25,
+        "height": 515,
+        "diam": 20,
+        "filename": "DIMM_P0_A0.png"
+    },
+    {
+        "type": "DIMM_P0_A1",
+        "id": 2,
+        "shape": "rect",
+        "x0": 905,
+        "y0": 328,
+        "width": 25,
+        "height": 515,
+        "diam": 20,
+        "filename": "DIMM_P0_A1.png"
+    },
+    {
+        "type": "DIMM_P1_A0",
+        "id": 3,
+        "shape": "rect",
+        "x0": 935,
+        "y0": 328,
+        "width": 25,
+        "height": 515,
+        "diam": 20,
+        "filename": "DIMM_P1_A0.png"
+    },
+    {
+        "type": "DIMM_P1_A1",
+        "id": 4,
+        "shape": "rect",
+        "x0": 965,
+        "y0": 328,
+        "width": 25,
+        "height": 515,
+        "diam": 20,
+        "filename": "DIMM_P1_A1.png"
+    }
+]
+
