@@ -1175,8 +1175,8 @@ export default {
 														}
 													}
 												}
-											} else {
-												// Generic card fallback for unrecognized card models
+											} else if (components[c]["type"].search("M2") == -1) {
+												// Generic card fallback for unrecognized card models (skip M2 slots)
 												peripherals.push(
 													new peripheral(
 														"PCI",
@@ -1202,33 +1202,32 @@ export default {
 												components[c]["height"] =
 													components[c]["width"] / (100.0 / 890.0);
 											}
-										} else {
-											// Generic card fallback if no Card Type/Model properties
-											peripherals.push(
-												new peripheral(
-													"PCI",
-													components[c]["x0"] -
-													components[c]["width"],
-													0,
-													components[c]["width"],
-													components[c]["height"],
-													"#FF800080",
-													peripheralImages.length,
-													components[c]["width"] * pciScale
-												)
-											);
-											peripheralImages.push(
-												m.loadImage("img/motherboard/generic_pci_card.png") // Path to your generic card image
-											);
-											components[c]["x0"] =
-												components[c]["x0"] -
-												components[c]["width"] * WIDTHOFFSET;
-											components[c]["y0"] = 0;
-											components[c]["width"] =
-												100.0 * components[c]["width"] * pciScale;
-											components[c]["height"] =
-												components[c]["width"] / (100.0 / 890.0);
-											components[c].popup.content = components[c].popup.content; // Keep the popup content
+} else if (components[c]["type"].search("M2") == -1) {
+													// Generic card fallback if no Card Type/Model properties (skip M2 slots)
+													peripherals.push(
+														new peripheral(
+															"PCI",
+															components[c]["x0"] -
+															components[c]["width"],
+															0,
+															components[c]["width"],
+															components[c]["height"],
+															"#FF800080",
+															peripheralImages.length,
+															components[c]["width"] * pciScale
+														)
+													);
+													peripheralImages.push(
+														m.loadImage("img/motherboard/generic_pci_card.png")
+													);
+													components[c]["x0"] =
+														components[c]["x0"] -
+														components[c]["width"] * WIDTHOFFSET;
+													components[c]["y0"] = 0;
+													components[c]["width"] =
+														100.0 * components[c]["width"] * pciScale;
+													components[c]["height"] =
+														components[c]["width"] / (100.0 / 890.0);
 										}
 
 
