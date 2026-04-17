@@ -1,3 +1,11 @@
+cockpit-45drives-hardware (2.5.14-1bookworm) bookworm; urgency=medium
+
+  * Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME
+    Hybrid F8X units and fixes some bugs with Motherboard tab displaying some PCIE/M2
+    data
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 17 Apr 2026 06:19:52 -0300
+
 cockpit-45drives-hardware (2.5.13-1bookworm) bookworm; urgency=medium
 
   * Fixes some pci script issues (previous change was not backwards compatible)
