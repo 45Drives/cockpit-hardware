@@ -2,13 +2,13 @@ cockpit-45drives-hardware (2.6.2-1jammy) jammy; urgency=medium
 
   * Test build
 
- -- Mark Hooper <mhooper@45drives.com>  Wed, 15 Apr 2026 07:56:51 -0300
+ -- Harmin Patel <hpatel@45drives.com>  Wed, 15 Apr 2026 07:56:51 -0300
 
 cockpit-45drives-hardware (2.6.1-1jammy) jammy; urgency=medium
 
   * building test package for fan controller
 
- -- Mark Hooper <mhooper@45drives.com>  Fri, 10 Apr 2026 11:00:54 -0300
+ -- Harmin Patel <hpatel@45drives.com>  Fri, 10 Apr 2026 11:00:54 -0300
 
 cockpit-45drives-hardware (2.5.14-1jammy) jammy; urgency=medium
 

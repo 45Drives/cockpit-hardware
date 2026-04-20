@@ -16,11 +16,11 @@ const adminCheck = ref(false);
 const adminFlag = ref(false);
 
 /* ── Chassis compatibility gate ──
- * The fan controller is only supported on NVME-F8X3 chassis.
+ * The fan controller is only supported on NVME-F8X1, NVME-F8X2, and NVME-F8X3 chassis.
  * We read /etc/45drives/server_info/server_info.json to decide.
  */
 const chassisChecked = ref(false);   // true once the check has completed
-const chassisSupported = ref(false); // true only when Chassis Size === "NVME-F8X3"
+const chassisSupported = ref(false); // true only for NVME-F8X1/F8X2/F8X3
 const chassisSize = ref("");         // actual value for the UI message
 
 async function checkChassisSize() {
@@ -34,7 +34,7 @@ async function checkChassisSize() {
     });
     const info = JSON.parse(raw);
     chassisSize.value = info["Chassis Size"] || "Unknown";
-    chassisSupported.value = chassisSize.value === "NVME-F8X3";
+    chassisSupported.value = ["NVME-F8X1", "NVME-F8X2", "NVME-F8X3"].includes(chassisSize.value);
   } catch (err) {
     console.error("Failed to read server info for chassis check:", err);
     chassisSize.value = "Unknown";
@@ -243,18 +243,11 @@ onMounted(async () => {
     >
       <div class="card">
         <div class="card-header">
-          <h3 class="text-header text-default">
-            Unsupported Chassis
-          </h3>
+          <h3 class="text-header text-default">Unsupported Chassis</h3>
         </div>
         <div class="card-body flex flex-col gap-4">
-          <div
-            class="bg-accent rounded-md p-5 flex flex-col items-center gap-4"
-          >
-            The 45Drives Fan Controller is only supported on the
-            <strong>NVME-F8X3</strong> chassis.
-            <br />
-            Detected chassis:&nbsp;<strong>{{ chassisSize }}</strong>
+          <div class="bg-accent rounded-md p-5 flex flex-col items-center gap-4">
+            The 45Drives Fan Controller is only supported on NVME-F8X1, NVME-F8X2, and NVME-F8X3 chassis. Detected chassis:&nbsp;{{ chassisSize }}
           </div>
         </div>
       </div>
