@@ -51,6 +51,23 @@ Currently supports the following motherboard models:
 
 Note: All of the interactive information displayed in this module is also available in the 45Drives System module. If your board is not in the list of supported motherboards, the information can be obtained there.
 
+### Fan Controller
+Provides fan speed monitoring, control, and profile management for supported 45Drives NVMe chassis.
+
+Currently supports the following chassis sizes:
+* NVME-F8X1
+* NVME-F8X2
+* NVME-F8X3
+
+This module allows you to:
+* Detect all fans and temperature sensors across multiple boards
+* Monitor real-time fan RPM and sensor temperatures
+* Create and manage fan speed profiles with temperature-based ranges
+* Set fan duty cycles per-fan or per-board via I2C
+* Bind temperature sensors to fans for automatic speed adjustment
+* Activate/deactivate profiles with a background daemon that persists settings across reboots
+* Save and restore fan speeds automatically on boot
+
 
 # Installation
 
