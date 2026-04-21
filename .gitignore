@@ -1,6 +1,9 @@
 # ignore the __pycache__ folder
 **/__pycache__
 
+# ignore storcli2 log files
+storcli2.log*
+
 .kdev4/
 *.kdev4
 *.kate-swp
