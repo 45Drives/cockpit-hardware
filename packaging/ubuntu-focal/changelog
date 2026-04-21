@@ -16,6 +16,38 @@ cockpit-45drives-hardware (2.5.14-1focal) focal; urgency=medium
     service
 
  -- Harmin Patel <hpatel@45drives.com>  Fri, 10 Apr 2026 10:46:44 -0300
+cockpit-45drives-hardware (2.5.14-1focal) focal; urgency=medium
+
+  * Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME
+    Hybrid F8X units and fixes some bugs with Motherboard tab displaying some PCIE/M2
+    data
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 17 Apr 2026 06:19:52 -0300
+
+cockpit-45drives-hardware (2.5.13-1focal) focal; urgency=medium
+
+  * Fixes some pci script issues (previous change was not backwards compatible)
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 30 Mar 2026 09:52:23 -0300
+
+cockpit-45drives-hardware (2.5.12-1focal) focal; urgency=medium
+
+  * Fixes potential none-type errors in python scripts (motherboard helpers and system
+    scripts)
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 24 Mar 2026 08:55:04 -0300
+
+cockpit-45drives-hardware (2.5.11-2focal) focal; urgency=medium
+
+  * Rebuilding with proper reference to submodule
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 09 Mar 2026 12:37:33 -0300
+
+cockpit-45drives-hardware (2.5.11-1focal) focal; urgency=medium
+
+  * Updates build to latest version using houston-common libraries
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 09 Mar 2026 12:27:12 -0300
 
 cockpit-45drives-hardware (2.5.10-2focal) focal; urgency=medium
 

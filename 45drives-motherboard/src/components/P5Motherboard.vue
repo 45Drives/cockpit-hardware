@@ -561,7 +561,8 @@ export default {
 							for (let c = 0; c < components.length; c++) {
 								if (
 									components[c]["id"] == pci_info["PCI Info"][i]["ID"] &&
-									(components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1)
+									(components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1 ||
+									(components[c]["type"].search("M2") != -1 && pci_info["PCI Info"][i]["Designation"] && pci_info["PCI Info"][i]["Designation"].search("M2") != -1))
 								) {
 
 									components[c].popup.content = JSON.stringify(
@@ -1174,34 +1175,59 @@ export default {
 														}
 													}
 												}
-											} 
-										} else {
-											// Generic card fallback if no specific card model found
-											peripherals.push(
-												new peripheral(
-													"PCI",
+											} else if (components[c]["type"].search("M2") == -1) {
+												// Generic card fallback for unrecognized card models (skip M2 slots)
+												peripherals.push(
+													new peripheral(
+														"PCI",
+														components[c]["x0"] -
+														components[c]["width"],
+														0,
+														components[c]["width"],
+														components[c]["height"],
+														"#FF800080",
+														peripheralImages.length,
+														components[c]["width"] * pciScale
+													)
+												);
+												peripheralImages.push(
+													m.loadImage("img/motherboard/generic_pci_card.png")
+												);
+												components[c]["x0"] =
 													components[c]["x0"] -
-													components[c]["width"],
-													0,
-													components[c]["width"],
-													components[c]["height"],
-													"#FF800080",
-													peripheralImages.length,
-													components[c]["width"] * pciScale
-												)
-											);
-											peripheralImages.push(
-												m.loadImage("img/motherboard/generic_pci_card.png") // Path to your generic card image
-											);
-											components[c]["x0"] =
-												components[c]["x0"] -
-												components[c]["width"] * WIDTHOFFSET;
-											components[c]["y0"] = 0;
-											components[c]["width"] =
-												100.0 * components[c]["width"] * pciScale;
-											components[c]["height"] =
-												components[c]["width"] / (100.0 / 890.0);
-											components[c].popup.content = components[c].popup.content; // Keep the popup content
+													components[c]["width"] * WIDTHOFFSET;
+												components[c]["y0"] = 0;
+												components[c]["width"] =
+													100.0 * components[c]["width"] * pciScale;
+												components[c]["height"] =
+													components[c]["width"] / (100.0 / 890.0);
+											}
+} else if (components[c]["type"].search("M2") == -1) {
+													// Generic card fallback if no Card Type/Model properties (skip M2 slots)
+													peripherals.push(
+														new peripheral(
+															"PCI",
+															components[c]["x0"] -
+															components[c]["width"],
+															0,
+															components[c]["width"],
+															components[c]["height"],
+															"#FF800080",
+															peripheralImages.length,
+															components[c]["width"] * pciScale
+														)
+													);
+													peripheralImages.push(
+														m.loadImage("img/motherboard/generic_pci_card.png")
+													);
+													components[c]["x0"] =
+														components[c]["x0"] -
+														components[c]["width"] * WIDTHOFFSET;
+													components[c]["y0"] = 0;
+													components[c]["width"] =
+														100.0 * components[c]["width"] * pciScale;
+													components[c]["height"] =
+														components[c]["width"] / (100.0 / 890.0);
 										}
 
 

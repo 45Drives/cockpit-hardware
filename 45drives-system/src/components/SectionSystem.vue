@@ -82,8 +82,7 @@
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn } = legacy;
+import { server, Command, unwrap } from "@45drives/houston-common-lib";
 
 export default {
   components: {
@@ -110,7 +109,7 @@ export default {
       }
       console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2|2UGW_REV2|1UGW|2U).*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|X15|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2|2UGW_REV2|1UGW|2U).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -122,7 +121,10 @@ export default {
           "MI4": "img/storinatorMI4.png",
           "F8X1": "img/F8X1.png",
           "F8X2": "img/F8X2.png",
-          "F8X3": "img/F8X3.png"
+          "F8X3": "img/F8X3.png",
+          "NVME-F8X1": "img/45dlogo.png",
+          "NVME-F8X2": "img/45dlogo.png",
+          "NVME-F8X3": "img/45dlogo.png"
         },
         "Stornado": {
           "2U": "img/stornado2U.png",
@@ -132,6 +134,7 @@ export default {
         },
         "HomeLab": {
           "HL15": "img/homelabHL15.png",
+          "X15": "img/homelabHL15.png",
           "HL4": "img/homelabHL4.png",
           "HL8": "img/homelabHL8.png",
           "HL15_BEAST": "img/homelabHL15BEAST.png"
@@ -168,14 +171,10 @@ export default {
       moboSerial.value = "Loading...";
       serverImgPath.value = "img/45dlogo.png";
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/server_info"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let sysInfo = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-system/scripts/server_info"], { superuser: "require" })
+        ));
+        let sysInfo = JSON.parse(proc.getStdout());
         sysModel.value = sysInfo["Model"];
         sysChassis.value = sysInfo["Chassis Size"];
         sysSerial.value = sysInfo["Serial"];
@@ -201,14 +200,9 @@ export default {
             showFixButton.value = true;
             fixButtonHandler.value = async () => {
               try {
-                const fixState = await useSpawn(
-                ["/opt/45drives/tools/server_identifier"],
-                {
-                  err: "out",
-                  superuser: "require",
-                  promise: true,
-                }
-              );
+                const fixState = await unwrap(server.execute(
+                  new Command(["/opt/45drives/tools/server_identifier"], { superuser: "require" })
+                ));
                 fatalError.value = false;
                 fatalErrorMsg.value.length = 0;
                 showFixButton.value = false;
@@ -217,7 +211,7 @@ export default {
                 console.log(error);
                 fatalError.value = true;
                 fatalErrorMsg.value.length = 0;
-                if (error.stderr) fatalErrorMsg.value.push(error.stderr);
+                if (error.message) fatalErrorMsg.value.push(error.message);
                 fatalErrorMsg.value.push("An error occurred when running /opt/45drives/tools/server_identifier");
                 showFixButton.value = false;
               }
@@ -229,7 +223,7 @@ export default {
           console.log(error);
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
-          if (error.stderr) fatalErrorMsg.value.push(error.stderr);
+          if (error.message) fatalErrorMsg.value.push(error.message);
           fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/server_info");
           showFixButton.value = false;
         }

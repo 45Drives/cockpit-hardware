@@ -4,8 +4,7 @@ import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import P5Motherboard from "./components/P5Motherboard.vue";
 import { ref, reactive, provide, onMounted } from "vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn } = legacy;
+import { server, Command, unwrap } from "@45drives/houston-common-lib";
 import {
   CheckIcon,
   ExclamationIcon,
@@ -65,7 +64,8 @@ export default {
       "EC266D2I-2T/AQC",
       "ROMED8-2T/BCM",
       "ROMED8-2T",
-      "ProArt X870E-CREATOR WIFI"
+      "ProArt X870E-CREATOR WIFI",
+      "MW34-SP0-00"
     ]);
 
     const adminCheck = ref(false);
@@ -120,16 +120,10 @@ export default {
 
     const getMoboInfo = async () => {
       try {
-        const state = await useSpawn(
-          [
-            "/usr/share/cockpit/45drives-motherboard/helper_scripts/motherboard",
-          ],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-motherboard/helper_scripts/motherboard"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         Object.assign(mobo_info, result);
         preloadChecks.mobo_info.content = result;
         // Need to find a more elegant fix for this:
@@ -145,23 +139,17 @@ export default {
         preloadChecks.mobo_info.content = null;
         preloadChecks.mobo_info.finished = true;
         preloadChecks.mobo_info.failed = true;
-        if (error.stdout)
-          preloadChecks.mobo_info.errorMessage.push(error.stdout);
-        if (error.stderr)
-          preloadChecks.mobo_info.errorMessage.push(error.stderr);
+        if (error.message)
+          preloadChecks.mobo_info.errorMessage.push(error.message);
       }
     };
 
     const getPciInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/pci"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-motherboard/helper_scripts/pci"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         Object.assign(pci_info, result);
         preloadChecks.pci_info.content = result;
         preloadChecks.pci_info.finished = true;
@@ -171,23 +159,17 @@ export default {
         preloadChecks.pci_info.content = null;
         preloadChecks.pci_info.finished = true;
         preloadChecks.pci_info.failed = true;
-        if (error.stdout)
-          preloadChecks.pci_info.errorMessage.push(error.stdout);
-        if (error.stderr)
-          preloadChecks.pci_info.errorMessage.push(error.stderr);
+        if (error.message)
+          preloadChecks.pci_info.errorMessage.push(error.message);
       }
     };
 
     const getSataInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/sata"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-motherboard/helper_scripts/sata"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         Object.assign(sata_info, result);
         preloadChecks.sata_info.content = result;
         preloadChecks.sata_info.finished = true;
@@ -197,23 +179,17 @@ export default {
         preloadChecks.sata_info.content = null;
         preloadChecks.sata_info.finished = true;
         preloadChecks.sata_info.failed = true;
-        if (error.stdout)
-          preloadChecks.sata_info.errorMessage.push(error.stdout);
-        if (error.stderr)
-          preloadChecks.sata_info.errorMessage.push(error.stderr);
+        if (error.message)
+          preloadChecks.sata_info.errorMessage.push(error.message);
       }
     };
 
     const getRamInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/ram"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-motherboard/helper_scripts/ram"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         Object.assign(ram_info, result);
         preloadChecks.ram_info.content = result;
         preloadChecks.ram_info.finished = true;
@@ -223,23 +199,17 @@ export default {
         preloadChecks.ram_info.content = null;
         preloadChecks.ram_info.finished = true;
         preloadChecks.ram_info.failed = true;
-        if (error.stdout)
-          preloadChecks.ram_info.errorMessage.push(error.stdout);
-        if (error.stderr)
-          preloadChecks.ram_info.errorMessage.push(error.stderr);
+        if (error.message)
+          preloadChecks.ram_info.errorMessage.push(error.message);
       }
     };
 
     const getNetworkInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/network"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-motherboard/helper_scripts/network"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         Object.assign(network_info, result);
         preloadChecks.network_info.content = result;
         preloadChecks.network_info.finished = true;
@@ -249,23 +219,17 @@ export default {
         preloadChecks.network_info.content = null;
         preloadChecks.network_info.finished = true;
         preloadChecks.network_info.failed = true;
-        if (error.stdout)
-          preloadChecks.network_info.errorMessage.push(error.stdout);
-        if (error.stderr)
-          preloadChecks.network_info.errorMessage.push(error.stderr);
+        if (error.message)
+          preloadChecks.network_info.errorMessage.push(error.message);
       }
     };
 
     const getServerInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-motherboard/helper_scripts/server_info"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-motherboard/helper_scripts/server_info"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         Object.assign(server_info, result);
         preloadChecks.server_info.content = result;
         preloadChecks.server_info.finished = true;
@@ -275,10 +239,8 @@ export default {
         preloadChecks.server_info.content = null;
         preloadChecks.server_info.finished = true;
         preloadChecks.server_info.failed = true;
-        if (error.stdout)
-          preloadChecks.server_info.errorMessage.push(error.stdout);
-        if (error.stderr)
-          preloadChecks.server_info.errorMessage.push(error.stderr);
+        if (error.message)
+          preloadChecks.server_info.errorMessage.push(error.message);
       }
     }
 

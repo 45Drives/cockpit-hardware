@@ -8,8 +8,8 @@ import ServerSection from "./components/ServerSection.vue";
 import DiskSection from "./components/DiskSection.vue";
 import CanvasSection from "./components/CanvasSection.vue";
 import ErrorMessage from "./components/ErrorMessage.vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn, errorStringHTML } = legacy;
+import { legacy, server, Command, unwrap } from "@45drives/houston-common-lib";
+const { errorStringHTML } = legacy;
 import { pushNotification, Notification, NotificationView } from "@45drives/houston-common-ui";
 import ZfsSection from "./components/ZfsSection.vue";
 
@@ -43,7 +43,17 @@ export default {
 
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
 
+    const withTimeout = (promise, timeoutMs, label) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs / 1000}s`)), timeoutMs)
+        ),
+      ]);
+    };
+
     let watchInitiated = false;
+    let initStarted = false;
 
     const adminFlag = ref(false);
     const adminCheck = ref(false);
@@ -78,10 +88,9 @@ export default {
       preloadChecks.serverInfo.finished = false;
       preloadChecks.diskInfo.finished = false;
       try {
-        const state = await useSpawn(["/opt/45drives/tools/dmap"], {
-          err: "out",
-          superuser: "require",
-        }).promise();
+        await unwrap(server.execute(
+          new Command(["/opt/45drives/tools/dmap"], { superuser: "require" })
+        ));
         init();
       } catch (error) {
         preloadChecks.serverInfo.finished = true;
@@ -89,7 +98,7 @@ export default {
         pushNotification(
           new Notification(
             "Error running dmap",
-            errorStringHTML(error.stdout),
+            errorStringHTML(error.message || error),
             "error",
             "never"
           )
@@ -100,20 +109,16 @@ export default {
 
     const runServerIdentifier = async () => {
       try {
-        const state = await useSpawn(
-          ["/opt/45drives/tools/server_identifier"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
+        await unwrap(server.execute(
+          new Command(["/opt/45drives/tools/server_identifier"], { superuser: "require" })
+        ));
         return await runServerInfo();
       } catch (error) {
         console.log(error);
         pushNotification(
           new Notification(
             "Error running server_identifier",
-            errorStringHTML(error.stdout),
+            errorStringHTML(error.message || error),
             "error",
             "never"
           )
@@ -135,6 +140,15 @@ export default {
               pageLayout.value = "B";
               break;
             case "F8X3":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X1":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X2":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X3":
               pageLayout.value = "B";
               break;
             case "2U":
@@ -165,6 +179,9 @@ export default {
               pageLayout.value = "B";
               break;
             case "HL15":
+              pageLayout.value = "B";
+              break;
+            case "X15":
               pageLayout.value = "B";
               break;
             case "PRO4":
@@ -219,6 +236,15 @@ export default {
             case "F8X3":
               pageLayout.value = "BZ";
               break;              
+            case "NVME-F8X1":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X2":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X3":
+              pageLayout.value = "BZ";
+              break;
             case "2U":
               pageLayout.value = "AZ";
               break;       
@@ -247,6 +273,9 @@ export default {
               pageLayout.value = "BZ";
               break;
             case "HL15":
+              pageLayout.value = "BZ";
+              break;
+            case "X15":
               pageLayout.value = "BZ";
               break;
             case "PRO4":
@@ -294,14 +323,14 @@ export default {
     const runServerInfo = async () => {
       preloadChecks.serverInfo.finished = false;
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks/scripts/server_info"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await withTimeout(
+          unwrap(server.execute(
+            new Command(["/usr/share/cockpit/45drives-disks/scripts/server_info"], { superuser: "require" })
+          )),
+          30000,
+          'server_info'
+        );
+        let result = JSON.parse(proc.getStdout());
         preloadChecks.serverInfo.content = result;
         preloadChecks.serverInfo.finished = true;
         preloadChecks.serverInfo.failed = false;
@@ -311,14 +340,14 @@ export default {
         preloadChecks.serverInfo.finished = true;
         preloadChecks.serverInfo.failed = true;
         if (
-          error.stdout &&
-          error.stdout.includes(
+          error.message &&
+          error.message.includes(
             "/etc/45drives/server_info/server_info.json not found."
           )
         ) {
           serverInfoFailNotification = new Notification(
               "Error obtaining server model information",
-              errorStringHTML(error.stdout),
+              errorStringHTML(error.message),
               "error",
               30000
             );
@@ -330,11 +359,14 @@ export default {
 
     const runLsdev = async () => {
       try {
-        const state = await useSpawn(["/opt/45drives/tools/lsdev", "--json"], {
-          err: "out",
-          superuser: "require",
-        }).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await withTimeout(
+          unwrap(server.execute(
+            new Command(["/opt/45drives/tools/lsdev", "--json"], { superuser: "require" })
+          )),
+          30000,
+          'lsdev'
+        );
+        let result = JSON.parse(proc.getStdout());
         if (
           !lsdevJson["rows"] ||
           result.rows.flat().filter((slot) => slot.occupied).length !=
@@ -356,7 +388,7 @@ export default {
         pushNotification(
           new Notification(
             "Error obtaining disk information",
-            errorStringHTML(error.stdout),
+            errorStringHTML(error.message || error),
             "error",
             "never"
           )
@@ -369,14 +401,14 @@ export default {
       preloadChecks.lsdev.finished = false;
       preloadChecks.diskInfo.finished = false;
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks/scripts/disk_info"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await withTimeout(
+          unwrap(server.execute(
+            new Command(["/usr/share/cockpit/45drives-disks/scripts/disk_info"], { superuser: "require" })
+          )),
+          30000,
+          'disk_info'
+        );
+        let result = JSON.parse(proc.getStdout());
         Object.assign(diskInfo, result);
         preloadChecks.lsdev.content = result;
         preloadChecks.lsdev.finished = true;
@@ -391,12 +423,12 @@ export default {
         preloadChecks.diskInfo.failed = true;
         preloadChecks.diskInfo.finished = true;
         if (
-          error.stdout &&
-          error.stdout.includes("Error opening /etc/vdev_id.conf. Run `dmap`.")
+          error.message &&
+          error.message.includes("Error opening /etc/vdev_id.conf. Run `dmap`.")
         ) {
           const diskErrorNotif = new Notification(
               "Error obtaining disk information",
-              errorStringHTML(error.stdout),
+              errorStringHTML(error.message),
               "error",
               "never"
             );
@@ -410,7 +442,7 @@ export default {
           pushNotification(
             new Notification(
               "Error obtaining disk information",
-              errorStringHTML(error.stdout),
+              errorStringHTML(error.message || error),
               "error"
             )
           );
@@ -421,14 +453,14 @@ export default {
 
     const runZfsInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks/scripts/zfs_info"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let result = JSON.parse(state.stdout);
+        const proc = await withTimeout(
+          unwrap(server.execute(
+            new Command(["/usr/share/cockpit/45drives-disks/scripts/zfs_info"], { superuser: "require" })
+          )),
+          30000,
+          'zfs_info'
+        );
+        let result = JSON.parse(proc.getStdout());
         Object.assign(zfsInfo, result);
         if (result.warnings && result.warnings.length > 0){
           pushNotification(
@@ -451,7 +483,7 @@ export default {
         pushNotification(
           new Notification(
             "Unable to gather zfs information",
-            errorStringHTML(error.stdout),
+            errorStringHTML(error.message || error),
             "warning",
             "never"
           )
@@ -461,18 +493,45 @@ export default {
     };
 
     const init = async () => {
-      await runServerInfo();
-      await runDiskInfo();
-      await runZfsInfo();
-      if (!preloadChecks.diskInfo.failed && !preloadChecks.serverInfo.failed && preloadChecks.zfs.finished) {
+      if (initStarted) return;
+      initStarted = true;
+      try {
+        // console.time('init:total');
+        // console.time('init:serverInfo');
+        await runServerInfo();
+        // console.timeEnd('init:serverInfo');
+        // console.time('init:diskInfo+zfsInfo');
+        await Promise.all([runDiskInfo(), runZfsInfo()]);
+        // console.timeEnd('init:diskInfo+zfsInfo');
         setPageLayout();
-        runLsdev();
+        if (!preloadChecks.diskInfo.failed && !preloadChecks.serverInfo.failed) {
+          console.time('init:lsdev');
+          await runLsdev();
+          // console.timeEnd('init:lsdev');
+        }
+        // console.timeEnd('init:total');
+      } catch (error) {
+        console.error('init failed:', error);
+        // Ensure page still renders with whatever data we have
+        preloadChecks.serverInfo.finished = true;
+        preloadChecks.diskInfo.finished = true;
+        preloadChecks.zfs.finished = true;
+        preloadChecks.zfs.failed = true;
+        setPageLayout();
       }
     };
 
+    const MAX_LSDEV_RETRIES = 5;
+
     const retryLsdev = async (duration) => {
       await delay(duration);
+      let retries = 0;
       while (await runLsdev()) {
+        retries++;
+        if (retries >= MAX_LSDEV_RETRIES) {
+          console.warn('lsdev: max retries reached, stopping retry loop');
+          break;
+        }
         await delay(duration);
       }
       await runZfsInfo();
@@ -480,19 +539,35 @@ export default {
 
     const rootCheck = async () => {
       let root_check = cockpit.permission({ admin: true });
-      root_check.addEventListener("changed", () => {
+      let handled = false;
+      const handlePermission = () => {
+        if (handled) return;
+        // console.log('rootCheck: allowed =', root_check.allowed);
         if (root_check.allowed) {
-          //user is an administrator, start the module as normal
-          //setup on-click listeners for buttons as required.
+          handled = true;
           adminCheck.value = true;
           adminFlag.value = true;
           init();
-        } else {
-          //user is not an administrator, block the page content.
+        } else if (root_check.allowed === false) {
+          handled = true;
           adminCheck.value = true;
           adminFlag.value = false;
         }
-      });
+      };
+      root_check.addEventListener("changed", handlePermission);
+      // Check immediately in case already resolved
+      handlePermission();
+      // Polling fallback: if event never fires, check periodically
+      const pollInterval = setInterval(() => {
+        if (handled) {
+          clearInterval(pollInterval);
+          return;
+        }
+        // console.log('rootCheck: polling, allowed =', root_check.allowed);
+        handlePermission();
+      }, 500);
+      // Stop polling after 10 seconds regardless
+      setTimeout(() => clearInterval(pollInterval), 10000);
     };
 
     let udevState;

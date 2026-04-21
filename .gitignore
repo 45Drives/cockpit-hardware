@@ -11,6 +11,13 @@ node_modules
 node_modules/
 .yarn/
 .yarnrc.yml
+.pnpm/
+.pnpm-lock.yaml
+.pnpm-debug.log
+*.log
+*.log.*
+*.log-*
+
 
 # deb packaging
 debian/cockpit-45drives-hardware

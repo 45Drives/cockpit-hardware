@@ -61,8 +61,7 @@
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn } = legacy;
+import { server, Command, unwrap } from "@45drives/houston-common-lib";
 import ErrorMessage from "./ErrorMessage.vue";
 
 export default {
@@ -80,14 +79,10 @@ export default {
       networks.value.length = 0;
       networks.value.push({ connectionName: 'Loading...', connectionState: 'Loading...', connectionType: 'Loading...', mac: 'Loading...', ipv4: 'Loading...', ipv6: 'Loading...', pciSlot: 'Loading...', busAddress: 'Loading...' });
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/network"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let networkInfo = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-system/scripts/network"], { superuser: "require" })
+        ));
+        let networkInfo = JSON.parse(proc.getStdout());
         networks.value.length = 0;
         networkInfo.forEach(network => {
           networks.value.push(network);
@@ -99,7 +94,7 @@ export default {
           console.log(error);
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
-          fatalErrorMsg.value.push(error.stderr);
+          fatalErrorMsg.value.push(error.message);
           fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/network");
           showFixButton.value = false;
         }

@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.6.2-1
+## cockpit-45drives-hardware 2.5.10-2
 
-* Test build
+* Updates write perms and rebuilding

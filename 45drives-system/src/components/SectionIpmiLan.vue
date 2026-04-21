@@ -53,8 +53,7 @@
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn } = legacy;
+import { server, Command, unwrap } from "@45drives/houston-common-lib";
 import ErrorMessage from "./ErrorMessage.vue";
 
 export default {
@@ -71,14 +70,10 @@ export default {
     const getIpmiInfo = async () => {
       ipmi.value={ ipAddress: 'Loading...', subnetMask: 'Loading...', macAddress: 'Loading...', defaultGatewayIp: 'Loading...' };
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-system/scripts/ipmi"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise();
-        let ipmiInfo = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-system/scripts/ipmi"], { superuser: "require" })
+        ));
+        let ipmiInfo = JSON.parse(proc.getStdout());
         ipmi.value = ipmiInfo;
           fatalError.value = false;
           fatalErrorMsg.value.length = 0;
@@ -87,7 +82,7 @@ export default {
           console.log(error);
           fatalError.value = true;
           fatalErrorMsg.value.length = 0;
-          fatalErrorMsg.value.push(error.stderr);
+          fatalErrorMsg.value.push(error.message);
           fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/ipmi");
           showFixButton.value = false;
         }

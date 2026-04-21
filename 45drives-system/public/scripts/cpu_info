@@ -33,6 +33,7 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Gold 6430",
 		"Intel(R) Xeon(R) E E-2434",
 		"Intel(R) Xeon(R) E E-2478",
+  		"Intel(R) Core(TM) i7-14700"
 	],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -95,6 +96,7 @@ g_ipmitool_sensor_fields = {
 	"SYS_FAN3": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_FAN4": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_FAN5": " (RPM)", #Giga Computing (GIGABYTE)
+ 	"SYS_FAN6": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
 	"TEMP_CPU": " (C)", 
 	"TEMP_DDR5_A1 ": " (C)",

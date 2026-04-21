@@ -61,8 +61,7 @@
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref, reactive } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
-import { legacy } from "@45drives/houston-common-lib";
-const { useSpawn } = legacy;
+import { server, Command, unwrap } from "@45drives/houston-common-lib";
 
 export default {
   setup() {
@@ -90,16 +89,12 @@ export default {
 
     const runServerInfo = async () => {
       try {
-        const state = await useSpawn(
-          ["/usr/share/cockpit/45drives-disks/scripts/server_info"],
-          {
-            err: "out",
-            superuser: "require",
-          }
-        ).promise()
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/usr/share/cockpit/45drives-disks/scripts/server_info"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         console.log(result);
-        serverInfo.value = state.stdout;
+        serverInfo.value = proc.getStdout();
         serverInfoError.errorFlag = false;
         serverInfoError.errorMessage.length = 0;
         serverInfoError.showFixButton = false;
@@ -107,7 +102,7 @@ export default {
         console.log(error);
         serverInfoError.errorFlag = true;
         serverInfoError.errorMessage.length = 0;
-        serverInfoError.errorMessage.push(error.stderr);
+        serverInfoError.errorMessage.push(error.message);
         serverInfoError.errorMessage.push(
           "An error occurred when trying to run /usr/share/cockpit/45drives-disks/scripts/server_info"
         );
@@ -117,13 +112,12 @@ export default {
 
     const runLsdev = async () => {
       try {
-        const state = await useSpawn(["/opt/45drives/tools/lsdev", "--json"], {
-          err: "out",
-          superuser: "require",
-        }).promise()
-        let result = JSON.parse(state.stdout);
+        const proc = await unwrap(server.execute(
+          new Command(["/opt/45drives/tools/lsdev", "--json"], { superuser: "require" })
+        ));
+        let result = JSON.parse(proc.getStdout());
         console.log(result);
-        lsdevInfo.value = state.stdout;
+        lsdevInfo.value = proc.getStdout();
         lsdevError.errorFlag = false;
         lsdevError.errorMessage.length = 0;
         lsdevError.showFixButton = false;
@@ -131,7 +125,7 @@ export default {
         console.log(error);
         lsdevError.errorFlag = true;
         lsdevError.errorMessage.length = 0;
-        lsdevError.errorMessage.push(error.stderr);
+        lsdevError.errorMessage.push(error.message);
         lsdevError.errorMessage.push(
           "An error occurred when trying to run /opt/45drives/tools/lsdev"
         );
