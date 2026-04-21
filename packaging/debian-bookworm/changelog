@@ -1,21 +1,10 @@
-cockpit-45drives-hardware (2.6.2-1bookworm) bookworm; urgency=medium
-
-  * Test build
-
- -- Harmin Patel <hpatel@45drives.com>  Wed, 15 Apr 2026 07:56:51 -0300
-
-cockpit-45drives-hardware (2.6.1-1bookworm) bookworm; urgency=medium
-
-  * building test package for fan controller
-
- -- Harmin Patel <hpatel@45drives.com>  Fri, 10 Apr 2026 11:00:54 -0300
-
-cockpit-45drives-hardware (2.5.14-1bookworm) bookworm; urgency=medium
+cockpit-45drives-hardware (2.7.0-1bookworm) bookworm; urgency=medium
 
   * Adds 45Drives Fan Controller module with persistent speed control and systemd
     service
 
- -- Harmin Patel <hpatel@45drives.com>  Fri, 10 Apr 2026 10:46:44 -0300
+ -- Harmin Patel <hpatel@45drives.com>  Mon, 21 Apr 2026 10:00:00 -0300
+
 cockpit-45drives-hardware (2.5.14-1bookworm) bookworm; urgency=medium
 
   * Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME
