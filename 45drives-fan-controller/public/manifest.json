@@ -1,6 +1,10 @@
 {
     "version": 0,
 
+    "conditions": [
+        { "path-exists": "/etc/45drives/fan-controller-supported" }
+    ],
+
     "menu": {
         "45drives-fan-controller": {
             "label": "45Drives Fan Controller",
