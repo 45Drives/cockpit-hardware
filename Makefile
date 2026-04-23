@@ -14,10 +14,10 @@
 
 # PLUGIN_SRCS is space-delimited list of subdirectories containg a plugin project.
 # You can leave it empty for automatic detection based on directories containing a package.json file.
-PLUGIN_SRCS=45drives-disks 45drives-motherboard 45drives-system
+PLUGIN_SRCS=45drives-disks 45drives-motherboard 45drives-system 45drives-fan-controller
 
 # For installing to a remote machine for testing with `make install-remote`
-REMOTE_TEST_HOST=192.168.123.5
+REMOTE_TEST_HOST=192.168.207.11
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install
@@ -26,10 +26,10 @@ RESTART_COCKPIT?=1
 # When set to 1, JS is not minified
 DEBUG?=0
 
-# Run yarn upgrade or npm update for each project before build
+# Run yarn upgrade or npm update for each pSroject before build
 AUTO_UPGRADE_DEPS?=0
 
-# Remove the files on remote server before rsync
+# Remove the files on remote server before rsyncS
 REMOTE_TEST_REMOVE_BEFORE?=1
 
 # USAGE

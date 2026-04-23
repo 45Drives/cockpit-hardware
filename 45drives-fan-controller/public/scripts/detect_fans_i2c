@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""
+detect_fans - Detect all fans across both MAX31790 boards.
+
+Scans board 1 (0x40) and board 2 (0x48), checking all 6 fan channels each.
+For each fan that responds, enables the tachometer and reads the current RPM.
+
+Output (JSON to stdout):
+{
+    "fans": [
+        { "board": 1, "fan": 1, "name": "Board1_Fan1", "rpm": 5100, "responding": true },
+        ...
+    ],
+    "count": 6
+}
+"""
+
+import json
+import os
+import sys
+
+# Allow importing fan_common from the same directory
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    BOARDS,
+    get_board_addr,
+    get_fan_registers,
+    check_and_enable_tach,
+    read_tach_rpm,
+)
+
+
+def detect_all_fans():
+    """Scan both boards, all 6 fan channels each."""
+    fans = []
+
+    for board_num in sorted(BOARDS.keys()):
+        dev_addr = get_board_addr(board_num)
+
+        for fan_num in range(1, 7):
+            config_reg, tach_reg, _pwm_reg = get_fan_registers(fan_num)
+
+            responding = check_and_enable_tach(dev_addr, config_reg)
+            rpm = 0
+            if responding:
+                rpm = read_tach_rpm(dev_addr, tach_reg)
+
+            # Only include fans that are actually responding
+            if responding:
+                fans.append({
+                    "board": board_num,
+                    "fan": fan_num,
+                    "name": f"Board{board_num}_Fan{fan_num}",
+                    "rpm": rpm,
+                    "responding": True,
+                })
+
+    return fans
+
+
+def main():
+    try:
+        fans = detect_all_fans()
+        output = {
+            "fans": fans,
+            "count": len(fans),
+        }
+        print(json.dumps(output, indent=4))
+    except Exception as e:
+        error = {"error_msg": str(e)}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

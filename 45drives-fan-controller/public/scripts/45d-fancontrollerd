@@ -1,0 +1,384 @@
+#!/usr/bin/env python3
+"""
+45d-fancontrollerd - 45Drives Fan Controller Daemon
+
+Reads the active fan profile from /etc/45drives/fan-controller/profiles.json,
+polls temperature sensors, and adjusts fan PWM duty cycles accordingly.
+
+Runs as a systemd service so fan control persists across reboots and
+operates independently of the Cockpit UI.
+
+Signals:
+  SIGHUP  - Reload the configuration file without restarting.
+  SIGTERM - Graceful shutdown: reset fans to default duty and exit.
+"""
+
+import json
+import logging
+import os
+import signal
+import sys
+import time
+
+# ── Path setup ──
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+
+from fan_common import (
+    probe_boards,
+    get_board_hwmon,
+    set_pwm_duty,
+    set_pwm_duty_auto,
+    set_pwm_duty_i2c,
+    read_fan_rpm,
+    read_fan_rpm_auto,
+    discover_temp_sensors,
+    read_sensor_temp,
+    _discover_gpu_sensors,
+    _discover_storcli_hba,
+    _discover_smartctl_drives,
+    FANS_PER_BOARD,
+    BOARDS,
+    enable_all_tachometers,
+    get_board_addr,
+    save_fan_speeds,
+    load_fan_speeds,
+    get_transport,
+)
+
+# ── Constants ──
+CONFIG_PATH = "/etc/45drives/fan-controller/profiles.json"
+DEFAULT_DUTY = 100         # % duty when no profile is active or on startup
+POLL_INTERVAL = 5          # seconds between sensor poll cycles
+SETTLE_TIME = 2            # seconds to wait after setting PWM before next read
+
+# ── Logging ──
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+log = logging.getLogger("45d-fancontrollerd")
+
+# ── Global state ──
+_running = True
+_reload_requested = False
+
+
+# ====================================================================
+#  Signal handlers
+# ====================================================================
+
+def _handle_sighup(signum, frame):
+    """Reload configuration on SIGHUP."""
+    global _reload_requested
+    _reload_requested = True
+    log.info("SIGHUP received — will reload configuration.")
+
+
+def _handle_sigterm(signum, frame):
+    """Graceful shutdown on SIGTERM/SIGINT."""
+    global _running
+    _running = False
+    log.info("SIGTERM received — shutting down.")
+
+
+# ====================================================================
+#  Configuration loading
+# ====================================================================
+
+def load_config():
+    """
+    Load and validate the profiles configuration file.
+    Returns (active_profile_dict, config_dict) or (None, None) on error.
+    """
+    if not os.path.isfile(CONFIG_PATH):
+        log.warning("Config file not found: %s", CONFIG_PATH)
+        return None, None
+
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            config = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        log.error("Failed to read config: %s", e)
+        return None, None
+
+    active_id = config.get("activeProfileId")
+    if active_id is None:
+        log.info("No active profile set in config.")
+        return None, config
+
+    profiles = config.get("profiles", [])
+    for p in profiles:
+        if p.get("id") == active_id:
+            log.info("Loaded active profile: '%s' (id=%s)", p.get("name", "?"), active_id)
+            return p, config
+
+    log.warning("Active profile id=%s not found in profiles list.", active_id)
+    return None, config
+
+
+def extract_fan_configs(profile):
+    """
+    Extract a list of per-fan control configurations from a profile.
+
+    Returns a list of dicts:
+      [{
+        "board": 1,
+        "fan": 2,
+        "name": "Board1_Fan2",
+        "sensorBindings": ["hwmon0_temp1", ...],
+        "ranges": [{"tempLow": 30, "tempHigh": 50, "speed": 40}, ...],
+      }, ...]
+    """
+    fans_cfg = profile.get("fans", {})
+    fan_ranges = profile.get("fanRanges", {})
+    fan_bindings = profile.get("fanSensorBindings", {})
+    detected_fans = profile.get("detectedFans", [])
+    default_duty = profile.get("defaultDuty", DEFAULT_DUTY)
+
+    configs = []
+    for fan_info in detected_fans:
+        name = fan_info.get("name", "")
+        board = fan_info.get("board", 1)
+        fan_num = fan_info.get("fan", 1)
+
+        ranges = fan_ranges.get(name, [])
+        bindings = fan_bindings.get(name, [])
+
+        # Only include fans that have both bindings and ranges
+        if not ranges or not bindings:
+            continue
+
+        # Sort ranges by tempLow ascending for consistent matching
+        sorted_ranges = sorted(ranges, key=lambda r: r.get("tempLow", 0))
+
+        configs.append({
+            "board": board,
+            "fan": fan_num,
+            "name": name,
+            "sensorBindings": bindings,
+            "ranges": sorted_ranges,
+            "defaultDuty": default_duty,
+        })
+
+    return configs
+
+
+# ====================================================================
+#  Temperature → duty matching
+# ====================================================================
+
+def match_duty(temp, ranges, default_duty=DEFAULT_DUTY):
+    """
+    Given a temperature and a sorted list of ranges, return the duty %.
+
+    Matching rules (same as the UI):
+      - If temp falls within [tempLow, tempHigh] of a range → use that speed.
+      - If temp exceeds all ranges → use highest range's speed.
+      - If temp is below all ranges → use lowest range's speed.
+      - If no ranges at all → return default_duty.
+    """
+    if not ranges:
+        return default_duty
+
+    for r in ranges:
+        if r["tempLow"] <= temp <= r["tempHigh"]:
+            return r["speed"]
+
+    # Below all ranges
+    if temp < ranges[0]["tempLow"]:
+        return ranges[0]["speed"]
+
+    # Above all ranges
+    return ranges[-1]["speed"]
+
+
+# ====================================================================
+#  Fan reset helper
+# ====================================================================
+
+def reset_all_fans_to_default(duty=DEFAULT_DUTY):
+    """Set all discovered fans to the given duty (best-effort)."""
+    try:
+        boards = probe_boards()
+        for board_num in boards:
+            for fan_num in range(1, FANS_PER_BOARD + 1):
+                try:
+                    set_pwm_duty_auto(board_num, fan_num, duty)
+                except Exception:
+                    pass
+        log.info("Reset all fans to %d%% duty.", duty)
+    except Exception as e:
+        log.warning("Could not reset fans: %s", e)
+
+
+# ====================================================================
+#  Main daemon loop
+# ====================================================================
+
+def run_daemon():
+    global _running, _reload_requested
+
+    signal.signal(signal.SIGHUP, _handle_sighup)
+    signal.signal(signal.SIGTERM, _handle_sigterm)
+    signal.signal(signal.SIGINT, _handle_sigterm)
+
+    log.info("45Drives Fan Controller daemon starting (pid=%d).", os.getpid())
+    log.info("Config file: %s", CONFIG_PATH)
+    log.info("Poll interval: %ds", POLL_INTERVAL)
+
+    # ── Enable tachometers on all fan channels ──
+    try:
+        enable_all_tachometers()
+        log.info("Tachometers enabled on all fan channels.")
+    except Exception as e:
+        log.warning("Could not enable tachometers: %s", e)
+
+    # ── Restore saved fan speeds (persist across reboots) ──
+    saved_speeds = load_fan_speeds()
+    if saved_speeds:
+        log.info("Restoring %d saved fan speed(s).", len(saved_speeds))
+        for entry in saved_speeds:
+            board_num = entry.get("board", 1)
+            fan_num = entry.get("fan", 1)
+            duty = entry.get("duty", DEFAULT_DUTY)
+            try:
+                addr = get_board_addr(board_num)
+                set_pwm_duty_i2c(addr, fan_num, duty)
+                log.info("  Board%d_Fan%d → %d%%", board_num, fan_num, duty)
+            except Exception as e:
+                log.warning("  Board%d_Fan%d: restore failed: %s", board_num, fan_num, e)
+    else:
+        log.info("No saved fan speeds — applying default %d%%.", DEFAULT_DUTY)
+        reset_all_fans_to_default(DEFAULT_DUTY)
+
+    # ── Initial load ──
+    profile, config = load_config()
+    fan_configs = extract_fan_configs(profile) if profile else []
+
+    if not fan_configs:
+        log.info("No active profile — maintaining saved/default fan speeds.")
+
+    # ── Main loop ──
+    while _running:
+        # ── Handle reload ──
+        if _reload_requested:
+            _reload_requested = False
+            log.info("Reloading configuration...")
+            profile, config = load_config()
+            fan_configs = extract_fan_configs(profile) if profile else []
+            if not fan_configs:
+                log.info("No active fan configurations after reload — idling.")
+
+        if not fan_configs:
+            # Nothing to control — sleep and check again
+            _interruptible_sleep(POLL_INTERVAL)
+            continue
+
+        # ── Poll sensors and adjust fans ──
+        try:
+            _control_cycle(fan_configs)
+        except Exception as e:
+            log.error("Error in control cycle: %s", e)
+
+        _interruptible_sleep(POLL_INTERVAL)
+
+    # ── Graceful shutdown ──
+    # Do NOT reset fans — preserve last-set speeds so they persist
+    # across daemon restarts.  Speeds are saved in fan-speeds.json
+    # and will be restored on next startup.
+    log.info("Shutting down — fan speeds preserved.")
+    log.info("Daemon stopped.")
+
+
+def _control_cycle(fan_configs):
+    """
+    One iteration of the control loop:
+      1. Read all sensor temperatures.
+      2. For each configured fan, find the hottest bound sensor.
+      3. Match the temperature to a range and set PWM duty.
+    """
+    # Build a sensor temp cache for this cycle
+    sensor_temps = {}
+
+    # Hwmon sensors
+    try:
+        for s in discover_temp_sensors():
+            sensor_temps[s["id"]] = s["value"]
+    except Exception as e:
+        log.debug("hwmon sensor read error: %s", e)
+
+    # GPU sensors (nvidia-smi)
+    try:
+        for s in _discover_gpu_sensors():
+            sensor_temps[s["id"]] = s["value"]
+    except Exception:
+        pass
+
+    # HBA sensors (storcli)
+    try:
+        for s in _discover_storcli_hba():
+            sensor_temps[s["id"]] = s["value"]
+    except Exception:
+        pass
+
+    # Drive sensors (smartctl)
+    try:
+        for s in _discover_smartctl_drives():
+            sensor_temps[s["id"]] = s["value"]
+    except Exception:
+        pass
+
+    # ── Per-fan control ──
+    boards = probe_boards()
+
+    for fc in fan_configs:
+        board_num = fc["board"]
+        fan_num = fc["fan"]
+        bindings = fc["sensorBindings"]
+        ranges = fc["ranges"]
+        default = fc.get("defaultDuty", DEFAULT_DUTY)
+
+        # Find hottest bound sensor
+        hottest = None
+        for sid in bindings:
+            val = sensor_temps.get(sid)
+            if val is not None:
+                if hottest is None or val > hottest:
+                    hottest = val
+
+        if hottest is None:
+            log.debug("Fan %s: no sensor readings available — skipping.", fc["name"])
+            continue
+
+        duty = match_duty(hottest, ranges, default)
+
+        # Apply PWM
+        try:
+            set_pwm_duty_auto(board_num, fan_num, duty)
+            log.debug(
+                "Fan %s: hottest=%.1f°C → %d%% duty",
+                fc["name"], hottest, duty,
+            )
+        except Exception as e:
+            log.warning("Fan %s: failed to set duty: %s", fc["name"], e)
+
+
+def _interruptible_sleep(seconds):
+    """Sleep in small increments so signals can interrupt promptly."""
+    end = time.monotonic() + seconds
+    while _running and not _reload_requested and time.monotonic() < end:
+        time.sleep(0.5)
+
+
+# ====================================================================
+#  Entry point
+# ====================================================================
+
+if __name__ == "__main__":
+    try:
+        run_daemon()
+    except Exception as e:
+        log.critical("Fatal error: %s", e)
+        sys.exit(1)

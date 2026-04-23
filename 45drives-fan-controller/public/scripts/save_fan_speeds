@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+"""
+save_fan_speeds - Save fan speed(s) to persistent config.
+
+Used by developers to lock in fan speeds before shipping units.
+Speeds saved here are restored automatically on every boot by the daemon.
+
+Usage:
+    save_fan_speeds <duty_percent> [board_num]
+        Set ALL fans on a board to the same duty and save.
+
+    save_fan_speeds <fan_num> <duty_percent> <board_num>
+        Set a specific fan and save.
+
+    save_fan_speeds --show
+        Show currently saved speeds.
+
+Examples:
+    save_fan_speeds 60            # All fans on board 1 → 60%
+    save_fan_speeds 60 1          # All fans on board 1 → 60%
+    save_fan_speeds 3 75 1        # Fan 3 on board 1 → 75%
+    save_fan_speeds --show        # Print saved config
+"""
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    FANS_PER_BOARD,
+    BOARDS,
+    enable_all_tachometers,
+    set_pwm_duty_i2c,
+    get_board_addr,
+    save_fan_speeds,
+    load_fan_speeds,
+    SPEED_CONFIG_PATH,
+)
+
+
+def show_saved():
+    """Print currently saved fan speeds."""
+    speeds = load_fan_speeds()
+    if not speeds:
+        print("No saved fan speeds found.")
+        print(f"  Config file: {SPEED_CONFIG_PATH}")
+        return
+
+    print(f"Saved fan speeds ({SPEED_CONFIG_PATH}):")
+    for entry in sorted(speeds, key=lambda e: (e.get("board", 0), e.get("fan", 0))):
+        print(f"  Board {entry['board']} Fan {entry['fan']}: {entry['duty']}%")
+
+
+def set_and_save_all(duty, board_num):
+    """Set all fans on a board to the same duty and save."""
+    addr = get_board_addr(board_num)
+    speeds = load_fan_speeds()
+
+    print(f"Enabling tachometers...")
+    enable_all_tachometers()
+
+    for fan_num in range(1, FANS_PER_BOARD + 1):
+        print(f"  Board {board_num} Fan {fan_num} → {duty}%")
+        set_pwm_duty_i2c(addr, fan_num, duty)
+        # Update speeds list
+        updated = False
+        for entry in speeds:
+            if entry.get("board") == board_num and entry.get("fan") == fan_num:
+                entry["duty"] = duty
+                updated = True
+                break
+        if not updated:
+            speeds.append({"board": board_num, "fan": fan_num, "duty": duty})
+
+    save_fan_speeds(speeds)
+    print(f"\nSaved to {SPEED_CONFIG_PATH}")
+    print("Speeds will persist across reboots.")
+
+
+def set_and_save_single(fan_num, duty, board_num):
+    """Set a single fan and save."""
+    addr = get_board_addr(board_num)
+    speeds = load_fan_speeds()
+
+    print(f"Enabling tachometers...")
+    enable_all_tachometers()
+
+    print(f"  Board {board_num} Fan {fan_num} → {duty}%")
+    set_pwm_duty_i2c(addr, fan_num, duty)
+
+    updated = False
+    for entry in speeds:
+        if entry.get("board") == board_num and entry.get("fan") == fan_num:
+            entry["duty"] = duty
+            updated = True
+            break
+    if not updated:
+        speeds.append({"board": board_num, "fan": fan_num, "duty": duty})
+
+    save_fan_speeds(speeds)
+    print(f"\nSaved to {SPEED_CONFIG_PATH}")
+    print("Speed will persist across reboots.")
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(1)
+
+    if sys.argv[1] == "--show":
+        show_saved()
+        return
+
+    try:
+        if len(sys.argv) == 2:
+            # save_fan_speeds <duty>  →  all fans, board 1
+            duty = int(sys.argv[1])
+            set_and_save_all(duty, board_num=1)
+
+        elif len(sys.argv) == 3:
+            # save_fan_speeds <duty> <board>  →  all fans on board
+            duty = int(sys.argv[1])
+            board_num = int(sys.argv[2])
+            set_and_save_all(duty, board_num)
+
+        elif len(sys.argv) >= 4:
+            # save_fan_speeds <fan> <duty> <board>  →  single fan
+            fan_num = int(sys.argv[1])
+            duty = int(sys.argv[2])
+            board_num = int(sys.argv[3])
+            if fan_num < 1 or fan_num > FANS_PER_BOARD:
+                print(f"Error: fan_num must be 1-{FANS_PER_BOARD}", file=sys.stderr)
+                sys.exit(1)
+            set_and_save_single(fan_num, duty, board_num)
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

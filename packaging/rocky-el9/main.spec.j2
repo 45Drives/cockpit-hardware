@@ -36,14 +36,30 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-system
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
+%dir /usr/share/cockpit/45drives-fan-controller
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
+/usr/lib/systemd/system/45d-fancontroller.service
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
 /usr/share/cockpit/45drives-system/*
+/usr/share/cockpit/45drives-fan-controller/*
 
+%post
+systemctl daemon-reload
+systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
+
+%preun
+if [ $1 -eq 0 ]; then
+    systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
+fi
+
+%postun
+systemctl daemon-reload
 
 %changelog
+* Mon Apr 21 2026 Harmin Patel <hpatel@45drives.com> 2.7.0-1
+- Adds 45Drives Fan Controller module with persistent speed control and systemd service
 * Fri Apr 17 2026 Jordan Keough <jkeough@45drives.com> 2.5.14-1
 - Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME
   Hybrid F8X units and fixes some bugs with Motherboard tab displaying some PCIE/M2

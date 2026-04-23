@@ -4,6 +4,7 @@
     "45drives-disks",
     "45drives-motherboard",
     "45drives-system",
+    "45drives-fan-controller",
     "houston-common",
     "houston-common/houston-common-*"
   ],
@@ -12,7 +13,9 @@
     "build:disks": "yarn workspace 45drives-disks run build",
     "build:motherboard": "yarn workspace 45drives-motherboard run build",
     "build:system": "yarn workspace 45drives-system run build",
-    "build": "yarn build:common && yarn build:disks && yarn build:motherboard && yarn build:system"
+    "build:fan-controller": "yarn workspace 45drives-fan-controller run build",
+    "deploy:fan-controller": "yarn build:fan-controller && cp -af 45drives-fan-controller/dist/* $HOME/.local/share/cockpit/45drives-fan-controller-test/ && mkdir -p /usr/share/cockpit/45drives-fan-controller/scripts && cp -af 45drives-fan-controller/public/scripts/* /usr/share/cockpit/45drives-fan-controller/scripts/ && chmod +x /usr/share/cockpit/45drives-fan-controller/scripts/*",
+    "build": "yarn build:common && yarn build:disks && yarn build:motherboard && yarn build:system && yarn build:fan-controller"
   },
   "packageManager": "yarn@4.13.0"
 }

@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""
+detect_fans - Auto-detect all real fans across all MAX31790 boards.
+
+Enables tachometers via I2C, sets a detection duty, waits for spin-up,
+then checks RPM to identify channels with physical fans connected.
+
+Output (JSON to stdout):
+{
+    "transport": "hwmon",
+    "boards": [1],
+    "fans": [
+        { "board": 1, "fan": 2, "name": "Board1_Fan2", "rpm": 6597 },
+        ...
+    ],
+    "count": 2
+}
+"""
+
+import json
+import os
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    FANS_PER_BOARD,
+    BOARDS,
+    probe_boards,
+    read_fan_rpm,
+    read_fan_rpm_auto,
+    set_pwm_duty,
+    set_pwm_duty_auto,
+    enable_all_tachometers,
+    get_transport,
+    check_and_enable_tach,
+    get_board_addr,
+    get_fan_registers,
+    read_tach_rpm,
+)
+
+
+def detect_all_fans():
+    """
+    Scan every discovered board, every channel, return only real fans.
+
+    Steps:
+      1. Enable tachometers on all channels (required for fault/RPM).
+      2. Set a moderate duty so fans spin up.
+      3. Wait for tachometer to register pulses.
+      4. Only fans with RPM > 0 are physically connected.
+    """
+    boards = probe_boards()
+
+    # Enable tachometers — the hwmon driver does NOT do this
+    enable_all_tachometers()
+
+    # Set all channels to 100% for detection spin-up
+    for board_num in boards:
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            try:
+                set_pwm_duty_auto(board_num, fan_num, 100)
+            except Exception:
+                pass
+
+    # Wait for fans to spin up and tach to register
+    time.sleep(3)
+
+    fans = []
+    for board_num in sorted(boards.keys()):
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            rpm = read_fan_rpm_auto(board_num, fan_num)
+            if rpm > 0:
+                fans.append({
+                    "board": board_num,
+                    "fan": fan_num,
+                    "name": f"Board{board_num}_Fan{fan_num}",
+                    "rpm": rpm,
+                })
+
+    return sorted(boards.keys()), fans
+
+
+def main():
+    try:
+        board_list, fans = detect_all_fans()
+        output = {
+            "transport": get_transport(),
+            "boards": board_list,
+            "fans": fans,
+            "count": len(fans),
+        }
+        print(json.dumps(output, indent=4))
+    except Exception as e:
+        error = {"error_msg": str(e)}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

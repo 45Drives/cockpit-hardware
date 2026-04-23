@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""
+get_fan_rpm - Read the current RPM for a specific fan via hwmon sysfs.
+
+Usage:
+    get_fan_rpm <fan_num> [board_num]
+    get_fan_rpm --all
+"""
+
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fan_common import (
+    FANS_PER_BOARD,
+    probe_boards,
+    get_board_hwmon,
+    is_fan_present,
+    is_fan_present_auto,
+    read_fan_rpm,
+    read_fan_rpm_auto,
+    enable_all_tachometers,
+    get_transport,
+)
+
+
+def _ensure_tach():
+    """Enable tachometers once per invocation."""
+    try:
+        enable_all_tachometers()
+    except Exception:
+        pass
+
+
+def read_single_fan(fan_num, board_num):
+    _ensure_tach()
+    present, rpm = is_fan_present_auto(board_num, fan_num)
+    return {
+        "board": board_num,
+        "fan": fan_num,
+        "rpm": rpm,
+        "present": present,
+        "success": True,
+    }
+
+
+def read_all_fans():
+    _ensure_tach()
+    boards = probe_boards()
+    fans = []
+    for board_num in sorted(boards.keys()):
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            present, rpm = is_fan_present_auto(board_num, fan_num)
+            if present:
+                fans.append({"board": board_num, "fan": fan_num, "rpm": rpm})
+    return {"fans": fans, "success": True}
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(json.dumps({
+            "error_msg": "Usage: get_fan_rpm <fan_num> [board_num]  or  --all"
+        }), file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        if sys.argv[1] == "--all":
+            output = read_all_fans()
+        else:
+            fan_num = int(sys.argv[1])
+            board_num = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+            if fan_num < 1 or fan_num > FANS_PER_BOARD:
+                print(json.dumps({"error_msg": f"fan_num must be 1-{FANS_PER_BOARD}"}),
+                      file=sys.stderr)
+                sys.exit(1)
+            output = read_single_fan(fan_num, board_num)
+
+        print(json.dumps(output, indent=4))
+
+    except Exception as e:
+        error = {"error_msg": str(e), "success": False}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

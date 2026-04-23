@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+
+import json
+import subprocess
+import sys
+
+
+def detect_fans():
+    fans = []
+
+    try:
+        # Attempt detection via ipmitool
+        result = subprocess.run(
+            ["ipmitool", "sdr", "type", "Fan"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"ipmitool exited with code {result.returncode}: {result.stderr.strip()}"
+            )
+
+        for line in result.stdout.strip().splitlines():
+            # Example line:
+            # CPU0_FAN         | B8h | ok  | 29.1 | 5100 RPM
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 5 and "RPM" in parts[4]:
+                name = parts[0]
+                rpm_str = parts[4].replace("RPM", "").strip()
+                try:
+                    rpm = int(float(rpm_str))
+                except ValueError:
+                    rpm = 0
+                fans.append({"name": name, "rpm": rpm})
+
+    except FileNotFoundError:
+        # ipmitool not installed – fall back or error
+        raise RuntimeError(
+            "ipmitool is not installed. Please install ipmitool to detect fans."
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("ipmitool command timed out.")
+    return fans
+
+
+def main():
+    try:
+        fans = detect_fans()
+        output = {
+            "fans": fans,
+            "count": len(fans),
+        }
+        print(json.dumps(output, indent=4))
+    except Exception as e:
+        error = {"error_msg": str(e)}
+        print(json.dumps(error, indent=4), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

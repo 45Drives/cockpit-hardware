@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.7.0-1focal) focal; urgency=medium
+
+  * Adds 45Drives Fan Controller module with persistent speed control and systemd
+    service
+
+ -- Harmin Patel <hpatel@45drives.com>  Mon, 21 Apr 2026 10:00:00 -0300
+
 cockpit-45drives-hardware (2.5.14-1focal) focal; urgency=medium
 
   * Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME

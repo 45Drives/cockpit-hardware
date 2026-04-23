@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""
+load_profiles - Read fan profiles from the persistent config file.
+
+Output (JSON to stdout):
+{
+  "version": 1,
+  "activeProfileId": null,
+  "profiles": [ ... ],
+  "success": true
+}
+
+If the file does not exist, returns an empty default config.
+"""
+
+import json
+import os
+import sys
+
+CONFIG_PATH = "/etc/45drives/fan-controller/profiles.json"
+
+DEFAULT_CONFIG = {
+    "version": 1,
+    "activeProfileId": None,
+    "profiles": [],
+}
+
+
+def main():
+    try:
+        if not os.path.isfile(CONFIG_PATH):
+            result = {**DEFAULT_CONFIG, "success": True}
+            print(json.dumps(result, indent=2))
+            return
+
+        with open(CONFIG_PATH, "r") as f:
+            data = json.load(f)
+
+        data["success"] = True
+        print(json.dumps(data, indent=2))
+
+    except Exception as e:
+        error = {"error_msg": str(e), "success": False}
+        print(json.dumps(error), file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
