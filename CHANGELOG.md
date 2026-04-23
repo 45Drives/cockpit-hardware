@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.5.14-1
+## cockpit-45drives-hardware 2.7.0-2
 
-* Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME Hybrid F8X units and fixes some bugs with Motherboard tab displaying some PCIE/M2 data
+* Pushes 45Drives Fan Controller module to stable for use with new NVME-F8X* servers -> unsure why package version incremented so far but matching latest testing package + incrementing build number
