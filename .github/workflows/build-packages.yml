@@ -2,7 +2,7 @@ name: Build Packages
 on:
   push:
     branches: 
-      - dev-fan-controller
+      - build
     tags:
       - 'v*.*.*'
 jobs:
