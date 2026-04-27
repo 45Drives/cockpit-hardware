@@ -71,6 +71,7 @@ g_ipmitool_sensor_fields = {
 	"P1_DIMME~H Temp": " (C)", #X12DPi-N6
 	"P2_DIMMA~D Temp": " (C)", #X12DPi-N6
 	"P2_DIMME~H Temp": " (C)", #X12DPi-N6,
+ 	"DIMMAB Temp": " (C)", #X13SAE-F
  	"DIMMG0_TEMP": " (C)", #Giga Computing (GIGABYTE)
   	"DIMMG1_TEMP": " (C)", #Giga Computing (GIGABYTE)
    	"DIMMG2_TEMP": " (C)", #Giga Computing (GIGABYTE)
@@ -97,8 +98,10 @@ locator_tags = {
 	"CPU1_DIMM_D2":["DDR4_D"],
 	"CPU1_DIMM_E1":["DDR4_E"],
 	"CPU1_DIMM_F1":["DDR4_F"],
-	"DIMMA1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
-	"DIMMB1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
+	"DIMMA1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp","DIMMAB Temp"],
+	"DIMMB1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp","DIMMAB Temp"],
+ 	"DIMMA2":["DIMMAB Temp"],
+	"DIMMB2":["DIMMAB Temp"],
 	"DIMMC1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
 	"DIMMD1":["DIMMABCD","P1_DIMMA~D","DIMMABCD Temp"],
 	"DIMME1":["DIMMEFGH","P1_DIMME~H","DIMMEFGH Temp"],

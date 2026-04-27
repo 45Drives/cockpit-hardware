@@ -29,6 +29,7 @@ g_dmi_mobo_fields = {
 		"X11SSM-F",
 		"X11SPi-TF",
 		"X12SPL-F",
+		"X13SAE-F",
 		"H12SSL-i",
 		"X11SPH-nCTF",
 		"X11SPH-nCTPF",
@@ -44,7 +45,7 @@ g_dmi_mobo_fields = {
 		"ROMED8-2T/BCM",
   		"ROMED8-2T",
 		"ProArt X870E-CREATOR WIFI",
-		"MW34-SP0-00",
+  		"MW34-SP0-00",
 	],
 	"Serial Number": None
 }
@@ -78,7 +79,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Gold 6430",
 		"Intel(R) Xeon(R) E E-2434",
 		"Intel(R) Xeon(R) E E-2478",
-		"Intel(R) Core(TM) i7-14700"
+  		"Intel(R) Core(TM) i7-14700",
+		"12th Gen Intel(R) Core(TM) i7-12700K"
 	],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -107,6 +109,7 @@ g_ipmitool_sensor_fields = {
 	"P2-DIMMD1 Temp": " (C)",
 	"P2-DIMME1 Temp": " (C)",
 	"CPU Temp": " (C)",
+	"DIMMAB Temp": " (C)",
 	"DIMMA1 Temp": " (C)",
 	"DIMMA2 Temp": " (C)",
 	"DIMMB1 Temp": " (C)",

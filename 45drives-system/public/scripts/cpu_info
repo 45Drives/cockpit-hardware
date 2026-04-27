@@ -33,7 +33,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) Gold 6430",
 		"Intel(R) Xeon(R) E E-2434",
 		"Intel(R) Xeon(R) E E-2478",
-  		"Intel(R) Core(TM) i7-14700"
+  		"Intel(R) Core(TM) i7-14700",
+    	"12th Gen Intel(R) Core(TM) i7-12700K"
 	],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -63,6 +64,7 @@ g_ipmitool_sensor_fields = {
 	"P2-DIMMD1 Temp": " (C)",
 	"P2-DIMME1 Temp": " (C)",
 	"CPU Temp": " (C)",
+ 	"DIMMAB Temp": " (C)",
 	"DIMMA1 Temp": " (C)",
 	"DIMMA2 Temp": " (C)",
 	"DIMMB1 Temp": " (C)",

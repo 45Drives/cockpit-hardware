@@ -543,7 +543,10 @@ export default {
 											peripheralImages.length
 										)
 									);
-									peripheralImages.push(m.loadImage("img/motherboard/ram.png"));
+									let ramImg = components[c]["width"] > components[c]["height"]
+									? "img/motherboard/ram-90.png"
+									: "img/motherboard/ram.png";
+								peripheralImages.push(m.loadImage(ramImg));
 								}
 							}
 						}
@@ -559,10 +562,14 @@ export default {
 					for (let i = 0; i < pci_info["PCI Info"].length; i++) {
 						if (pci_info["PCI Info"][i].hasOwnProperty("ID")) {
 							for (let c = 0; c < components.length; c++) {
+								let isM2Component = components[c]["type"].search("M2") != -1;
+								let isM2PciEntry = pci_info["PCI Info"][i]["Designation"] && pci_info["PCI Info"][i]["Designation"].search("M2") != -1;
 								if (
 									components[c]["id"] == pci_info["PCI Info"][i]["ID"] &&
-									(components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1 ||
-									(components[c]["type"].search("M2") != -1 && pci_info["PCI Info"][i]["Designation"] && pci_info["PCI Info"][i]["Designation"].search("M2") != -1))
+									(
+										(isM2Component && isM2PciEntry && pci_info["PCI Info"][i]["Designation"] == components[c]["type"]) ||
+										(!isM2Component && !isM2PciEntry && (components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1))
+									)
 								) {
 
 									components[c].popup.content = JSON.stringify(

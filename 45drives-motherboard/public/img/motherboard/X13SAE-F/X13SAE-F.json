@@ -1,0 +1,233 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 575,
+        "y0": 346,
+        "width": 210,
+        "height": 140,
+        "diam": 0,
+        "filename": "CPU.png"
+    },
+    {
+        "type": "SLOT1 PCI 33MHZ",
+        "id": "1",
+        "shape": "rect",
+ 	"x0": 48,
+        "y0": 145,
+        "width": 24,
+        "height": 255,
+        "diam": 24,
+        "filename": "PCI_SLOT_1.png"
+    },
+    {
+        "type": "PCH SLOT2 PCI-E 3.0 X4",
+        "id": "2",
+        "shape": "rect",
+        "x0": 109,
+        "y0": 162,
+        "width": 24,
+        "height": 118,
+        "diam": 24,
+        "filename": "PCI_SLOT_2.png"
+    },
+    {
+        "type": "CPU SLOT4 PCI-E 5.0 X8 (IN X16)",
+        "id": "4",
+        "shape": "rect",
+        "x0": 235,
+        "y0": 159,
+        "width": 24,
+        "height": 269,
+        "diam": 24,
+        "filename": "PCI_SLOT_4.png"
+    },
+    {
+        "type": "PCH SLOT5 PCI-E 3.0 X4",
+        "id": "5",
+        "shape": "rect",
+        "x0": 296,
+        "y0": 162,
+        "width": 24,
+        "height": 118,
+        "diam": 24,
+        "filename": "PCI_SLOT_5.png"
+    },
+    {
+        "type": "CPU SLOT7 PCI-E 5.0 X16",
+        "id": "7",
+        "shape": "rect",
+        "x0": 424,
+        "y0": 159,
+        "width": 24,
+        "height": 269,
+        "diam": 24,
+        "filename": "PCI_SLOT_7.png"
+    },
+    {
+        "type": "PCI-E M.2-M1",
+        "id": "6",
+        "shape": "rect",
+        "x0": 77,
+        "y0": 707,
+        "width": 69,
+        "height": 20,
+        "diam": 24,
+        "filename": "M2_M1.png"
+    },
+    {
+        "type": "PCI-E M.2-M2",
+        "id": "7",
+        "shape": "rect",
+     	"x0": 155,
+        "y0": 476,
+   	"width": 69,
+        "height": 20,
+        "diam": 24,
+        "filename": "M2_M2.png"
+    },
+    {
+        "type": "PCI-E M.2-M3",
+        "id": "8",
+        "shape": "rect",
+        "x0": 459,
+        "y0": 203,
+        "width": 69,
+        "height": 20,
+        "diam": 24,
+        "filename": "M2_M3.png"
+    },
+    {
+        "type": "DIMMA1",
+        "id": 1,
+        "shape": "rect",
+        "x0": 452,
+        "y0": 570,
+        "width": 455,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMMA1.png"
+    },
+    {
+        "type": "DIMMA2",
+        "id": 2,
+        "shape": "rect",
+        "x0": 452,
+        "y0": 600,
+        "width": 455,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMMA2.png"
+    },
+    {
+        "type": "DIMMB1",
+        "id": 3,
+        "shape": "rect",
+ 	"x0": 452,
+        "y0": 630,
+        "width": 455,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMMB1.png"
+    },
+    {
+        "type": "DIMMB2",
+        "id": 4,
+        "shape": "rect",
+     	"x0": 452,
+        "y0": 660,
+        "width": 455,
+        "height": 20,
+        "diam": 20,
+        "filename": "DIMMB2.png"
+    },
+    {
+        "type": "I-SATA0",
+        "id": "0",
+        "shape": "rect",
+        "x0": 153,
+        "y0": 715,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA0.png"
+    },
+    {
+        "type": "I-SATA1",
+        "id": "1",
+        "shape": "rect",
+     	"x0": 153,
+        "y0": 735,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA1.png"
+    },
+    {
+        "type": "I-SATA2",
+        "id": "2",
+        "shape": "rect",
+     	"x0": 208,
+        "y0": 715,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA2.png"
+    },
+    {
+        "type": "I-SATA3",
+        "id": "3",
+        "shape": "rect",
+       	"x0": 208,
+        "y0": 735,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA3.png"
+    },
+    {
+        "type": "I-SATA4",
+        "id": "4",
+        "shape": "rect",
+      	"x0": 258,
+        "y0": 715,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA4.png"
+    },
+    {
+        "type": "I-SATA5",
+        "id": "5",
+        "shape": "rect",
+        "x0": 258,
+        "y0": 735,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA5.png"
+    },
+    {
+        "type": "I-SATA6",
+        "id": "6",
+        "shape": "rect",
+        "x0": 308,
+        "y0": 715,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA6.png"
+    },
+    {
+        "type": "I-SATA7",
+        "id": "7",
+        "shape": "rect",
+   	"x0": 308,
+        "y0": 735,
+        "width": 48,
+        "height": 20,
+        "diam": 22,
+        "filename": "I-SATA7.png"
+    }
+]
