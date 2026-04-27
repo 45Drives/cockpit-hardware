@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.7.0-2
+## cockpit-45drives-hardware 2.7.1-1
 
-* Pushes 45Drives Fan Controller module to stable for use with new NVME-F8X* servers -> unsure why package version incremented so far but matching latest testing package + incrementing build number
+* Adds X13SAE-F mobo and fixes handling for RAM with horizontal image in motherboard module and extra handling for m.2 in pci slot ID json

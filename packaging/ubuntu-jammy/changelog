@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.7.1-1jammy) jammy; urgency=medium
+
+  * Adds X13SAE-F mobo and fixes handling for RAM with horizontal image in motherboard
+    module and extra handling for m.2 in pci slot ID json
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 27 Apr 2026 12:36:19 -0300
+
 cockpit-45drives-hardware (2.7.0-2jammy) jammy; urgency=medium
 
   * Pushes 45Drives Fan Controller module to stable for use with new NVME-F8X* servers -> unsure
