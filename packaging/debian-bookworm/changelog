@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.7.2-1bookworm) bookworm; urgency=medium
+
+  * Adds support for GENOAD8X-2T/BCM mobo
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 05 May 2026 06:31:43 -0300
+
 cockpit-45drives-hardware (2.7.1-1bookworm) bookworm; urgency=medium
 
   * Adds X13SAE-F mobo and fixes handling for RAM with horizontal image in motherboard
