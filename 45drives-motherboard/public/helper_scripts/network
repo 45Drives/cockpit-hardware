@@ -234,7 +234,7 @@ def get_network_info():
 			device_name = hw_entry[2]
 			
 			# Exclude onboard ethernet from PCI matching
-			if motherboard_model.startswith('MZ73') or motherboard_model.startswith('ROMED8'):
+			if motherboard_model.startswith('MZ73') or motherboard_model.startswith('ROMED8') or motherboard_model.startswith('GENOAD8X'):
 				if is_BCM57416_onboard_ethernet(device_name):
 					continue
 

@@ -66,7 +66,8 @@ export default {
       "ROMED8-2T/BCM",
       "ROMED8-2T",
       "ProArt X870E-CREATOR WIFI",
-      "MW34-SP0-00"
+      "MW34-SP0-00",
+      "GENOAD8X-2T/BCM"
     ]);
 
     const adminCheck = ref(false);

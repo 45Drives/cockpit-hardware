@@ -121,6 +121,24 @@ BA_LUT_MH53 = {
     "M2_3": ["0000:a0:01.4"],
 }
 
+# ASRock GENOAD8X-2T/BCM – BIOS gives duplicate ID 22 to PCIE4 and PCIE6.
+# Static map ensures unique IDs.
+GENOA_SLOT_IDS = {
+    "PCIE0": "16",
+    "PCIE1": "17",
+    "PCIE2": "18",
+    "PCIE3": "19",
+    "PCIE4": "20",
+    "PCIE5": "21",
+    "PCIE6": "22",
+    "MCIO1": "33",
+    "MCIO2": "35",
+    "MCIO3": "37",
+    "MCIO4": "39",
+    "M2_1": "1",
+    "M2_2": "2",
+}
+
 # Gigabyte B550I board
 PCIE_SLOT_LUT_B550I = {
     "J10": "PCIEX16",
@@ -211,6 +229,10 @@ def parse_lspci_output():
         if motherboard_model.startswith("MZ73") and \
            any(excl in " ".join(rest_of_line) for excl in exclusion_strings):
             # Skip onboard BCM57416 NIC duplicates etc.
+            continue
+
+        if motherboard_model.startswith("GENOAD8X") and \
+           any(excl in " ".join(rest_of_line) for excl in exclusion_strings):
             continue
 
         parsed_data[bus_address] = rest_of_line
@@ -493,7 +515,7 @@ def dmidecode():
                         current_slot = None  # skip duplicate
                     else:
                         slot_seen[norm] = True
-                        if current_slot.get("Bus Address") != "0000:00:00.0":
+                        if current_slot.get("Bus Address") not in ("0000:00:00.0", "0000:ff:00.0"):
                             cards.append(current_slot)
 
                 # MZ73 duplicate suffix handling
@@ -503,13 +525,20 @@ def dmidecode():
                         current_slot = None
                     else:
                         slot_seen[base] = True
-                        if current_slot.get("Bus Address") != "0000:00:00.0":
+                        if current_slot.get("Bus Address") not in ("0000:00:00.0", "0000:ff:00.0"):
                             cards.append(current_slot)
+
+                # GENOA: allow slots with placeholder bus addresses
+                # GENOA: trust dmidecode Current Usage as-is
+                elif motherboard_model.startswith("GENOAD8X"):
+                    if designation not in slot_seen:
+                        slot_seen[designation] = True
+                        cards.append(current_slot)
 
                 # generic
                 else:
                     slot_seen[designation] = True
-                    if current_slot.get("Bus Address") != "0000:00:00.0":
+                    if current_slot.get("Bus Address") not in ("0000:00:00.0", "0000:ff:00.0"):
                         cards.append(current_slot)
 
             # start a new slot dict
@@ -533,6 +562,11 @@ def dmidecode():
         if "Designation" in current_slot:
             designation = current_slot["Designation"]
             stripped = re.sub(r"_[A-Z]$", "", designation)
+
+            # GENOA: normalize compound designations (e.g. "PCIE7/MCIO1" → "MCIO1")
+            if motherboard_model.startswith("GENOAD8X") and "/" in stripped:
+                stripped = stripped.split("/")[-1]
+
             current_slot["Designation"] = stripped
 
             if designation == "N/A":
@@ -554,6 +588,9 @@ def dmidecode():
                 current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE_MZ73[designation]
 
             elif designation.startswith("U2_"):
+                current_slot["Type"] = "MCIO Port"
+
+            elif "MCIO" in designation:
                 current_slot["Type"] = "MCIO Port"
 
             elif designation.startswith("OCU") and \
@@ -586,7 +623,7 @@ def dmidecode():
     if current_slot:
         if motherboard_model == "ME03-CE0-000":
             if current_slot.get("Designation") != "Y3...@ptal._..P" and \
-               current_slot.get("Bus Address") != "0000:00:00.0":
+               current_slot.get("Bus Address") not in ("0000:00:00.0", "0000:ff:00.0"):
                 desig = current_slot.get("Designation", "")
                 if desig in PCIE_SLOT_LUT_B550I:
                     current_slot["Designation"] = PCIE_SLOT_LUT_B550I[desig]
@@ -600,12 +637,22 @@ def dmidecode():
         else:
             desig = current_slot.get("Designation", "")
             bus_addr = current_slot.get("Bus Address", "")
-            if desig != "N/A" and bus_addr and bus_addr != "0000:00:00.0":
-                if desig not in slot_seen:
+            if desig != "N/A" and desig not in slot_seen:
+                # GENOA: trust dmidecode Current Usage as-is
+                if motherboard_model.startswith("GENOAD8X"):
+                    cards.append(current_slot)
+                elif bus_addr and bus_addr not in ("0000:00:00.0", "0000:ff:00.0"):
                     cards.append(current_slot)
 
     if motherboard_model == "MH53-G40-000":
         return normalize_mh53_pci_slots(cards, parse_lspci_output())
+
+    # GENOA: apply static unique IDs
+    if motherboard_model.startswith("GENOAD8X"):
+        for slot in cards:
+            desig = slot.get("Designation", "")
+            if desig in GENOA_SLOT_IDS:
+                slot["ID"] = GENOA_SLOT_IDS[desig]
 
     return cards
 

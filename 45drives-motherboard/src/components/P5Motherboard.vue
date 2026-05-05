@@ -38,6 +38,7 @@ export default {
 				"B550I AORUS PRO AX": "B550I_AORUS_PRO_AX",
 				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC",
 				"ROMED8-2T/BCM" : "ROMED8-2T",
+				"GENOAD8X-2T/BCM": "GENOAD8X-2TBCM",
 				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI"
 			};
 
@@ -1248,63 +1249,54 @@ export default {
 			};
 
 			m.getCPU = function () {
-				// console.log(mobo_info);
-				// console.log(components);
 				let contentStr;
 				for (let i = 0; i < components.length; i++) {
 					if (components[i].type == "cpu" && components[i].id == 1) {
-						contentStr = "";
-						contentStr +=
-							"Socket Designation: " +
-							mobo_info["Motherboard Info"][1]["CPU"][0]["Socket Designation"] +
-							"\n";
-						contentStr +=
-							"Version: " +
-							mobo_info["Motherboard Info"][1]["CPU"][0]["Version"] +
-							"\n";
-						contentStr +=
-							"Max Speed: " +
-							mobo_info["Motherboard Info"][1]["CPU"][0]["Max Speed"] +
-							"\n";
+						try {
+							const cpuData = mobo_info["Motherboard Info"][1]["CPU"][0];
+							const sensorReadings = mobo_info["Motherboard Info"][2]["Sensor Readings"][0];
 
-						// Access the first element of the Sensor Readings array
-						const sensorReadings = mobo_info["Motherboard Info"][2]["Sensor Readings"][0];
+							contentStr = "";
+							contentStr += "Socket Designation: " + cpuData["Socket Designation"] + "\n";
+							contentStr += "Version: " + cpuData["Version"] + "\n";
+							contentStr += "Max Speed: " + cpuData["Max Speed"] + "\n";
 
-						// Try both old and new key names
-						let cpu0Temp =
-							sensorReadings["CPU0_TEMP"] || // New format
-							sensorReadings["CPU Temp"] ||
-							sensorReadings["CPU1 Temp"] || // Original format
-							"N/A";
+							// Try both old and new key names
+							let cpu0Temp =
+								sensorReadings["CPU0_TEMP"] || // Giga Computing format
+								sensorReadings["CPU Temp"] ||
+								sensorReadings["CPU1 Temp"] || // ASRockRack / renamed TEMP_CPU
+								sensorReadings["TEMP_CPU"] ||  // Raw TEMP_CPU if not renamed
+								"N/A";
 
-						contentStr += "Temperature: " + cpu0Temp + "\n";
-						components[i].popup.content = contentStr;
+							contentStr += "Temperature: " + cpu0Temp + "\n";
+							components[i].popup.content = contentStr;
+						} catch (err) {
+							console.error("getCPU error (cpu1):", err);
+							components[i].popup.content = "CPU1\n(error loading info)";
+						}
 					} else if (components[i].type == "cpu" && components[i].id == 2) {
-						contentStr = "";
-						contentStr +=
-							"Socket Designation: " +
-							mobo_info["Motherboard Info"][1]["CPU"][1]["Socket Designation"] +
-							"\n";
-						contentStr +=
-							"Version: " +
-							mobo_info["Motherboard Info"][1]["CPU"][1]["Version"] +
-							"\n";
-						contentStr +=
-							"Max Speed: " +
-							mobo_info["Motherboard Info"][1]["CPU"][1]["Max Speed"] +
-							"\n";
+						try {
+							const cpuData = mobo_info["Motherboard Info"][1]["CPU"][1];
+							const sensorReadings = mobo_info["Motherboard Info"][2]["Sensor Readings"][0];
 
-						// Access the first element of the Sensor Readings array
-						const sensorReadings = mobo_info["Motherboard Info"][2]["Sensor Readings"][0];
+							contentStr = "";
+							contentStr += "Socket Designation: " + cpuData["Socket Designation"] + "\n";
+							contentStr += "Version: " + cpuData["Version"] + "\n";
+							contentStr += "Max Speed: " + cpuData["Max Speed"] + "\n";
 
-						// Try both old and new key names
-						let cpu1Temp =
-							sensorReadings["CPU1_TEMP"] || // New format
-							sensorReadings["CPU2 Temp"] || // Original format
-							"N/A";
+							// Try both old and new key names
+							let cpu1Temp =
+								sensorReadings["CPU1_TEMP"] || // Giga Computing format
+								sensorReadings["CPU2 Temp"] || // Original format
+								"N/A";
 
-						contentStr += "Temperature: " + cpu1Temp + "\n";
-						components[i].popup.content = contentStr;
+							contentStr += "Temperature: " + cpu1Temp + "\n";
+							components[i].popup.content = contentStr;
+						} catch (err) {
+							console.error("getCPU error (cpu2):", err);
+							components[i].popup.content = "CPU2\n(error loading info)";
+						}
 					}
 				}
 			};

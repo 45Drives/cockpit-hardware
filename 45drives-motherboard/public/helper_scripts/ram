@@ -78,6 +78,12 @@ g_ipmitool_sensor_fields = {
   	"DIMMG3_TEMP": " (C)", #Giga Computing (GIGABYTE)
    	"TEMP_DDR5_A1": " (C)", #ASRockRack
 	"TEMP_DDR5_B1": " (C)", #ASRockRack
+	"TEMP_DDR5_C1": " (C)", #ASRockRack
+	"TEMP_DDR5_E1": " (C)", #ASRockRack
+	"TEMP_DDR5_G1": " (C)", #ASRockRack
+	"TEMP_DDR5_H1": " (C)", #ASRockRack
+	"TEMP_DDR5_I1": " (C)", #ASRockRack
+	"TEMP_DDR5_K1": " (C)", #ASRockRack
 	"TEMP_CPU1_DDR4A": " (C)", #ASRockRack
  	"TEMP_CPU1_DDR4B": " (C)", #ASRockRack
   	"TEMP_CPU1_DDR4C": " (C)", #ASRockRack
@@ -190,6 +196,17 @@ B550I_AORUS_locator_tags = {
 EC266D2I_locator_tags = {
    	"Controller0-ChannelA-DIMM0": "TEMP_DDR5_A1",
  	"Controller1-ChannelA-DIMM0": "TEMP_DDR5_B1",
+}
+
+GENOA_locator_tags = {
+    "P0 CHANNEL A": "TEMP_DDR5_A1",
+    "P0 CHANNEL B": "TEMP_DDR5_B1",
+    "P0 CHANNEL C": "TEMP_DDR5_C1",
+    "P0 CHANNEL E": "TEMP_DDR5_E1",
+    "P0 CHANNEL G": "TEMP_DDR5_G1",
+    "P0 CHANNEL H": "TEMP_DDR5_H1",
+    "P0 CHANNEL I": "TEMP_DDR5_I1",
+    "P0 CHANNEL K": "TEMP_DDR5_K1",
 }
 
 ROMED8_locator_tags = {
@@ -322,6 +339,11 @@ def dmidecode():
 					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
 					if bank_locator in ROMED8_locator_tags:
 						current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
+				elif motherboard_model.startswith("GENOAD8X") and bank_locator:
+					chan = bank_locator.split()[-1]          # "A" … "K"
+					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
+					if bank_locator in GENOA_locator_tags:
+						current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
 				slot_entries.append(current_slot.copy())
 			current_slot = slot_template.copy()
 			bank_locator = ""  # Reset bank locator for new entry
@@ -357,6 +379,11 @@ def dmidecode():
 			current_slot["Locator"] = f"DIMM {chan}"
 			if bank_locator in ROMED8_locator_tags:
 				current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
+		if motherboard_model.startswith("GENOAD8X") and bank_locator:
+			chan = bank_locator.split()[-1]
+			current_slot["Locator"] = f"DIMM {chan}"
+			if bank_locator in GENOA_locator_tags:
+				current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
 		slot_entries.append(current_slot.copy())
 	
 		for slot in slot_entries:

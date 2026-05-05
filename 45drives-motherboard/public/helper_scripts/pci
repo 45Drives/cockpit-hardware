@@ -134,6 +134,25 @@ BA_LUT_MH53 = {
     "M2_3": ["0000:a0:01.4"],
 }
 
+# ASRock GENOAD8X-2T/BCM – BIOS gives duplicate ID 22 to PCIE4 and PCIE6.
+# Static map ensures unique IDs.
+GENOA_SLOT_IDS = {
+    "PCIE0": "16",
+    "PCIE1": "17",
+    "PCIE2": "18",
+    "PCIE3": "19",
+    "PCIE4": "20",
+    "PCIE5": "21",
+    "PCIE6": "22",
+    "PCIE7": "23",
+    "MCIO1": "33",
+    "MCIO2": "35",
+    "MCIO3": "37",
+    "MCIO4": "39",
+    "M2_1": "1",
+    "M2_2": "2",
+}
+
 PCIE_SLOT_LUT_B550I = {
     "J10": "PCIEX16",
     "J3700 M.2 Slot": "M2A_CPU",
@@ -230,6 +249,12 @@ def parse_lspci_output():
         rest_of_line = re.findall(r'"[^"]*"|[\S]+', line)[1:]
 
         if motherboard_model.startswith("MZ73") and any(
+            exclusion_string in " ".join(rest_of_line)
+            for exclusion_string in exclusion_strings
+        ):
+            continue
+
+        if motherboard_model.startswith("GENOAD8X") and any(
             exclusion_string in " ".join(rest_of_line)
             for exclusion_string in exclusion_strings
         ):
@@ -476,8 +501,11 @@ def finalize_slot(
     if not designation or designation == "N/A":
         return
 
-    if not bus_addr or bus_addr == "0000:00:00.0":
-        return
+    if not bus_addr or bus_addr in ("0000:00:00.0", "0000:ff:00.0"):
+        # GENOA: allow slots with placeholder bus addresses through;
+        # trust dmidecode Current Usage as-is.
+        if not motherboard_model.startswith("GENOAD8X"):
+            return
 
     if motherboard_model == "ME03-CE0-000" and designation in PCIE_SLOT_TYPE_GIGABYTE_ME03:
         current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE_ME03[designation]
@@ -560,6 +588,11 @@ def dmidecode():
 
         designation = current_slot["Designation"]
         stripped_designation = re.sub(r"_[A-Z]$", "", designation)
+
+        # GENOA: normalize compound designations (e.g. "PCIE7/MCIO1" → "MCIO1")
+        if motherboard_model.startswith("GENOAD8X") and "/" in stripped_designation:
+            stripped_designation = stripped_designation.split("/")[-1]
+
         current_slot["Designation"] = stripped_designation
 
         if designation == "N/A":
@@ -575,6 +608,8 @@ def dmidecode():
         elif motherboard_model.startswith("MZ73") and normalized_designation in PCIE_SLOT_TYPE_GIGABYTE_MZ73:
             current_slot["Type"] = PCIE_SLOT_TYPE_GIGABYTE_MZ73[normalized_designation]
         elif normalized_designation.startswith("U2_"):
+            current_slot["Type"] = "MCIO Port"
+        elif "MCIO" in normalized_designation:
             current_slot["Type"] = "MCIO Port"
         elif normalized_designation.startswith("OCU"):
             if actual_type and not str(actual_type).startswith("OCulink"):
@@ -602,6 +637,14 @@ def dmidecode():
 
     if motherboard_model == "MH53-G40-000":
         return normalize_mh53_pci_slots(cards, parse_lspci_output())
+
+    # GENOA: apply static unique IDs
+    if motherboard_model.startswith("GENOAD8X"):
+        for slot in cards:
+            desig = slot.get("Designation", "")
+            if desig in GENOA_SLOT_IDS:
+                slot["ID"] = GENOA_SLOT_IDS[desig]
+
     return cards
 
 

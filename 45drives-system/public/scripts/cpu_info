@@ -7,7 +7,7 @@ import json
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4"],
+	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4","SP6"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7282 16-Core Processor",
@@ -21,6 +21,7 @@ g_dmi_cpu_fields = {
 		"AMD EPYC 8534P 64-Core Emb Processor",
 	  	"AMD EPYC 8124P 16-Core Processor",
       	"AMD EPYC 8024P 8-Core Processor",
+        "AMD EPYC 9334 32-Core Processor",
 		"AMD Ryzen 9 7950X 16-Core Processor",
 		"AMD Ryzen 5 5500GT with Radeon Graphics",
 		"AMD Ryzen 7 5700G with Radeon Graphics",
@@ -53,6 +54,8 @@ g_ipmitool_sensor_fields = {
 	"FAN4": "(RPM)",
 	"FAN5": "(RPM)",
 	"FAN6": "(RPM)",
+	"FAN7": "(RPM)",
+	"FAN8": "(RPM)",
 	"FANA": "(RPM)",
 	"FANB": "(RPM)",
 	"P1-DIMMA1 Temp": " (C)",
@@ -101,8 +104,16 @@ g_ipmitool_sensor_fields = {
  	"SYS_FAN6": " (RPM)", #Giga Computing (GIGABYTE)
 	"SYS_POWER": " (W)", #Giga Computing (GIGABYTE)
 	"TEMP_CPU": " (C)", 
-	"TEMP_DDR5_A1 ": " (C)",
-	"TEMP_DDR5_B1 ": " (C)",
+	"TEMP_DDR5_A1": " (C)",
+	"TEMP_DDR5_B1": " (C)",
+	"TEMP_DDR5_C1": " (C)",
+	"TEMP_DDR5_E1": " (C)",
+	"TEMP_DDR5_G1": " (C)",
+	"TEMP_DDR5_H1": " (C)",
+	"TEMP_DDR5_I1": " (C)",
+	"TEMP_DDR5_K1": " (C)",
+	"TEMP_M.2_1": " (C)",
+	"TEMP_M.2_2": " (C)",
 	"CPU1 Power": " (W)",
 }
 
