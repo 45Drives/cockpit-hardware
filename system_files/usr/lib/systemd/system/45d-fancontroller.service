@@ -2,6 +2,7 @@
 Description=45Drives Fan Controller Daemon
 After=multi-user.target
 Wants=multi-user.target
+ConditionPathExists=/etc/45drives/fan-controller-supported
 
 [Service]
 Type=simple
