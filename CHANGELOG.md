@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.7.2-1
+## cockpit-45drives-hardware 2.7.2-2
 
-* Adds support for GENOAD8X-2T/BCM mobo
+* Updates 45d-fancontroller.service to no longer auto-start when sentinel file does not exist
