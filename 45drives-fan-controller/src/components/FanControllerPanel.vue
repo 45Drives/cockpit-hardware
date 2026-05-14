@@ -572,9 +572,11 @@ const props = defineProps({
   profile: { type: Object, default: null },
   /** Current profile ID from parent (null = new, unsaved). */
   profileId: { type: [Number, null], default: null },
+  /** Async callback to persist profile — returns the saved profile ID. */
+  saveFn: { type: Function, default: null },
 });
 
-const emit = defineEmits(["go-back", "save", "update:profileId"]);
+const emit = defineEmits(["go-back", "update:profileId"]);
 
 /* ── Constants ── */
 const AUTO_POLL_INTERVAL = 5000; // ms
@@ -707,11 +709,17 @@ async function saveProfile() {
   saveMsg.value = "";
   try {
     const state = collectProfileState();
-    emit("save", state);
+    if (props.saveFn) {
+      const savedId = await props.saveFn(state);
+      if (savedId != null) {
+        emit("update:profileId", savedId);
+      }
+    }
     saveMsg.value = "✓ Saved";
     saveMsgOk.value = true;
   } catch (err) {
-    saveMsg.value = "✗ Save failed";
+    console.error("Save failed:", err);
+    saveMsg.value = "✗ Save failed: " + (err.message || "unknown error");
     saveMsgOk.value = false;
   }
   saving.value = false;

@@ -274,8 +274,8 @@ onMounted(async () => {
         :key="editorSessionKey"
         :profile="editingProfile"
         :profileId="editingProfileId"
+        :saveFn="onSave"
         @go-back="onGoBack"
-        @save="onSave"
         @update:profileId="(id) => editingProfileId.value = id"
       />
     </div>

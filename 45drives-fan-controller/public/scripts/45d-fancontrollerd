@@ -54,12 +54,10 @@ POLL_INTERVAL = 5          # seconds between sensor poll cycles
 SETTLE_TIME = 2            # seconds to wait after setting PWM before next read
 
 # Default temperature ranges for auto-generated profiles
+# All fans run at 100% by default for maximum cooling headroom.
+# Users can adjust via the Cockpit UI after initial setup.
 DEFAULT_TEMP_RANGES = [
-    {"tempLow": 0,  "tempHigh": 35, "speed": 20},
-    {"tempLow": 35, "tempHigh": 50, "speed": 40},
-    {"tempLow": 50, "tempHigh": 65, "speed": 60},
-    {"tempLow": 65, "tempHigh": 75, "speed": 80},
-    {"tempLow": 75, "tempHigh": 100, "speed": 100},
+    {"tempLow": 0, "tempHigh": 100, "speed": 100},
 ]
 
 # ── Logging ──
