@@ -1,6 +1,10 @@
 #!/bin/bash
 
 if [ "$1" == "configure" ]; then
+	dkms add -m ipmb-bus -v 1.0 2>/dev/null || true
+	dkms build -m ipmb-bus -v 1.0 2>/dev/null || true
+	dkms install -m ipmb-bus -v 1.0 2>/dev/null || true
+	modprobe ipmb_bus 2>/dev/null || true
 	systemctl daemon-reload
 	systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
 fi

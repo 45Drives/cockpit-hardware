@@ -12,4 +12,5 @@ fi
 
 if [ "$1" == "purge" ]; then
 	rm -rf /etc/45drives/fan-controller
+	rm -rf /usr/src/ipmb-bus-1.0
 fi

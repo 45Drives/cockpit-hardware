@@ -47,10 +47,20 @@ from fan_common import (
 )
 
 # ── Constants ──
-CONFIG_PATH = "/etc/45drives/fan-controller/profiles.json"
+CONFIG_DIR  = "/etc/45drives/fan-controller"
+CONFIG_PATH = os.path.join(CONFIG_DIR, "profiles.json")
 DEFAULT_DUTY = 100         # % duty when no profile is active or on startup
 POLL_INTERVAL = 5          # seconds between sensor poll cycles
 SETTLE_TIME = 2            # seconds to wait after setting PWM before next read
+
+# Default temperature ranges for auto-generated profiles
+DEFAULT_TEMP_RANGES = [
+    {"tempLow": 0,  "tempHigh": 35, "speed": 20},
+    {"tempLow": 35, "tempHigh": 50, "speed": 40},
+    {"tempLow": 50, "tempHigh": 65, "speed": 60},
+    {"tempLow": 65, "tempHigh": 75, "speed": 80},
+    {"tempLow": 75, "tempHigh": 100, "speed": 100},
+]
 
 # ── Logging ──
 logging.basicConfig(
@@ -116,6 +126,177 @@ def load_config():
 
     log.warning("Active profile id=%s not found in profiles list.", active_id)
     return None, config
+
+
+# ====================================================================
+#  Auto-generate a default profile
+# ====================================================================
+
+def _detect_real_fans():
+    """Detect physically connected fans (RPM > 0 at 100% duty)."""
+    boards = probe_boards()
+    enable_all_tachometers()
+
+    # Spin all channels to 100% for detection
+    for board_num in boards:
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            try:
+                set_pwm_duty_auto(board_num, fan_num, 100)
+            except Exception:
+                pass
+
+    time.sleep(3)  # wait for tach to register
+
+    fans = []
+    for board_num in sorted(boards.keys()):
+        for fan_num in range(1, FANS_PER_BOARD + 1):
+            rpm = read_fan_rpm_auto(board_num, fan_num)
+            if rpm > 0:
+                fans.append({
+                    "board": board_num,
+                    "fan": fan_num,
+                    "name": f"Board{board_num}_Fan{fan_num}",
+                    "rpm": rpm,
+                })
+    return fans
+
+
+def _detect_all_sensors():
+    """Detect all temperature sensors (hwmon, GPU, HBA, drives)."""
+    sensors = discover_temp_sensors()
+    try:
+        sensors.extend(_discover_gpu_sensors())
+    except Exception:
+        pass
+    try:
+        sensors.extend(_discover_storcli_hba())
+    except Exception:
+        pass
+    try:
+        sensors.extend(_discover_smartctl_drives())
+    except Exception:
+        pass
+    return sensors
+
+
+def _pick_default_bindings(sensors):
+    """Pick the best sensors to bind all fans to by default.
+
+    Preference order:
+      1. CPU sensors (category 'cpu' or chip names like k10temp, coretemp)
+      2. Any board/chipset sensors
+      3. Fall back to all sensors if nothing better is found
+    """
+    cpu_ids = [
+        s["id"] for s in sensors
+        if s.get("category") == "cpu"
+        or s.get("chip", "") in ("k10temp", "coretemp", "zenpower")
+        or "tctl" in s.get("label", "").lower()
+        or "tdie" in s.get("label", "").lower()
+    ]
+    if cpu_ids:
+        return cpu_ids
+
+    board_ids = [
+        s["id"] for s in sensors
+        if s.get("category") in ("board", "chipset", "system")
+    ]
+    if board_ids:
+        return board_ids
+
+    # Last resort: bind to everything
+    return [s["id"] for s in sensors]
+
+
+def generate_default_profile():
+    """Auto-detect fans and sensors, build and save a default profile.
+
+    Returns (profile, config) on success or (None, None) on failure.
+    """
+    log.info("No profiles found — auto-generating a default profile...")
+
+    try:
+        fans = _detect_real_fans()
+    except Exception as e:
+        log.error("Fan detection failed: %s", e)
+        return None, None
+
+    if not fans:
+        log.warning("No fans detected — cannot generate a profile.")
+        return None, None
+
+    log.info("Detected %d fan(s): %s", len(fans), [f["name"] for f in fans])
+
+    try:
+        sensors = _detect_all_sensors()
+    except Exception as e:
+        log.error("Sensor detection failed: %s", e)
+        return None, None
+
+    if not sensors:
+        log.warning("No temperature sensors found — cannot generate a profile.")
+        return None, None
+
+    log.info("Detected %d sensor(s).", len(sensors))
+
+    binding_ids = _pick_default_bindings(sensors)
+    log.info("Default sensor bindings: %s", binding_ids)
+
+    # Build per-fan structures
+    fan_ranges = {}
+    fan_sensor_bindings = {}
+    for fan in fans:
+        fan_ranges[fan["name"]] = list(DEFAULT_TEMP_RANGES)
+        fan_sensor_bindings[fan["name"]] = list(binding_ids)
+
+    profile = {
+        "id": 1,
+        "name": "Auto-Generated Default",
+        "detected": True,
+        "detectedFans": fans,
+        "detectedCount": len(fans),
+        "detectedSensors": [
+            {
+                "id": s["id"],
+                "chip": s.get("chip", ""),
+                "hwmon": s.get("hwmon", ""),
+                "label": s.get("label", ""),
+                "value": s.get("value", 0),
+                "category": s.get("category", ""),
+                "device_type": s.get("device_type", ""),
+                "model": s.get("model", ""),
+            }
+            for s in sensors
+        ],
+        "sensorCount": len(sensors),
+        "fanRanges": fan_ranges,
+        "fanSensorBindings": fan_sensor_bindings,
+        "defaultDuty": DEFAULT_DUTY,
+        "fanCount": len(fans),
+        "boardCount": len(set(f["board"] for f in fans)),
+        "rangeCount": len(fans) * len(DEFAULT_TEMP_RANGES),
+    }
+
+    config = {
+        "version": 1,
+        "activeProfileId": 1,
+        "profiles": [profile],
+    }
+
+    # Save to disk
+    try:
+        os.makedirs(CONFIG_DIR, mode=0o755, exist_ok=True)
+        tmp_path = CONFIG_PATH + ".tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(config, f, indent=2)
+            f.write("\n")
+        os.rename(tmp_path, CONFIG_PATH)
+        log.info("Saved auto-generated profile to %s", CONFIG_PATH)
+    except OSError as e:
+        log.error("Failed to save auto-generated profile: %s", e)
+        return None, None
+
+    return profile, config
 
 
 def extract_fan_configs(profile):
@@ -255,6 +436,16 @@ def run_daemon():
 
     # ── Initial load ──
     profile, config = load_config()
+
+    # If no profiles exist at all, auto-generate a default one
+    if profile is None:
+        needs_autogen = (config is None) or (not config.get("profiles"))
+        if not needs_autogen and config.get("activeProfileId") is None:
+            # Config exists but no active profile — also try auto-gen if empty
+            needs_autogen = not config.get("profiles")
+        if needs_autogen:
+            profile, config = generate_default_profile()
+
     fan_configs = extract_fan_configs(profile) if profile else []
 
     if not fan_configs:
