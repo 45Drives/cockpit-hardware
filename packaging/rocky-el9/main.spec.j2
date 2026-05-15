@@ -9,7 +9,7 @@ URL: {{ git_url }}
 Source0: %{name}-%{version}.tar.gz
 BuildArch: {{ architecture.rocky }}
 Requires: {{ dependencies.rocky_common | join(',') }}
-Recommends: 45d-fancontrol >= 2.0.0
+Recommends: 45d-fancontrol >= 1.0.0
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
