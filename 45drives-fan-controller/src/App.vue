@@ -23,6 +23,8 @@ const chassisChecked = ref(false);   // true once the check has completed
 const chassisSupported = ref(false); // true only for NVME-F8X1/F8X2/F8X3
 const chassisSize = ref("");         // actual value for the UI message
 
+const backendInstalled = ref(true);  // assume installed until proven otherwise
+
 async function checkChassisSize() {
   try {
     const raw = await new Promise((resolve, reject) => {
@@ -41,6 +43,18 @@ async function checkChassisSize() {
     chassisSupported.value = false;
   }
   chassisChecked.value = true;
+}
+
+async function checkBackendInstalled() {
+  try {
+    await cockpit.spawn(
+      ["test", "-x", "/opt/45drives/fan-controller/scripts/45d-fancontrollerd"],
+      { err: "ignore" }
+    );
+    backendInstalled.value = true;
+  } catch {
+    backendInstalled.value = false;
+  }
 }
 
 const rootCheck = async () => {
@@ -218,8 +232,11 @@ onMounted(async () => {
   rootCheck();
   await checkChassisSize();
   if (chassisSupported.value) {
-    await loadProfilesFromStorage();
-    await refreshDaemonStatus();
+    await checkBackendInstalled();
+    if (backendInstalled.value) {
+      await loadProfilesFromStorage();
+      await refreshDaemonStatus();
+    }
   }
 });
 </script>
@@ -248,6 +265,36 @@ onMounted(async () => {
         <div class="card-body flex flex-col gap-4">
           <div class="bg-accent rounded-md p-5 flex flex-col items-center gap-4">
             The 45Drives Fan Controller is only supported on NVME-F8X1, NVME-F8X2, and NVME-F8X3 chassis. Detected chassis:&nbsp;{{ chassisSize }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supported chassis — backend package not installed -->
+    <div
+      v-else-if="!backendInstalled"
+      class="grow flex flex-col well overflow-y-auto p-4 justify-center items-center"
+    >
+      <div class="card" style="max-width: 40rem;">
+        <div class="card-header">
+          <h3 class="text-header text-default">Fan Controller Backend Not Installed</h3>
+        </div>
+        <div class="card-body flex flex-col gap-4">
+          <div class="bg-accent rounded-md p-5 flex flex-col items-start gap-3">
+            <p>
+              The <strong>45d-fancontrol</strong> package is required for fan monitoring and control
+              but is not currently installed on this system.
+            </p>
+            <p>Install it with one of the following commands:</p>
+            <code class="bg-default rounded px-3 py-2 text-sm block w-full select-all">
+              dnf install 45d-fancontrol
+            </code>
+            <code class="bg-default rounded px-3 py-2 text-sm block w-full select-all">
+              apt install 45d-fancontrol
+            </code>
+            <p class="text-muted text-sm">
+              After installing, refresh this page to continue.
+            </p>
           </div>
         </div>
       </div>

@@ -22,10 +22,9 @@
  * Resolve the absolute path to a backend script.
  *
  * Scripts live at:
- *   /usr/share/cockpit/45drives-fan-controller/scripts/<name>
+ *   /opt/45drives/fan-controller/scripts/<name>
  */
-const MODULE_NAME = "45drives-fan-controller";
-const PROD_BASE   = `/usr/share/cockpit/${MODULE_NAME}/scripts`;
+const PROD_BASE = `/opt/45drives/fan-controller/scripts`;
 
 let _resolvedBase = null;
 

@@ -9,6 +9,7 @@ URL: {{ git_url }}
 Source0: %{name}-%{version}.tar.gz
 BuildArch: {{ architecture.rocky }}
 Requires: {{ dependencies.rocky_common | join(',') }}
+Recommends: 45d-fancontrol >= 2.0.0
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
@@ -37,31 +38,17 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
 %dir /usr/share/cockpit/45drives-fan-controller
-%dir /etc/45drives/fan-controller
-%config(noreplace) /etc/45drives/fan-controller/profiles.json
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
-/usr/lib/systemd/system/45d-fancontroller.service
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
 /usr/share/cockpit/45drives-system/*
 /usr/share/cockpit/45drives-fan-controller/*
-/usr/src/ipmb-bus-1.0/*
 
 %post
-dkms add -m ipmb-bus -v 1.0 2>/dev/null || true
-dkms build -m ipmb-bus -v 1.0 2>/dev/null || true
-dkms install -m ipmb-bus -v 1.0 2>/dev/null || true
-modprobe ipmb_bus 2>/dev/null || true
 systemctl daemon-reload
-systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
 
 %preun
-if [ $1 -eq 0 ]; then
-    systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
-    modprobe -r ipmb_bus 2>/dev/null || true
-    dkms remove -m ipmb-bus -v 1.0 --all 2>/dev/null || true
-fi
 
 %postun
 systemctl daemon-reload

@@ -27,8 +27,7 @@
             "ipmitool",
             "lshw",
             "45drives-tools (>= 3.0.1)",
-            "iproute2",
-            "dkms"
+            "iproute2"
         ],
         "rocky_common": [
             "cockpit",
@@ -38,9 +37,7 @@
             "dmidecode >= 3.3",
             "ipmitool",
             "lshw",
-            "45drives-tools >= 3.0.1",
-            "dkms",
-            "kernel-devel"
+            "45drives-tools >= 3.0.1"
         ]
     },
     "builds": [
