@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+"""
+45d-firmware-check
+
+Discovers installed firmware, fetches the manifest from repo.45drives.com,
+compares versions, and writes a cache file at /var/cache/45drives/firmware.json.
+
+Usage:
+    45d-firmware-check              # run full check, write cache
+    45d-firmware-check --stdout     # print result to stdout (don't write cache)
+    45d-firmware-check --discover   # just run discovery, no manifest comparison
+
+Exit codes:
+    0 - success
+    1 - discovery script failed
+    2 - manifest fetch failed (cache written with partial data)
+"""
+
+import json
+import os
+import re
+import subprocess
+import sys
+import urllib.request
+import urllib.error
+from datetime import datetime, timezone
+
+###############################################################################
+# Configuration
+###############################################################################
+
+MANIFEST_URL = "http://192.168.209.126:8080/manifest.json"
+CACHE_DIR = "/var/cache/45drives"
+CACHE_FILE = os.path.join(CACHE_DIR, "firmware.json")
+DISCOVER_SCRIPT = "/usr/share/cockpit/45drives-system/scripts/firmware-discover"
+MANIFEST_FETCH_TIMEOUT = 30  # seconds
+
+###############################################################################
+# Discovery
+###############################################################################
+
+def run_discover():
+    """Run the discovery script and return parsed JSON list."""
+    if not os.path.isfile(DISCOVER_SCRIPT):
+        # Fallback: try relative path (dev mode)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        alt = os.path.join(script_dir, "firmware-discover")
+        if os.path.isfile(alt):
+            script = alt
+        else:
+            print(f"Error: discovery script not found at {DISCOVER_SCRIPT}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        script = DISCOVER_SCRIPT
+
+    try:
+        result = subprocess.run(
+            ["python3", script],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=120
+        )
+    except subprocess.TimeoutExpired:
+        print("Error: discovery script timed out", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error running discovery: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if result.returncode != 0:
+        print(f"Error: discovery script failed (exit {result.returncode})", file=sys.stderr)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        devices = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        print(f"Error: discovery output is not valid JSON: {e}", file=sys.stderr)
+        print(f"Output was: {result.stdout[:500]}", file=sys.stderr)
+        sys.exit(1)
+
+    return devices
+
+###############################################################################
+# Manifest fetch
+###############################################################################
+
+def fetch_manifest():
+    """Fetch the firmware manifest from repo.45drives.com. Returns dict or None."""
+    try:
+        req = urllib.request.Request(MANIFEST_URL, headers={"User-Agent": "45d-firmware-check/1.0"})
+        with urllib.request.urlopen(req, timeout=MANIFEST_FETCH_TIMEOUT) as resp:
+            data = resp.read().decode("utf-8")
+            return json.loads(data)
+    except urllib.error.URLError as e:
+        print(f"Warning: could not fetch manifest: {e}", file=sys.stderr)
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Warning: manifest is not valid JSON: {e}", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"Warning: manifest fetch error: {e}", file=sys.stderr)
+        return None
+
+###############################################################################
+# Version comparison
+###############################################################################
+
+def normalize_version(ver_str):
+    """Strip non-numeric prefixes and split into comparable tuples."""
+    if not ver_str or ver_str.lower() in ("unknown", "n/a", "-"):
+        return None
+    # Remove common prefixes like 'v', 'V', 'FW'
+    ver_str = re.sub(r'^[vV]|^FW[: ]*', '', ver_str).strip()
+    # Split on dots, dashes, underscores
+    parts = re.split(r'[.\-_]', ver_str)
+    result = []
+    for p in parts:
+        # Extract numeric portion
+        num = re.sub(r'[^0-9]', '', p)
+        result.append(int(num) if num else 0)
+    return tuple(result) if result else None
+
+
+def version_compare(current, latest):
+    """
+    Compare two version strings.
+    Returns:
+        'current'    - current >= latest
+        'outdated'   - current < latest
+        'unknown'    - can't determine
+    """
+    cur = normalize_version(current)
+    lat = normalize_version(latest)
+
+    if cur is None or lat is None:
+        return "unknown"
+
+    # Pad to same length
+    max_len = max(len(cur), len(lat))
+    cur = cur + (0,) * (max_len - len(cur))
+    lat = lat + (0,) * (max_len - len(lat))
+
+    if cur >= lat:
+        return "current"
+    else:
+        return "outdated"
+
+###############################################################################
+# Matching
+###############################################################################
+
+def find_manifest_entry(device, manifest):
+    """Find the matching manifest entry for a discovered device."""
+    if not manifest or "components" not in manifest:
+        return None
+
+    device_type = device.get("type", "")
+    model = device.get("model", "")
+
+    # Look in the matching component category
+    entries = manifest["components"].get(device_type, [])
+
+    for entry in entries:
+        pattern = entry.get("model_match", "")
+        if pattern and re.search(pattern, model, re.IGNORECASE):
+            return entry
+
+    return None
+
+###############################################################################
+# Main logic
+###############################################################################
+
+def build_cache(devices, manifest):
+    """Build the cache structure with comparison results."""
+    results = []
+
+    for device in devices:
+        entry = find_manifest_entry(device, manifest)
+
+        result = {
+            "type": device.get("type", ""),
+            "model": device.get("model", ""),
+            "vendor": device.get("vendor", ""),
+            "current_firmware": device.get("firmware", ""),
+            "device_path": device.get("device_path", ""),
+            "latest_firmware": None,
+            "update_available": "unknown",
+            "flash_tool": None,
+            "flashable": False,
+            "requires_reboot": False,
+            "release_notes": "",
+            "release_date": "",
+        }
+
+        if entry:
+            result["latest_firmware"] = entry.get("latest_firmware")
+            result["flash_tool"] = entry.get("flash_tool")
+            result["flash_command"] = entry.get("flash_command", "")
+            result["firmware_file"] = entry.get("firmware_file", "")
+            result["flashable"] = entry.get("flashable", False)
+            result["requires_reboot"] = entry.get("requires_reboot", False)
+            result["release_notes"] = entry.get("release_notes", "")
+            result["release_date"] = entry.get("release_date", "")
+            result["update_available"] = version_compare(
+                device.get("firmware", ""),
+                entry.get("latest_firmware", "")
+            )
+
+        results.append(result)
+
+    cache = {
+        "schema_version": "1.0",
+        "last_checked": datetime.now(timezone.utc).isoformat(),
+        "manifest_url": MANIFEST_URL,
+        "manifest_available": manifest is not None,
+        "device_count": len(results),
+        "updates_available": sum(1 for r in results if r["update_available"] == "outdated"),
+        "devices": results,
+    }
+
+    return cache
+
+
+def write_cache(cache):
+    """Write cache to disk."""
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    tmp_file = CACHE_FILE + ".tmp"
+    try:
+        with open(tmp_file, "w") as f:
+            json.dump(cache, f, indent=2)
+        os.replace(tmp_file, CACHE_FILE)
+    except OSError as e:
+        # Try to clean up
+        try:
+            os.unlink(tmp_file)
+        except OSError:
+            pass
+        raise RuntimeError(f"Error writing cache: {e}") from e
+
+
+def main():
+    stdout_only = "--stdout" in sys.argv
+    discover_only = "--discover" in sys.argv
+
+    # Step 1: Discover devices
+    devices = run_discover()
+
+    if discover_only:
+        print(json.dumps(devices, indent=2))
+        return
+
+    # Step 2: Fetch manifest
+    manifest = fetch_manifest()
+
+    # Step 3: Compare and build cache
+    cache = build_cache(devices, manifest)
+
+    # Step 4: Output
+    if stdout_only:
+        print(json.dumps(cache, indent=2))
+    else:
+        try:
+            write_cache(cache)
+        except RuntimeError as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
+        print(f"Cache written: {CACHE_FILE}")
+        print(f"Devices found: {cache['device_count']}")
+        print(f"Updates available: {cache['updates_available']}")
+
+
+if __name__ == "__main__":
+    main()

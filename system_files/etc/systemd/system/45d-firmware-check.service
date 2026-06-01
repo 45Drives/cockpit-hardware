@@ -1,0 +1,16 @@
+[Unit]
+Description=45Drives Firmware Version Check
+Documentation=https://github.com/45Drives/cockpit-hardware
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/share/cockpit/45drives-system/scripts/firmware-check
+# Run as root (needed for dmidecode, ipmitool, storcli, etc.)
+User=root
+# Limit resource usage
+Nice=19
+IOSchedulingClass=idle
+# Timeout after 5 minutes
+TimeoutStartSec=300

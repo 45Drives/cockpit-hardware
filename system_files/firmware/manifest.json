@@ -1,0 +1,310 @@
+{
+  "schema_version": "1.0",
+  "last_updated": "2026-06-01T00:00:00Z",
+  "maintained_by": "45Drives R&D",
+  "description": "Firmware manifest for 45Drives hardware. Used by 45d-firmware-check to compare installed firmware against latest validated versions.",
+  "components": {
+    "hba": [
+      {
+        "model_match": "9400-16i",
+        "vendor": "Broadcom",
+        "latest_firmware": "25.00.00.00",
+        "flash_tool": "storcli2",
+        "flash_command": "storcli2 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "2024-06-01",
+        "release_notes": "Latest validated SAS3616 firmware for 9400-16i HBA",
+        "firmware_file": "HBA_9400-16i_SAS_SATA_Profile.bin",
+        "sha256": ""
+      },
+      {
+        "model_match": "9400-24i",
+        "vendor": "Broadcom",
+        "latest_firmware": "25.00.00.00",
+        "flash_tool": "storcli2",
+        "flash_command": "storcli2 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "2024-06-01",
+        "release_notes": "Latest validated firmware for 9400-24i HBA",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "9305-16i",
+        "vendor": "Broadcom",
+        "latest_firmware": "16.00.12.00",
+        "flash_tool": "storcli64",
+        "flash_command": "storcli64 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "9305-24i",
+        "vendor": "Broadcom",
+        "latest_firmware": "16.00.12.00",
+        "flash_tool": "storcli64",
+        "flash_command": "storcli64 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "9361-16i",
+        "vendor": "Broadcom",
+        "latest_firmware": "3324",
+        "flash_tool": "storcli64",
+        "flash_command": "storcli64 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "MegaRAID controller firmware",
+        "firmware_file": "MR_FW_3324_4MB.rom",
+        "sha256": ""
+      },
+      {
+        "model_match": "9361-24i",
+        "vendor": "Broadcom",
+        "latest_firmware": "3324",
+        "flash_tool": "storcli64",
+        "flash_command": "storcli64 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "MegaRAID controller firmware",
+        "firmware_file": "MR_FW_3324_4MB.rom",
+        "sha256": ""
+      },
+      {
+        "model_match": "9600-16i",
+        "vendor": "Broadcom",
+        "latest_firmware": "8.17.1.0-00000-00002",
+        "flash_tool": "storcli2",
+        "flash_command": "storcli2 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "9600-16i_full_fw_vsn_pldm_pkg_signed.rom",
+        "sha256": ""
+      },
+      {
+        "model_match": "9600-24i",
+        "vendor": "Broadcom",
+        "latest_firmware": "8.17.1.0-00000-00002",
+        "flash_tool": "storcli2",
+        "flash_command": "storcli2 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "9600-24i_full_fw_vsn_pldm_pkg_signed.rom",
+        "sha256": ""
+      },
+      {
+        "model_match": "9660-16i",
+        "vendor": "Broadcom",
+        "latest_firmware": "8.17.1.0-00000-00002",
+        "flash_tool": "storcli2",
+        "flash_command": "storcli2 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "9660-16i_full_fw_vsn_pldm_pkg_signed.rom",
+        "sha256": ""
+      },
+      {
+        "model_match": "9405W-16i",
+        "vendor": "Broadcom",
+        "latest_firmware": "",
+        "flash_tool": "storcli2",
+        "flash_command": "storcli2 /cX download file=<firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ],
+    "nic": [
+      {
+        "model_match": "ConnectX-6|MCX631",
+        "vendor": "NVIDIA/Mellanox",
+        "latest_firmware": "",
+        "flash_tool": "mlxup",
+        "flash_command": "mlxup --update --dev <device_path>",
+        "flashable": true,
+        "self_updating": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "mlxup checks NVIDIA servers directly for latest firmware. No manual version tracking needed.",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "ConnectX-5|MCX516",
+        "vendor": "NVIDIA/Mellanox",
+        "latest_firmware": "",
+        "flash_tool": "mlxup",
+        "flash_command": "mlxup --update --dev <device_path>",
+        "flashable": true,
+        "self_updating": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "mlxup checks NVIDIA servers directly for latest firmware. No manual version tracking needed.",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "P210p|BCM57",
+        "vendor": "Broadcom",
+        "latest_firmware": "",
+        "flash_tool": "niccli",
+        "flash_command": "niccli -u <device_path> -f <firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "X710|E810|Intel.*Ethernet",
+        "vendor": "Intel",
+        "latest_firmware": "",
+        "flash_tool": "nvmupdate64e",
+        "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ],
+    "bios": [
+      {
+        "model_match": "System BIOS",
+        "vendor": "GIGABYTE",
+        "latest_firmware": "",
+        "flash_tool": null,
+        "flash_command": null,
+        "flashable": false,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "BIOS updates require manual flash via BIOS recovery or vendor utility. Download from Gigabyte support site.",
+        "firmware_file": "",
+        "sha256": ""
+      },
+      {
+        "model_match": "System BIOS",
+        "vendor": "American Megatrends",
+        "latest_firmware": "",
+        "flash_tool": null,
+        "flash_command": null,
+        "flashable": false,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "BIOS updates require manual flash. Download from motherboard vendor support site.",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ],
+    "bmc": [
+      {
+        "model_match": "BMC/IPMI",
+        "vendor": ".*",
+        "latest_firmware": "",
+        "flash_tool": null,
+        "flash_command": null,
+        "flashable": false,
+        "requires_reboot": false,
+        "release_date": "",
+        "release_notes": "BMC updates typically performed via IPMI web interface or vendor-specific tool.",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ],
+    "expander": [
+      {
+        "model_match": "VirtualSES|SAS.*Expander",
+        "vendor": "BROADCOM",
+        "latest_firmware": "",
+        "flash_tool": null,
+        "flash_command": null,
+        "flashable": false,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "SAS Expander firmware updates require specialized tools and careful sequencing. Contact 45Drives support.",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ],
+    "nvme": [
+      {
+        "model_match": "Micron_7400",
+        "vendor": "Micron",
+        "latest_firmware": "E1MU23Y5",
+        "flash_tool": "nvme-cli",
+        "flash_command": "nvme fw-download <device_path> --fw=<firmware_path> && nvme fw-activate <device_path> --slot=1 --action=1",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "Micron 7400 NVMe data drive firmware",
+        "firmware_file": "Micron_7400_E1MU23Y5_release.ubi",
+        "sha256": ""
+      },
+      {
+        "model_match": "Micron_7450",
+        "vendor": "Micron",
+        "latest_firmware": "E2MU200",
+        "flash_tool": "nvme-cli",
+        "flash_command": "nvme fw-download <device_path> --fw=<firmware_path> && nvme fw-activate <device_path> --slot=1 --action=1",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "Micron 7450 NVMe data drive firmware",
+        "firmware_file": "Micron_7450_E2MU200_release.ubi",
+        "sha256": ""
+      },
+      {
+        "model_match": "Samsung.*980|Samsung.*970|Samsung.*990",
+        "vendor": "Samsung",
+        "latest_firmware": "",
+        "flash_tool": null,
+        "flash_command": null,
+        "flashable": false,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "Samsung M.2 boot drive. Manual update only via Samsung Magician or firmware ISO. Do NOT flash while system is running from this drive.",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ],
+    "gpu": [
+      {
+        "model_match": "A100|A30|A40|L40|H100",
+        "vendor": "NVIDIA",
+        "latest_firmware": "",
+        "flash_tool": "nvflash",
+        "flash_command": "nvflash --index=<gpu_index> <firmware_path>",
+        "flashable": true,
+        "requires_reboot": true,
+        "release_date": "",
+        "release_notes": "NVIDIA datacenter GPU VBIOS update",
+        "firmware_file": "",
+        "sha256": ""
+      }
+    ]
+  }
+}
