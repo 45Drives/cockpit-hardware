@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+"""
+firmware-check - Compares discovered firmware against manifest and outputs
+status for each device. Writes results to cache file.
+
+Used by: systemd timer (45d-firmware-check.timer)
+         SectionFirmware.vue (on-demand refresh)
+         App.vue (badge notification)
+
+Exit codes:
+    0 = all firmware current
+    1 = error
+    2 = one or more devices have outdated firmware
+"""
+
+import json
+import subprocess
+import sys
+import re
+import os
+from pathlib import Path
+from datetime import datetime
+
+
+MANIFEST_PATH = "/usr/share/45drives/firmware/manifest.json"
+CACHE_PATH = "/var/cache/45drives/firmware/status.json"
+DISCOVER_SCRIPT = "/usr/share/45drives/firmware/firmware-discover"
+
+# For development, allow override via environment
+if os.environ.get("FIRMWARE_MANIFEST_PATH"):
+    MANIFEST_PATH = os.environ["FIRMWARE_MANIFEST_PATH"]
+if os.environ.get("FIRMWARE_CACHE_PATH"):
+    CACHE_PATH = os.environ["FIRMWARE_CACHE_PATH"]
+if os.environ.get("FIRMWARE_DISCOVER_PATH"):
+    DISCOVER_SCRIPT = os.environ["FIRMWARE_DISCOVER_PATH"]
+
+
+def load_manifest():
+    """Load the firmware manifest."""
+    try:
+        with open(MANIFEST_PATH, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error loading manifest: {e}", file=sys.stderr)
+        return None
+
+
+def run_discover():
+    """Run firmware-discover and parse output."""
+    try:
+        result = subprocess.run(
+            [sys.executable, DISCOVER_SCRIPT],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=120
+        )
+        if result.returncode != 0:
+            print(f"firmware-discover failed: {result.stderr}", file=sys.stderr)
+            return None
+        return json.loads(result.stdout)
+    except Exception as e:
+        print(f"Error running firmware-discover: {e}", file=sys.stderr)
+        return None
+
+
+def match_device_to_manifest(device, manifest):
+    """
+    Find the matching manifest entry for a discovered device.
+    Returns the manifest entry or None.
+    """
+    device_type = device.get("type", "")
+    components = manifest.get("components", {})
+
+    # Map device type to manifest section
+    section = components.get(device_type, [])
+    if not section:
+        return None
+
+    device_model = device.get("model", "")
+
+    for entry in section:
+        model_pattern = entry.get("model_match", "")
+        if not model_pattern:
+            continue
+
+        # Check if device model matches the manifest pattern (regex)
+        try:
+            if re.search(model_pattern, device_model, re.IGNORECASE):
+                # For HDDs, also check part_match and interface if specified
+                if device_type == "hdd":
+                    # Check interface
+                    entry_interface = entry.get("interface", "")
+                    device_interface = device.get("interface", "")
+                    if entry_interface and device_interface:
+                        if entry_interface.upper() != device_interface.upper():
+                            continue
+
+                    # Check part_match if specified
+                    part_match = entry.get("part_match", "")
+                    device_part = device.get("part_number", "")
+                    if part_match and device_part:
+                        if not re.search(part_match, device_part, re.IGNORECASE):
+                            continue
+
+                return entry
+        except re.error:
+            # Invalid regex, try exact match
+            if model_pattern.lower() in device_model.lower():
+                return entry
+
+    return None
+
+
+def compare_firmware(device_fw, manifest_fw):
+    """
+    Compare firmware versions.
+    Returns: 'current', 'outdated', or 'unknown'
+    """
+    if not manifest_fw:
+        return "unknown"
+    if not device_fw:
+        return "unknown"
+
+    # Normalize for comparison
+    device_fw_norm = device_fw.strip().upper()
+    manifest_fw_norm = manifest_fw.strip().upper()
+
+    if device_fw_norm == manifest_fw_norm:
+        return "current"
+    else:
+        return "outdated"
+
+
+def write_cache(results):
+    """Write results to cache file."""
+    cache_dir = os.path.dirname(CACHE_PATH)
+    os.makedirs(cache_dir, exist_ok=True)
+
+    try:
+        with open(CACHE_PATH, "w") as f:
+            json.dump(results, f, indent=2)
+    except OSError as e:
+        print(f"Error writing cache: {e}", file=sys.stderr)
+
+
+def main():
+    # Load manifest
+    manifest = load_manifest()
+    if not manifest:
+        return 1
+
+    # Run discovery
+    discovered = run_discover()
+    if not discovered:
+        return 1
+
+    # Compare each device
+    results = {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "hostname": discovered.get("hostname", ""),
+        "manifest_version": manifest.get("schema_version", ""),
+        "summary": {
+            "total": 0,
+            "current": 0,
+            "outdated": 0,
+            "unknown": 0,
+        },
+        "devices": [],
+    }
+
+    has_outdated = False
+
+    for device in discovered.get("devices", []):
+        entry = match_device_to_manifest(device, manifest)
+
+        if entry:
+            status = compare_firmware(device.get("firmware", ""), entry.get("latest_firmware", ""))
+            device_result = {
+                "type": device.get("type", ""),
+                "model": device.get("model", ""),
+                "model_full": device.get("model_full", device.get("model", "")),
+                "serial": device.get("serial", ""),
+                "device": device.get("device", ""),
+                "slot": device.get("slot", ""),
+                "sg_device": device.get("sg_device", ""),
+                "current_firmware": device.get("firmware", ""),
+                "latest_firmware": entry.get("latest_firmware", ""),
+                "update_available": status,
+                "flashable": entry.get("flashable", False),
+                "requires_reboot": entry.get("requires_reboot", False),
+                "flash_tool": entry.get("flash_tool", ""),
+                "flash_command": entry.get("flash_command", ""),
+                "firmware_file": entry.get("firmware_file", ""),
+                "family": entry.get("family", ""),
+                "release_notes": entry.get("release_notes", ""),
+            }
+        else:
+            status = "unknown"
+            device_result = {
+                "type": device.get("type", ""),
+                "model": device.get("model", ""),
+                "model_full": device.get("model_full", device.get("model", "")),
+                "serial": device.get("serial", ""),
+                "device": device.get("device", ""),
+                "slot": device.get("slot", ""),
+                "sg_device": device.get("sg_device", ""),
+                "current_firmware": device.get("firmware", ""),
+                "latest_firmware": "",
+                "update_available": status,
+                "flashable": False,
+                "requires_reboot": False,
+                "flash_tool": "",
+                "flash_command": "",
+                "firmware_file": "",
+                "family": device.get("family", ""),
+                "release_notes": "No manifest entry found for this device",
+            }
+
+        results["devices"].append(device_result)
+        results["summary"]["total"] += 1
+        results["summary"][status] += 1
+
+        if status == "outdated":
+            has_outdated = True
+
+    # Write cache
+    write_cache(results)
+
+    # Print summary
+    s = results["summary"]
+    print(f"Firmware check complete: {s['total']} devices, "
+          f"{s['current']} current, {s['outdated']} outdated, {s['unknown']} unknown")
+
+    return 2 if has_outdated else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

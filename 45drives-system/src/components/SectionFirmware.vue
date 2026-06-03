@@ -6,6 +6,14 @@
       <span v-if="lastChecked" class="text-xs text-muted">Last checked: {{ lastChecked }}</span>
       <button
         type="button"
+        class="btn btn-sm btn-default"
+        title="Dismiss notification badge"
+        @click="dismissBadge()"
+      >
+        Dismiss
+      </button>
+      <button
+        type="button"
         class="card-refresh-btn"
         :disabled="checking"
         @click="checkFirmware()"
@@ -62,7 +70,7 @@
 
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
-import { ref } from "vue";
+import { ref, inject } from "vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
 
 export default {
@@ -72,6 +80,8 @@ export default {
     const checking = ref(false);
     const error = ref("");
     const lastChecked = ref("");
+    const dismissBadge = inject('dismissBadge', () => {});
+    const checkFirmwareBadge = inject('checkFirmwareBadge', () => {});
 
     const loadCache = async () => {
       try {
@@ -98,6 +108,7 @@ export default {
           new Command(["python3", "/usr/share/cockpit/45drives-system/scripts/firmware-check"], { superuser: "require" })
         ));
         await loadCache();
+        checkFirmwareBadge();
       } catch (e) {
         error.value = "Firmware check failed: " + (e.message || e);
       } finally {
@@ -113,7 +124,7 @@ export default {
       }
     });
 
-    return { devices, checking, error, lastChecked, checkFirmware };
+    return { devices, checking, error, lastChecked, checkFirmware, dismissBadge };
   }
 };
 </script>

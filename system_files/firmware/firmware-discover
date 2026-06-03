@@ -1,0 +1,322 @@
+#!/usr/bin/env python3
+"""
+firmware-discover - Scans the system for all hardware components and reports
+their current firmware versions. Outputs JSON to stdout.
+
+Used by: 45d-firmware-check (comparison against manifest)
+         SectionFirmware.vue (display in UI)
+
+Exit codes:
+    0 = success
+    1 = error
+"""
+
+import json
+import subprocess
+import sys
+import re
+import os
+from pathlib import Path
+
+
+def run_cmd(cmd, timeout=30):
+    """Run a command and return stdout, stderr, returncode."""
+    try:
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=timeout
+        )
+        return result.stdout.strip(), result.stderr.strip(), result.returncode
+    except subprocess.TimeoutExpired:
+        return "", "timeout", -1
+    except Exception as e:
+        return "", str(e), -1
+
+
+def discover_hdds():
+    """Discover HDD firmware using smartctl."""
+    devices = []
+    
+    # Get list of block devices
+    stdout, _, rc = run_cmd("lsblk -d -n -o NAME,TYPE | grep disk")
+    if rc != 0 or not stdout:
+        return devices
+
+    for line in stdout.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        name = parts[0]
+        dev_path = f"/dev/{name}"
+
+        # Skip nvme devices (handled separately)
+        if name.startswith("nvme"):
+            continue
+
+        # Get smartctl info
+        stdout, _, rc = run_cmd(f"smartctl -i {dev_path}")
+        if rc not in (0, 4) or not stdout:  # rc=4 means SMART disabled but info available
+            continue
+
+        info = {}
+        for field_line in stdout.splitlines():
+            if ":" in field_line:
+                key, _, val = field_line.partition(":")
+                info[key.strip()] = val.strip()
+
+        model = info.get("Device Model", "")
+        serial = info.get("Serial Number", "")
+        firmware = info.get("Firmware Version", "")
+        family = info.get("Model Family", "")
+        capacity = info.get("User Capacity", "")
+        sata_ver = info.get("SATA Version is", "")
+
+        if not model or not firmware:
+            continue
+
+        # Determine interface
+        interface = "SATA"
+        if "SAS" in info.get("Transport protocol", ""):
+            interface = "SAS"
+        elif not sata_ver:
+            # Check if it's SAS via other means
+            if "SAS" in stdout:
+                interface = "SAS"
+
+        # Extract part number from model (e.g., ST16000NM000J-2TW103 -> 2TW103)
+        part_match = ""
+        if "-" in model:
+            part_match = model.split("-", 1)[1]
+
+        # Find sg device for SeaChest
+        sg_device = ""
+        sg_stdout, _, _ = run_cmd(f"ls /sys/class/scsi_generic/ 2>/dev/null")
+        if sg_stdout:
+            for sg in sg_stdout.splitlines():
+                sg_path = f"/sys/class/scsi_generic/{sg}/device/block"
+                if os.path.exists(sg_path):
+                    blocks = os.listdir(sg_path)
+                    if name in blocks:
+                        sg_device = f"/dev/{sg}"
+                        break
+
+        # Get slot from vdev mapping
+        slot = ""
+        vdev_path = f"/dev/disk/by-vdev/"
+        if os.path.isdir(vdev_path):
+            try:
+                for entry in os.listdir(vdev_path):
+                    link = os.readlink(os.path.join(vdev_path, entry))
+                    if name in link and "-part" not in entry:
+                        slot = entry
+                        break
+            except OSError:
+                pass
+
+        devices.append({
+            "type": "hdd",
+            "device": dev_path,
+            "sg_device": sg_device,
+            "slot": slot,
+            "model": model.split("-")[0] if "-" in model else model,
+            "model_full": model,
+            "part_number": part_match,
+            "serial": serial,
+            "firmware": firmware,
+            "family": family,
+            "interface": interface,
+            "capacity": capacity,
+        })
+
+    return devices
+
+
+def discover_nvme():
+    """Discover NVMe firmware using nvme-cli."""
+    devices = []
+
+    stdout, _, rc = run_cmd("nvme list -o json 2>/dev/null")
+    if rc != 0 or not stdout:
+        # Fallback: try lsblk for nvme devices
+        stdout, _, rc = run_cmd("lsblk -d -n -o NAME | grep nvme")
+        if rc != 0 or not stdout:
+            return devices
+        for line in stdout.splitlines():
+            name = line.strip()
+            dev_path = f"/dev/{name}"
+            info_out, _, _ = run_cmd(f"smartctl -i {dev_path}")
+            if not info_out:
+                continue
+            info = {}
+            for field_line in info_out.splitlines():
+                if ":" in field_line:
+                    key, _, val = field_line.partition(":")
+                    info[key.strip()] = val.strip()
+            model = info.get("Model Number", "")
+            serial = info.get("Serial Number", "")
+            firmware = info.get("Firmware Version", "")
+            if model and firmware:
+                devices.append({
+                    "type": "nvme",
+                    "device": dev_path,
+                    "model": model,
+                    "serial": serial,
+                    "firmware": firmware,
+                })
+        return devices
+
+    try:
+        nvme_data = json.loads(stdout)
+        nvme_list = nvme_data.get("Devices", [])
+        for dev in nvme_list:
+            devices.append({
+                "type": "nvme",
+                "device": dev.get("DevicePath", ""),
+                "model": dev.get("ModelNumber", "").strip(),
+                "serial": dev.get("SerialNumber", "").strip(),
+                "firmware": dev.get("Firmware", "").strip(),
+            })
+    except json.JSONDecodeError:
+        pass
+
+    return devices
+
+
+def discover_hba():
+    """Discover HBA/RAID controller firmware using storcli2 or storcli64."""
+    devices = []
+
+    # Try storcli2 first (newer controllers)
+    for tool in ["storcli2", "storcli64", "/opt/45drives/tools/storcli2", "/opt/MegaRAID/storcli/storcli64"]:
+        stdout, _, rc = run_cmd(f"{tool} /call show all J 2>/dev/null")
+        if rc == 0 and stdout:
+            try:
+                data = json.loads(stdout)
+                controllers = data.get("Controllers", [])
+                for ctrl in controllers:
+                    resp = ctrl.get("Response Data", {})
+                    basics = resp.get("Basics", {})
+                    model = basics.get("Model", "")
+                    serial = basics.get("Serial Number", "")
+                    fw = resp.get("Version", {}).get("Firmware Package Build", "")
+                    if not fw:
+                        fw = resp.get("Version", {}).get("Firmware Version", "")
+                    if model:
+                        devices.append({
+                            "type": "hba",
+                            "model": model,
+                            "serial": serial,
+                            "firmware": fw,
+                            "tool": tool,
+                        })
+            except (json.JSONDecodeError, KeyError):
+                pass
+            break
+
+    return devices
+
+
+def discover_nic():
+    """Discover NIC firmware using ethtool."""
+    devices = []
+
+    stdout, _, rc = run_cmd("ls /sys/class/net/ | grep -v lo")
+    if rc != 0 or not stdout:
+        return devices
+
+    seen = set()
+    for iface in stdout.splitlines():
+        iface = iface.strip()
+        if not iface:
+            continue
+
+        # Get driver info
+        drv_out, _, _ = run_cmd(f"ethtool -i {iface} 2>/dev/null")
+        if not drv_out:
+            continue
+
+        info = {}
+        for field_line in drv_out.splitlines():
+            if ":" in field_line:
+                key, _, val = field_line.partition(":")
+                info[key.strip()] = val.strip()
+
+        firmware = info.get("firmware-version", "")
+        driver = info.get("driver", "")
+        bus = info.get("bus-info", "")
+
+        # Deduplicate by bus address (multi-port NICs)
+        if bus in seen:
+            continue
+        seen.add(bus)
+
+        if firmware and driver:
+            devices.append({
+                "type": "nic",
+                "interface": iface,
+                "driver": driver,
+                "firmware": firmware,
+                "bus_info": bus,
+            })
+
+    return devices
+
+
+def discover_bios():
+    """Discover BIOS/UEFI version using dmidecode."""
+    devices = []
+
+    stdout, _, rc = run_cmd("dmidecode -t bios 2>/dev/null")
+    if rc != 0 or not stdout:
+        return devices
+
+    info = {}
+    for line in stdout.splitlines():
+        line = line.strip()
+        if ":" in line:
+            key, _, val = line.partition(":")
+            info[key.strip()] = val.strip()
+
+    vendor = info.get("Vendor", "")
+    version = info.get("Version", "")
+    release_date = info.get("Release Date", "")
+
+    if version:
+        devices.append({
+            "type": "bios",
+            "vendor": vendor,
+            "firmware": version,
+            "release_date": release_date,
+        })
+
+    return devices
+
+
+def main():
+    results = {
+        "timestamp": "",
+        "hostname": "",
+        "devices": [],
+    }
+
+    # Get timestamp
+    from datetime import datetime
+    results["timestamp"] = datetime.utcnow().isoformat() + "Z"
+
+    # Get hostname
+    stdout, _, _ = run_cmd("hostname")
+    results["hostname"] = stdout
+
+    # Discover all components
+    results["devices"].extend(discover_hdds())
+    results["devices"].extend(discover_nvme())
+    results["devices"].extend(discover_hba())
+    results["devices"].extend(discover_nic())
+    results["devices"].extend(discover_bios())
+
+    print(json.dumps(results, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
