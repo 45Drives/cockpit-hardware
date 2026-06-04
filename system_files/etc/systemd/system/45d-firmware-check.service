@@ -6,7 +6,7 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/share/cockpit/45drives-system/scripts/firmware-check
+ExecStart=/usr/bin/python3 /usr/share/45drives/firmware/firmware-check
 # Run as root (needed for dmidecode, ipmitool, storcli, etc.)
 User=root
 # Limit resource usage

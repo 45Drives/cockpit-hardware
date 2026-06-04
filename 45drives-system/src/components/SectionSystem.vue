@@ -260,7 +260,7 @@ export default {
       let cacheData = null;
       try {
         const cacheProc = await unwrap(server.execute(
-          new Command(["cat", "/var/cache/45drives/firmware.json"], { superuser: "require" })
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
         ));
         cacheData = JSON.parse(cacheProc.getStdout());
       } catch (e) {
@@ -268,10 +268,10 @@ export default {
         console.log("Firmware cache not found, running firmware-check...");
         try {
           await unwrap(server.execute(
-            new Command(["python3", "/usr/share/cockpit/45drives-system/scripts/firmware-check"], { superuser: "require" })
+            new Command(["python3", "/usr/share/45drives/firmware/firmware-check"], { superuser: "require" })
           ));
           const retryProc = await unwrap(server.execute(
-            new Command(["cat", "/var/cache/45drives/firmware.json"], { superuser: "require" })
+            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
           ));
           cacheData = JSON.parse(retryProc.getStdout());
         } catch (e2) {

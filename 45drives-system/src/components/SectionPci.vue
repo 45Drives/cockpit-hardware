@@ -26,8 +26,6 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Card Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Card Model</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Firmware Version</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Latest FW</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default">
@@ -39,21 +37,6 @@
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.cardType }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.cardModel }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.firmwareVersion }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ pci.latestFirmware || '-' }}</td>
-                  <td class="whitespace-nowrap px-3 py-4 text-sm">
-                    <div v-if="pci.rebootRequired" class="flex items-center gap-2">
-                      <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">Reboot Required</span>
-                      <button @click="showRebootDialog()" class="inline-flex items-center rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700">Reboot Now</button>
-                    </div>
-                    <div v-else-if="pci.updateStatus === 'outdated'" class="flex items-center gap-2">
-                      <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Update Available</span>
-                      <button @click="showUpdateModal(pci)" class="inline-flex items-center rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700">Info</button>
-                      <button v-if="pci.flashable" :disabled="pci.flashing" @click="flashDevice(pci)" class="inline-flex items-center rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">{{ pci.flashing ? 'Flashing...' : 'Update Now' }}</button>
-                    </div>
-                    <span v-else-if="pci.updateStatus === 'current'" class="inline-flex items-center rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-medium text-white">Up to Date</span>
-                    <span v-else-if="pci.firmwareVersion && pci.firmwareVersion !== '-' && pci.firmwareVersion !== 'Loading...'" class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">Unknown</span>
-                    <span v-else class="text-muted">-</span>
-                  </td>
                 </tr>
               </tbody>
             </table>
@@ -306,7 +289,7 @@ export default {
     const loadFirmwareCache = async () => {
       try {
         const cacheProc = await unwrap(server.execute(
-          new Command(["cat", "/var/cache/45drives/firmware.json"], { superuser: "try" })
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
         ));
         return JSON.parse(cacheProc.getStdout());
       } catch (e) {
@@ -314,10 +297,10 @@ export default {
         console.log("Firmware cache not found, running firmware-check...");
         try {
           await unwrap(server.execute(
-            new Command(["python3", "/usr/share/cockpit/45drives-system/scripts/firmware-check"], { superuser: "try" })
+            new Command(["python3", "/usr/share/45drives/firmware/firmware-check"], { superuser: "try" })
           ));
           const retryProc = await unwrap(server.execute(
-            new Command(["cat", "/var/cache/45drives/firmware.json"], { superuser: "try" })
+            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
           ));
           return JSON.parse(retryProc.getStdout());
         } catch (e2) {
@@ -571,7 +554,7 @@ export default {
       if (runFirmwareCheck) {
         try {
           await unwrap(server.execute(
-            new Command(["python3", "/usr/share/cockpit/45drives-system/scripts/firmware-check"], { superuser: "try" })
+            new Command(["python3", "/usr/share/45drives/firmware/firmware-check"], { superuser: "try" })
           ));
         } catch (e) {
           console.log("Firmware check failed (non-fatal):", e);

@@ -3,8 +3,8 @@
 firmware-flash - Flashes firmware to a specific device.
 
 Usage:
-    firmware-flash --device /dev/sg7 --firmware-file /path/to/file.LOD --tool SeaChest_Firmware
     firmware-flash --cache-index 3   (flash device at index 3 from cache)
+    firmware-flash --cache-index 3 --dry-run   (show what would be done)
 
 Exit codes:
     0 = success
@@ -109,16 +109,31 @@ def flash_seachest(sg_device, firmware_path):
 
 
 def flash_storcli(device_info, firmware_path):
-    """Flash HBA using storcli2/storcli64."""
-    tool = device_info.get("flash_tool", "storcli2")
+    """Flash HBA using storcli64."""
+    tool = device_info.get("flash_tool", "storcli64")
+    ctrl_idx = device_info.get("controller_index", 0)
+
+    # Resolve full path for storcli
+    tool_path = tool
+    for candidate in [
+        f"/opt/45drives/tools/{tool}",
+        f"/opt/MegaRAID/storcli/{tool}",
+        f"/usr/local/bin/{tool}",
+        f"/usr/bin/{tool}",
+    ]:
+        if os.path.isfile(candidate):
+            tool_path = candidate
+            break
+
     # Build command — replace placeholders
     cmd_template = device_info.get("flash_command", "")
     if not cmd_template:
-        cmd_template = f"{tool} /c0 download file={firmware_path}"
+        cmd_template = f"{tool_path} /c{ctrl_idx} download file={firmware_path}"
     else:
+        cmd_template = cmd_template.replace(tool, tool_path)
         cmd_template = cmd_template.replace("<firmware_path>", firmware_path)
-        # Replace controller index placeholder
-        cmd_template = cmd_template.replace("/cX", "/c0")
+        # Replace controller index placeholder with actual index
+        cmd_template = cmd_template.replace("/cX", f"/c{ctrl_idx}")
 
     print(f"Running: {cmd_template}")
 
@@ -168,6 +183,95 @@ def flash_nvme(device_path, firmware_path):
         return False, str(e)
 
 
+def flash_niccli(device_info, firmware_path):
+    """Flash Broadcom NIC using niccli.
+    
+    niccli uses its own adapter IDs (from 'niccli --list'), so we need to
+    resolve the PCI bus address to the niccli adapter ID at flash time.
+    """
+    bus_info = device_info.get("bus_info", "")
+    if not bus_info:
+        return False, "No bus_info available for niccli flash"
+
+    # Find niccli binary
+    niccli_bin = None
+    for path in ["/usr/bin/niccli", "/usr/local/bin/niccli", "/opt/45drives/tools/niccli"]:
+        if os.path.isfile(path):
+            niccli_bin = path
+            break
+    if not niccli_bin:
+        niccli_bin = shutil.which("niccli")
+    if not niccli_bin:
+        return False, "niccli not found. Install niccli from Broadcom driver package."
+
+    # Get adapter list from niccli
+    print(f"Discovering Broadcom adapter ID for PCI {bus_info}...")
+    try:
+        result = subprocess.run(
+            [niccli_bin, "--list"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=30
+        )
+        if result.returncode != 0:
+            # niccli returns non-zero when no devices found
+            if "not found" in result.stdout.lower() or "not found" in result.stderr.lower():
+                return False, "No Broadcom NICs found by niccli"
+            return False, f"niccli --list failed: {result.stdout}{result.stderr}"
+
+        nic_list = result.stdout
+        print(f"niccli --list output:\n{nic_list}")
+    except Exception as e:
+        return False, f"Failed to run niccli --list: {e}"
+
+    # Find adapter ID matching our PCI bus address
+    # niccli --list output format: <id> <model> <mac> <fw_ver> <pci_addr> ...
+    adapter_id = None
+    # Strip domain prefix for matching (0000:42:00.0 → 42:00.0)
+    short_bus = bus_info
+    if short_bus.startswith("0000:"):
+        short_bus = short_bus[5:]
+    # Also match without function for multi-port (42:00.0 → 42:00)
+    bus_slot = short_bus.rsplit(".", 1)[0] if "." in short_bus else short_bus
+
+    for line in nic_list.splitlines():
+        # Match by PCI address in the line
+        if short_bus in line or bus_info in line or bus_slot in line:
+            # Adapter ID is the first alphanumeric token
+            parts = line.split()
+            if parts:
+                adapter_id = parts[0].strip()
+                break
+
+    if not adapter_id:
+        return False, f"Could not find niccli adapter ID for PCI bus {bus_info}"
+
+    # Flash using niccli
+    cmd = f"{niccli_bin} -i {adapter_id} fw --update -f {firmware_path} --yes"
+    print(f"Running: {cmd}")
+
+    try:
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=300, input="y\n"
+        )
+        output = result.stdout + result.stderr
+        print(output)
+
+        if "already up-to-date" in output.lower():
+            return True, "Firmware already up-to-date. Reboot to activate."
+        elif "update is in progress" in output.lower() or \
+             "updated to package version" in output.lower() or \
+             "update successful" in output.lower():
+            return True, output
+        elif result.returncode == 0:
+            return True, output
+        else:
+            return False, f"niccli exit code {result.returncode}: {output}"
+    except subprocess.TimeoutExpired:
+        return False, "niccli firmware update timed out (300s)"
+    except Exception as e:
+        return False, str(e)
+
+
 def flash_device(device_info):
     """Flash a device based on its type and tool."""
     flash_tool = device_info.get("flash_tool", "")
@@ -195,6 +299,8 @@ def flash_device(device_info):
         return flash_seachest(sg_device, firmware_path)
     elif "storcli" in flash_tool:
         return flash_storcli(device_info, firmware_path)
+    elif "niccli" in flash_tool:
+        return flash_niccli(device_info, firmware_path)
     elif "nvme" in flash_tool:
         device_path = device_info.get("device", "")
         return flash_nvme(device_path, firmware_path)
@@ -204,85 +310,47 @@ def flash_device(device_info):
 
 def main():
     parser = argparse.ArgumentParser(description="Flash firmware to a device")
-    parser.add_argument("--cache-index", type=int, help="Index of device in cache to flash")
-    parser.add_argument("--device", type=str, help="Device path (e.g., /dev/sg7)")
-    parser.add_argument("--firmware-file", type=str, help="Path to firmware file")
-    parser.add_argument("--tool", type=str, help="Flash tool to use")
+    parser.add_argument("--cache-index", type=int, required=True, help="Index of device in cache to flash")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without flashing")
     args = parser.parse_args()
 
-    if args.cache_index is not None:
-        # Flash from cache
-        cache = load_cache()
-        if not cache:
-            return 1
-
-        devices = cache.get("devices", [])
-        if args.cache_index < 0 or args.cache_index >= len(devices):
-            print(f"Error: Invalid cache index {args.cache_index} (have {len(devices)} devices)", file=sys.stderr)
-            return 1
-
-        device_info = devices[args.cache_index]
-
-        if not device_info.get("flashable", False):
-            print(f"Error: Device is not flashable: {device_info.get('model', 'unknown')}", file=sys.stderr)
-            return 3
-
-        if device_info.get("update_available") != "outdated":
-            print(f"Warning: Device firmware is already current or unknown", file=sys.stderr)
-
-        if args.dry_run:
-            print(f"Would flash: {device_info.get('model', '')} ({device_info.get('device', '')})")
-            print(f"  Current FW: {device_info.get('current_firmware', '')}")
-            print(f"  Target FW:  {device_info.get('latest_firmware', '')}")
-            print(f"  Tool: {device_info.get('flash_tool', '')}")
-            print(f"  File: {device_info.get('firmware_file', '')}")
-            return 0
-
-        print(f"Flashing: {device_info.get('model', '')} ({device_info.get('device', '')})")
-        print(f"  Current: {device_info.get('current_firmware', '')} -> Target: {device_info.get('latest_firmware', '')}")
-
-        success, message = flash_device(device_info)
-
-        if success:
-            print(f"\n✓ Flash successful")
-            return 0
-        else:
-            print(f"\n✗ Flash failed: {message}", file=sys.stderr)
-            return 2
-
-    elif args.device and args.firmware_file and args.tool:
-        # Direct flash mode
-        if args.dry_run:
-            print(f"Would flash: {args.device} with {args.firmware_file} using {args.tool}")
-            return 0
-
-        device_info = {
-            "device": args.device,
-            "sg_device": args.device,
-            "flash_tool": args.tool,
-            "firmware_file": args.firmware_file,
-            "type": "hdd",
-        }
-
-        # If firmware-file is an absolute path, use it directly
-        if os.path.isabs(args.firmware_file) and os.path.isfile(args.firmware_file):
-            if "SeaChest" in args.tool:
-                success, message = flash_seachest(args.device, args.firmware_file)
-            else:
-                success, message = flash_device(device_info)
-        else:
-            success, message = flash_device(device_info)
-
-        if success:
-            print(f"\n✓ Flash successful")
-            return 0
-        else:
-            print(f"\n✗ Flash failed: {message}", file=sys.stderr)
-            return 2
-    else:
-        parser.print_help()
+    cache = load_cache()
+    if not cache:
         return 1
+
+    devices = cache.get("devices", [])
+    if args.cache_index < 0 or args.cache_index >= len(devices):
+        print(f"Error: Invalid cache index {args.cache_index} (have {len(devices)} devices)", file=sys.stderr)
+        return 1
+
+    device_info = devices[args.cache_index]
+
+    if not device_info.get("flashable", False):
+        print(f"Error: Device is not flashable: {device_info.get('model', 'unknown')}", file=sys.stderr)
+        return 3
+
+    if device_info.get("update_available") != "outdated":
+        print(f"Warning: Device firmware is already current or unknown", file=sys.stderr)
+
+    if args.dry_run:
+        print(f"Would flash: {device_info.get('model', '')} ({device_info.get('device', '')})")
+        print(f"  Current FW: {device_info.get('current_firmware', '')}")
+        print(f"  Target FW:  {device_info.get('latest_firmware', '')}")
+        print(f"  Tool: {device_info.get('flash_tool', '')}")
+        print(f"  File: {device_info.get('firmware_file', '')}")
+        return 0
+
+    print(f"Flashing: {device_info.get('model', '')} ({device_info.get('device', '')})")
+    print(f"  Current: {device_info.get('current_firmware', '')} -> Target: {device_info.get('latest_firmware', '')}")
+
+    success, message = flash_device(device_info)
+
+    if success:
+        print(f"\n✓ Flash successful")
+        return 0
+    else:
+        print(f"\n✗ Flash failed: {message}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

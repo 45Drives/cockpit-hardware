@@ -31,3 +31,6 @@ debian/.debhelper
 
 # version files
 version.js
+*.LOD
+*.bin
+*.rom

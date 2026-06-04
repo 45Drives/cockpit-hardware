@@ -64,9 +64,11 @@ def discover_hdds():
                 key, _, val = field_line.partition(":")
                 info[key.strip()] = val.strip()
 
-        model = info.get("Device Model", "")
-        serial = info.get("Serial Number", "")
-        firmware = info.get("Firmware Version", "")
+        # SATA drives use "Device Model" / "Firmware Version"
+        # SAS drives use "Product" / "Revision"
+        model = info.get("Device Model", "") or info.get("Product", "")
+        serial = info.get("Serial Number", "") or info.get("Serial number", "")
+        firmware = info.get("Firmware Version", "") or info.get("Revision", "")
         family = info.get("Model Family", "")
         capacity = info.get("User Capacity", "")
         sata_ver = info.get("SATA Version is", "")
@@ -183,21 +185,24 @@ def discover_nvme():
 
 
 def discover_hba():
-    """Discover HBA/RAID controller firmware using storcli2 or storcli64."""
+    """Discover HBA/RAID controller firmware using storcli64."""
     devices = []
 
-    # Try storcli2 first (newer controllers)
-    for tool in ["storcli2", "storcli64", "/opt/45drives/tools/storcli2", "/opt/MegaRAID/storcli/storcli64"]:
+    # Try storcli64 at known paths
+    for tool in ["/opt/45drives/tools/storcli64", "storcli64", "/opt/MegaRAID/storcli/storcli64", "/usr/local/bin/storcli64"]:
         stdout, _, rc = run_cmd(f"{tool} /call show all J 2>/dev/null")
         if rc == 0 and stdout:
             try:
                 data = json.loads(stdout)
                 controllers = data.get("Controllers", [])
-                for ctrl in controllers:
+                for idx, ctrl in enumerate(controllers):
                     resp = ctrl.get("Response Data", {})
+                    if not resp:
+                        continue
                     basics = resp.get("Basics", {})
                     model = basics.get("Model", "")
                     serial = basics.get("Serial Number", "")
+                    ctrl_idx = basics.get("Controller", idx)
                     fw = resp.get("Version", {}).get("Firmware Package Build", "")
                     if not fw:
                         fw = resp.get("Version", {}).get("Firmware Version", "")
@@ -208,26 +213,34 @@ def discover_hba():
                             "serial": serial,
                             "firmware": fw,
                             "tool": tool,
+                            "controller_index": ctrl_idx,
                         })
             except (json.JSONDecodeError, KeyError):
                 pass
-            break
+            if devices:
+                break
 
     return devices
 
 
 def discover_nic():
-    """Discover NIC firmware using ethtool."""
+    """Discover NIC firmware using ethtool + lspci for model info."""
     devices = []
 
     stdout, _, rc = run_cmd("ls /sys/class/net/ | grep -v lo")
     if rc != 0 or not stdout:
         return devices
 
-    seen = set()
+    seen_slots = set()  # Deduplicate by PCI slot (base address without function)
     for iface in stdout.splitlines():
         iface = iface.strip()
         if not iface:
+            continue
+
+        # Skip virtual/bridge/vlan interfaces
+        if os.path.exists(f"/sys/class/net/{iface}/bridge") or \
+           os.path.isfile(f"/sys/class/net/{iface}/bonding") or \
+           not os.path.exists(f"/sys/class/net/{iface}/device"):
             continue
 
         # Get driver info
@@ -245,19 +258,56 @@ def discover_nic():
         driver = info.get("driver", "")
         bus = info.get("bus-info", "")
 
-        # Deduplicate by bus address (multi-port NICs)
-        if bus in seen:
+        if not firmware or not driver or not bus or bus == "N/A":
             continue
-        seen.add(bus)
 
-        if firmware and driver:
-            devices.append({
-                "type": "nic",
-                "interface": iface,
-                "driver": driver,
-                "firmware": firmware,
-                "bus_info": bus,
-            })
+        # Deduplicate multi-port NICs by PCI slot (strip function .X suffix)
+        slot_base = bus.rsplit(".", 1)[0] if "." in bus else bus
+        if slot_base in seen_slots:
+            continue
+        seen_slots.add(slot_base)
+
+        # Get model from lspci
+        model = ""
+        lspci_out, _, _ = run_cmd(f"lspci -s {bus} 2>/dev/null")
+        if lspci_out:
+            # Format: "42:00.0 Ethernet controller: Broadcom Inc. ... BCM57416 ..."
+            parts = lspci_out.split(":", 2)
+            if len(parts) >= 3:
+                model = parts[2].strip()
+
+        # Also try to get part number from lspci VPD
+        part_number = ""
+        vpd_out, _, _ = run_cmd(f"lspci -s {bus} -vv 2>/dev/null | grep -i 'Part number'")
+        if vpd_out and "Part number:" in vpd_out:
+            part_number = vpd_out.split("Part number:")[-1].strip()
+
+        # Extract short model identifier (e.g., BCM57416, ConnectX-6)
+        short_model = model
+        # Try to find common chip identifiers
+        chip_match = re.search(r'(BCM\d+|ConnectX-\d+|MCX\d+|X[57]10|E810|XXV710|XL710|I350|I210)', model)
+        if chip_match:
+            short_model = chip_match.group(1)
+
+        # Normalize firmware version for Broadcom NICs
+        # ethtool reports "224.0.158.0/pkg 224.1.102.0" — extract package version
+        fw_normalized = firmware
+        if driver == "bnxt_en" and "/pkg " in firmware:
+            fw_normalized = firmware.split("/pkg ")[-1].strip()
+
+        devices.append({
+            "type": "nic",
+            "device": iface,
+            "interface": iface,
+            "model": short_model,
+            "model_full": model,
+            "part_number": part_number,
+            "serial": "",
+            "driver": driver,
+            "firmware": fw_normalized,
+            "firmware_raw": firmware,
+            "bus_info": bus,
+        })
 
     return devices
 

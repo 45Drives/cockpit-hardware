@@ -25,6 +25,7 @@ from datetime import datetime
 MANIFEST_PATH = "/usr/share/45drives/firmware/manifest.json"
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 DISCOVER_SCRIPT = "/usr/share/45drives/firmware/firmware-discover"
+FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
 
 # For development, allow override via environment
 if os.environ.get("FIRMWARE_MANIFEST_PATH"):
@@ -33,6 +34,8 @@ if os.environ.get("FIRMWARE_CACHE_PATH"):
     CACHE_PATH = os.environ["FIRMWARE_CACHE_PATH"]
 if os.environ.get("FIRMWARE_DISCOVER_PATH"):
     DISCOVER_SCRIPT = os.environ["FIRMWARE_DISCOVER_PATH"]
+if os.environ.get("FIRMWARE_DIR"):
+    FIRMWARE_DIR = os.environ["FIRMWARE_DIR"]
 
 
 def load_manifest():
@@ -85,19 +88,19 @@ def match_device_to_manifest(device, manifest):
         # Check if device model matches the manifest pattern (regex)
         try:
             if re.search(model_pattern, device_model, re.IGNORECASE):
-                # For HDDs, also check part_match and interface if specified
+                # For HDDs, also check part_match if specified
                 if device_type == "hdd":
-                    # Check interface
-                    entry_interface = entry.get("interface", "")
-                    device_interface = device.get("interface", "")
-                    if entry_interface and device_interface:
-                        if entry_interface.upper() != device_interface.upper():
-                            continue
+                    # Note: interface check removed - model number encodes SAS/SATA
+                    # and SATA drives behind SAS HBAs report as SAS transport
 
-                    # Check part_match if specified
+                    # Check part_match if specified in manifest entry
                     part_match = entry.get("part_match", "")
                     device_part = device.get("part_number", "")
-                    if part_match and device_part:
+                    if part_match:
+                        # If manifest requires part_match but device has no part number
+                        # (common with SAS "Product" field), skip to avoid ambiguity
+                        if not device_part:
+                            continue
                         if not re.search(part_match, device_part, re.IGNORECASE):
                             continue
 
@@ -169,12 +172,13 @@ def main():
 
     has_outdated = False
 
-    for device in discovered.get("devices", []):
+    for idx, device in enumerate(discovered.get("devices", [])):
         entry = match_device_to_manifest(device, manifest)
 
         if entry:
             status = compare_firmware(device.get("firmware", ""), entry.get("latest_firmware", ""))
             device_result = {
+                "cache_index": idx,
                 "type": device.get("type", ""),
                 "model": device.get("model", ""),
                 "model_full": device.get("model_full", device.get("model", "")),
@@ -182,6 +186,8 @@ def main():
                 "device": device.get("device", ""),
                 "slot": device.get("slot", ""),
                 "sg_device": device.get("sg_device", ""),
+                "bus_info": device.get("bus_info", ""),
+                "controller_index": device.get("controller_index", ""),
                 "current_firmware": device.get("firmware", ""),
                 "latest_firmware": entry.get("latest_firmware", ""),
                 "update_available": status,
@@ -193,9 +199,22 @@ def main():
                 "family": entry.get("family", ""),
                 "release_notes": entry.get("release_notes", ""),
             }
+
+            # Verify firmware payload exists on disk if device is flashable
+            fw_file = device_result.get("firmware_file", "")
+            if device_result["flashable"] and fw_file:
+                fw_path = os.path.join(FIRMWARE_DIR, fw_file)
+                if not os.path.isfile(fw_path):
+                    device_result["flashable"] = False
+                    device_result["payload_missing"] = True
+                    device_result["release_notes"] = (
+                        device_result.get("release_notes", "") +
+                        f" [Firmware file not deployed: {fw_file}]"
+                    ).strip()
         else:
             status = "unknown"
             device_result = {
+                "cache_index": idx,
                 "type": device.get("type", ""),
                 "model": device.get("model", ""),
                 "model_full": device.get("model_full", device.get("model", "")),
@@ -203,6 +222,7 @@ def main():
                 "device": device.get("device", ""),
                 "slot": device.get("slot", ""),
                 "sg_device": device.get("sg_device", ""),
+                "bus_info": device.get("bus_info", ""),
                 "current_firmware": device.get("firmware", ""),
                 "latest_firmware": "",
                 "update_available": status,
@@ -230,7 +250,7 @@ def main():
     print(f"Firmware check complete: {s['total']} devices, "
           f"{s['current']} current, {s['outdated']} outdated, {s['unknown']} unknown")
 
-    return 2 if has_outdated else 0
+    return 0
 
 
 if __name__ == "__main__":

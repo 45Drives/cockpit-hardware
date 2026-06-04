@@ -22,7 +22,7 @@ const dismissBadge = () => {
  * Badge types: "warning" (updates available), "error" (reboot required)
  */
 const checkFirmwareBadge = () => {
-  const cacheFile = cockpit.file("/var/cache/45drives/firmware.json", { superuser: "try" });
+  const cacheFile = cockpit.file("/var/cache/45drives/firmware/status.json", { superuser: "try" });
   cacheFile.read()
     .then((content) => {
       if (!content) return;

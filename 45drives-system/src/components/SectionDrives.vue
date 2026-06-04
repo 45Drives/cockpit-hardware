@@ -2,7 +2,7 @@
 <div class="card">
   <div class="card-header flex flex-row items-center justify-between">
     <h3 class="text-header text-default">Drives</h3>
-    <div class="mt-3 sm:mt-0 sm:ml-4">
+    <div class="mt-3 sm:mt-0 sm:ml-4 flex items-center gap-2">
       <button type="button" class="card-refresh-btn" :disabled="loading" @click="loadDrives()">
         <RefreshIconOutline class="h-5 w-5" aria-hidden="true" />
       </button>
@@ -22,16 +22,14 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Size</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Firmware</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Latest FW</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default bg-default">
                 <tr v-if="loading">
-                  <td colspan="8" class="py-4 text-center text-sm text-muted">Loading drives...</td>
+                  <td colspan="6" class="py-4 text-center text-sm text-muted">Loading drives...</td>
                 </tr>
                 <tr v-else-if="drives.length === 0">
-                  <td colspan="8" class="py-4 text-center text-sm text-muted">No drives detected</td>
+                  <td colspan="6" class="py-4 text-center text-sm text-muted">No drives detected</td>
                 </tr>
                 <tr v-for="drive in drives" :key="drive.device">
                   <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-default sm:pl-6">/dev/{{ drive.device }}</td>
@@ -40,17 +38,6 @@
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.type }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.size }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-default">{{ drive.firmware || '—' }}</td>
-                  <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-default">{{ drive.latestFirmware || '—' }}</td>
-                  <td class="whitespace-nowrap px-3 py-3 text-sm">
-                    <div v-if="drive.updateStatus === 'outdated'" class="flex items-center gap-2">
-                      <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Update Available</span>
-                      <button @click="showDriveInfo(drive)" class="inline-flex items-center rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700">Info</button>
-                      <button v-if="drive.flashable" :disabled="drive.flashing" @click="flashDrive(drive)" class="inline-flex items-center rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">{{ drive.flashing ? 'Flashing...' : 'Update Now' }}</button>
-                    </div>
-                    <span v-else-if="drive.updateStatus === 'current'" class="inline-flex items-center rounded-full bg-green-600 px-2.5 py-0.5 text-xs font-medium text-white">Up to Date</span>
-                    <span v-else-if="drive.firmware && drive.firmware !== '—'" class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">Unknown</span>
-                    <span v-else class="text-muted">—</span>
-                  </td>
                 </tr>
               </tbody>
             </table>
@@ -109,6 +96,44 @@
     <div class="px-6 py-3 border-t border-default flex justify-end gap-2">
       <button @click="modalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Close</button>
       <button v-if="modalData.flashable" :disabled="modalData.flashing" @click="flashDrive(modalData); modalVisible = false" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">{{ modalData.flashing ? 'Flashing...' : 'Update Now' }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Flash Progress Modal -->
+<div v-if="flashProgressVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-default rounded-lg shadow-xl max-w-lg w-full mx-4 overflow-hidden">
+    <div class="px-6 py-4 border-b border-default flex justify-between items-center">
+      <h3 class="text-lg font-semibold">{{ flashComplete ? (flashSuccess ? 'Flash Complete' : 'Flash Failed') : 'Flashing Firmware...' }}</h3>
+    </div>
+    <div class="px-6 py-4 space-y-4">
+      <!-- Progress indicator -->
+      <div v-if="!flashComplete" class="flex items-center gap-3">
+        <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span class="text-sm font-medium text-yellow-600">Do NOT power off or remove the drive!</span>
+      </div>
+      <!-- Success icon -->
+      <div v-if="flashComplete && flashSuccess" class="flex items-center gap-3">
+        <svg class="h-6 w-6 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span class="text-sm font-medium text-green-700">Firmware updated successfully</span>
+      </div>
+      <!-- Failure icon -->
+      <div v-if="flashComplete && !flashSuccess" class="flex items-center gap-3">
+        <svg class="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        <span class="text-sm font-medium text-red-700">Firmware flash failed</span>
+      </div>
+      <!-- Output log -->
+      <div class="bg-gray-900 rounded-md p-3 font-mono text-xs max-h-64 overflow-y-auto whitespace-pre-wrap" ref="flashLogEl" v-html="colorizeLog(flashLog || 'Starting flash process...')"></div>
+    </div>
+    <div v-if="flashComplete" class="px-6 py-3 border-t border-default flex justify-end">
+      <button @click="flashProgressVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Close</button>
     </div>
   </div>
 </div>
@@ -256,11 +281,13 @@ export default {
           ));
           const fwData = JSON.parse(fwProc.getStdout());
           const fwDevices = fwData.devices || [];
+          const matchedSerials = new Set();
           for (let drive of driveList) {
             const match = fwDevices.find(fd =>
               fd.serial && fd.serial === drive.serial
             );
             if (match) {
+              matchedSerials.add(match.serial);
               drive.latestFirmware = match.latest_firmware || "";
               drive.updateStatus = match.update_available || "";
               drive.flashable = match.flashable || false;
@@ -276,6 +303,9 @@ export default {
               }
             }
           }
+
+          // Non-drive firmware devices (HBAs, NICs, BIOS, BMC) are handled
+          // by the Firmware Updates section (SectionFirmware.vue), not here.
         } catch (e) {
           console.log("Firmware cache not available:", e);
         }
@@ -293,6 +323,23 @@ export default {
       if (d.tran === "sata") return d.rota === "1" || d.rota === true ? "SATA HDD" : "SATA SSD";
       if (d.rota === "0" || d.rota === false) return "SSD";
       return "HDD";
+    };
+
+    const colorizeLog = (text) => {
+      return text.split('\n').map(line => {
+        const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (/✗|FAILED|ERROR|failed/i.test(line)) {
+          return `<span class="text-red-400">${escaped}</span>`;
+        } else if (/✓|Success|successful|completed successfully/i.test(line)) {
+          return `<span class="text-green-400">${escaped}</span>`;
+        } else if (/^>|^---/.test(line)) {
+          return `<span class="text-gray-300">${escaped}</span>`;
+        } else if (/Warning/i.test(line)) {
+          return `<span class="text-yellow-400">${escaped}</span>`;
+        } else {
+          return `<span class="text-gray-400">${escaped}</span>`;
+        }
+      }).join('\n');
     };
 
     onMounted(() => {
@@ -368,10 +415,28 @@ export default {
       confirmLoading.value = false;
     };
 
+    const flashProgressVisible = ref(false);
+    const flashLog = ref('');
+    const flashComplete = ref(false);
+    const flashSuccess = ref(false);
+
     const proceedFlash = async () => {
       confirmModalVisible.value = false;
       const drive = confirmDrive.value;
       drive.flashing = true;
+
+      // Show progress modal
+      flashLog.value = '';
+      flashComplete.value = false;
+      flashSuccess.value = false;
+      flashProgressVisible.value = true;
+
+      flashLog.value += `> Target: /dev/${drive.device} (${drive.model})\n`;
+      flashLog.value += `> Current firmware: ${drive.firmware}\n`;
+      flashLog.value += `> Target firmware: ${drive.latestFirmware}\n`;
+      flashLog.value += `> Flash tool: ${drive.flashTool || 'SeaChest_Firmware'}\n`;
+      flashLog.value += `> Firmware file: ${drive.firmwareFile}\n`;
+      flashLog.value += `\n--- Starting firmware flash ---\n\n`;
 
       try {
         const proc = await unwrap(server.execute(
@@ -382,21 +447,32 @@ export default {
             "--tool", drive.flashTool || "SeaChest_Firmware"
           ], { superuser: "require" })
         ));
-        const output = proc.getStdout();
-        console.log("Flash output:", output);
+        const stdout = proc.getStdout();
+        const stderr = proc.getStderr();
+        if (stdout) flashLog.value += stdout + '\n';
+        if (stderr) flashLog.value += stderr + '\n';
+        flashLog.value += '\n--- Flash completed successfully ---\n';
+        flashSuccess.value = true;
+
         // Re-run firmware check to update cache
+        flashLog.value += '\n> Refreshing firmware status...\n';
         try {
           await unwrap(server.execute(
             new Command(["python3", "/usr/share/45drives/firmware/firmware-check"], { superuser: "require" })
           ));
+          flashLog.value += '> Status cache updated.\n';
         } catch (e) {
-          console.log("Failed to refresh firmware cache:", e);
+          flashLog.value += '> Warning: Failed to refresh cache.\n';
         }
         await loadDrives();
       } catch (e) {
         console.error("Flash failed:", e);
-        alert("Firmware flash failed: " + (e.message || e));
+        flashLog.value += `\nERROR: ${e.message || e}\n`;
+        if (e.stderr) flashLog.value += e.stderr + '\n';
+        flashLog.value += '\n--- Flash FAILED ---\n';
+        flashSuccess.value = false;
       }
+      flashComplete.value = true;
       drive.flashing = false;
     };
 
@@ -414,6 +490,11 @@ export default {
       confirmDrive,
       confirmInput,
       proceedFlash,
+      flashProgressVisible,
+      flashLog,
+      flashComplete,
+      flashSuccess,
+      colorizeLog,
     };
   },
 };

@@ -135,7 +135,7 @@ system-files-install-local:
 	-cp -af system_files/* $(DESTDIR)/
 
 system-files-install-remote:
-	-rsync -avh system_files/* $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST):$(DESTDIR)/
+	-rsync -avh --checksum system_files/* $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST):$(DESTDIR)/
 
 
 clean: FORCE
