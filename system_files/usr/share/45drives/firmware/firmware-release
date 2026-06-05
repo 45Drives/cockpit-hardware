@@ -1,0 +1,459 @@
+#!/usr/bin/env python3
+"""
+firmware-release - CLI tool for 45Drives engineers to manage firmware releases.
+
+Streamlines the workflow of adding/updating firmware in the manifest and
+deploying to the firmware repository.
+
+Usage:
+    firmware-release add --file /path/to/new.rom --model 9600-16i --version 24.21.00.38
+    firmware-release update-hashes
+    firmware-release list
+    firmware-release validate
+    firmware-release deploy [--dry-run]
+
+Typical workflow:
+    1. firmware-release add --file vendor-firmware.rom --model 9600-16i --version 24.21.00.38
+       → Copies file to repo, updates manifest, computes SHA256
+    2. firmware-release validate
+       → Checks all entries have files, hashes, versions
+    3. firmware-release deploy
+       → Syncs to repo server (or signs + syncs)
+"""
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+MANIFEST_PATH = os.path.join(SCRIPT_DIR, "manifest.json")
+REPO_CONF_PATH = os.path.join(SCRIPT_DIR, "repo.conf")
+
+# Default firmware repo directory (development)
+DEFAULT_REPO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", "..", "firmware-repo"))
+
+
+def compute_sha256(filepath):
+    """Compute SHA256 hash of a file."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def load_manifest():
+    """Load manifest.json."""
+    if not os.path.isfile(MANIFEST_PATH):
+        print(f"Error: Manifest not found at {MANIFEST_PATH}", file=sys.stderr)
+        sys.exit(1)
+    with open(MANIFEST_PATH, "r") as f:
+        return json.load(f)
+
+
+def save_manifest(manifest):
+    """Write manifest.json with updated timestamp."""
+    manifest["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with open(MANIFEST_PATH, "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+
+
+def find_entry(manifest, model):
+    """Find a manifest entry by model_match."""
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            if entry.get("model_match", "").lower() == model.lower():
+                return category, entry
+    return None, None
+
+
+def get_repo_dir(args):
+    """Determine firmware repo directory."""
+    if hasattr(args, 'repo_dir') and args.repo_dir:
+        return args.repo_dir
+    if os.path.isdir(DEFAULT_REPO_DIR):
+        return DEFAULT_REPO_DIR
+    return None
+
+
+# ─── Commands ──────────────────────────────────────────────────────────────────
+
+
+def cmd_add(args):
+    """Add or update a firmware file for a device model."""
+    firmware_path = os.path.abspath(args.file)
+    if not os.path.isfile(firmware_path):
+        print(f"Error: File not found: {firmware_path}", file=sys.stderr)
+        return 1
+
+    manifest = load_manifest()
+    category, entry = find_entry(manifest, args.model)
+
+    if entry is None:
+        print(f"Error: Model '{args.model}' not found in manifest.", file=sys.stderr)
+        print(f"Available models:")
+        for cat, entries in manifest.get("components", {}).items():
+            for e in entries:
+                print(f"  [{cat}] {e.get('model_match', '?')}")
+        return 1
+
+    # Determine filename (keep original or use custom)
+    firmware_filename = args.name if args.name else os.path.basename(firmware_path)
+
+    # Copy file to repo directory
+    repo_dir = get_repo_dir(args)
+    if repo_dir:
+        os.makedirs(repo_dir, exist_ok=True)
+        dest_path = os.path.join(repo_dir, firmware_filename)
+        if os.path.abspath(firmware_path) != os.path.abspath(dest_path):
+            shutil.copy2(firmware_path, dest_path)
+            print(f"  Copied: {firmware_path} → {dest_path}")
+        else:
+            print(f"  File already in repo: {dest_path}")
+    else:
+        print(f"  Warning: No repo directory found. File not copied.")
+        dest_path = firmware_path
+
+    # Compute SHA256
+    sha256 = compute_sha256(dest_path if repo_dir else firmware_path)
+
+    # Update manifest entry
+    old_version = entry.get("latest_firmware", "")
+    old_file = entry.get("firmware_file", "")
+
+    entry["firmware_file"] = firmware_filename
+    entry["latest_firmware"] = args.version
+    entry["sha256"] = sha256
+    entry["release_date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if args.notes:
+        entry["release_notes"] = args.notes
+
+    save_manifest(manifest)
+
+    print(f"\n✅ Updated [{category}] {args.model}:")
+    print(f"   Version:  {old_version} → {args.version}")
+    print(f"   File:     {old_file} → {firmware_filename}")
+    print(f"   SHA256:   {sha256}")
+    print(f"   Date:     {entry['release_date']}")
+    return 0
+
+
+def cmd_update_hashes(args):
+    """Recompute SHA256 for all entries that have firmware files."""
+    manifest = load_manifest()
+    repo_dir = get_repo_dir(args)
+
+    search_dirs = []
+    if repo_dir:
+        search_dirs.append(repo_dir)
+    search_dirs.append(os.path.join(SCRIPT_DIR, "files"))
+
+    updated = 0
+    missing = 0
+
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            fw_file = entry.get("firmware_file", "")
+            if not fw_file:
+                continue
+
+            filepath = None
+            for d in search_dirs:
+                candidate = os.path.join(d, fw_file)
+                if os.path.isfile(candidate):
+                    filepath = candidate
+                    break
+
+            if not filepath:
+                print(f"  MISSING: {fw_file}")
+                missing += 1
+                continue
+
+            new_hash = compute_sha256(filepath)
+            if new_hash != entry.get("sha256", ""):
+                entry["sha256"] = new_hash
+                print(f"  UPDATED: {fw_file} → {new_hash[:16]}...")
+                updated += 1
+
+    save_manifest(manifest)
+    print(f"\nDone: {updated} updated, {missing} missing")
+    return 0
+
+
+def cmd_list(args):
+    """List all firmware entries and their status."""
+    manifest = load_manifest()
+    repo_dir = get_repo_dir(args)
+
+    print(f"{'Model':<20} {'Version':<16} {'File':<45} {'Hash':<8} {'In Repo':<8}")
+    print("─" * 105)
+
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            model = entry.get("model_match", "?")
+            version = entry.get("latest_firmware", "?")
+            fw_file = entry.get("firmware_file", "")
+            sha256 = entry.get("sha256", "")
+            has_hash = "✅" if sha256 else "❌"
+
+            in_repo = "—"
+            if fw_file and repo_dir:
+                if os.path.isfile(os.path.join(repo_dir, fw_file)):
+                    in_repo = "✅"
+                else:
+                    in_repo = "❌"
+
+            display_file = fw_file if fw_file else "(none)"
+            if len(display_file) > 43:
+                display_file = "..." + display_file[-40:]
+
+            print(f"  {model:<18} {version:<16} {display_file:<45} {has_hash:<8} {in_repo:<8}")
+
+    return 0
+
+
+def cmd_validate(args):
+    """Validate manifest completeness and integrity."""
+    manifest = load_manifest()
+    repo_dir = get_repo_dir(args)
+    errors = []
+    warnings = []
+
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            model = entry.get("model_match", "?")
+            prefix = f"[{category}/{model}]"
+
+            # Check required fields
+            if not entry.get("latest_firmware"):
+                warnings.append(f"{prefix} No version specified")
+
+            if not entry.get("firmware_file"):
+                warnings.append(f"{prefix} No firmware_file specified")
+                continue
+
+            # Check SHA256 populated
+            if not entry.get("sha256"):
+                errors.append(f"{prefix} Missing SHA256 hash")
+
+            # Check file exists in repo
+            if repo_dir:
+                fw_path = os.path.join(repo_dir, entry["firmware_file"])
+                if not os.path.isfile(fw_path):
+                    errors.append(f"{prefix} File not in repo: {entry['firmware_file']}")
+                elif entry.get("sha256"):
+                    # Verify hash matches
+                    actual = compute_sha256(fw_path)
+                    if actual != entry["sha256"]:
+                        errors.append(f"{prefix} SHA256 MISMATCH! Manifest says {entry['sha256'][:16]}... but file is {actual[:16]}...")
+
+    # Report
+    if warnings:
+        print("⚠️  Warnings:")
+        for w in warnings:
+            print(f"   {w}")
+        print()
+
+    if errors:
+        print("❌ Errors:")
+        for e in errors:
+            print(f"   {e}")
+        print(f"\n{len(errors)} error(s) found. Fix before deploying.")
+        return 1
+    else:
+        print("✅ All entries valid. Ready to deploy.")
+        return 0
+
+
+def cmd_deploy(args):
+    """Deploy manifest + firmware files to the repo server."""
+    # Read repo config
+    repo_url = ""
+    if os.path.isfile(REPO_CONF_PATH):
+        with open(REPO_CONF_PATH, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("REPO_URL="):
+                    repo_url = line.split("=", 1)[1].strip().strip('"')
+
+    repo_dir = get_repo_dir(args)
+    if not repo_dir:
+        print("Error: No firmware repo directory found.", file=sys.stderr)
+        return 1
+
+    # Validate first
+    print("Running validation...\n")
+    manifest = load_manifest()
+    # Quick validation
+    errors = 0
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            if entry.get("firmware_file") and not entry.get("sha256"):
+                print(f"  ❌ [{entry.get('model_match')}] Missing SHA256")
+                errors += 1
+    if errors:
+        print(f"\n{errors} error(s). Run 'firmware-release validate' for details.")
+        return 1
+
+    print("✅ Validation passed.\n")
+
+    # Sign manifest (if GPG key available)
+    gpg_key = args.gpg_key if hasattr(args, 'gpg_key') and args.gpg_key else None
+    if gpg_key:
+        print(f"Signing manifest with key {gpg_key}...")
+        sig_path = MANIFEST_PATH + ".sig"
+        result = subprocess.run(
+            ["gpg", "--detach-sign", "--armor", "-u", gpg_key, "-o", sig_path, MANIFEST_PATH],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print(f"Error signing: {result.stderr}", file=sys.stderr)
+            return 1
+        print(f"  Signed: {sig_path}")
+        # Copy sig to repo
+        shutil.copy2(sig_path, os.path.join(repo_dir, "manifest.json.sig"))
+
+    # Copy manifest to repo dir
+    shutil.copy2(MANIFEST_PATH, os.path.join(repo_dir, "manifest.json"))
+    print(f"  Manifest copied to {repo_dir}/manifest.json")
+
+    # Deploy to remote (if configured)
+    if args.remote:
+        target = args.remote  # e.g., user@repo.45drives.com:/srv/firmware/
+        cmd = ["rsync", "-avz", "--progress", repo_dir + "/", target]
+        if args.dry_run:
+            cmd.insert(1, "--dry-run")
+            print(f"\n[DRY RUN] Would sync to: {target}")
+        else:
+            print(f"\nSyncing to: {target}")
+
+        print(f"  Command: {' '.join(cmd)}\n")
+        if not args.dry_run:
+            confirm = input("Proceed? [y/N] ")
+            if confirm.lower() != "y":
+                print("Aborted.")
+                return 1
+        result = subprocess.run(cmd)
+        return result.returncode
+    else:
+        print(f"\n📁 Files ready in: {repo_dir}/")
+        print(f"   To deploy, re-run with: --remote user@repo.45drives.com:/srv/firmware/")
+        return 0
+
+
+def cmd_remove(args):
+    """Remove a firmware entry or clear its firmware file."""
+    manifest = load_manifest()
+    category, entry = find_entry(manifest, args.model)
+
+    if entry is None:
+        print(f"Error: Model '{args.model}' not found in manifest.", file=sys.stderr)
+        return 1
+
+    old_file = entry.get("firmware_file", "")
+    entry["firmware_file"] = ""
+    entry["sha256"] = ""
+    entry["flashable"] = False
+
+    save_manifest(manifest)
+    print(f"✅ Cleared firmware for {args.model} (was: {old_file})")
+
+    # Optionally remove from repo
+    repo_dir = get_repo_dir(args)
+    if repo_dir and old_file:
+        repo_file = os.path.join(repo_dir, old_file)
+        if os.path.exists(repo_file) and args.delete_file:
+            os.remove(repo_file)
+            print(f"   Deleted: {repo_file}")
+
+    return 0
+
+
+# ─── Main ─────────────────────────────────────────────────────────────────────
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Firmware release management tool for 45Drives",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Add new firmware for 9600-16i
+  firmware-release add --file ~/Downloads/9600-16i_v2.rom --model 9600-16i --version 24.22.00.00
+
+  # List all firmware entries
+  firmware-release list
+
+  # Recompute all SHA256 hashes
+  firmware-release update-hashes
+
+  # Validate everything is consistent
+  firmware-release validate
+
+  # Deploy to production
+  firmware-release deploy --remote deploy@repo.45drives.com:/srv/firmware/
+
+  # Deploy with GPG signing
+  firmware-release deploy --remote deploy@repo.45drives.com:/srv/firmware/ --gpg-key firmware@45drives.com
+        """
+    )
+    parser.add_argument("--repo-dir", help="Path to firmware repo directory")
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # add
+    add_parser = subparsers.add_parser("add", help="Add/update firmware for a device model")
+    add_parser.add_argument("--file", "-f", required=True, help="Path to firmware file")
+    add_parser.add_argument("--model", "-m", required=True, help="Device model (e.g., 9600-16i)")
+    add_parser.add_argument("--version", "-v", required=True, help="Firmware version string")
+    add_parser.add_argument("--name", "-n", help="Override filename in repo (default: keep original)")
+    add_parser.add_argument("--notes", help="Release notes")
+
+    # update-hashes
+    subparsers.add_parser("update-hashes", help="Recompute SHA256 for all firmware files")
+
+    # list
+    subparsers.add_parser("list", help="List all firmware entries")
+
+    # validate
+    subparsers.add_parser("validate", help="Validate manifest completeness and integrity")
+
+    # deploy
+    deploy_parser = subparsers.add_parser("deploy", help="Deploy to repo server")
+    deploy_parser.add_argument("--remote", help="rsync target (e.g., user@host:/path/)")
+    deploy_parser.add_argument("--dry-run", action="store_true", help="Show what would be synced")
+    deploy_parser.add_argument("--gpg-key", help="GPG key ID for signing manifest")
+
+    # remove
+    remove_parser = subparsers.add_parser("remove", help="Remove firmware for a model")
+    remove_parser.add_argument("--model", "-m", required=True, help="Device model")
+    remove_parser.add_argument("--delete-file", action="store_true", help="Also delete the file from repo")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        return 1
+
+    commands = {
+        "add": cmd_add,
+        "update-hashes": cmd_update_hashes,
+        "list": cmd_list,
+        "validate": cmd_validate,
+        "deploy": cmd_deploy,
+        "remove": cmd_remove,
+    }
+
+    return commands[args.command](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,333 +1,338 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Firmware Management Project — Project DNA</title>
-<style>
-  :root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --border: #0f3460;
-    --text: #e0e0e0;
-    --text-muted: #a0a0b0;
-    --accent: #4fc3f7;
-    --accent2: #81c784;
-    --warning: #ffb74d;
-    --error: #ef5350;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    padding: 2rem;
-    max-width: 1000px;
-    margin: 0 auto;
-  }
-  h1 {
-    color: var(--accent);
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 2px solid var(--border);
-    padding-bottom: 0.5rem;
-  }
-  h2 {
-    color: var(--accent);
-    font-size: 1.4rem;
-    margin-top: 2.5rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 0.3rem;
-  }
-  h3 {
-    color: var(--accent2);
-    font-size: 1.1rem;
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-  h4 {
-    color: var(--text);
-    font-size: 1rem;
-    margin-top: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-  p { margin-bottom: 0.8rem; }
-  .meta {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-  }
-  strong { color: #fff; }
-  ul, ol {
-    margin-left: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  li { margin-bottom: 0.3rem; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1rem 0;
-    font-size: 0.9rem;
-  }
-  th {
-    background: var(--border);
-    color: var(--accent);
-    text-align: left;
-    padding: 0.6rem 0.8rem;
-    border: 1px solid var(--border);
-  }
-  td {
-    padding: 0.5rem 0.8rem;
-    border: 1px solid var(--border);
-    background: var(--surface);
-  }
-  tr:hover td { background: #1a2a4a; }
-  code {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 0.15rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.85rem;
-    color: var(--accent);
-  }
-  .section { margin-bottom: 2rem; }
-  .badge {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: bold;
-  }
-  .badge-error { background: var(--error); color: #fff; }
-  .badge-warning { background: var(--warning); color: #000; }
-  .badge-ok { background: var(--accent2); color: #000; }
-  hr {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 2rem 0;
-  }
-  .note {
-    background: var(--surface);
-    border-left: 3px solid var(--accent);
-    padding: 0.8rem 1rem;
-    margin: 1rem 0;
-    border-radius: 0 4px 4px 0;
-  }
-  @media print {
-    body { background: #fff; color: #000; }
-    th { background: #eee; color: #000; }
-    td { background: #fff; }
-    code { background: #f5f5f5; color: #333; }
-    .note { background: #f9f9f9; }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firmware Management — Project DNA</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --purple: #bc8cff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .hero {
+            background: linear-gradient(135deg, #1a1f35 0%, #0d1117 50%, #112030 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 60px 40px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero .subtitle { color: var(--text-muted); font-size: 1.1rem; }
+        .container { max-width: 960px; margin: 0 auto; padding: 40px 24px; }
+        .nav {
+            position: sticky; top: 0;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 40px;
+            z-index: 100;
+            display: flex; gap: 24px; overflow-x: auto;
+        }
+        .nav a {
+            color: var(--text-muted); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; white-space: nowrap;
+            transition: color 0.2s;
+        }
+        .nav a:hover { color: var(--accent); }
+        section { margin-bottom: 48px; }
+        h2 {
+            font-size: 1.6rem; font-weight: 600; margin-bottom: 20px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--accent);
+        }
+        h3 { font-size: 1.2rem; font-weight: 600; margin: 24px 0 12px; color: var(--text); }
+        h4 { font-size: 1rem; font-weight: 600; margin: 20px 0 8px; color: var(--purple); }
+        p { margin-bottom: 12px; }
+        .muted { color: var(--text-muted); }
+        ul, ol { margin: 12px 0; padding-left: 24px; }
+        li { margin-bottom: 6px; }
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; padding: 20px; margin: 16px 0;
+        }
+        .card-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px; margin: 16px 0;
+        }
+        .stakeholder {
+            display: inline-block; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 6px 16px; margin: 4px; font-size: 0.9rem;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+        th, td { padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+        th { background: var(--surface); font-weight: 600; color: var(--accent); }
+        tr:hover td { background: rgba(88, 166, 255, 0.05); }
+        code {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 4px; padding: 2px 6px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.85em; color: var(--accent);
+        }
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+        }
+        .badge-green { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+        .badge-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
+        .badge-red { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+        .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+        .milestone-row td:first-child { font-weight: 600; color: var(--purple); width: 40px; text-align: center; }
+        .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); border-radius: 3px; }
+        .impact-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+        .impact-icon { font-size: 1.5rem; min-width: 40px; text-align: center; }
+        .resolved { text-decoration: line-through; color: var(--text-muted); }
+        @media (max-width: 768px) {
+            .hero { padding: 40px 20px; }
+            .hero h1 { font-size: 1.8rem; }
+            .nav { padding: 12px 20px; }
+            .container { padding: 24px 16px; }
+            .card-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
 
-<h1>Firmware Management Project — Project DNA</h1>
-
-
-<hr>
-
-<h2>1. WHO</h2>
-<div class="section">
-<p><strong>Stakeholders & Contributors:</strong></p>
-<ul>
-  <li>Brett Kelly</li>
-  <li>Rachit Hans</li>
-  <li>Andrew MacAdam</li>
-  <li>Austin Auxworthy</li>
-</ul>
+<div class="hero">
+    <h1>Firmware Management Project</h1>
+    <p class="subtitle">Project DNA — 45Drives Houston Module</p>
+    <p class="muted" style="margin-top: 8px; font-size: 0.85rem;">Branch: firmware-update</p>
 </div>
 
-<h2>2. WHY — The Problem We're Solving</h2>
-<div class="section">
-<p>Customers have no visibility into firmware versions on their servers. They don't know when updates exist until something breaks.</p>
-<p><strong>What we're building:</strong> A Houston module that lists all devices, shows current firmware, notifies of available updates, and allows safe updates from the UI.</p>
-<p><strong>Key rule:</strong> Risky devices (BIOS, BMC) → display only. Safe devices (HBAs, NICs, HDDs, NVMe) → allow update from UI.</p>
-<p><strong>Scope:</strong> Permanent devices (HBAs, NICs, Expanders, RAID, BIOS, BMC, NVMe, HDDs, GPUs). HDD firmware flashing via SeaChest is now in scope.</p>
+<nav class="nav">
+    <a href="#who">Who</a>
+    <a href="#why">Why</a>
+    <a href="#how">How</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#risks">Risks</a>
+    <a href="#threads">Threads</a>
+    <a href="#milestones">Milestones</a>
+</nav>
 
-<h3>Business Impact</h3>
-<ol>
-  <li><strong>SUPPORT REDUCTION:</strong> Fewer tickets about firmware mismatches or update problems. Customers self-serve instead.</li>
-  <li><strong>CUSTOMER HAPPINESS:</strong> 2-3 hours of manual work becomes 5 minutes.</li>
-  <li><strong>SAFETY:</strong> We prevent mistakes (wrong version, interrupted updates) that could damage servers.</li>
-  <li><strong>FLEET CONSISTENCY:</strong> Dual-repo sync ensures production and development stay aligned on firmware binaries.</li>
-</ol>
+<div class="container">
+
+    <section id="who">
+        <h2>1. Who</h2>
+        <p class="muted">Stakeholders &amp; Contributors</p>
+        <div style="margin-top: 12px;">
+            <span class="stakeholder">Brett Kelly</span>
+            <span class="stakeholder">Rachit Hans</span>
+            <span class="stakeholder">Andrew MacAdam</span>
+            <span class="stakeholder">Austin Auxworthy</span>
+        </div>
+    </section>
+
+    <section id="why">
+        <h2>2. Why — The Problem We're Solving</h2>
+        <div class="card">
+            <p><strong>Problem:</strong> Customers have no visibility into firmware versions on their servers. They don't know when updates exist until something breaks.</p>
+            <p style="margin-top: 12px;"><strong>Solution:</strong> A Houston module that lists all devices, shows current firmware, notifies of available updates, and allows safe updates from the UI.</p>
+        </div>
+        <h3>Key Rules</h3>
+        <ul>
+            <li><strong>Risky devices</strong> (BIOS, BMC) → display only</li>
+            <li><strong>Safe devices</strong> (HBAs, NICs, HDDs, NVMe) → allow update from UI</li>
+        </ul>
+        <p class="muted" style="margin-top: 12px;"><strong>Scope:</strong> Permanent devices — HBAs, NICs, RAID, BIOS, BMC, Seagate HDDs, GPUs</p>
+
+        <h3>Business Impact</h3>
+        <div class="impact-item">
+            <div class="impact-icon">📉</div>
+            <div><strong>Support Reduction</strong><p class="muted">Fewer tickets about firmware mismatches. Customers self-serve.</p></div>
+        </div>
+        <div class="impact-item">
+            <div class="impact-icon">😊</div>
+            <div><strong>Customer Happiness</strong><p class="muted">2-3 hours of manual work becomes 5 minutes.</p></div>
+        </div>
+        <div class="impact-item">
+            <div class="impact-icon">🛡️</div>
+            <div><strong>Safety</strong><p class="muted">Prevents wrong-version and interrupted-update mistakes that damage servers.</p></div>
+        </div>
+        <div class="impact-item">
+            <div class="impact-icon">🔄</div>
+            <div><strong>Fleet Consistency</strong><p class="muted">Dual-repo sync ensures production and development stay aligned.</p></div>
+        </div>
+    </section>
+
+    <section id="how">
+        <h2>3. How — What We're Building</h2>
+        <div class="card">
+            <p>A <strong>"Firmware"</strong> section in the <code>45drives-system</code> Cockpit module.</p>
+            <p style="margin-top: 8px;"><strong>What users see:</strong> A table of all components with <em>"Current Version" | "Latest Version" | "Status"</em>. Up-to-date → checkmark. Updates available → button. <strong>Sidebar badge</strong> notifies without opening the page.</p>
+        </div>
+    </section>
+
+    <section id="architecture">
+        <h2>4. Architecture</h2>
+        <p class="muted">Manifest-driven, cache-first architecture with phased flash enablement.</p>
+        <div class="card-grid">
+            <div class="card">
+                <h4>1. Discovery Script</h4>
+                <p><code>firmware-discover</code></p>
+                <ul>
+                    <li>Enumerates hardware via storcli, mlxup, dmidecode, smartctl, nvme-cli</li>
+                    <li>Leverages existing <code>pci</code> script</li>
+                    <li>Outputs structured JSON</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>2. Firmware Repo</h4>
+                <p><code>manifest.json</code> + binaries</p>
+                <ul>
+                    <li>Hosted at <code>repo.45drives.com/firmware/</code></li>
+                    <li>8 component categories</li>
+                    <li>Per-entry: model_match, vendor, latest_firmware, flash_tool, sha256</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>3. Version Check + Cache</h4>
+                <p><code>firmware-check</code></p>
+                <ul>
+                    <li>GPG-verified manifest fetch</li>
+                    <li>Compares versions, writes atomic cache</li>
+                    <li>Systemd timer runs daily</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>4. Flash Runner</h4>
+                <p><code>firmware-flash</code></p>
+                <ul>
+                    <li>Downloads binary with SHA256 verification</li>
+                    <li>Executes flash command</li>
+                    <li>Returns JSON with reboot_needed</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>5. Sidebar Badge</h4>
+                <p>Preloads on Cockpit start</p>
+                <ul>
+                    <li>🔴 Reboot required</li>
+                    <li>🟡 X updates available</li>
+                    <li>✅ Everything current</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>6. Firmware Table UI</h4>
+                <p>Vue.js component</p>
+                <ul>
+                    <li>FirmwareTable.vue from cache</li>
+                    <li>Status badges, refresh, update buttons</li>
+                    <li>Manual instructions for BIOS/BMC</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>7. HDD Firmware</h4>
+                <p>Seagate Exos via SeaChest</p>
+                <ul>
+                    <li>Exos X18, X20, X22, X24, 2X18</li>
+                    <li>Uses <code>/dev/sgX</code> paths</li>
+                    <li>Live microcode (no reboot)</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>8. Security Pipeline</h4>
+                <p>GPG + SHA256</p>
+                <ul>
+                    <li>GPG-signed manifest (enforced)</li>
+                    <li>SHA256 hash per binary (enforced)</li>
+                    <li>Tampered manifests rejected</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="risks">
+        <h2>5. Risks &amp; Open Questions</h2>
+        <table>
+            <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+            <tbody>
+                <tr><td>Scanner misses components on older hardware</td><td>Graceful fallback — report "unknown"</td></tr>
+                <tr><td>Flash tool failures vary by vendor</td><td>Per-tool error handling, capture stdout/stderr</td></tr>
+                <tr><td>HDD flash during active I/O</td><td>ZFS scrub/rebuild detection, mount check</td></tr>
+                <tr><td>Network unreachable during fetch</td><td>Cache last-known state, stale warning</td></tr>
+                <tr><td>Dual-repo drift</td><td>SHA256 verification, drift detection script</td></tr>
+            </tbody>
+        </table>
+        <h3>Open Questions</h3>
+        <ul>
+            <li class="resolved">Will scanner find ALL components? → Resolved: handles missing tools gracefully</li>
+            <li>Should HDD flash require unmounting? → Seagate says hot-flash supported</li>
+            <li>Which repo is authoritative? → Thread 9</li>
+            <li>Approval workflow needed? → Phase 1: explicit user confirmation only</li>
+        </ul>
+    </section>
+
+    <section id="threads">
+        <h2>6. Project Threads</h2>
+        <div class="progress-bar"><div class="progress-bar-fill" style="width: 75%;"></div></div>
+
+        <table>
+            <thead><tr><th>#</th><th>Thread</th><th>Effort</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Audit Existing Scripts</td><td>8h</td></tr>
+                <tr><td>2</td><td>Modify Discovery Scripts</td><td>8h</td></tr>
+                <tr><td>3</td><td>Manifest &amp; Repo Infrastructure</td><td>8h</td></tr>
+                <tr><td>4</td><td>Firmware Check Cache Service</td><td>4h</td></tr>
+                <tr><td>5</td><td>UI Integration</td><td>6h</td></tr>
+                <tr><td>6</td><td>Firmware Flash Capability</td><td>8h</td></tr>
+                <tr><td>7</td><td>Packaging &amp; Release</td><td>8h</td></tr>
+                <tr><td>8</td><td>HDD Firmware Update</td><td>8h</td></tr>
+                <tr><td>9</td><td>Dual-Repo Firmware Sync</td><td>10h</td></tr>
+                <tr><td>10</td><td>Manifest Management &amp; Docs</td><td>10h</td></tr>
+                <tr><td>11</td><td>GPG Signing &amp; Integrity</td><td>8h</td></tr>
+                <tr><td>12</td><td>Firmware Admin App</td><td>16h</td></tr>
+                <tr><td>13</td><td>Testing</td><td>8h</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="milestones">
+        <h2>7. End-to-End Milestones</h2>
+        <table>
+            <thead><tr><th>#</th><th>Milestone</th><th>Success Criteria</th></tr></thead>
+            <tbody>
+                <tr class="milestone-row"><td>1</td><td>Discovery + Comparison</td><td>Script scans server, compares against manifest, outputs JSON</td></tr>
+                <tr class="milestone-row"><td>2</td><td>Sidebar Badge</td><td>Badge appears on 45Drives System tab when updates available</td></tr>
+                <tr class="milestone-row"><td>3</td><td>UI Displays Status</td><td>Houston shows firmware table with real data from cache</td></tr>
+                <tr class="milestone-row"><td>4</td><td>Flash End-to-End</td><td>Click "Update" on HBA/NIC → firmware flashes, version changes</td></tr>
+                <tr class="milestone-row"><td>5</td><td>HDD Flash Validated</td><td>Batch flash Exos drives via SeaChest with safety checks</td></tr>
+                <tr class="milestone-row"><td>6</td><td>GPG Signing</td><td>Tampered/missing sigs rejected</td></tr>
+                <tr class="milestone-row"><td>7</td><td>SHA256 Enforcement</td><td>Mismatched/missing hashes block flash</td></tr>
+                <tr class="milestone-row"><td>8</td><td>Admin App</td><td>Internal web UI for upload, assign, sign, publish</td></tr>
+                <tr class="milestone-row"><td>9</td><td>Dual-Repo Sync</td><td>Sync propagates firmware with SHA256 match</td></tr>
+                <tr class="milestone-row"><td>10</td><td>Testing</td><td>End-to-end validation across all hardware, edge cases, failure modes</td></tr>
+                <tr class="milestone-row"><td>11</td><td>Full Release</td><td>All components packaged and tested</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer style="text-align: center; padding: 40px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem;">
+        <p>45Drives · Firmware Management Project DNA · Last updated June 2025</p>
+        <p style="margin-top: 4px;">Branch: <code>firmware-update</code> · Repo: 45Drives/cockpit-hardware</p>
+    </footer>
 </div>
-
-<h2>3. HOW — What We're Building</h2>
-<div class="section">
-<p>We're adding a "Firmware" section to the existing 45drives-system Cockpit module. It's like a control panel for server component updates.</p>
-<p><strong>What users see:</strong> A table showing all server components with columns: "Current Version" | "Latest Version" | "Status". A <strong>sidebar badge</strong> on the 45Drives System tab notifies of pending updates without requiring the user to open the page.</p>
-
-<h3>Architecture</h3>
-<p><strong>Hypothesis:</strong> Build a firmware management module within the existing 45drives-system Cockpit Houston UI that follows a manifest-driven, cache-first architecture with phased flash enablement.</p>
-
-<h3>Solution Components</h3>
-
-<h4>1. BACKEND — Device Discovery Script (<code>firmware-discover</code>)</h4>
-<ul>
-  <li>Enumerates all permanent hardware using existing CLI tools (storcli, storcli2, mlxup, dmidecode, ipmitool, smartctl, nvme-cli)</li>
-  <li>Leverages the existing <code>pci</code> script for HBA and NIC detection</li>
-  <li>Adds BIOS, BMC, NVMe, HDD, and SAS Expander discovery</li>
-  <li>Outputs structured JSON: <code>[{type, model, vendor, firmware, device_path}]</code></li>
-</ul>
-
-<h4>2. REPO — Firmware Manifest and Binary Hosting</h4>
-<ul>
-  <li><code>manifest.json</code> at <code>repo.45drives.com/firmware/manifest.json</code></li>
-  <li>Schema covers 8 component categories: HBA, NIC, BIOS, BMC, Expander, NVMe, HDD, GPU</li>
-  <li>Per-entry fields: model_match (regex), vendor, latest_firmware, flash_tool, flash_command, flashable, requires_reboot, firmware_file, sha256</li>
-  <li>Firmware binaries hosted alongside manifest</li>
-</ul>
-
-<h4>3. BACKEND — Version Comparison and Caching (<code>firmware-check</code>)</h4>
-<ul>
-  <li>Fetches manifest, runs discovery, compares versions</li>
-  <li>Writes atomic cache to <code>/var/cache/45drives/firmware.json</code></li>
-  <li>Classifies devices as: current, outdated, or unknown</li>
-  <li>Handles network failures gracefully (writes partial cache)</li>
-  <li>Systemd timer (<code>45d-firmware-check.timer</code>) runs daily with <code>RandomizedDelaySec=12h</code></li>
-</ul>
-
-<h4>4. BACKEND — Flash Runner (<code>firmware-flash</code>)</h4>
-<ul>
-  <li>Validates manifest entry, resolves tool paths</li>
-  <li>Downloads firmware binary with SHA256 verification</li>
-  <li>Executes flash command with proper arguments</li>
-  <li>Returns JSON result with status, stdout, stderr, reboot_needed</li>
-</ul>
-
-<h4>5. FRONTEND — Sidebar Badge Notification</h4>
-<ul>
-  <li>Preloads on Cockpit start (no need to open the page)</li>
-  <li>Reads firmware cache and sets page_status badge:</li>
-</ul>
-<p style="margin-left:1.5rem;">
-  <span class="badge badge-error">Error</span> Reboot required to complete firmware update<br>
-  <span class="badge badge-warning">Warning</span> X firmware update(s) available<br>
-  <span class="badge badge-ok">OK</span> Everything current — no badge shown
-</p>
-
-<h4>6. FRONTEND — Firmware Table UI</h4>
-<ul>
-  <li>FirmwareTable.vue component reading from cache</li>
-  <li>Status badges, refresh button, manual update instructions modal</li>
-  <li>Integration into 45drives-system SectionContainer</li>
-</ul>
-
-<h4>7. HDD FIRMWARE — Seagate Exos via SeaChest</h4>
-<p><strong>Supported Drives:</strong> Exos X18, X20, X22, X24, 2X18 (SAS & SATA variants)</p>
-<p><strong>Flash Tool:</strong> <code>SeaChest_Firmware</code><br>
-<strong>Flash Command:</strong> <code>SeaChest_Firmware --device /dev/sgX --downloadFW /path/to/firmware.LOD</code><br>
-<strong>Reboot Required:</strong> No (live microcode download)</p>
-
-<p><strong>Workflow:</strong></p>
-<ol>
-  <li>Discover drives via <code>smartctl -i</code> or <code>SeaChest_Firmware --deviceInfo --scan</code></li>
-  <li>Match model against manifest regex (e.g., <code>ST.*Exos.*X18|ST18000NM</code>)</li>
-  <li>Pre-flight safety checks:
-    <ul>
-      <li>Not in active ZFS scrub or resilver (<code>zpool status</code>)</li>
-      <li>Warning if drive is mounted (Seagate supports hot-flash on Exos)</li>
-      <li>Confirm no heavy I/O in progress</li>
-    </ul>
-  </li>
-  <li>Flash firmware LOD file via SeaChest</li>
-  <li>Post-flash: re-read firmware version to confirm update</li>
-</ol>
-
-<p><strong>Batch Flash:</strong></p>
-<ul>
-  <li>Flash all matching drives in chassis sequentially</li>
-  <li>Per-drive status tracking (success/fail/skipped)</li>
-  <li>Failure on one drive does NOT abort remaining</li>
-</ul>
-
-<div class="note">
-  <strong>Notes:</strong> Uses <code>/dev/sgX</code> (SCSI generic) paths, not <code>/dev/sdX</code>. LOD files sourced from Seagate support (not publicly downloadable). Different firmware for SAS vs SATA variants. Some drives require minimum firmware version before upgrade (chain flash).
-</div>
-
-<h4>8. DUAL-REPO SYNC</h4>
-<ul>
-  <li>Sync firmware binaries between <code>cockpit-hardware</code> and <code>productionScripts</code> repos</li>
-  <li>Single source of truth with SHA256 verification</li>
-  <li>Script-based or CI-triggered sync on manifest update</li>
-</ul>
-</div>
-
-<h2>4. UNCERTAINTIES — Known Risks & Open Questions</h2>
-<div class="section">
-<h3>Technical Risks</h3>
-<table>
-  <tr><th>Risk</th><th>Mitigation</th></tr>
-  <tr><td>Scanner misses components on older hardware revisions</td><td>Graceful fallback — report "unknown" rather than crash</td></tr>
-  <tr><td>Flash tool failures vary by vendor</td><td>Per-tool error handling, capture full stdout/stderr</td></tr>
-  <tr><td>HDD flash during active I/O could cause data loss</td><td>Pre-flight checks: ZFS scrub/rebuild detection, mount check</td></tr>
-  <tr><td>Network unreachable during manifest fetch</td><td>Cache continues to show last-known state, badge shows stale warning</td></tr>
-  <tr><td>Dual-repo drift (firmware mismatch between repos)</td><td>SHA256 verification on sync, drift detection script</td></tr>
-</table>
-
-<h3>Open Questions</h3>
-<ol>
-  <li><s>Will the scanner find ALL server components across all customer hardware?</s> → <strong>Resolved:</strong> Discovery script handles missing tools gracefully, reports what it can find.</li>
-  <li>Should HDD flash require unmounting the drive? → Seagate says hot-flash is supported for Exos, but we add safety warnings.</li>
-  <li>Which repo is authoritative for firmware binaries? → To be decided in Thread 9.</li>
-  <li>Do we need approval workflow for flash operations? → Phase 1 uses explicit user confirmation only.</li>
-</ol>
-</div>
-
-<h2>5. PROJECT PLAN</h2>
-<div class="section">
-<table>
-  <tr><th>Thread</th><th>Description</th><th>Effort</th></tr>
-  <tr><td>1. Audit Existing Scripts</td><td>Review discovery + flash tools, identify gaps</td><td>8h</td></tr>
-  <tr><td>2. Modify Discovery Scripts</td><td><code>firmware-discover</code> outputs structured JSON</td><td>8h</td></tr>
-  <tr><td>3. Manifest & Repo Infrastructure</td><td>Schema, initial manifest, hosting</td><td>8h</td></tr>
-  <tr><td>4. Firmware Check Cache Service</td><td><code>firmware-check</code> + systemd timer</td><td>4h</td></tr>
-  <tr><td>5. UI Integration</td><td>FirmwareTable.vue, badges, refresh</td><td>6h</td></tr>
-  <tr><td>6. Firmware Flash Capability</td><td><code>firmware-flash</code> with tool resolution</td><td>8h</td></tr>
-  <tr><td>7. Packaging & Release</td><td>RPM/DEB specs, install testing</td><td>8h</td></tr>
-  <tr><td>8. HDD Firmware Update</td><td>SeaChest integration, batch flash testing</td><td>8h</td></tr>
-  <tr><td>9. Dual-Repo Firmware Sync</td><td>cockpit-hardware ↔ productionScripts sync</td><td>10h</td></tr>
-  <tr><td>10. Manifest Management & Docs</td><td>CLI update tool, validation, process docs</td><td>10h</td></tr>
-</table>
-<p><strong>Total: ~68 hours</strong></p>
-</div>
-
-<h2>6. END-TO-END MILESTONES</h2>
-<div class="section">
-<table>
-  <tr><th>#</th><th>Milestone</th><th>Success Criteria</th></tr>
-  <tr><td>1</td><td>Discovery + Comparison Works</td><td>Script scans server, compares against manifest, outputs JSON. All permanent devices detected with correct versions.</td></tr>
-  <tr><td>2</td><td>Sidebar Badge Notification</td><td>Badge appears on 45Drives System tab when updates available or reboot needed.</td></tr>
-  <tr><td>3</td><td>UI Displays Firmware Status</td><td>Open Houston, see firmware table with real data. Table shows all components, versions, update status.</td></tr>
-  <tr><td>4</td><td>Flash Works End-to-End</td><td>Click "Update" on HBA/NIC → firmware flashes successfully. Version changes after flash, no errors.</td></tr>
-  <tr><td>5</td><td>HDD Flash Validated</td><td>Batch flash Exos drives via SeaChest with safety checks. No data loss.</td></tr>
-  <tr><td>6</td><td>Dual-Repo Sync Working</td><td>Add firmware in one repo, sync script propagates to other with SHA256 match.</td></tr>
-  <tr><td>7</td><td>Full Release Ready</td><td>All components, all flows, packaged and tested. Ready to ship.</td></tr>
-</table>
-</div>
-
-<h2>7. FILES & LOCATIONS</h2>
-<div class="section">
-<table>
-  <tr><th>Component</th><th>Path</th></tr>
-  <tr><td>Manifest</td><td><code>system_files/firmware/manifest.json</code></td></tr>
-  <tr><td>Discovery script</td><td><code>45drives-system/public/scripts/firmware-discover</code></td></tr>
-  <tr><td>Check script</td><td><code>45drives-system/public/scripts/firmware-check</code></td></tr>
-  <tr><td>Flash script</td><td><code>45drives-system/public/scripts/firmware-flash</code></td></tr>
-  <tr><td>Systemd timer</td><td><code>system_files/etc/systemd/system/45d-firmware-check.timer</code></td></tr>
-  <tr><td>Systemd service</td><td><code>system_files/etc/systemd/system/45d-firmware-check.service</code></td></tr>
-  <tr><td>UI entry point</td><td><code>45drives-system/src/App.vue</code> (badge logic)</td></tr>
-  <tr><td>Firmware section</td><td><code>45drives-system/src/components/SectionFirmware.vue</code></td></tr>
-  <tr><td>Threads tracker</td><td><code>documentation/threads/firmware-management-threads.json</code></td></tr>
-  <tr><td>Project plan</td><td><code>Houston_firmware_update_ProjectPlan.json</code></td></tr>
-</table>
-</div>
-
 </body>
 </html>

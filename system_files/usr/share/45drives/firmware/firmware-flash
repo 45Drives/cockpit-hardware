@@ -64,15 +64,19 @@ def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
     If expected_sha256 is provided, verifies integrity after download.
     Returns True if file is now available at dest_path, False otherwise.
     """
+    # Enforce: SHA256 must be present in manifest for integrity verification
+    if not expected_sha256:
+        print(f"  ✗ REFUSED: No SHA256 hash in manifest for {firmware_file}.")
+        print(f"    Firmware files without integrity hashes cannot be safely downloaded.")
+        print(f"    Run 'firmware-release update-hashes' to populate the manifest.")
+        return False
+
     if os.path.isfile(dest_path):
-        # File exists locally — verify SHA256 if we have one
-        if expected_sha256:
-            actual = compute_sha256(dest_path)
-            if actual != expected_sha256:
-                print(f"  Local file SHA256 mismatch! Re-downloading...")
-                os.unlink(dest_path)
-            else:
-                return True
+        # File exists locally — verify SHA256
+        actual = compute_sha256(dest_path)
+        if actual != expected_sha256:
+            print(f"  Local file SHA256 mismatch! Re-downloading...")
+            os.unlink(dest_path)
         else:
             return True
 
@@ -375,12 +379,64 @@ def flash_niccli(device_info, firmware_path):
         return False, str(e)
 
 
+def flash_mlxup(device_info):
+    """Flash Mellanox/NVIDIA NIC using mlxup (self-updating — downloads firmware automatically)."""
+    bus_info = device_info.get("bus_info", "")
+
+    # Find mlxup binary
+    mlxup_bin = None
+    for path in ["/usr/bin/mlxup", "/usr/local/bin/mlxup", "/opt/45drives/tools/mlxup", "/root/nic-firmware-tools/mlxup"]:
+        if os.path.isfile(path):
+            mlxup_bin = path
+            break
+    if not mlxup_bin:
+        mlxup_bin = shutil.which("mlxup")
+    if not mlxup_bin:
+        return False, "mlxup not found. Install mlxup from NVIDIA/Mellanox."
+
+    # Build command
+    if bus_info:
+        cmd = f"{mlxup_bin} --update --dev {bus_info} --yes"
+    else:
+        cmd = f"{mlxup_bin} --update --yes"
+
+    print(f"Running: {cmd}")
+    print(f"  (mlxup downloads firmware from NVIDIA servers automatically)")
+
+    try:
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=300
+        )
+        output = result.stdout + result.stderr
+        print(output)
+
+        if result.returncode == 0:
+            return True, output
+        elif "already updated" in output.lower() or "up to date" in output.lower():
+            return True, "Firmware already up-to-date."
+        else:
+            return False, f"mlxup exit code {result.returncode}: {output}"
+    except subprocess.TimeoutExpired:
+        return False, "mlxup firmware update timed out (300s)"
+    except Exception as e:
+        return False, str(e)
+
+
 def flash_device(device_info):
     """Flash a device based on its type and tool."""
     flash_tool = device_info.get("flash_tool", "")
     firmware_file = device_info.get("firmware_file", "")
     device_type = device_info.get("type", "")
     expected_sha256 = device_info.get("sha256", "")
+
+    # Self-updating tools (no firmware_file needed — tool downloads its own)
+    SELF_UPDATING_TOOLS = ["mlxup"]
+    is_self_updating = any(t in flash_tool for t in SELF_UPDATING_TOOLS)
+
+    if is_self_updating:
+        if "mlxup" in flash_tool:
+            return flash_mlxup(device_info)
 
     if not firmware_file:
         return False, "No firmware file specified in manifest"
@@ -414,6 +470,8 @@ def flash_device(device_info):
         return flash_storcli(device_info, firmware_path)
     elif "niccli" in flash_tool:
         return flash_niccli(device_info, firmware_path)
+    elif "mlxup" in flash_tool:
+        return flash_mlxup(device_info)
     elif "nvme" in flash_tool:
         device_path = device_info.get("device", "")
         return flash_nvme(device_path, firmware_path)

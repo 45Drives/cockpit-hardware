@@ -544,14 +544,32 @@ export default {
 
     const loadRebootPending = async () => {
       try {
+        // Check if system has rebooted since the pending file was written
+        // If so, the reboot already happened — clear the pending state
+        const uptimeProc = await unwrap(server.execute(
+          new Command(["python3", "-c",
+            "import os, time; f='" + FIRMWARE_REBOOT_PENDING_FILE + "'; " +
+            "boot_time = time.time() - float(open('/proc/uptime').read().split()[0]); " +
+            "file_mtime = os.path.getmtime(f); " +
+            "print('stale' if boot_time > file_mtime else 'current')"
+          ], { superuser: "try" })
+        ));
+        const status = uptimeProc.getStdout().trim();
+        if (status === 'stale') {
+          // System rebooted after the pending file was written — clear it
+          rebootPendingDevices.value = new Set();
+          await saveRebootPending();
+          return;
+        }
+
         const proc = await unwrap(server.execute(
           new Command(["cat", FIRMWARE_REBOOT_PENDING_FILE], { superuser: "try" })
         ));
         const pending = JSON.parse(proc.getStdout());
-        if (Array.isArray(pending)) {
+        if (Array.isArray(pending) && pending.length > 0) {
           rebootPendingDevices.value = new Set(pending);
         }
-      } catch (e) { /* file doesn't exist yet */ }
+      } catch (e) { /* file doesn't exist yet or error checking — treat as clean */ }
     };
 
     // Load reboot-pending state on mount
