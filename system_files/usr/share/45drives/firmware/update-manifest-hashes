@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""
+update-manifest-hashes - Computes SHA256 for all firmware files referenced in
+the manifest and updates the sha256 fields in-place.
+
+Usage:
+    update-manifest-hashes                         # uses firmware-repo/ as file source
+    update-manifest-hashes --firmware-dir /path    # specify firmware directory
+
+Run this after adding/updating firmware files. The updated manifest should then
+be committed and deployed.
+"""
+
+import hashlib
+import json
+import os
+import sys
+import argparse
+
+
+def compute_sha256(filepath):
+    """Compute SHA256 hash of a file."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def find_firmware_file(filename, search_dirs):
+    """Search for a firmware file in the given directories."""
+    for d in search_dirs:
+        path = os.path.join(d, filename)
+        if os.path.isfile(path):
+            return path
+        # Also check symlinks
+        if os.path.islink(path) and os.path.exists(path):
+            return path
+    return None
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Update SHA256 hashes in firmware manifest")
+    parser.add_argument("--manifest", default=None, help="Path to manifest.json")
+    parser.add_argument("--firmware-dir", action="append", default=[], help="Directory to search for firmware files (can specify multiple)")
+    args = parser.parse_args()
+
+    # Find manifest
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    manifest_path = args.manifest or os.path.join(script_dir, "manifest.json")
+
+    if not os.path.isfile(manifest_path):
+        print(f"Error: Manifest not found at {manifest_path}", file=sys.stderr)
+        return 1
+
+    # Search directories
+    search_dirs = args.firmware_dir if args.firmware_dir else []
+    # Add common locations
+    repo_dir = os.path.join(os.path.dirname(script_dir), "..", "..", "..", "..", "firmware-repo")
+    if os.path.isdir(repo_dir):
+        search_dirs.append(os.path.abspath(repo_dir))
+    search_dirs.append(os.path.join(script_dir, "files"))
+
+    # Load manifest
+    with open(manifest_path, "r") as f:
+        manifest = json.load(f)
+
+    updated = 0
+    missing = 0
+    unchanged = 0
+
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            fw_file = entry.get("firmware_file", "")
+            if not fw_file:
+                continue
+
+            filepath = find_firmware_file(fw_file, search_dirs)
+            if not filepath:
+                print(f"  MISSING: {fw_file} (not found in search dirs)")
+                missing += 1
+                continue
+
+            new_hash = compute_sha256(filepath)
+            old_hash = entry.get("sha256", "")
+
+            if new_hash != old_hash:
+                entry["sha256"] = new_hash
+                print(f"  UPDATED: {fw_file} -> {new_hash}")
+                updated += 1
+            else:
+                unchanged += 1
+
+    # Write back
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+
+    print(f"\nDone: {updated} updated, {unchanged} unchanged, {missing} missing")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -21,11 +21,15 @@ import shutil
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+import hashlib
 
 
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
 SEACHEST_PATH = "/usr/share/45drives/firmware/tools/SeaChest_Firmware"
+REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
 
 # Environment overrides for development
 if os.environ.get("FIRMWARE_CACHE_PATH"):
@@ -34,6 +38,105 @@ if os.environ.get("FIRMWARE_DIR"):
     FIRMWARE_DIR = os.environ["FIRMWARE_DIR"]
 if os.environ.get("SEACHEST_PATH"):
     SEACHEST_PATH = os.environ["SEACHEST_PATH"]
+
+
+def get_repo_url():
+    """Read the firmware repo URL from config."""
+    conf_path = REPO_CONF
+    if os.environ.get("FIRMWARE_REPO_CONF"):
+        conf_path = os.environ["FIRMWARE_REPO_CONF"]
+    try:
+        with open(conf_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or not line:
+                    continue
+                if line.startswith("REPO_URL="):
+                    return line.split("=", 1)[1].strip()
+    except FileNotFoundError:
+        pass
+    return None
+
+
+def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
+    """Download a firmware file from the repo if not available locally.
+    
+    If expected_sha256 is provided, verifies integrity after download.
+    Returns True if file is now available at dest_path, False otherwise.
+    """
+    if os.path.isfile(dest_path):
+        # File exists locally — verify SHA256 if we have one
+        if expected_sha256:
+            actual = compute_sha256(dest_path)
+            if actual != expected_sha256:
+                print(f"  Local file SHA256 mismatch! Re-downloading...")
+                os.unlink(dest_path)
+            else:
+                return True
+        else:
+            return True
+
+    repo_url = get_repo_url()
+    if not repo_url:
+        print("  No firmware repo configured (repo.conf missing or no REPO_URL)")
+        return False
+
+    url = f"{repo_url}/{firmware_file}"
+    print(f"  Firmware not found locally. Downloading from repo...")
+    print(f"  URL: {url}")
+
+    try:
+        req = Request(url, headers={"User-Agent": "45drives-firmware-flash/1.0"})
+        response = urlopen(req, timeout=60)
+
+        # Ensure destination directory exists
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+        sha256_hash = hashlib.sha256()
+        with open(dest_path, "wb") as f:
+            while True:
+                chunk = response.read(65536)
+                if not chunk:
+                    break
+                f.write(chunk)
+                sha256_hash.update(chunk)
+
+        file_size = os.path.getsize(dest_path)
+        actual_sha256 = sha256_hash.hexdigest()
+        print(f"  Downloaded: {firmware_file} ({file_size} bytes)")
+        print(f"  SHA256: {actual_sha256}")
+
+        # Verify integrity
+        if expected_sha256 and actual_sha256 != expected_sha256:
+            print(f"  ✗ INTEGRITY FAILURE: SHA256 mismatch!")
+            print(f"    Expected: {expected_sha256}")
+            print(f"    Got:      {actual_sha256}")
+            os.unlink(dest_path)
+            return False
+
+        return True
+
+    except HTTPError as e:
+        print(f"  Download failed: HTTP {e.code} - {e.reason}")
+        return False
+    except URLError as e:
+        print(f"  Download failed: {e.reason}")
+        return False
+    except Exception as e:
+        print(f"  Download failed: {e}")
+        # Clean up partial download
+        if os.path.exists(dest_path):
+            os.unlink(dest_path)
+        return False
+
+
+def compute_sha256(filepath):
+    """Compute SHA256 of a file."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
 
 
 # SeaChest exit codes
@@ -195,7 +298,7 @@ def flash_niccli(device_info, firmware_path):
 
     # Find niccli binary
     niccli_bin = None
-    for path in ["/usr/bin/niccli", "/usr/local/bin/niccli", "/opt/45drives/tools/niccli"]:
+    for path in ["/opt/niccli/niccli", "/usr/local/bin/niccli", "/usr/bin/niccli", "/opt/45drives/tools/niccli"]:
         if os.path.isfile(path):
             niccli_bin = path
             break
@@ -235,10 +338,10 @@ def flash_niccli(device_info, firmware_path):
     for line in nic_list.splitlines():
         # Match by PCI address in the line
         if short_bus in line or bus_info in line or bus_slot in line:
-            # Adapter ID is the first alphanumeric token
+            # Adapter ID is the first token, strip trailing ')' (e.g. "1)" → "1")
             parts = line.split()
             if parts:
-                adapter_id = parts[0].strip()
+                adapter_id = parts[0].strip().rstrip(")")
                 break
 
     if not adapter_id:
@@ -277,6 +380,7 @@ def flash_device(device_info):
     flash_tool = device_info.get("flash_tool", "")
     firmware_file = device_info.get("firmware_file", "")
     device_type = device_info.get("type", "")
+    expected_sha256 = device_info.get("sha256", "")
 
     if not firmware_file:
         return False, "No firmware file specified in manifest"
@@ -291,7 +395,16 @@ def flash_device(device_info):
                 firmware_path = candidate
                 break
         else:
-            return False, f"Firmware file not found: {firmware_path}"
+            # Not found locally — try to fetch from repo
+            if not fetch_firmware_from_repo(firmware_file, firmware_path, expected_sha256):
+                return False, f"Firmware file not found locally and could not be downloaded: {firmware_file}"
+    else:
+        # File exists locally — verify SHA256 if available
+        if expected_sha256:
+            actual = compute_sha256(firmware_path)
+            if actual != expected_sha256:
+                print(f"  ✗ Local file SHA256 mismatch! Expected {expected_sha256}, got {actual}")
+                return False, f"Firmware file integrity check failed (SHA256 mismatch)"
 
     # Route to appropriate flash function
     if "SeaChest" in flash_tool:

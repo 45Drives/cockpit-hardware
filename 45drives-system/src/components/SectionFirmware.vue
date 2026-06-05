@@ -14,6 +14,14 @@
         Update All ({{ flashableDevices.length }})
       </button>
       <button
+        v-if="rebootPendingDevices.size > 0"
+        type="button"
+        @click="safeReboot()"
+        class="inline-flex items-center rounded-md bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700"
+      >
+        Safe Reboot
+      </button>
+      <button
         type="button"
         class="btn btn-sm btn-default"
         title="Dismiss notification badge"
@@ -320,6 +328,51 @@
   </div>
 </div>
 
+<!-- Safe Reboot Modal -->
+<div v-if="rebootModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-default rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
+    <div class="px-6 py-4 border-b border-default flex justify-between items-center">
+      <h3 class="text-lg font-semibold">Reboot System</h3>
+      <button @click="rebootModalVisible = false" class="text-muted hover:text-default text-xl">&times;</button>
+    </div>
+    <div class="px-6 py-4 space-y-4">
+      <!-- Disclaimer -->
+      <div class="rounded-md bg-yellow-50 border border-yellow-200 p-3">
+        <p class="text-sm font-medium text-yellow-800">⚠ Please perform reboots during a maintenance window.</p>
+        <p class="text-xs text-yellow-700 mt-1">Ensure no critical workloads are running. Pending firmware updates will be activated after reboot.</p>
+      </div>
+
+      <!-- Pending firmware count -->
+      <div class="rounded-md bg-blue-50 border border-blue-200 p-3">
+        <p class="text-xs font-medium text-blue-800">{{ rebootPendingDevices.size }} firmware update(s) pending activation.</p>
+      </div>
+
+      <!-- Confirmation input -->
+      <div>
+        <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">reboot now</span> to confirm:</label>
+        <input v-model="rebootConfirmInput" type="text" placeholder="reboot now" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+      </div>
+
+      <!-- Reboot error -->
+      <div v-if="rebootError" class="rounded-md bg-red-50 border border-red-200 p-3">
+        <p class="text-sm text-red-800">{{ rebootError }}</p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="px-6 py-3 border-t border-default flex justify-between items-center">
+      <button @click="rebootModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+      <button
+        @click="executeReboot()"
+        :disabled="rebootConfirmInput !== 'reboot now' || rebootExecuting"
+        class="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ rebootExecuting ? 'Rebooting...' : 'Reboot Now' }}
+      </button>
+    </div>
+  </div>
+</div>
+
 </template>
 
 <script>
@@ -386,8 +439,8 @@ export default {
       return !!(device.flashable && device.firmware_file);
     };
 
-    // Devices eligible for batch flash
-    const flashableDevices = computed(() => outdatedDevices.value.filter(d => canFlash(d)));
+    // Devices eligible for batch flash (exclude reboot-pending ones)
+    const flashableDevices = computed(() => outdatedDevices.value.filter(d => canFlash(d) && !rebootPendingDevices.value.has(d.cache_index)));
 
     // Info modal
     const infoVisible = ref(false);
@@ -688,7 +741,32 @@ export default {
       batchComplete.value = true;
     };
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, flashAllDevices, proceedBatchFlash };
+    // Safe Reboot
+    const rebootModalVisible = ref(false);
+    const rebootConfirmInput = ref('');
+    const rebootError = ref('');
+    const rebootExecuting = ref(false);
+
+    const safeReboot = () => {
+      rebootModalVisible.value = true;
+      rebootConfirmInput.value = '';
+      rebootError.value = '';
+    };
+
+    const executeReboot = async () => {
+      rebootExecuting.value = true;
+      rebootError.value = '';
+      try {
+        await unwrap(server.execute(
+          new Command(["systemctl", "reboot"], { superuser: "require" })
+        ));
+      } catch (e) {
+        rebootError.value = `Reboot command failed: ${e}`;
+        rebootExecuting.value = false;
+      }
+    };
+
+    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, flashAllDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
   }
 };
 </script>

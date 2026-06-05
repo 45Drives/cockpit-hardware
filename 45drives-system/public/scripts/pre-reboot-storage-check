@@ -456,7 +456,12 @@ def check_lvm_usage(devices):
 ###############################################################################
 
 def assess_controller_risk(devices, io_activity, mounts, zfs_pools, md_arrays, boot_disks, lvm_info):
-    """Assess risk for a single controller."""
+    """Assess risk for a single controller.
+    
+    This is purely informational — shows what's present on each controller.
+    ZFS, mdraid, and normal I/O all handle reboots gracefully.
+    Only an mdraid rebuild is flagged as a concern.
+    """
     
     risk_level = RISK_SAFE
     warnings = []
@@ -470,75 +475,22 @@ def assess_controller_risk(devices, io_activity, mounts, zfs_pools, md_arrays, b
             "recommendations": [],
         }
     
-    # Boot disk
+    # Boot disk (informational)
     if boot_disks:
-        risk_level = RISK_CRITICAL
         warnings.append("OS/boot disk ({}) is on this controller".format(", ".join(boot_disks)))
-        recommendations.append("This reboot will restart the OS — ensure all services are ready for shutdown")
     
-    # I/O activity
-    any_writes = False
-    any_reads = False
-    heavy = False
-    
-    for dev, activity in io_activity.items():
-        if activity["write_active"]:
-            any_writes = True
-            if activity["total_writes_during_sample"] > 100:
-                heavy = True
-        if activity["read_active"]:
-            any_reads = True
-            if activity["total_reads_during_sample"] > 1000:
-                heavy = True
-    
-    if heavy:
-        risk_level = risk_max(risk_level, RISK_HIGH)
-        warnings.append("Heavy I/O activity detected")
-        recommendations.append("Stop active workloads and wait for I/O to become idle before rebooting")
-    elif any_writes:
-        risk_level = risk_max(risk_level, RISK_HIGH)
-        warnings.append("Active write operations detected")
-        recommendations.append("Stop write-intensive services before rebooting")
-    elif any_reads:
-        risk_level = risk_max(risk_level, RISK_WARNING)
-        warnings.append("Read activity detected")
-    
-    # ZFS pools
+    # ZFS pools (informational — ZFS handles reboots gracefully)
     if zfs_pools:
         pool_names = [p["name"] for p in zfs_pools]
         warnings.append("ZFS pools: {}".format(", ".join(pool_names)))
-        for p in zfs_pools:
-            recommendations.append("Export ZFS pool '{}': zpool export {}".format(p["name"], p["name"]))
-            # Check scrub/resilver
-            if p.get("scan") and ("scrub in progress" in (p["scan"] or "") or "resilver in progress" in (p["scan"] or "")):
-                risk_level = risk_max(risk_level, RISK_HIGH)
-                warnings.append("ZFS scrub/resilver in progress on pool '{}'".format(p["name"]))
-                recommendations.append("Wait for scrub/resilver to complete on '{}'".format(p["name"]))
-        risk_level = risk_max(risk_level, RISK_WARNING)
     
-    # Mounts
-    if mounts:
-        mount_points = [m["mount_point"] for m in mounts]
-        warnings.append("Mounted filesystems: {}".format(", ".join(mount_points)))
-        for m in mounts:
-            recommendations.append("Unmount '{}': umount {}".format(m["mount_point"], m["mount_point"]))
-        risk_level = risk_max(risk_level, RISK_WARNING)
-    
-    # mdraid
+    # mdraid — only flag active rebuild as a concern
     if md_arrays:
         for arr in md_arrays:
-            warnings.append("mdraid array '{}' uses drives on this controller".format(arr["name"]))
             if arr.get("rebuilding"):
-                risk_level = risk_max(risk_level, RISK_HIGH)
-                warnings.append("RAID rebuild in progress on '{}'".format(arr["name"]))
-                recommendations.append("Wait for RAID rebuild to complete on '{}'".format(arr["name"]))
-        risk_level = risk_max(risk_level, RISK_WARNING)
-    
-    # LVM
-    if lvm_info:
-        vgs = list(set(l["vg"] for l in lvm_info))
-        warnings.append("LVM volume groups: {}".format(", ".join(vgs)))
-        risk_level = risk_max(risk_level, RISK_INFO)
+                risk_level = risk_max(risk_level, RISK_WARNING)
+                warnings.append("mdraid rebuild in progress on '{}'".format(arr["name"]))
+                recommendations.append("Consider waiting for RAID rebuild to complete on '{}'".format(arr["name"]))
     
     return {
         "risk_level": risk_level,
@@ -639,10 +591,8 @@ def main():
 
     # Step 4: Global recommendations
     global_recommendations = []
-    if overall_risk in (RISK_HIGH, RISK_CRITICAL):
-        global_recommendations.append("Resolve high-risk storage before rebooting")
-    if overall_risk != RISK_SAFE:
-        global_recommendations.append("Perform reboot during a maintenance window if possible")
+    if overall_risk == RISK_WARNING:
+        global_recommendations.append("An mdraid rebuild is in progress — consider waiting for it to finish")
     
     # Step 5: Output
     output = {
