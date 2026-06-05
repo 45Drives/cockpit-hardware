@@ -250,7 +250,12 @@ def api_upload():
     version = request.form.get("version", "")
     notes = request.form.get("notes", "")
 
-    filename = f.filename
+    # Sanitize filename to prevent path traversal attacks
+    filename = os.path.basename(f.filename)
+    # Remove any remaining dangerous characters
+    filename = filename.replace("..", "").replace("/", "").replace("\\", "")
+    if not filename:
+        return jsonify({"error": "Invalid filename"}), 400
     dest_path = os.path.join(FIRMWARE_DIR, filename)
 
     # Save file

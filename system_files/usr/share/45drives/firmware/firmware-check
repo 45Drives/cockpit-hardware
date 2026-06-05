@@ -428,20 +428,24 @@ def main():
 
             # Verify firmware payload exists on disk if device is flashable
             fw_file = device_result.get("firmware_file", "")
+            expected_sha256 = device_result.get("sha256", "")
             if device_result["flashable"] and fw_file:
                 fw_path = os.path.join(FIRMWARE_DIR, fw_file)
                 if not os.path.isfile(fw_path):
                     # File not local — check if repo is configured for on-demand download
-                    if has_repo_configured():
+                    # Also require SHA256 hash — firmware-flash refuses downloads without it
+                    if has_repo_configured() and expected_sha256:
                         # Keep flashable=True; firmware-flash will download it
                         device_result["payload_missing"] = False
                         device_result["payload_remote"] = True
                     else:
                         device_result["flashable"] = False
                         device_result["payload_missing"] = True
+                        reason = f" [Firmware file not deployed: {fw_file}]"
+                        if not expected_sha256:
+                            reason = f" [No SHA256 hash — cannot safely download: {fw_file}]"
                         device_result["release_notes"] = (
-                            device_result.get("release_notes", "") +
-                            f" [Firmware file not deployed: {fw_file}]"
+                            device_result.get("release_notes", "") + reason
                         ).strip()
         else:
             status = "unknown"
