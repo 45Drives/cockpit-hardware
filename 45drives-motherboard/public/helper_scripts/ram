@@ -344,6 +344,11 @@ def dmidecode():
 					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
 					if bank_locator in GENOA_locator_tags:
 						current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
+				elif motherboard_model.startswith("GENOAD8UD") and bank_locator:
+					chan = bank_locator.split()[-1]          # "A" … "K"
+					current_slot["Locator"] = f"DIMM {chan}1"  # e.g. "DIMM A1"
+					if bank_locator in GENOA_locator_tags:
+						current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
 				slot_entries.append(current_slot.copy())
 			current_slot = slot_template.copy()
 			bank_locator = ""  # Reset bank locator for new entry
@@ -379,6 +384,11 @@ def dmidecode():
 			current_slot["Locator"] = f"DIMM {chan}"
 			if bank_locator in ROMED8_locator_tags:
 				current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
+		if motherboard_model.startswith("GENOAD8UD") and bank_locator:
+			chan = bank_locator.split()[-1]
+			current_slot["Locator"] = f"DIMM {chan}1"
+			if bank_locator in GENOA_locator_tags:
+				current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
 		if motherboard_model.startswith("GENOAD8X") and bank_locator:
 			chan = bank_locator.split()[-1]
 			current_slot["Locator"] = f"DIMM {chan}"
