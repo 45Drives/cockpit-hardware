@@ -567,6 +567,10 @@ def dmidecode():
             if motherboard_model.startswith("GENOAD8X") and "/" in stripped:
                 stripped = stripped.split("/")[-1]
 
+            # GENOAD8UD: normalize compound MCIO designations (e.g. "MCIO1-1" → "MCIO1")
+            if motherboard_model.startswith("GENOAD8UD") and re.match(r"MCIO\d+-[12]$", stripped):
+                stripped = re.sub(r"-[12]$", "", stripped)
+
             current_slot["Designation"] = stripped
 
             if designation == "N/A":
