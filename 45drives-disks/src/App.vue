@@ -13,6 +13,9 @@ const { errorStringHTML } = legacy;
 import { pushNotification, Notification, NotificationView } from "@45drives/houston-common-ui";
 import ZfsSection from "./components/ZfsSection.vue";
 
+// DEV MODE: Set to true to limit lsdev to chassis template size (for testing on spoofed servers)
+const DEV_MODE = false;
+
 export default {
   name: "App",
   components: {
@@ -151,6 +154,9 @@ export default {
             case "NVME-F8X3":
               pageLayout.value = "B";
               break;
+            case "E16":
+              pageLayout.value = "A";
+              break;
             case "2U":
               pageLayout.value = "A";
               break;
@@ -244,6 +250,9 @@ export default {
               break;
             case "NVME-F8X3":
               pageLayout.value = "BZ";
+              break;
+            case "E16":
+              pageLayout.value = "AZ";
               break;
             case "2U":
               pageLayout.value = "AZ";
@@ -359,9 +368,13 @@ export default {
 
     const runLsdev = async () => {
       try {
+        const lsdevArgs = ["/opt/45drives/tools/lsdev", "--json"];
+        if (DEV_MODE) {
+          lsdevArgs.push("--dev-mode");
+        }
         const proc = await withTimeout(
           unwrap(server.execute(
-            new Command(["/opt/45drives/tools/lsdev", "--json"], { superuser: "require" })
+            new Command(lsdevArgs, { superuser: "require" })
           )),
           30000,
           'lsdev'

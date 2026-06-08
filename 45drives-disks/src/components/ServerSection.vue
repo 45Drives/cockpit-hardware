@@ -241,7 +241,7 @@ export default {
       }
     };
 
-    watch(lsdevJson, updateDiskSummary); //when lsdev is run again on udev rule trigger
+    watch(lsdevJson, updateDiskSummary, { immediate: true }); //when lsdev is run again on udev rule trigger
 
     return {
       diskCount,

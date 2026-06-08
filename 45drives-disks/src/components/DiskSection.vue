@@ -195,11 +195,24 @@ export default {
     const diskObj = reactive({});
     const lsdevJson = inject("lsdevJson");
     const diskInfo = inject("diskInfo");
+    const bootDrives = inject("bootDrives", reactive([]));
     const loadingSpinner = ref(true);
     // console.log('disks info:', diskInfo)
     // console.log('lsDev info:', lsdevJson)
     const updateDiskObj = () => {
       if (!currentDisk.value) return;
+      
+      // Check if it's a boot drive
+      if (currentDisk.value.startsWith("boot-")) {
+        const bootDrive = bootDrives.find((drive) => drive["bay-id"] === currentDisk.value);
+        if (bootDrive) {
+          Object.assign(diskObj, bootDrive);
+          loadingSpinner.value = false;
+          return;
+        }
+      }
+      
+      // Normal storage drive lookup
       const tmpObj = lsdevJson.rows
         ? lsdevJson.rows
             .flat()
@@ -221,6 +234,7 @@ export default {
 
     watch(currentDisk, updateDiskObj);
     watch(lsdevJson, updateDiskObj); //when lsdev is run again on udev rule trigger
+    watch(bootDrives, updateDiskObj); //when boot drives are fetched
 
     return {
       wMsg,
