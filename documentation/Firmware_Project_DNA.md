@@ -141,8 +141,10 @@ We're adding a "Firmware" section to the existing 45drives-system Cockpit module
 | 8. HDD Firmware Update | SeaChest integration, batch flash testing | 8h |
 | 9. Dual-Repo Firmware Sync | cockpit-hardware ↔ productionScripts sync | 10h |
 | 10. Manifest Management & Docs | CLI update tool, validation, process docs | 10h |
+| 11. GPG Signing & Integrity | Key generation, manifest signing, SHA256 enforcement, verification in firmware-check/flash | 8h |
+| 12. Firmware Admin App | Internal web UI for upload, assign, sign, publish. Smart dropdowns, search, model management | 16h |
 
-**Total: ~68 hours**
+**Total: ~102 hours**
 
 ---
 
@@ -156,6 +158,9 @@ We're adding a "Firmware" section to the existing 45drives-system Cockpit module
 | 4 | Flash Works End-to-End | Click "Update" on HBA/NIC → firmware flashes successfully. Version changes after flash, no errors. |
 | 5 | HDD Flash Validated | Batch flash Exos drives via SeaChest with safety checks. No data loss. |
 | 6 | Dual-Repo Sync Working | Add firmware in one repo, sync script propagates to other with SHA256 match. |
-| 7 | Full Release Ready | All components, all flows, packaged and tested. Ready to ship. |
+| 7 | GPG Manifest Signing + Verification | Manifest is GPG-signed on publish. Customer machines verify signature before trusting remote manifest. Tampered manifests rejected. Missing signatures rejected. |
+| 8 | SHA256 Firmware Integrity Enforcement | All firmware downloads verified against SHA256 hash in manifest. Mismatched or missing hashes block flash. Corrupted downloads detected and rejected. |
+| 9 | Firmware Admin App (Internal) | Internal web UI for engineers to upload firmware, assign to models, sign manifest, and publish — no CLI or manual JSON editing required. Smart dropdowns auto-fill flash tools/commands from existing manifest data. |
+| 10 | Full Release Ready | All components, all flows, packaged and tested. Ready to ship. |
 
 ---

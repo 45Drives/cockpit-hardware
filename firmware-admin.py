@@ -529,6 +529,80 @@ def api_manifest():
     return jsonify(load_manifest())
 
 
+@app.route("/api/check-coverage", methods=["POST"])
+def api_check_coverage():
+    """Check which models from a list are covered by the manifest."""
+    import re as regex_module
+    data = request.json
+    input_models = data.get("models", [])
+    if not input_models:
+        return jsonify({"error": "No models provided"}), 400
+
+    manifest = load_manifest()
+    results = []
+
+    for item in input_models:
+        model_name = (item if isinstance(item, str) else item.get("model", "")).strip()
+        current_fw = item.get("firmware", "") if isinstance(item, dict) else ""
+        if not model_name:
+            continue
+
+        matched_entry = None
+        matched_category = None
+
+        for category, entries in manifest.get("components", {}).items():
+            for entry in entries:
+                pattern = entry.get("model_match", "")
+                if not pattern:
+                    continue
+                try:
+                    if regex_module.fullmatch(pattern, model_name, regex_module.IGNORECASE):
+                        matched_entry = entry
+                        matched_category = category
+                        break
+                    if pattern.lower() == model_name.lower():
+                        matched_entry = entry
+                        matched_category = category
+                        break
+                except regex_module.error:
+                    if pattern.lower() == model_name.lower():
+                        matched_entry = entry
+                        matched_category = category
+                        break
+            if matched_entry:
+                break
+
+        if matched_entry:
+            latest = matched_entry.get("latest_firmware", "")
+            has_file = bool(matched_entry.get("firmware_file"))
+            needs_update = (current_fw and latest and current_fw != latest)
+            results.append({
+                "model": model_name,
+                "status": "supported",
+                "category": matched_category,
+                "family": matched_entry.get("family", ""),
+                "latest_firmware": latest,
+                "current_firmware": current_fw,
+                "needs_update": needs_update,
+                "has_firmware_file": has_file,
+            })
+        else:
+            results.append({
+                "model": model_name,
+                "status": "unsupported",
+                "current_firmware": current_fw,
+            })
+
+    supported = sum(1 for r in results if r["status"] == "supported")
+    unsupported = sum(1 for r in results if r["status"] == "unsupported")
+    return jsonify({
+        "total": len(results),
+        "supported": supported,
+        "unsupported": unsupported,
+        "results": results,
+    })
+
+
 # ─── File Serving (for customer machines) ──────────────────────────────────────
 
 @app.route("/manifest.json")
@@ -867,6 +941,7 @@ APP_HTML = """<!DOCTYPE html>
             <div class="tabs">
                 <div class="tab active" data-tab="upload">Upload</div>
                 <div class="tab" data-tab="models">Models</div>
+                <div class="tab" data-tab="coverage">Coverage</div>
                 <div class="tab" data-tab="tools">Tools</div>
                 <div class="tab" data-tab="files">Files</div>
             </div>
@@ -988,6 +1063,28 @@ APP_HTML = """<!DOCTYPE html>
                 </div>
             </div>
             
+            <!-- Coverage Tab -->
+            <div class="tab-content" id="tab-coverage">
+                <div class="card">
+                    <h2>🔍 Check Coverage</h2>
+                    <p style="color:#888; font-size:0.85rem; margin-bottom:1rem;">Paste model numbers from a customer machine to see which are supported. One per line, or paste smartctl scan output.</p>
+                    <div class="form-row">
+                        <label>Device Models <span style="color:#666; font-size:0.75rem;">(one per line — optionally add current firmware after a comma: MODEL,FIRMWARE)</span></label>
+                        <textarea id="coverageInput" style="min-height:140px; font-family:monospace; font-size:0.85rem;" placeholder="ST16000NM001G,SN06&#10;ST8000NM017B,SN04&#10;9600-16i&#10;ConnectX-6&#10;UNKNOWN_MODEL_XYZ"></textarea>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                        <button class="btn btn-primary" onclick="checkCoverage()">🔍 Check Coverage</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('coverageInput').value=''; document.getElementById('coverageResults').style.display='none';">Clear</button>
+                        <button class="btn btn-secondary" onclick="parseScanOutput()">📋 Parse from smartctl JSON</button>
+                    </div>
+                    <div id="coverageResults" style="display:none;">
+                        <div id="coverageSummary" style="margin-bottom:1rem; padding:0.75rem; border-radius:6px; background:#0a0a15; border:1px solid #333;"></div>
+                        <div id="coverageUnsupported" style="margin-bottom:1rem;"></div>
+                        <div id="coverageSupported"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Files Tab -->
             <!-- Tools Tab -->
             <div class="tab-content" id="tab-tools">
@@ -1105,6 +1202,11 @@ APP_HTML = """<!DOCTYPE html>
                 <button class="btn btn-primary" onclick="saveModelEdit()">💾 Save</button>
             </div>
         </div>
+    </div>
+
+    <!-- Family Detail Modal -->
+    <div class="modal-overlay" id="familyModal">
+        <div class="modal" id="familyModalContent"></div>
     </div>
 
     <script>
@@ -1631,26 +1733,280 @@ APP_HTML = """<!DOCTYPE html>
             const resp = await fetch('/api/models');
             models = await resp.json();
             
-            // Model grid
+            // Model grid — group by family for HDD, show individual for others
             const grid = document.getElementById('modelGrid');
-            grid.innerHTML = models.map(m => {
-                let badge = '';
-                if (m.firmware_file && m.sha256) badge = '<span class="badge badge-ok">✓ Ready</span>';
-                else if (m.firmware_file && !m.sha256) badge = '<span class="badge badge-no-hash">⚠ No Hash</span>';
-                else badge = '<span class="badge badge-missing">No File</span>';
-                
-                const subtitle = m.capacity ? `${m.category} • ${m.capacity}` : m.category;
-                
-                return `<div class="model-card" onclick='openEditModal(${JSON.stringify(m)})'>
-                    <div class="model-name">${m.display_name}</div>
-                    <div class="model-meta">${m.category} • ${m.model}</div>
-                    <div class="model-version">v${m.version || '?'}</div>
-                    <div class="model-file" title="${m.firmware_file || 'No file assigned'}">${m.firmware_file || '—'}</div>
-                    ${badge}
-                </div>`;
-            }).join('');
+            const categories = {};
+            models.forEach(m => {
+                if (!categories[m.category]) categories[m.category] = [];
+                categories[m.category].push(m);
+            });
+
+            let cards = [];
+            for (const [cat, items] of Object.entries(categories)) {
+                if (cat === 'hdd') {
+                    // Group HDDs by family
+                    const families = {};
+                    items.forEach(m => {
+                        const key = m.family || m.model;
+                        if (!families[key]) families[key] = [];
+                        families[key].push(m);
+                    });
+                    for (const [fam, members] of Object.entries(families)) {
+                        const allReady = members.every(m => m.firmware_file && m.sha256);
+                        const someReady = members.some(m => m.firmware_file && m.sha256);
+                        let badge = '';
+                        if (allReady) badge = '<span class="badge badge-ok">✓ All Ready</span>';
+                        else if (someReady) badge = '<span class="badge badge-no-hash">⚠ Partial</span>';
+                        else badge = '<span class="badge badge-missing">No Files</span>';
+
+                        // Collect unique firmware versions and interfaces
+                        const versions = [...new Set(members.map(m => m.version).filter(Boolean))];
+                        const interfaces = [...new Set(members.map(m => m.interface).filter(Boolean))];
+                        const fwFile = [...new Set(members.map(m => m.firmware_file).filter(Boolean))];
+                        const vendor = members[0].vendor || '';
+
+                        cards.push(`<div class="model-card" onclick='openFamilyDetail("${fam.replace(/'/g, "\\'")}")' data-search="${fam.toLowerCase()} ${vendor.toLowerCase()} ${cat} ${members.map(m=>m.model).join(' ').toLowerCase()}">
+                            <div class="model-name">${vendor ? vendor + ' ' : ''}${fam}</div>
+                            <div class="model-meta">${cat} • ${members.length} model${members.length > 1 ? 's' : ''} • ${interfaces.join('/')}</div>
+                            <div class="model-version">${versions.length > 0 ? 'v' + versions.join(', v') : 'No version'}</div>
+                            <div class="model-file">${fwFile.length > 0 ? fwFile.join(', ') : '—'}</div>
+                            ${badge}
+                        </div>`);
+                    }
+                } else {
+                    // Non-HDD: show individual cards
+                    items.forEach(m => {
+                        let badge = '';
+                        if (m.firmware_file && m.sha256) badge = '<span class="badge badge-ok">✓ Ready</span>';
+                        else if (m.firmware_file && !m.sha256) badge = '<span class="badge badge-no-hash">⚠ No Hash</span>';
+                        else badge = '<span class="badge badge-missing">No File</span>';
+
+                        cards.push(`<div class="model-card" onclick='openEditModal(${JSON.stringify(m)})' data-search="${m.display_name.toLowerCase()} ${m.model.toLowerCase()} ${cat} ${(m.vendor||'').toLowerCase()}">
+                            <div class="model-name">${m.display_name}</div>
+                            <div class="model-meta">${cat} • ${m.model}</div>
+                            <div class="model-version">v${m.version || '?'}</div>
+                            <div class="model-file" title="${m.firmware_file || 'No file assigned'}">${m.firmware_file || '—'}</div>
+                            ${badge}
+                        </div>`);
+                    });
+                }
+            }
+            grid.innerHTML = cards.join('');
         }
-        
+
+        function openFamilyDetail(family) {
+            // Filter to models in this family
+            const familyModels = models.filter(m => m.family === family);
+            if (familyModels.length === 1) {
+                openEditModal(familyModels[0]);
+                return;
+            }
+            // Build a mini-grid in the family modal (separate from edit modal)
+            const content = document.getElementById('familyModalContent');
+            content.innerHTML = `
+                <h2>📦 ${family} <span style="color:#888; font-size:0.85rem;">(${familyModels.length} models)</span></h2>
+                <div class="model-grid" style="max-height:60vh; overflow-y:auto;">
+                    ${familyModels.map((m, i) => {
+                        let badge = '';
+                        if (m.firmware_file && m.sha256) badge = '<span class="badge badge-ok">✓</span>';
+                        else if (m.firmware_file) badge = '<span class="badge badge-no-hash">⚠</span>';
+                        else badge = '<span class="badge badge-missing">✗</span>';
+                        return `<div class="model-card" data-family-idx="${i}">
+                            <div class="model-name">${m.model}</div>
+                            <div class="model-meta">${m.interface || ''} • ${m.capacity || ''}</div>
+                            <div class="model-version">v${m.version || '?'}</div>
+                            <div class="model-file">${m.firmware_file || '—'}</div>
+                            ${badge}
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeFamilyModal()">Close</button>
+                </div>
+            `;
+            // Attach click handlers (avoids quote escaping issues with inline JSON)
+            content.querySelectorAll('[data-family-idx]').forEach(card => {
+                card.addEventListener('click', () => {
+                    const idx = parseInt(card.dataset.familyIdx);
+                    closeFamilyModal();
+                    openEditModal(familyModels[idx]);
+                });
+            });
+            document.getElementById('familyModal').classList.add('open');
+        }
+
+        function closeFamilyModal() {
+            document.getElementById('familyModal').classList.remove('open');
+        }
+
+        // Close family modal on overlay click
+        document.getElementById('familyModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFamilyModal();
+        });
+
+        // ─── Coverage Check ────────────────────────────────────────────
+        async function checkCoverage() {
+            const raw = document.getElementById('coverageInput').value.trim();
+            if (!raw) { showToast('Paste model numbers first', 'error'); return; }
+
+            // Parse lines: each line is "MODEL" or "MODEL,FIRMWARE"
+            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+            const modelList = lines.map(line => {
+                const parts = line.split(/[,\t]+/);
+                return { model: parts[0].trim(), firmware: (parts[1] || '').trim() };
+            });
+
+            try {
+                const resp = await fetch('/api/check-coverage', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ models: modelList })
+                });
+                const data = await resp.json();
+                if (!resp.ok) { showToast(data.error || 'Check failed', 'error'); return; }
+                renderCoverageResults(data);
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
+        function renderCoverageResults(data) {
+            const resultsEl = document.getElementById('coverageResults');
+            const summaryEl = document.getElementById('coverageSummary');
+            const unsupportedEl = document.getElementById('coverageUnsupported');
+            const supportedEl = document.getElementById('coverageSupported');
+            resultsEl.style.display = 'block';
+
+            // Summary bar
+            const pct = data.total > 0 ? Math.round((data.supported / data.total) * 100) : 0;
+            const barColor = pct === 100 ? '#27ae60' : pct >= 80 ? '#f39c12' : '#e74c3c';
+            summaryEl.innerHTML = `
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.5rem;">
+                    <strong style="font-size:1.1rem;">${pct}% Coverage</strong>
+                    <span style="color:#888;">${data.supported} supported / ${data.unsupported} unsupported / ${data.total} total</span>
+                </div>
+                <div style="height:6px; background:#1a1a2e; border-radius:3px; overflow:hidden;">
+                    <div style="height:100%; width:${pct}%; background:${barColor}; border-radius:3px;"></div>
+                </div>
+            `;
+
+            // Unsupported (gaps) — shown prominently
+            const unsupported = data.results.filter(r => r.status === 'unsupported');
+            if (unsupported.length > 0) {
+                unsupportedEl.innerHTML = `
+                    <h3 style="color:#e74c3c; margin-bottom:0.5rem;">❌ Unsupported Models (${unsupported.length})</h3>
+                    <p style="color:#888; font-size:0.8rem; margin-bottom:0.5rem;">These models have no matching entry in the manifest. Firmware updates will NOT be applied to these drives.</p>
+                    <div class="model-grid">
+                        ${unsupported.map(r => `
+                            <div class="model-card" style="border-color:#5c1a1a;">
+                                <div class="model-name" style="color:#e74c3c;">${r.model}</div>
+                                <div class="model-meta">${r.current_firmware ? 'Current FW: ' + r.current_firmware : 'No FW info'}</div>
+                                <span class="badge badge-missing">Not in manifest</span>
+                                <div style="margin-top:0.5rem;">
+                                    <button class="btn btn-primary" style="padding:0.3rem 0.6rem; font-size:0.75rem;" onclick="quickAddFromCoverage('${r.model}')">+ Add to Manifest</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                unsupportedEl.innerHTML = '';
+            }
+
+            // Supported — collapsed by default
+            const supported = data.results.filter(r => r.status === 'supported');
+            if (supported.length > 0) {
+                const needsUpdate = supported.filter(r => r.needs_update);
+                const upToDate = supported.filter(r => !r.needs_update);
+                let html = `<details ${unsupported.length === 0 ? 'open' : ''}>
+                    <summary style="cursor:pointer; color:#27ae60; font-weight:bold; margin-bottom:0.5rem;">
+                        ✅ Supported Models (${supported.length})${needsUpdate.length > 0 ? ` — <span style="color:#f39c12;">${needsUpdate.length} need update</span>` : ''}
+                    </summary>
+                    <div class="model-grid">`;
+                supported.forEach(r => {
+                    const updateBadge = r.needs_update
+                        ? `<span class="badge badge-no-hash">⬆ ${r.current_firmware} → ${r.latest_firmware}</span>`
+                        : r.has_firmware_file
+                            ? `<span class="badge badge-ok">✓ Ready</span>`
+                            : `<span class="badge badge-no-hash">⚠ No file uploaded</span>`;
+                    html += `<div class="model-card" style="border-color:#1a3a2a;">
+                        <div class="model-name" style="color:#27ae60;">${r.model}</div>
+                        <div class="model-meta">${r.category} • ${r.family || r.model}</div>
+                        <div class="model-version">Latest: v${r.latest_firmware || '?'}${r.current_firmware ? ' | Current: v' + r.current_firmware : ''}</div>
+                        ${updateBadge}
+                    </div>`;
+                });
+                html += '</div></details>';
+                supportedEl.innerHTML = html;
+            } else {
+                supportedEl.innerHTML = '';
+            }
+        }
+
+        function quickAddFromCoverage(model) {
+            // Pre-fill the Add Model form and switch to Models tab
+            document.getElementById('newModelMatch').value = model;
+            // Switch to models tab
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector('[data-tab="models"]').classList.add('active');
+            document.getElementById('tab-models').classList.add('active');
+            // Scroll to top
+            document.querySelector('.content').scrollTop = 0;
+            showToast(`Fill in details for ${model} and click "Add Model"`, 'success');
+        }
+
+        function parseScanOutput() {
+            // Try to parse the textarea as smartctl JSON scan output
+            const raw = document.getElementById('coverageInput').value.trim();
+            if (!raw) { showToast('Paste smartctl output first', 'error'); return; }
+
+            try {
+                const json = JSON.parse(raw);
+                // Handle smartctl --scan-open --json output
+                let parsed = [];
+                if (json.devices) {
+                    // It's a scan result — we need to explain we need per-device info
+                    showToast('This is a scan list. Paste individual device info or a list of model numbers.', 'error');
+                    return;
+                }
+                if (json.model_name) {
+                    // Single device info
+                    parsed.push(json.model_name + (json.firmware_version ? ',' + json.firmware_version : ''));
+                }
+                if (parsed.length > 0) {
+                    document.getElementById('coverageInput').value = parsed.join('\\n');
+                    showToast(`Parsed ${parsed.length} device(s)`, 'success');
+                    return;
+                }
+            } catch(e) {
+                // Not JSON — try to extract model numbers from smartctl text output
+                const modelLines = [];
+                const lines = raw.split('\\n');
+                for (const line of lines) {
+                    // Match "Device Model:" or "Product:" lines from smartctl -i
+                    let m = line.match(/(?:Device Model|Product|Model Number):\\s*(.+)/i);
+                    if (m) {
+                        let model = m[1].trim();
+                        // Try to find firmware on nearby lines
+                        modelLines.push(model);
+                    }
+                    // Match "Firmware Version:" 
+                    let fw = line.match(/(?:Firmware Version|Revision):\\s*(.+)/i);
+                    if (fw && modelLines.length > 0) {
+                        // Append firmware to last model
+                        modelLines[modelLines.length - 1] += ',' + fw[1].trim();
+                    }
+                }
+                if (modelLines.length > 0) {
+                    document.getElementById('coverageInput').value = modelLines.join('\\n');
+                    showToast(`Extracted ${modelLines.length} model(s) from text`, 'success');
+                    return;
+                }
+            }
+            showToast('Could not parse input. Use format: MODEL,FIRMWARE (one per line)', 'error');
+        }
+
         async function loadFiles() {
             const resp = await fetch('/api/files');
             const files = await resp.json();
@@ -1682,16 +2038,38 @@ APP_HTML = """<!DOCTYPE html>
                 const filtered = items.filter(m => 
                     m.model.toLowerCase().includes(query) ||
                     (m.vendor || '').toLowerCase().includes(query) ||
+                    (m.family || '').toLowerCase().includes(query) ||
                     cat.toLowerCase().includes(query)
                 );
                 if (filtered.length === 0) continue;
-                html += `<div class="nav-section">${cat} (${filtered.length})</div>`;
-                filtered.forEach(m => {
-                    let statusClass = 'status-missing';
-                    if (m.firmware_file && m.sha256) statusClass = 'status-ok';
-                    else if (m.firmware_file) statusClass = 'status-no-hash';
-                    html += `<div class="nav-item"><span>${m.display_name}</span><div class="status ${statusClass}"></div></div>`;
-                });
+
+                // Group by family (for categories with many entries like hdd)
+                if (cat === 'hdd' && !query) {
+                    html += `<div class="nav-section">${cat} (${filtered.length})</div>`;
+                    const families = {};
+                    filtered.forEach(m => {
+                        const key = m.family || m.model;
+                        if (!families[key]) families[key] = [];
+                        families[key].push(m);
+                    });
+                    for (const [fam, members] of Object.entries(families)) {
+                        // Determine aggregate status
+                        const allReady = members.every(m => m.firmware_file && m.sha256);
+                        const someReady = members.some(m => m.firmware_file && m.sha256);
+                        const statusClass = allReady ? 'status-ok' : someReady ? 'status-no-hash' : 'status-missing';
+                        const count = members.length;
+                        const label = count > 1 ? `${fam} <span style="color:#555; font-size:0.75rem;">(${count})</span>` : fam;
+                        html += `<div class="nav-item"><span>${label}</span><div class="status ${statusClass}"></div></div>`;
+                    }
+                } else {
+                    html += `<div class="nav-section">${cat} (${filtered.length})</div>`;
+                    filtered.forEach(m => {
+                        let statusClass = 'status-missing';
+                        if (m.firmware_file && m.sha256) statusClass = 'status-ok';
+                        else if (m.firmware_file) statusClass = 'status-no-hash';
+                        html += `<div class="nav-item"><span>${m.display_name}</span><div class="status ${statusClass}"></div></div>`;
+                    });
+                }
             }
             sidebar.innerHTML = html || '<div style="padding:1rem;color:#666;">No matches</div>';
             
@@ -1704,8 +2082,8 @@ APP_HTML = """<!DOCTYPE html>
             if (!grid) return;
             const cards = grid.querySelectorAll('.model-card');
             cards.forEach(card => {
-                const text = card.textContent.toLowerCase();
-                card.style.display = text.includes(query) ? '' : 'none';
+                const searchText = (card.dataset.search || card.textContent).toLowerCase();
+                card.style.display = searchText.includes(query) ? '' : 'none';
             });
         }
         
