@@ -90,6 +90,46 @@ def discover_hdds():
         if "-" in model:
             part_match = model.split("-", 1)[1]
 
+        # Determine sector format from Sector Sizes field
+        # "512 bytes logical, 4096 bytes physical" = 512E (emulated)
+        # "4096 bytes logical, 4096 bytes physical" = 4kN (native 4K)
+        # "512 bytes logical, 512 bytes physical"   = 512N (native 512)
+        sector_format = ""
+        sector_info = info.get("Sector Sizes", "") or info.get("Sector Size", "")
+        if sector_info:
+            logical = 0
+            physical = 0
+            # Parse "512 bytes logical, 4096 bytes physical"
+            parts = sector_info.lower().split(",")
+            for part in parts:
+                part = part.strip()
+                if "logical" in part:
+                    try:
+                        logical = int(part.split()[0])
+                    except (ValueError, IndexError):
+                        pass
+                elif "physical" in part:
+                    try:
+                        physical = int(part.split()[0])
+                    except (ValueError, IndexError):
+                        pass
+            # Single value format: "512 bytes logical/physical"
+            if not physical and logical:
+                physical = logical
+            elif not logical and not physical:
+                # Try single value: "512 bytes"
+                try:
+                    logical = physical = int(sector_info.split()[0])
+                except (ValueError, IndexError):
+                    pass
+
+            if logical == 512 and physical == 4096:
+                sector_format = "512E"
+            elif logical == 4096 and physical == 4096:
+                sector_format = "4kN"
+            elif logical == 512 and physical == 512:
+                sector_format = "512N"
+
         # Find sg device for SeaChest
         sg_device = ""
         sg_stdout, _, _ = run_cmd(f"ls /sys/class/scsi_generic/ 2>/dev/null")
@@ -127,6 +167,7 @@ def discover_hdds():
             "firmware": firmware,
             "family": family,
             "interface": interface,
+            "sector_format": sector_format,
             "capacity": capacity,
         })
 

@@ -69,10 +69,13 @@ def sign_and_publish():
     if os.path.exists(sig_path):
         os.unlink(sig_path)
 
-    result = subprocess.run(
-        ["gpg", "--detach-sign", "--armor", "-u", GPG_KEY_ID, "-o", sig_path, MANIFEST_SRC],
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
+    try:
+        result = subprocess.run(
+            ["gpg", "--batch", "--yes", "--detach-sign", "--armor", "-u", GPG_KEY_ID, "-o", sig_path, MANIFEST_SRC],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=30
+        )
+    except subprocess.TimeoutExpired:
+        return False, "GPG signing timed out (30s)"
     if result.returncode != 0:
         return False, f"GPG signing failed: {result.stderr}"
 
@@ -118,7 +121,13 @@ def get_all_models():
                 "firmware_file": entry.get("firmware_file", ""),
                 "sha256": entry.get("sha256", ""),
                 "flash_tool": entry.get("flash_tool", ""),
+                "flash_command": entry.get("flash_command", ""),
                 "flashable": entry.get("flashable", False),
+                "requires_reboot": entry.get("requires_reboot", False),
+                "part_match": entry.get("part_match", ""),
+                "release_notes": entry.get("release_notes", ""),
+                "release_date": entry.get("release_date", ""),
+                "upgrade_from": entry.get("upgrade_from", ""),
             })
     return models
 
@@ -128,6 +137,44 @@ def get_all_models():
 @app.route("/api/models")
 def api_models():
     return jsonify(get_all_models())
+
+
+@app.route("/api/model/update", methods=["PUT"])
+def api_model_update():
+    """Update fields of an existing model entry."""
+    data = request.json
+    model_match = (data.get("model") or "").strip()
+    if not model_match:
+        return jsonify({"error": "model is required"}), 400
+
+    manifest = load_manifest()
+    found = False
+    for category, entries in manifest.get("components", {}).items():
+        for entry in entries:
+            if entry.get("model_match", "") == model_match:
+                # Update editable fields if provided
+                editable = [
+                    "latest_firmware", "firmware_file", "flash_tool", "flash_command",
+                    "flashable", "requires_reboot", "release_notes", "release_date",
+                    "upgrade_from", "part_match", "family", "interface", "capacity", "vendor"
+                ]
+                for field in editable:
+                    if field in data:
+                        val = data[field]
+                        # Handle booleans
+                        if field in ("flashable", "requires_reboot"):
+                            val = val if isinstance(val, bool) else str(val).lower() == "true"
+                        entry[field] = val
+                found = True
+                break
+        if found:
+            break
+
+    if not found:
+        return jsonify({"error": f"Model '{model_match}' not found"}), 404
+
+    save_manifest(manifest)
+    return jsonify({"status": "ok", "model": model_match})
 
 
 @app.route("/api/flash-tools")
@@ -238,7 +285,7 @@ def api_files():
 
 @app.route("/api/upload", methods=["POST"])
 def api_upload():
-    """Upload firmware file and optionally assign to a model."""
+    """Upload firmware file and assign to all models in a family/interface/track."""
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
@@ -246,9 +293,18 @@ def api_upload():
     if not f.filename:
         return jsonify({"error": "Empty filename"}), 400
 
-    model = request.form.get("model", "")
-    version = request.form.get("version", "")
+    category = request.form.get("category", "hdd").strip()
+    family = request.form.get("family", "").strip()
+    interface = request.form.get("interface", "").strip()
+    version = request.form.get("version", "").strip()
+    model_match_input = request.form.get("model_match", "").strip()
     notes = request.form.get("notes", "")
+    upgrade_from = request.form.get("upgrade_from", "").strip()
+
+    if not family and not model_match_input:
+        return jsonify({"error": "Family or model number is required"}), 400
+    if not version:
+        return jsonify({"error": "Firmware version is required"}), 400
 
     # Sanitize filename to prevent path traversal attacks
     filename = os.path.basename(f.filename)
@@ -267,35 +323,91 @@ def api_upload():
         "filename": filename,
         "size": size,
         "sha256": sha256,
-        "assigned": False,
+        "assigned_models": [],
     }
 
-    # Assign to model if specified
-    if model:
-        manifest = load_manifest()
-        found = False
-        for category, entries in manifest.get("components", {}).items():
-            for entry in entries:
-                if entry.get("model_match", "").lower() == model.lower():
-                    entry["firmware_file"] = filename
-                    entry["sha256"] = sha256
-                    if version:
-                        entry["latest_firmware"] = version
-                    if notes:
-                        entry["release_notes"] = notes
-                    entry["release_date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-                    found = True
-                    break
-            if found:
-                break
+    track_prefix = version[:2] if len(version) >= 2 else ""
+    manifest = load_manifest()
+    assigned = []
 
-        if found:
-            save_manifest(manifest)
-            result["assigned"] = True
-            result["model"] = model
-            result["version"] = version
-        else:
-            result["warning"] = f"Model '{model}' not found in manifest"
+    # Only search within the selected category
+    entries_in_cat = manifest.get("components", {}).get(category, [])
+    for entry in entries_in_cat:
+        entry_family = entry.get("family", "")
+        entry_interface = entry.get("interface", "")
+        entry_model = entry.get("model_match", "")
+        entry_version = entry.get("latest_firmware", "")
+        entry_track = entry_version[:2] if len(entry_version) >= 2 else ""
+
+        matched = False
+
+        # Match by family + interface + track prefix (HDD)
+        if (family and entry_family == family and
+                entry_interface == interface and
+                entry_track == track_prefix):
+            matched = True
+
+        # Match by model number
+        if (model_match_input and entry_model and
+                entry_model.lower() == model_match_input.lower()):
+            matched = True
+
+        if matched:
+            entry["firmware_file"] = filename
+            entry["sha256"] = sha256
+            entry["latest_firmware"] = version
+            if upgrade_from:
+                entry["upgrade_from"] = upgrade_from
+            if notes:
+                entry["release_notes"] = notes
+            entry["release_date"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            assigned.append(entry_model)
+
+    # If model_match was provided but didn't match any existing entry, create it
+    model_already_existed = model_match_input and model_match_input.lower() in [m.lower() for m in assigned]
+    if model_match_input and not model_already_existed:
+        # Defaults per category
+        CATEGORY_DEFAULTS = {
+            "hdd": {"vendor": "Seagate", "flash_tool": "SeaChest", "flash_command": "SeaChest_Firmware --scan --firmware <firmware_path>", "requires_reboot": False},
+            "hba": {"vendor": "Broadcom", "flash_tool": "storcli64", "flash_command": "storcli64 /cX download file=<firmware_path>", "requires_reboot": True},
+            "nic": {"vendor": "NVIDIA/Mellanox", "flash_tool": "mlxup", "flash_command": "mlxup --update --dev <bus_info>", "requires_reboot": True},
+            "nvme": {"vendor": "Micron", "flash_tool": "nvme-cli", "flash_command": "nvme fw-download <device> --fw=<firmware_path> && nvme fw-activate <device> -s 1", "requires_reboot": True},
+            "ssd": {"vendor": "", "flash_tool": "", "flash_command": "", "requires_reboot": True},
+        }
+        defaults = CATEGORY_DEFAULTS.get(category, CATEGORY_DEFAULTS["hdd"])
+
+        new_entry = {
+            "model_match": model_match_input,
+            "vendor": defaults["vendor"],
+            "latest_firmware": version,
+            "firmware_file": filename,
+            "sha256": sha256,
+            "flashable": True,
+            "flash_tool": defaults["flash_tool"],
+            "flash_command": defaults["flash_command"],
+            "requires_reboot": defaults["requires_reboot"],
+            "release_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        }
+        if interface:
+            new_entry["interface"] = interface
+        if family:
+            new_entry["family"] = family
+        if upgrade_from:
+            new_entry["upgrade_from"] = upgrade_from
+        if notes:
+            new_entry["release_notes"] = notes
+
+        if category not in manifest.get("components", {}):
+            manifest["components"][category] = []
+        manifest["components"][category].append(new_entry)
+        assigned.append(model_match_input)
+        result["created_new"] = True
+
+    if assigned:
+        save_manifest(manifest)
+        result["assigned_models"] = assigned
+    else:
+        result["warning"] = f"No models found for {family} / {interface} / {track_prefix}-track"
 
     return jsonify(result)
 
@@ -543,6 +655,50 @@ APP_HTML = """<!DOCTYPE html>
         .form-row select { cursor: pointer; }
         .form-row textarea { resize: vertical; min-height: 60px; }
 
+        .chip-input-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            padding: 0.4rem 0.5rem;
+            background: #0f0f1a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            min-height: 38px;
+            cursor: text;
+            align-items: center;
+        }
+        .chip-input-container:focus-within { border-color: #00d4aa; }
+        .chip-input-container .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: #1a3a5c;
+            border: 1px solid #00d4aa;
+            border-radius: 12px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            color: #00d4aa;
+            white-space: nowrap;
+        }
+        .chip-input-container .chip .chip-remove {
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .chip-input-container .chip .chip-remove:hover { color: #ff4444; }
+        .chip-input-container .chip-text-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #eee;
+            font-size: 0.85rem;
+            flex: 1;
+            min-width: 80px;
+            padding: 0.2rem 0;
+        }
+
         .searchable-select { position: relative; }
         .searchable-select input[type="text"] {
             width: 100%;
@@ -641,9 +797,35 @@ APP_HTML = """<!DOCTYPE html>
         .toast.show { opacity: 1; }
         .toast.success { background: #27ae60; }
         .toast.error { background: #e74c3c; }
+        .toast.progress { background: #8e44ad; }
         
         .signed-status { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
         .signed-status .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            width: 600px;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .modal h2 { color: #00d4aa; margin-bottom: 1rem; font-size: 1.1rem; }
+        .modal .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        .modal .form-grid .span-2 { grid-column: span 2; }
+        .modal .modal-actions { display: flex; gap: 0.5rem; margin-top: 1.2rem; justify-content: flex-end; }
         
         .upload-result {
             background: #0f0f1a;
@@ -702,23 +884,57 @@ APP_HTML = """<!DOCTYPE html>
                             <label>File</label>
                             <input type="text" id="uploadFilename" readonly>
                         </div>
-                        <div class="form-row">
-                            <label>Assign to Model (optional)</label>
-                            <div class="searchable-select" id="modelSelectWrapper">
-                                <input type="text" id="modelSearchInput" placeholder="Search models..." autocomplete="off" onclick="toggleModelDropdown(true)">
-                                <input type="hidden" id="uploadModel" value="">
-                                <div class="searchable-dropdown" id="modelDropdown"></div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                            <div class="form-row">
+                                <label>Device Type</label>
+                                <select id="uploadCategory" onchange="onCategoryChange()">
+                                    <option value="hdd">HDD (Seagate)</option>
+                                    <option value="hba">HBA (Broadcom)</option>
+                                    <option value="nic">NIC (Mellanox/Broadcom)</option>
+                                    <option value="nvme">NVMe SSD</option>
+                                    <option value="ssd">SSD</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label>Model Number <span style="color:#666; font-size:0.75rem;">(from firmware release notes)</span></label>
+                                <input type="text" id="uploadModelMatch" placeholder="e.g., ST16000NM001G" oninput="livePreview()">
+                            </div>
+                        </div>
+                        <div id="hddFields">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                                <div class="form-row">
+                                    <label>Interface</label>
+                                    <select id="uploadInterface" onchange="livePreview()">
+                                        <option value="SATA">SATA</option>
+                                        <option value="SAS">SAS</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label>Apply to entire family? <span style="color:#666; font-size:0.75rem;">(assigns to all models in same family &amp; track)</span></label>
+                                    <select id="uploadFamily" onchange="livePreview()">
+                                        <option value="">— None (single model only) —</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label>Compatible Source Versions <span style="color:#666; font-size:0.75rem;">(drives must be running one of these — press Enter to add)</span></label>
+                                <div class="chip-input-container" id="upgradeFromChips" onclick="this.querySelector('.chip-text-input').focus()">
+                                    <input type="text" class="chip-text-input" id="upgradeFromInput" placeholder="e.g., SN01, SN02, SN03, SN04...">
+                                </div>
                             </div>
                         </div>
                         <div class="form-row">
-                            <label>Firmware Version</label>
-                            <input type="text" id="uploadVersion" placeholder="e.g., 24.22.00.00">
+                            <label>Target Firmware Version</label>
+                            <input type="text" id="uploadVersion" placeholder="e.g., SN05 or 25.00.00.00" oninput="livePreview()">
                         </div>
                         <div class="form-row">
                             <label>Release Notes</label>
                             <textarea id="uploadNotes" placeholder="Optional notes..."></textarea>
                         </div>
-                        <button class="btn btn-primary" onclick="doUpload()">⬆️ Upload & Assign</button>
+                        <div id="uploadPreview" style="display:none; margin:1rem 0; padding:0.75rem; background:#0a0a15; border:1px solid #333; border-radius:6px; font-size:0.85rem;">
+                        </div>
+                        <button class="btn btn-primary" onclick="doUpload()">⬆️ Upload & Assign to Family</button>
+                        <button class="btn btn-secondary" onclick="previewUpload()">👁 Preview</button>
                         <button class="btn btn-secondary" onclick="cancelUpload()">Cancel</button>
                     </div>
                     <div class="upload-result" id="uploadResult"></div>
@@ -823,6 +1039,74 @@ APP_HTML = """<!DOCTYPE html>
     
     <div class="toast" id="toast"></div>
 
+    <!-- Edit Model Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h2>✏️ Edit Model: <span id="editModelTitle"></span></h2>
+            <input type="hidden" id="editModelKey">
+            <div class="form-grid">
+                <div class="form-row">
+                    <label>Vendor</label>
+                    <input type="text" id="editVendor">
+                </div>
+                <div class="form-row">
+                    <label>Family</label>
+                    <input type="text" id="editFamily">
+                </div>
+                <div class="form-row">
+                    <label>Interface</label>
+                    <input type="text" id="editInterface">
+                </div>
+                <div class="form-row">
+                    <label>Capacity</label>
+                    <input type="text" id="editCapacity">
+                </div>
+                <div class="form-row">
+                    <label>Part Match</label>
+                    <input type="text" id="editPartMatch">
+                </div>
+                <div class="form-row">
+                    <label>Latest Firmware</label>
+                    <input type="text" id="editVersion">
+                </div>
+                <div class="form-row">
+                    <label>Flash Tool</label>
+                    <input type="text" id="editFlashTool">
+                </div>
+                <div class="form-row">
+                    <label>Flashable</label>
+                    <select id="editFlashable"><option value="true">Yes</option><option value="false">No</option></select>
+                </div>
+                <div class="form-row span-2">
+                    <label>Flash Command</label>
+                    <input type="text" id="editFlashCommand">
+                </div>
+                <div class="form-row">
+                    <label>Requires Reboot</label>
+                    <select id="editReboot"><option value="true">Yes</option><option value="false">No</option></select>
+                </div>
+                <div class="form-row">
+                    <label>Firmware File</label>
+                    <input type="text" id="editFirmwareFile" readonly style="opacity:0.6" title="Upload a file to change this">
+                </div>
+                <div class="form-row span-2">
+                    <label>Compatible Source FW</label>
+                    <div class="chip-input-container" id="editUpgradeFromChips" onclick="this.querySelector('.chip-text-input').focus()">
+                        <input type="text" class="chip-text-input" id="editUpgradeFromInput" placeholder="Type prefix, press Enter...">
+                    </div>
+                </div>
+                <div class="form-row span-2">
+                    <label>Release Notes</label>
+                    <textarea id="editNotes" style="min-height:50px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveModelEdit()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let models = [];
         let pendingFile = null;
@@ -862,16 +1146,97 @@ APP_HTML = """<!DOCTYPE html>
             pendingFile = null;
             document.getElementById('uploadForm').style.display = 'none';
             fileInput.value = '';
+            clearUpgradeFromChips();
         }
-        
+
+        // ─── Chip input for upgrade_from ───────────────────────────────
+        const chipContainer = document.getElementById('upgradeFromChips');
+        const chipInput = document.getElementById('upgradeFromInput');
+
+        chipInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addChip(this.value.trim());
+                this.value = '';
+            }
+            if (e.key === 'Backspace' && this.value === '') {
+                const chips = chipContainer.querySelectorAll('.chip');
+                if (chips.length) chips[chips.length - 1].remove();
+            }
+        });
+
+        chipInput.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                addChip(this.value.trim());
+                this.value = '';
+            }
+        });
+
+        function addChip(value) {
+            value = value.replace(/,/g, '').trim().toUpperCase();
+            if (!value) return;
+            // Prevent duplicates
+            const existing = [...chipContainer.querySelectorAll('.chip')].map(c => c.dataset.value);
+            if (existing.includes(value)) return;
+
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.dataset.value = value;
+            chip.innerHTML = `${value}<span class="chip-remove" onclick="this.parentElement.remove()">&times;</span>`;
+            chipContainer.insertBefore(chip, chipInput);
+        }
+
+        function getUpgradeFromChips() {
+            return [...chipContainer.querySelectorAll('.chip')].map(c => c.dataset.value).join(',');
+        }
+
+        function clearUpgradeFromChips() {
+            chipContainer.querySelectorAll('.chip').forEach(c => c.remove());
+            chipInput.value = '';
+        }
+
+        function onCategoryChange() {
+            const cat = document.getElementById('uploadCategory').value;
+            const hddFields = document.getElementById('hddFields');
+            const modelInput = document.getElementById('uploadModelMatch');
+
+            if (cat === 'hdd') {
+                hddFields.style.display = 'block';
+                modelInput.placeholder = 'e.g., ST16000NM001G';
+            } else if (cat === 'hba') {
+                hddFields.style.display = 'none';
+                modelInput.placeholder = 'e.g., 9600-16i';
+            } else if (cat === 'nic') {
+                hddFields.style.display = 'none';
+                modelInput.placeholder = 'e.g., ConnectX-6 or P210p';
+            } else {
+                hddFields.style.display = 'none';
+                modelInput.placeholder = 'e.g., Micron_7450';
+            }
+            livePreview();
+        }
+
         async function doUpload() {
             if (!pendingFile) return;
             
+            const category = document.getElementById('uploadCategory').value;
+            const family = (category === 'hdd') ? document.getElementById('uploadFamily').value : '';
+            const iface = (category === 'hdd') ? document.getElementById('uploadInterface').value : '';
+            const version = document.getElementById('uploadVersion').value;
+            const modelMatch = document.getElementById('uploadModelMatch').value.trim();
+            
+            if (!family && !modelMatch) { showToast('Please enter a model number or select a family', 'error'); return; }
+            if (!version) { showToast('Please enter target firmware version', 'error'); return; }
+            
             const form = new FormData();
             form.append('file', pendingFile);
-            form.append('model', document.getElementById('uploadModel').value);
-            form.append('version', document.getElementById('uploadVersion').value);
+            form.append('category', category);
+            form.append('family', family);
+            form.append('interface', iface);
+            form.append('version', version);
+            form.append('model_match', modelMatch);
             form.append('notes', document.getElementById('uploadNotes').value);
+            form.append('upgrade_from', (category === 'hdd') ? getUpgradeFromChips() : '');
             
             try {
                 const resp = await fetch('/api/upload', { method: 'POST', body: form });
@@ -880,16 +1245,16 @@ APP_HTML = """<!DOCTYPE html>
                 const resultEl = document.getElementById('uploadResult');
                 resultEl.style.display = 'block';
                 
-                if (data.assigned) {
-                    resultEl.innerHTML = `✅ <strong>${data.filename}</strong> uploaded and assigned to <strong>${data.model}</strong><br>SHA256: ${data.sha256}<br><br>🔄 Signing & publishing...`;
-                    showToast('Uploaded and assigned!', 'success');
+                if (data.assigned_models && data.assigned_models.length > 0) {
+                    const action = data.created_new ? '🆕 Created new entry' : '🔗 Assigned';
+                    const target = modelMatch ? `model <code>${modelMatch}</code>` : `<strong>${family}</strong> ${iface} <code>${version.substring(0,2)}</code>-track`;
+                    resultEl.innerHTML = `✅ <strong>${data.filename}</strong> uploaded<br>${action} to <strong>${data.assigned_models.length}</strong> entry/entries: ${target}<br>SHA256: ${data.sha256}<br><br><span id="signStatus">🔄 Signing & publishing...</span>`;
                 } else if (data.warning) {
-                    resultEl.innerHTML = `⚠️ Uploaded <strong>${data.filename}</strong> but: ${data.warning}<br>SHA256: ${data.sha256}<br><br>🔄 Signing & publishing...`;
-                    showToast('Uploaded (not assigned)', 'success');
+                    resultEl.innerHTML = `⚠️ Uploaded <strong>${data.filename}</strong> but: ${data.warning}<br>SHA256: ${data.sha256}<br><br><span id="signStatus">🔄 Signing & publishing...</span>`;
                 } else {
-                    resultEl.innerHTML = `✅ <strong>${data.filename}</strong> uploaded (not assigned to any model)<br>SHA256: ${data.sha256}<br><br>🔄 Signing & publishing...`;
-                    showToast('File uploaded', 'success');
+                    resultEl.innerHTML = `✅ <strong>${data.filename}</strong> uploaded (no matching models found)<br>SHA256: ${data.sha256}<br><br><span id="signStatus">🔄 Signing & publishing...</span>`;
                 }
+                showToast('🔄 Signing & publishing...', 'progress', true);
                 
                 document.getElementById('uploadForm').style.display = 'none';
                 pendingFile = null;
@@ -899,15 +1264,21 @@ APP_HTML = """<!DOCTYPE html>
                 try {
                     const signResp = await fetch('/api/sign', { method: 'POST' });
                     const signData = await signResp.json();
+                    const signStatusEl = document.getElementById('signStatus');
                     if (signResp.ok) {
-                        resultEl.innerHTML = resultEl.innerHTML.replace('🔄 Signing & publishing...', '✅ Signed & published!');
-                        showToast('✓ Signed & published!', 'success');
+                        if (signStatusEl) signStatusEl.innerHTML = '✅ Signed & published!';
+                        else resultEl.innerHTML = resultEl.innerHTML.replace('🔄 Signing & publishing...', '✅ Signed & published!');
+                        updateToast('✅ Signed & published!', 'success');
                     } else {
-                        resultEl.innerHTML = resultEl.innerHTML.replace('🔄 Signing & publishing...', '❌ Sign failed: ' + signData.error);
-                        showToast('Sign failed: ' + signData.error, 'error');
+                        if (signStatusEl) signStatusEl.innerHTML = '❌ Sign failed: ' + signData.error;
+                        else resultEl.innerHTML = resultEl.innerHTML.replace('🔄 Signing & publishing...', '❌ Sign failed: ' + signData.error);
+                        updateToast('❌ Sign failed: ' + signData.error, 'error');
                     }
                 } catch (signErr) {
-                    resultEl.innerHTML = resultEl.innerHTML.replace('🔄 Signing & publishing...', '❌ Sign error: ' + signErr.message);
+                    const signStatusEl = document.getElementById('signStatus');
+                    if (signStatusEl) signStatusEl.innerHTML = '❌ Sign error: ' + signErr.message;
+                    else resultEl.innerHTML = resultEl.innerHTML.replace('🔄 Signing & publishing...', '❌ Sign error: ' + signErr.message);
+                    updateToast('❌ Sign error: ' + signErr.message, 'error');
                 }
                 
                 loadAll();
@@ -1151,17 +1522,114 @@ APP_HTML = """<!DOCTYPE html>
             await Promise.all([loadModels(), loadFiles()]);
             await loadFlashTools();
             loadModelFormDropdowns();
+            populateFamilyDropdown();
             buildSidebar();
             // Wire up vendor dropdown onchange
             document.getElementById('newModelVendor').onchange = onVendorChange;
         }
+
+        function populateFamilyDropdown() {
+            const families = new Set();
+            models.forEach(m => {
+                if (m.family && m.category === 'hdd') families.add(m.family);
+            });
+            const sel = document.getElementById('uploadFamily');
+            sel.innerHTML = '<option value="">— None (single model only) —</option>';
+            [...families].sort().forEach(f => {
+                sel.innerHTML += `<option value="${f}">${f}</option>`;
+            });
+        }
+
+        function livePreview() {
+            const category = document.getElementById('uploadCategory').value;
+            const family = (category === 'hdd') ? document.getElementById('uploadFamily').value : '';
+            const iface = (category === 'hdd') ? document.getElementById('uploadInterface').value : '';
+            const version = document.getElementById('uploadVersion').value;
+            const modelMatch = document.getElementById('uploadModelMatch').value.trim();
+            const previewEl = document.getElementById('uploadPreview');
+
+            // Don't show anything until there's at least some input
+            if (!family && !modelMatch && !version) {
+                previewEl.style.display = 'none';
+                return;
+            }
+
+            previewEl.style.display = 'block';
+
+            if ((!family && !modelMatch) || !version) {
+                previewEl.innerHTML = '<span style="color:#888;">Fill in model + version to see affected devices.</span>';
+                return;
+            }
+
+            const trackPrefix = version.substring(0, 2);
+            let matching = [];
+
+            // Filter models by selected category
+            const categoryModels = models.filter(m => m.category === category);
+
+            // Match by family + interface + track (HDD only)
+            if (family) {
+                const familyMatches = categoryModels.filter(m => 
+                    m.family === family && 
+                    m.interface === iface && 
+                    m.version && m.version.substring(0, 2) === trackPrefix
+                );
+                matching = matching.concat(familyMatches);
+            }
+
+            // Match by model number
+            if (modelMatch) {
+                const modelMatches = categoryModels.filter(m => {
+                    const entryModel = m.model || '';
+                    try {
+                        return new RegExp(entryModel, 'i').test(modelMatch) || 
+                               entryModel.toLowerCase() === modelMatch.toLowerCase();
+                    } catch(e) {
+                        return entryModel.toLowerCase() === modelMatch.toLowerCase();
+                    }
+                });
+                modelMatches.forEach(m => {
+                    if (!matching.find(x => x.model === m.model)) matching.push(m);
+                });
+            }
+
+            // Check if the entered model already exists in matches
+            const modelIsNew = modelMatch && !matching.find(m => 
+                (m.model || '').toLowerCase() === modelMatch.toLowerCase()
+            );
+
+            let html = '';
+            if (matching.length > 0) {
+                html += `✅ Compatible with <strong>${matching.length}</strong> existing model(s):<br>`;
+                html += '<div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.4rem;">';
+                matching.forEach(m => {
+                    const name = m.model || m.display_name;
+                    html += `<span style="display:inline-block; background:#1a2a3a; border:1px solid #2a4a6a; border-radius:4px; padding:0.2rem 0.5rem; font-size:0.8rem;">`;
+                    html += `<strong style="color:#4fc3f7;">${name}</strong>`;
+                    html += `</span>`;
+                });
+                html += '</div>';
+            }
+
+            if (modelIsNew) {
+                html += `<div style="margin-top:0.6rem; padding:0.4rem 0.6rem; background:#2a2a1a; border:1px solid #5a5a2a; border-radius:4px; font-size:0.85rem;">`;
+                html += `🆕 <strong style="color:#f39c12;">${modelMatch}</strong> is not in the manifest — a new entry will be created.`;
+                html += `</div>`;
+            }
+
+            if (matching.length === 0 && !modelIsNew) {
+                html = `⚠️ No matching entries found for this family/interface/track combination.`;
+            }
+
+            previewEl.innerHTML = html;
+        }
+
+        // Keep Preview button working (same as live)
+        function previewUpload() { livePreview(); }
         
         async function loadModels() {
             const resp = await fetch('/api/models');
             models = await resp.json();
-            
-            // Populate searchable model dropdown
-            populateModelDropdown(models);
             
             // Model grid
             const grid = document.getElementById('modelGrid');
@@ -1173,7 +1641,7 @@ APP_HTML = """<!DOCTYPE html>
                 
                 const subtitle = m.capacity ? `${m.category} • ${m.capacity}` : m.category;
                 
-                return `<div class="model-card">
+                return `<div class="model-card" onclick='openEditModal(${JSON.stringify(m)})'>
                     <div class="model-name">${m.display_name}</div>
                     <div class="model-meta">${m.category} • ${m.model}</div>
                     <div class="model-version">v${m.version || '?'}</div>
@@ -1258,73 +1726,140 @@ APP_HTML = """<!DOCTYPE html>
             return (bytes/(1024*1024)).toFixed(1) + ' MB';
         }
         
-        // ─── Searchable Model Dropdown ─────────────────────────────────
-        let modelOptions = [];
-        
-        function populateModelDropdown(modelList) {
-            modelOptions = [{value: '', label: '— Don\\'t assign —'}];
-            modelList.forEach(m => {
-                const label = `[${m.category}] ${m.display_name} — ${m.model}`;
-                modelOptions.push({value: m.model, label: label});
-            });
-            renderModelDropdown('');
-            document.getElementById('modelSearchInput').value = '';
-            document.getElementById('uploadModel').value = '';
-        }
-        
-        function renderModelDropdown(filter) {
-            const dd = document.getElementById('modelDropdown');
-            const filtered = modelOptions.filter(o => 
-                o.label.toLowerCase().includes(filter.toLowerCase())
-            );
-            dd.innerHTML = filtered.map(o => 
-                `<div class="dd-item" data-value="${o.value}" onclick="selectModel(this)">${o.label}</div>`
-            ).join('');
-        }
-        
-        function toggleModelDropdown(show) {
-            const dd = document.getElementById('modelDropdown');
-            if (show) {
-                renderModelDropdown(document.getElementById('modelSearchInput').value);
-                dd.classList.add('open');
-            } else {
-                setTimeout(() => dd.classList.remove('open'), 150);
-            }
-        }
-        
-        function selectModel(el) {
-            const value = el.dataset.value;
-            const label = el.textContent;
-            document.getElementById('uploadModel').value = value;
-            document.getElementById('modelSearchInput').value = value ? label : '';
-            document.getElementById('modelDropdown').classList.remove('open');
-        }
-        
-        document.addEventListener('click', function(e) {
-            if (!document.getElementById('modelSelectWrapper').contains(e.target)) {
-                document.getElementById('modelDropdown').classList.remove('open');
-            }
-        });
-        
-        // Wire up search input filtering
-        document.getElementById('modelSearchInput').addEventListener('input', function() {
-            renderModelDropdown(this.value);
-            document.getElementById('modelDropdown').classList.add('open');
-            // Clear selection if user is typing
-            document.getElementById('uploadModel').value = '';
-        });
-        
-        document.getElementById('modelSearchInput').addEventListener('focus', function() {
-            toggleModelDropdown(true);
-        });
-        
-        function showToast(msg, type) {
+        let toastTimer = null;
+        function showToast(msg, type, persistent) {
             const t = document.getElementById('toast');
             t.textContent = msg;
             t.className = `toast show ${type}`;
-            setTimeout(() => t.classList.remove('show'), 3000);
+            if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+            if (!persistent) {
+                toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+            }
         }
-        
+        function updateToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast show ${type}`;
+            if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+            toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+        // ─── Edit Modal ────────────────────────────────────────────────
+        const editModal = document.getElementById('editModal');
+        const editChipContainer = document.getElementById('editUpgradeFromChips');
+        const editChipInput = document.getElementById('editUpgradeFromInput');
+
+        editChipInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addEditChip(this.value.trim());
+                this.value = '';
+            }
+            if (e.key === 'Backspace' && this.value === '') {
+                const chips = editChipContainer.querySelectorAll('.chip');
+                if (chips.length) chips[chips.length - 1].remove();
+            }
+        });
+
+        editChipInput.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                addEditChip(this.value.trim());
+                this.value = '';
+            }
+        });
+
+        function addEditChip(value) {
+            value = value.replace(/,/g, '').trim().toUpperCase();
+            if (!value) return;
+            const existing = [...editChipContainer.querySelectorAll('.chip')].map(c => c.dataset.value);
+            if (existing.includes(value)) return;
+            const chip = document.createElement('span');
+            chip.className = 'chip';
+            chip.dataset.value = value;
+            chip.innerHTML = `${value}<span class="chip-remove" onclick="event.stopPropagation(); this.parentElement.remove()">&times;</span>`;
+            editChipContainer.insertBefore(chip, editChipInput);
+        }
+
+        function getEditChips() {
+            return [...editChipContainer.querySelectorAll('.chip')].map(c => c.dataset.value).join(',');
+        }
+
+        function clearEditChips() {
+            editChipContainer.querySelectorAll('.chip').forEach(c => c.remove());
+            editChipInput.value = '';
+        }
+
+        function openEditModal(m) {
+            document.getElementById('editModelKey').value = m.model;
+            document.getElementById('editModelTitle').textContent = m.display_name;
+            document.getElementById('editVendor').value = m.vendor || '';
+            document.getElementById('editFamily').value = m.family || '';
+            document.getElementById('editInterface').value = m.interface || '';
+            document.getElementById('editCapacity').value = m.capacity || '';
+            document.getElementById('editPartMatch').value = m.part_match || '';
+            document.getElementById('editVersion').value = m.version || '';
+            document.getElementById('editFlashTool').value = m.flash_tool || '';
+            document.getElementById('editFlashCommand').value = m.flash_command || '';
+            document.getElementById('editFlashable').value = m.flashable ? 'true' : 'false';
+            document.getElementById('editReboot').value = m.requires_reboot ? 'true' : 'false';
+            document.getElementById('editFirmwareFile').value = m.firmware_file || '';
+            document.getElementById('editNotes').value = m.release_notes || '';
+
+            // Populate upgrade_from chips
+            clearEditChips();
+            if (m.upgrade_from) {
+                m.upgrade_from.split(',').forEach(v => { if (v.trim()) addEditChip(v.trim()); });
+            }
+
+            editModal.classList.add('open');
+        }
+
+        function closeEditModal() {
+            editModal.classList.remove('open');
+        }
+
+        // Close modal on overlay click
+        editModal.addEventListener('click', function(e) {
+            if (e.target === this) closeEditModal();
+        });
+
+        async function saveModelEdit() {
+            const model = document.getElementById('editModelKey').value;
+            const payload = {
+                model: model,
+                vendor: document.getElementById('editVendor').value.trim(),
+                family: document.getElementById('editFamily').value.trim(),
+                interface: document.getElementById('editInterface').value.trim(),
+                capacity: document.getElementById('editCapacity').value.trim(),
+                part_match: document.getElementById('editPartMatch').value.trim(),
+                latest_firmware: document.getElementById('editVersion').value.trim(),
+                flash_tool: document.getElementById('editFlashTool').value.trim(),
+                flash_command: document.getElementById('editFlashCommand').value.trim(),
+                flashable: document.getElementById('editFlashable').value === 'true',
+                requires_reboot: document.getElementById('editReboot').value === 'true',
+                release_notes: document.getElementById('editNotes').value.trim(),
+                upgrade_from: getEditChips(),
+            };
+
+            try {
+                const resp = await fetch('/api/model/update', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    showToast(`Updated ${model}`, 'success');
+                    closeEditModal();
+                    loadAll();
+                } else {
+                    showToast(data.error || 'Update failed', 'error');
+                }
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
         loadAll();
     </script>
 </body>
@@ -1348,4 +1883,4 @@ if __name__ == "__main__":
     print(f"   GPG Key:  {GPG_KEY_ID}")
     print()
 
-    app.run(host=args.host, port=args.port, debug=False)
+    app.run(host=args.host, port=args.port, debug=False, threaded=True)

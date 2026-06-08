@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-06-05T19:50:28Z",
+  "last_updated": "2026-06-08T19:57:09Z",
   "maintained_by": "45Drives R&D",
   "description": "Firmware manifest for 45Drives hardware. Used by 45d-firmware-check to compare installed firmware against latest validated versions.",
   "components": {
@@ -277,15 +277,16 @@
         "vendor": "Seagate",
         "family": "Exos 7E8",
         "capacity": "8T",
-        "latest_firmware": "SN04",
+        "latest_firmware": "SN03",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "2026-06-05",
+        "release_date": "2026-06-08",
         "release_notes": "Exos 7E8 SATA 8T",
-        "firmware_file": "CimarronExos7E8SATA-STD-512E-SN04.LOD",
-        "sha256": "610c0b1ecdda01feae556c0576b9531d494128baa05cc61f16ebaaef0a932920"
+        "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
+        "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835",
+        "upgrade_from": "SN01,SN02"
       },
       {
         "model_match": "ST6000NM021A",
@@ -294,15 +295,16 @@
         "vendor": "Seagate",
         "family": "Exos 7E8",
         "capacity": "6T",
-        "latest_firmware": "SN04",
+        "latest_firmware": "SN03",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "2026-06-05",
+        "release_date": "2026-06-08",
         "release_notes": "Exos 7E8 SATA 6T",
-        "firmware_file": "CimarronExos7E8SATA-STD-512E-SN04.LOD",
-        "sha256": "610c0b1ecdda01feae556c0576b9531d494128baa05cc61f16ebaaef0a932920"
+        "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
+        "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835",
+        "upgrade_from": "SN01,SN02"
       },
       {
         "model_match": "ST4000NM000A",
@@ -430,7 +432,7 @@
         "vendor": "Seagate",
         "family": "Exos 7E10",
         "capacity": "4T",
-        "latest_firmware": "SN02",
+        "latest_firmware": "SN04",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
@@ -588,10 +590,11 @@
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "",
+        "release_date": "2026-06-08",
         "release_notes": "Exos X16 SATA 16T",
         "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
-        "sha256": ""
+        "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
+        "upgrade_from": "SN01,SN02,SN03"
       },
       {
         "model_match": "ST14000NM001G",
@@ -608,7 +611,8 @@
         "release_date": "",
         "release_notes": "Exos X16 SATA 14T",
         "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
-        "sha256": ""
+        "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
+        "upgrade_from": "SN01,SN02,SN03"
       },
       {
         "model_match": "ST12000NM001G",
@@ -625,7 +629,8 @@
         "release_date": "",
         "release_notes": "Exos X16 SATA 12T",
         "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
-        "sha256": ""
+        "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
+        "upgrade_from": "SN01,SN02,SN03"
       },
       {
         "model_match": "ST10000NM001G",
@@ -642,7 +647,8 @@
         "release_date": "",
         "release_notes": "Exos X16 SATA 10T",
         "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
-        "sha256": ""
+        "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
+        "upgrade_from": "SN01,SN02,SN03"
       },
       {
         "model_match": "ST18000NM009J",
@@ -659,7 +665,8 @@
         "release_date": "",
         "release_notes": "Exos X16 SATA 18T (SE-series, different LOD)",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "upgrade_from": "SE01"
       },
       {
         "model_match": "ST16000NM002G",
@@ -787,15 +794,15 @@
         "vendor": "Seagate",
         "family": "Exos X18",
         "capacity": "20T",
-        "latest_firmware": "SE06",
+        "latest_firmware": "SN06",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "",
+        "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 20T",
-        "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
-        "sha256": ""
+        "firmware_file": "EvansBPExosX18SATA-STD-5xxE-SE06.LOD",
+        "sha256": "590ae464c4bb08511c7f450b51b2be0e01e2762fa84c673bd3c20daa518d91dc"
       },
       {
         "model_match": "ST18000NM000J",
@@ -809,10 +816,10 @@
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "",
+        "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 18T",
         "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
-        "sha256": ""
+        "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
         "model_match": "ST16000NM000J",
@@ -829,7 +836,7 @@
         "release_date": "",
         "release_notes": "Exos X18 SATA 16T",
         "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
-        "sha256": ""
+        "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
         "model_match": "ST14000NM000J",
@@ -843,10 +850,10 @@
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "",
+        "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 14T",
         "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
-        "sha256": ""
+        "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
         "model_match": "ST12000NM000J",
@@ -863,7 +870,7 @@
         "release_date": "",
         "release_notes": "Exos X18 SATA 12T",
         "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
-        "sha256": ""
+        "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
         "model_match": "ST18000NM004J",
@@ -1506,10 +1513,10 @@
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "",
+        "release_date": "2026-06-08",
         "release_notes": "MobulaBP SATA 14T",
         "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
-        "sha256": ""
+        "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835"
       },
       {
         "model_match": "ST12000NM0008",
@@ -1526,7 +1533,7 @@
         "release_date": "",
         "release_notes": "MobulaBP SATA 12T",
         "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
-        "sha256": ""
+        "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835"
       },
       {
         "model_match": "ST10000NM0478",
@@ -1540,10 +1547,10 @@
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
         "requires_reboot": false,
-        "release_date": "",
+        "release_date": "2026-06-08",
         "release_notes": "MobulaBP SATA 10T",
         "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
-        "sha256": ""
+        "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835"
       },
       {
         "model_match": "ST14000NM0048",
@@ -1559,23 +1566,6 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "MobulaBP SAS 14T",
-        "firmware_file": "",
-        "sha256": ""
-      },
-      {
-        "model_match": "ST14000NM0081",
-        "part_match": "2H4201",
-        "interface": "SAS",
-        "vendor": "Seagate",
-        "family": "MobulaBP",
-        "capacity": "14T SED",
-        "latest_firmware": "E003",
-        "flash_tool": "SeaChest_Firmware",
-        "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
-        "flashable": true,
-        "requires_reboot": false,
-        "release_date": "",
-        "release_notes": "MobulaBP SAS 14T SED",
         "firmware_file": "",
         "sha256": ""
       },

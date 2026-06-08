@@ -424,6 +424,7 @@ def main():
                 "sha256": entry.get("sha256", ""),
                 "family": entry.get("family", ""),
                 "release_notes": entry.get("release_notes", ""),
+                "upgrade_from": entry.get("upgrade_from", ""),
             }
 
             # Verify firmware payload exists on disk if device is flashable
