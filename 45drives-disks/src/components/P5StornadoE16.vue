@@ -4,7 +4,7 @@
 
 <script>
 import P5 from "p5";
-import { ref, reactive, watch, onMounted, inject, provide } from "vue";
+import { ref, reactive, watch, onMounted, inject } from "vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
 import zfsAnimation from "./zfsAnimation.js";
 import loadingAnimation from "./loadingAnimation.js";
@@ -69,7 +69,7 @@ const assets = {
     devMode: false,
 };
 
-// E1S storage drive bays - TODO: adjust x,y coords after testing
+// E1S storage drive bays
 const diskLocations = [
     { x: 125, y: 119, w: 30, h: 99, BAY: "1-1", boot: false, occupied: false, image: null },
     { x: 196,  y: 119, w: 30, h: 99, BAY: "1-2", boot: false, occupied: false, image: null },
@@ -89,7 +89,7 @@ const diskLocations = [
     { x: 1196, y: 119, w: 30, h: 99, BAY: "1-16", boot: false, occupied: false, image: null },
 ];
 
-// Boot drive bays (15mm NVMe) - TODO: adjust x,y coords after testing
+// Boot drive bays (15mm NVMe)
 const bootDriveLocations = [
     { x: 452, y: 19.5, w: 196, h: 45, BAY: "boot-1", boot: true, occupied: false, image: null },
     { x: 749, y: 19.5, w: 196, h: 45, BAY: "boot-2", boot: true, occupied: false, image: null },
@@ -110,36 +110,50 @@ export default {
         const diskInfo = inject("diskInfo");
         const zfsInfo = inject("zfsInfo");
         const enableZfsAnimations = inject("enableZfsAnimations");
-
-        // Boot drive info fetched via nvme list
-        const bootDrives = reactive([]);
-        provide("bootDrives", bootDrives);
+        const bootDrives = inject("bootDrives");
+        // console.log("P5StornadoE16: Injected bootDrives:", bootDrives);
 
         async function fetchBootDrives() {
             try {
-                // Find ANY device (NVMe, SATA, etc.) that has boot-related partitions
+                // console.log("fetchBootDrives: Starting boot drive detection...");
+                
+                // Strategy: Find drives with partitions that are NOT in lsdev output
+                // These are boot drives (OS drives not managed as storage)
+                
+                // Get lsdev output to know which drives are storage drives
+                const lsdevProc = await unwrap(server.execute(
+                    new Command(["lsdev", "-j"], { superuser: "try" })
+                ));
+                const lsdevData = JSON.parse(lsdevProc.getStdout());
+                const storageDrives = new Set();
+                lsdevData.rows.flat().forEach(disk => {
+                    if (disk.dev) storageDrives.add(disk.dev);
+                });
+                // console.log("fetchBootDrives: Storage drives from lsdev:", Array.from(storageDrives));
+
+                // Get all block devices
                 const lsblkProc = await unwrap(server.execute(
                     new Command(["lsblk", "-J", "-o", "NAME,MOUNTPOINT,PKNAME,TYPE,SIZE,MODEL,SERIAL,FSTYPE,PARTTYPE,PATH"], { superuser: "require" })
                 ));
                 const lsblkData = JSON.parse(lsblkProc.getStdout());
                 const blockdevices = lsblkData.blockdevices || [];
+                // console.log("fetchBootDrives: Total block devices:", blockdevices.length);
 
-                // Find parent disks that contain boot/EFI partitions
-                const EFI_PARTTYPE = "c12a7328-f81f-11d2-ba4b-00a9a104f3cd";
+                // Find disks with partitions that aren't in lsdev (= boot drives)
                 const bootDevices = [];
-                
                 blockdevices.forEach((dev) => {
-                    const children = dev.children || [];
-                    const hasBoot = children.some((part) =>
-                        part.mountpoint === "/boot" ||
-                        part.mountpoint === "/boot/efi" ||
-                        part.mountpoint === "/efi" ||
-                        (part.parttype && part.parttype.toLowerCase() === EFI_PARTTYPE)
-                    );
-                    if (hasBoot && dev.type === "disk") {
+                    const devPath = dev.path || `/dev/${dev.name}`;
+                    const hasPartitions = dev.children && dev.children.length > 0;
+                    const isNotStorageDrive = !storageDrives.has(devPath);
+                    
+                    // console.log(`fetchBootDrives: Checking ${dev.name}: path=${devPath}, hasPartitions=${hasPartitions}, isNotStorageDrive=${isNotStorageDrive}, type=${dev.type}`);
+                    
+                    if (dev.type === "disk" && hasPartitions && isNotStorageDrive) {
+                        // console.log(`fetchBootDrives: ✓ Adding ${dev.name} as boot drive`);
                         bootDevices.push(dev);
                     }
                 });
+                // console.log("fetchBootDrives: Found boot devices:", bootDevices.length);
 
                 // Format boot devices to match lsdevJson structure
                 bootDrives.splice(0, bootDrives.length);
@@ -163,15 +177,21 @@ export default {
                     });
                 });
 
+                // console.log("Boot drives detected:", bootDrives.length, bootDrives);
+
                 // Mark boot bays as occupied and assign images
                 bootDriveLocations.forEach((loc, i) => {
                     if (i < bootDrives.length) {
                         loc.occupied = true;
                         loc.image = getBootDiskImage(bootDrives[i]["model-name"]);
+                    } else {
+                        loc.occupied = false;
+                        loc.image = null;
                     }
                 });
             } catch (error) {
-                console.error("Failed to fetch boot drive info:", error);
+                console.error("fetchBootDrives: Failed to fetch boot drive info:", error);
+                console.error("fetchBootDrives: Error details:", error.message, error.stack);
             }
         }
 
@@ -182,11 +202,20 @@ export default {
             return assets.disks.boot.default.image;
         }
 
+        function fixDiskType(slot) {
+            // Override generic "SSD" label for NVMe devices to be more specific
+            if (slot.dev && slot.dev.includes("nvme") && slot["disk_type"] === "SSD") {
+                slot["disk_type"] = "NVMe";
+            }
+            return slot;
+        }
+
         watch(
             diskInfo,
             () => {
                 diskInfoObj.value = diskInfo;
                 diskInfoObj.value.rows.flat().forEach((slot) => {
+                    fixDiskType(slot);
                     const index = allLocations.findIndex(
                         (loc) => loc.BAY === slot["bay-id"]
                     );
@@ -210,6 +239,7 @@ export default {
                 diskInfoObj.value = lsdevJson;
                 assets.loadingFlag = false;
                 diskInfoObj.value.rows.flat().forEach((slot) => {
+                    fixDiskType(slot);
                     const index = allLocations.findIndex(
                         (loc) => loc.BAY === slot["bay-id"]
                     );
@@ -242,16 +272,16 @@ export default {
             if (DEV_MODE && !isBoot) {
                 return assets.disks.ssd.samsungE1S.image;
             }
-            // NVMe model matching
-            if (/NVMe Micron/.test(modelName)) {
-                return category.micronNvme.image;
-            }
-            if (/NVMe XP/.test(modelName)) {
-                return category.seagateNvme.image;
-            }
-            // E1S specific (storage bays only)
-            if (!isBoot && /Samsung/.test(modelName)) {
+            // E1.S specific (storage bays only) - Micron 7450, Micron E1.S (MTFDLCE), and Samsung E1.S
+            if (!isBoot && (/Micron_7450/.test(modelName) || /MTFDLCE/.test(modelName) || /MTFDKCE/.test(modelName) || /Samsung.*E1S/.test(modelName) || /SAMSUNG.*MZTL2/.test(modelName))) {
                 return assets.disks.ssd.samsungE1S.image;
+            }
+            // Standard NVMe model matching (for boot drives and non-E1S)
+            if (/NVMe Micron/.test(modelName) || /Micron/.test(modelName)) {
+                return category.micronNvme?.image || category.default.image;
+            }
+            if (/NVMe XP/.test(modelName) || /Seagate/.test(modelName)) {
+                return category.seagateNvme?.image || category.default.image;
             }
             return category.default.image;
         }
@@ -343,10 +373,10 @@ export default {
                 }
 
                 // DEBUG: Show X,Y coords in image for drive positioning
-                p5.noStroke();
-                p5.fill(255);
-                p5.textSize(16);
-                p5.text(`x:${p5.mouseX} y:${p5.mouseY}`, 10, 20);
+                // p5.noStroke();
+                // p5.fill(255);
+                // p5.textSize(16);
+                // p5.text(`x:${p5.mouseX} y:${p5.mouseY}`, 10, 20);
 
             };
 
@@ -366,13 +396,15 @@ export default {
                 });
 
                 // DEBUG: Show X,Y coords in console on click for drive positioning
-                console.log("CLICK", { x: p5.mouseX, y: p5.mouseY });
+                // console.log("CLICK", { x: p5.mouseX, y: p5.mouseY });
 
             };
         };
 
         onMounted(() => {
+            console.log("P5StornadoE16: Component mounted, initializing...");
             new P5(p5Script);
+            console.log("P5StornadoE16: Calling fetchBootDrives...");
             fetchBootDrives();
         });
 

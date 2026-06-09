@@ -195,7 +195,8 @@ export default {
     const diskObj = reactive({});
     const lsdevJson = inject("lsdevJson");
     const diskInfo = inject("diskInfo");
-    const bootDrives = inject("bootDrives", reactive([]));
+    const bootDrives = inject("bootDrives");
+    // console.log("DiskSection: Injected bootDrives:", bootDrives);
     const loadingSpinner = ref(true);
     // console.log('disks info:', diskInfo)
     // console.log('lsDev info:', lsdevJson)
@@ -204,11 +205,15 @@ export default {
       
       // Check if it's a boot drive
       if (currentDisk.value.startsWith("boot-")) {
+        // console.log("Looking for boot drive:", currentDisk.value, "in", bootDrives);
         const bootDrive = bootDrives.find((drive) => drive["bay-id"] === currentDisk.value);
         if (bootDrive) {
+        //   console.log("Found boot drive:", bootDrive);
           Object.assign(diskObj, bootDrive);
           loadingSpinner.value = false;
           return;
+        } else {
+          console.log("Boot drive not found in bootDrives array");
         }
       }
       
@@ -234,7 +239,7 @@ export default {
 
     watch(currentDisk, updateDiskObj);
     watch(lsdevJson, updateDiskObj); //when lsdev is run again on udev rule trigger
-    watch(bootDrives, updateDiskObj); //when boot drives are fetched
+    watch(bootDrives, updateDiskObj, { deep: true }); //when boot drives are fetched
 
     return {
       wMsg,

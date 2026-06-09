@@ -43,6 +43,8 @@ export default {
     provide("enableZfsAnimations", enableZfsAnimations);
     const pageLayout = ref("AZ");
     provide("pageLayout", pageLayout);
+    const bootDrives = reactive([]);
+    provide("bootDrives", bootDrives);
 
     const delay = (s) => new Promise((res) => setTimeout(res, s * 1000));
 
