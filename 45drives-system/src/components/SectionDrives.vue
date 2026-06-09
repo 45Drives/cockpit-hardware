@@ -18,6 +18,7 @@
                 <tr>
                   <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Device</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Model</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Family</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Serial</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Size</th>
@@ -26,14 +27,15 @@
               </thead>
               <tbody class="divide-y divide-default bg-default">
                 <tr v-if="loading">
-                  <td colspan="6" class="py-4 text-center text-sm text-muted">Loading drives...</td>
+                  <td colspan="7" class="py-4 text-center text-sm text-muted">Loading drives...</td>
                 </tr>
                 <tr v-else-if="drives.length === 0">
-                  <td colspan="6" class="py-4 text-center text-sm text-muted">No drives detected</td>
+                  <td colspan="7" class="py-4 text-center text-sm text-muted">No drives detected</td>
                 </tr>
                 <tr v-for="drive in drives" :key="drive.device">
                   <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-default sm:pl-6">/dev/{{ drive.device }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.model || '—' }}</td>
+                  <td class="whitespace-nowrap px-3 py-3 text-sm text-muted">{{ drive.family || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-xs text-muted font-mono">{{ drive.serial || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.type }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.size }}</td>

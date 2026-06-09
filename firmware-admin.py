@@ -95,11 +95,8 @@ def get_all_models():
             interface = entry.get("interface", "")
             vendor = entry.get("vendor", "")
             # Build a readable display name
-            capacity = entry.get("capacity", "")
             if family:
                 display = f"{vendor} {family}" if vendor else family
-                if capacity:
-                    display += f" {capacity}"
                 if interface:
                     display += f" ({interface})"
             elif "|" in model_match:
@@ -115,7 +112,6 @@ def get_all_models():
                 "display_name": display,
                 "family": family,
                 "interface": interface,
-                "capacity": entry.get("capacity", ""),
                 "vendor": vendor,
                 "version": entry.get("latest_firmware", ""),
                 "firmware_file": entry.get("firmware_file", ""),
@@ -124,7 +120,6 @@ def get_all_models():
                 "flash_command": entry.get("flash_command", ""),
                 "flashable": entry.get("flashable", False),
                 "requires_reboot": entry.get("requires_reboot", False),
-                "part_match": entry.get("part_match", ""),
                 "release_notes": entry.get("release_notes", ""),
                 "release_date": entry.get("release_date", ""),
                 "upgrade_from": entry.get("upgrade_from", ""),
@@ -156,7 +151,7 @@ def api_model_update():
                 editable = [
                     "latest_firmware", "firmware_file", "flash_tool", "flash_command",
                     "flashable", "requires_reboot", "release_notes", "release_date",
-                    "upgrade_from", "part_match", "family", "interface", "capacity", "vendor"
+                    "upgrade_from", "family", "interface", "vendor"
                 ]
                 for field in editable:
                     if field in data:
@@ -303,6 +298,12 @@ def api_upload():
 
     if not family and not model_match_input:
         return jsonify({"error": "Family or model number is required"}), 400
+    if category == "hdd" and not family:
+        return jsonify({"error": "Family is required for HDD uploads"}), 400
+    if category == "hdd" and not model_match_input:
+        return jsonify({"error": "Model number is required for HDD uploads"}), 400
+    if category == "hdd" and not upgrade_from:
+        return jsonify({"error": "Compatible source versions (upgrade_from) is required for HDD uploads"}), 400
     if not version:
         return jsonify({"error": "Firmware version is required"}), 400
 
@@ -342,9 +343,10 @@ def api_upload():
         matched = False
 
         # Match by family + interface + track prefix (HDD)
+        # Also match models with no firmware yet (empty version = newly added)
         if (family and entry_family == family and
                 entry_interface == interface and
-                entry_track == track_prefix):
+                (entry_track == track_prefix or not entry_version)):
             matched = True
 
         # Match by model number
@@ -476,6 +478,8 @@ def api_add_model():
 
     if not category or not model_match:
         return jsonify({"error": "category and model_match are required"}), 400
+    if category == "hdd" and not data.get("family", "").strip():
+        return jsonify({"error": "Family is required for HDD entries"}), 400
 
     manifest = load_manifest()
     components = manifest.setdefault("components", {})
@@ -485,6 +489,9 @@ def api_add_model():
         for entry in entries:
             if entry.get("model_match", "").lower() == model_match.lower():
                 return jsonify({"error": f"Model '{model_match}' already exists in [{cat}]"}), 409
+
+    # Optional fields
+    family = data.get("family", "").strip()
 
     # Create new entry
     new_entry = {
@@ -500,6 +507,8 @@ def api_add_model():
         "firmware_file": "",
         "sha256": ""
     }
+    if family:
+        new_entry["family"] = family
 
     # Add to category (create category if needed)
     if category not in components:
@@ -973,6 +982,9 @@ APP_HTML = """<!DOCTYPE html>
                             <div class="form-row">
                                 <label>Model Number <span style="color:#666; font-size:0.75rem;">(from firmware release notes)</span></label>
                                 <input type="text" id="uploadModelMatch" placeholder="e.g., ST16000NM001G" oninput="livePreview()">
+                                <select id="uploadModelMatchHBA" style="display:none" onchange="onHBAModelSelect(); livePreview()">
+                                    <option value="">— Select HBA model —</option>
+                                </select>
                             </div>
                         </div>
                         <div id="hddFields">
@@ -1023,7 +1035,7 @@ APP_HTML = """<!DOCTYPE html>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                         <div class="form-row">
                             <label>Category</label>
-                            <select id="newModelCategory"></select>
+                            <select id="newModelCategory" onchange="onAddModelCategoryChange()"></select>
                         </div>
                         <div class="form-row">
                             <label>Model Match (regex)</label>
@@ -1044,6 +1056,11 @@ APP_HTML = """<!DOCTYPE html>
                         <div class="form-row" style="grid-column: span 2">
                             <label>Flash Command Template <span style="color:#666; font-size:0.75rem;">(auto-filled from tool, editable)</span></label>
                             <input type="text" id="newModelFlashCmd" placeholder="Auto-fills when you pick a tool">
+                        </div>
+                        <div class="form-row" id="newModelFamilyRow">
+                            <label>Family <span style="color:#666; font-size:0.75rem;">(HDD only)</span></label>
+                            <select id="newModelFamily"><option value="">— None —</option></select>
+                            <input type="text" id="newModelFamilyCustom" placeholder="Or type new family" style="margin-top:0.3rem;">
                         </div>
                         <div class="form-row">
                             <label>Requires Reboot</label>
@@ -1153,14 +1170,6 @@ APP_HTML = """<!DOCTYPE html>
                 <div class="form-row">
                     <label>Interface</label>
                     <input type="text" id="editInterface">
-                </div>
-                <div class="form-row">
-                    <label>Capacity</label>
-                    <input type="text" id="editCapacity">
-                </div>
-                <div class="form-row">
-                    <label>Part Match</label>
-                    <input type="text" id="editPartMatch">
                 </div>
                 <div class="form-row">
                     <label>Latest Firmware</label>
@@ -1301,18 +1310,31 @@ APP_HTML = """<!DOCTYPE html>
             const cat = document.getElementById('uploadCategory').value;
             const hddFields = document.getElementById('hddFields');
             const modelInput = document.getElementById('uploadModelMatch');
+            const hbaSelect = document.getElementById('uploadModelMatchHBA');
+
+            // Clear previous state
+            modelInput.value = '';
+            hbaSelect.value = '';
 
             if (cat === 'hdd') {
                 hddFields.style.display = 'block';
+                modelInput.style.display = 'block';
+                hbaSelect.style.display = 'none';
                 modelInput.placeholder = 'e.g., ST16000NM001G';
             } else if (cat === 'hba') {
                 hddFields.style.display = 'none';
-                modelInput.placeholder = 'e.g., 9600-16i';
+                modelInput.style.display = 'none';
+                hbaSelect.style.display = 'block';
+                populateHBADropdown();
             } else if (cat === 'nic') {
                 hddFields.style.display = 'none';
+                modelInput.style.display = 'block';
+                hbaSelect.style.display = 'none';
                 modelInput.placeholder = 'e.g., ConnectX-6 or P210p';
             } else {
                 hddFields.style.display = 'none';
+                modelInput.style.display = 'block';
+                hbaSelect.style.display = 'none';
                 modelInput.placeholder = 'e.g., Micron_7450';
             }
             livePreview();
@@ -1325,9 +1347,16 @@ APP_HTML = """<!DOCTYPE html>
             const family = (category === 'hdd') ? document.getElementById('uploadFamily').value : '';
             const iface = (category === 'hdd') ? document.getElementById('uploadInterface').value : '';
             const version = document.getElementById('uploadVersion').value;
-            const modelMatch = document.getElementById('uploadModelMatch').value.trim();
+            const modelMatch = (category === 'hba')
+                ? document.getElementById('uploadModelMatchHBA').value
+                : document.getElementById('uploadModelMatch').value.trim();
             
             if (!family && !modelMatch) { showToast('Please enter a model number or select a family', 'error'); return; }
+            if (category === 'hba' && !modelMatch) { showToast('Please select an HBA model', 'error'); return; }
+            if (category === 'hdd' && !family) { showToast('Family is required for HDD uploads', 'error'); return; }
+            if (category === 'hdd' && !modelMatch) { showToast('Model number is required for HDD uploads', 'error'); return; }
+            if (category === 'hdd' && !version) { showToast('Firmware version is required for HDD uploads', 'error'); return; }
+            if (category === 'hdd' && !getUpgradeFromChips()) { showToast('Compatible source versions is required for HDD uploads', 'error'); return; }
             if (!version) { showToast('Please enter target firmware version', 'error'); return; }
             
             const form = new FormData();
@@ -1535,6 +1564,16 @@ APP_HTML = """<!DOCTYPE html>
             vendorSelect.innerHTML = '<option value="">— Select —</option>';
             vendors.forEach(v => { vendorSelect.innerHTML += `<option value="${v}">${v}</option>`; });
             vendorSelect.innerHTML += '<option value="__new__">+ New vendor...</option>';
+
+            // Populate family dropdown from existing HDD models
+            const families = [...new Set(models.filter(m => m.category === 'hdd' && m.family).map(m => m.family))].sort();
+            const familySelect = document.getElementById('newModelFamily');
+            familySelect.innerHTML = '<option value="">— None —</option>';
+            families.forEach(f => { familySelect.innerHTML += `<option value="${f}">${f}</option>`; });
+            familySelect.innerHTML += '<option value="__new__">+ New family...</option>';
+            familySelect.onchange = function() {
+                document.getElementById('newModelFamilyCustom').style.display = this.value === '__new__' ? 'block' : 'none';
+            };
             
             // Populate category dropdown from existing + defaults
             const existingCats = [...new Set(models.map(m => m.category))];
@@ -1542,6 +1581,17 @@ APP_HTML = """<!DOCTYPE html>
             const allCats = [...new Set([...existingCats, ...defaultCats])];
             const catSelect = document.getElementById('newModelCategory');
             catSelect.innerHTML = allCats.map(c => `<option value="${c}">${c.toUpperCase()}</option>`).join('');
+            onAddModelCategoryChange();
+        }
+
+        function onAddModelCategoryChange() {
+            const cat = document.getElementById('newModelCategory').value;
+            const familyRow = document.getElementById('newModelFamilyRow');
+            if (cat === 'hdd') {
+                familyRow.style.display = 'block';
+            } else {
+                familyRow.style.display = 'none';
+            }
         }
         
         function onFlashToolChange() {
@@ -1593,15 +1643,22 @@ APP_HTML = """<!DOCTYPE html>
             
             const flash_command = document.getElementById('newModelFlashCmd').value.trim();
             const requires_reboot = document.getElementById('newModelReboot').value === 'true';
+
+            // HDD-specific fields
+            const familySelect = document.getElementById('newModelFamily');
+            const family = familySelect.value === '__new__'
+                ? document.getElementById('newModelFamilyCustom').value.trim()
+                : (familySelect.value || document.getElementById('newModelFamilyCustom').value.trim());
             
             if (!model_match) { showToast('Model match is required', 'error'); return; }
             if (!flash_tool) { showToast('Flash tool is required', 'error'); return; }
+            if (category === 'hdd' && !family) { showToast('Family is required for HDD entries', 'error'); return; }
             
             try {
                 const resp = await fetch('/api/add-model', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ category, model_match, vendor, flash_tool, flash_command, requires_reboot })
+                    body: JSON.stringify({ category, model_match, vendor, flash_tool, flash_command, requires_reboot, family })
                 });
                 const data = await resp.json();
                 if (resp.ok) {
@@ -1610,6 +1667,7 @@ APP_HTML = """<!DOCTYPE html>
                     document.getElementById('newModelVendorCustom').value = '';
                     document.getElementById('newModelFlashToolCustom').value = '';
                     document.getElementById('newModelFlashCmd').value = '';
+                    document.getElementById('newModelFamilyCustom').value = '';
                     loadAll();
                 } else {
                     showToast(data.error, 'error');
@@ -1642,12 +1700,29 @@ APP_HTML = """<!DOCTYPE html>
             });
         }
 
+        function populateHBADropdown() {
+            const hbaModels = models.filter(m => m.category === 'hba');
+            const sel = document.getElementById('uploadModelMatchHBA');
+            sel.innerHTML = '<option value="">— Select HBA model —</option>';
+            hbaModels.forEach(m => {
+                const label = m.model + (m.version ? ` (current: ${m.version})` : '');
+                sel.innerHTML += `<option value="${m.model}">${label}</option>`;
+            });
+        }
+
+        function onHBAModelSelect() {
+            const sel = document.getElementById('uploadModelMatchHBA');
+            document.getElementById('uploadModelMatch').value = sel.value;
+        }
+
         function livePreview() {
             const category = document.getElementById('uploadCategory').value;
             const family = (category === 'hdd') ? document.getElementById('uploadFamily').value : '';
             const iface = (category === 'hdd') ? document.getElementById('uploadInterface').value : '';
             const version = document.getElementById('uploadVersion').value;
-            const modelMatch = document.getElementById('uploadModelMatch').value.trim();
+            const modelMatch = (category === 'hba')
+                ? document.getElementById('uploadModelMatchHBA').value
+                : document.getElementById('uploadModelMatch').value.trim();
             const previewEl = document.getElementById('uploadPreview');
 
             // Don't show anything until there's at least some input
@@ -1658,8 +1733,16 @@ APP_HTML = """<!DOCTYPE html>
 
             previewEl.style.display = 'block';
 
+            if (category === 'hba' && !modelMatch) {
+                previewEl.innerHTML = '<span style="color:#888;">Select an HBA model to see the target device.</span>';
+                return;
+            }
+            if (category === 'hba' && !version) {
+                previewEl.innerHTML = '<span style="color:#888;">Enter the target firmware version.</span>';
+                return;
+            }
             if ((!family && !modelMatch) || !version) {
-                previewEl.innerHTML = '<span style="color:#888;">Fill in model + version to see affected devices.</span>';
+                previewEl.innerHTML = '<span style="color:#888;">Fill in family, model &amp; version to see affected devices.</span>';
                 return;
             }
 
@@ -1674,7 +1757,7 @@ APP_HTML = """<!DOCTYPE html>
                 const familyMatches = categoryModels.filter(m => 
                     m.family === family && 
                     m.interface === iface && 
-                    m.version && m.version.substring(0, 2) === trackPrefix
+                    (!m.version || m.version.substring(0, 2) === trackPrefix)
                 );
                 matching = matching.concat(familyMatches);
             }
@@ -1813,7 +1896,7 @@ APP_HTML = """<!DOCTYPE html>
                         else badge = '<span class="badge badge-missing">✗</span>';
                         return `<div class="model-card" data-family-idx="${i}">
                             <div class="model-name">${m.model}</div>
-                            <div class="model-meta">${m.interface || ''} • ${m.capacity || ''}</div>
+                            <div class="model-meta">${m.interface || ''}</div>
                             <div class="model-version">v${m.version || '?'}</div>
                             <div class="model-file">${m.firmware_file || '—'}</div>
                             ${badge}
@@ -1850,9 +1933,9 @@ APP_HTML = """<!DOCTYPE html>
             if (!raw) { showToast('Paste model numbers first', 'error'); return; }
 
             // Parse lines: each line is "MODEL" or "MODEL,FIRMWARE"
-            const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+            const lines = raw.split('\\n').map(l => l.trim()).filter(Boolean);
             const modelList = lines.map(line => {
-                const parts = line.split(/[,\t]+/);
+                const parts = line.split(/[,\\t]+/);
                 return { model: parts[0].trim(), firmware: (parts[1] || '').trim() };
             });
 
@@ -1975,31 +2058,31 @@ APP_HTML = """<!DOCTYPE html>
                     parsed.push(json.model_name + (json.firmware_version ? ',' + json.firmware_version : ''));
                 }
                 if (parsed.length > 0) {
-                    document.getElementById('coverageInput').value = parsed.join('\\n');
+                    document.getElementById('coverageInput').value = parsed.join('\\\\n');
                     showToast(`Parsed ${parsed.length} device(s)`, 'success');
                     return;
                 }
             } catch(e) {
                 // Not JSON — try to extract model numbers from smartctl text output
                 const modelLines = [];
-                const lines = raw.split('\\n');
+                const lines = raw.split('\\\\n');
                 for (const line of lines) {
                     // Match "Device Model:" or "Product:" lines from smartctl -i
-                    let m = line.match(/(?:Device Model|Product|Model Number):\\s*(.+)/i);
+                    let m = line.match(/(?:Device Model|Product|Model Number):\\\\s*(.+)/i);
                     if (m) {
                         let model = m[1].trim();
                         // Try to find firmware on nearby lines
                         modelLines.push(model);
                     }
                     // Match "Firmware Version:" 
-                    let fw = line.match(/(?:Firmware Version|Revision):\\s*(.+)/i);
+                    let fw = line.match(/(?:Firmware Version|Revision):\\\\s*(.+)/i);
                     if (fw && modelLines.length > 0) {
                         // Append firmware to last model
                         modelLines[modelLines.length - 1] += ',' + fw[1].trim();
                     }
                 }
                 if (modelLines.length > 0) {
-                    document.getElementById('coverageInput').value = modelLines.join('\\n');
+                    document.getElementById('coverageInput').value = modelLines.join('\\\\n');
                     showToast(`Extracted ${modelLines.length} model(s) from text`, 'success');
                     return;
                 }
@@ -2173,8 +2256,6 @@ APP_HTML = """<!DOCTYPE html>
             document.getElementById('editVendor').value = m.vendor || '';
             document.getElementById('editFamily').value = m.family || '';
             document.getElementById('editInterface').value = m.interface || '';
-            document.getElementById('editCapacity').value = m.capacity || '';
-            document.getElementById('editPartMatch').value = m.part_match || '';
             document.getElementById('editVersion').value = m.version || '';
             document.getElementById('editFlashTool').value = m.flash_tool || '';
             document.getElementById('editFlashCommand').value = m.flash_command || '';
@@ -2208,8 +2289,6 @@ APP_HTML = """<!DOCTYPE html>
                 vendor: document.getElementById('editVendor').value.trim(),
                 family: document.getElementById('editFamily').value.trim(),
                 interface: document.getElementById('editInterface').value.trim(),
-                capacity: document.getElementById('editCapacity').value.trim(),
-                part_match: document.getElementById('editPartMatch').value.trim(),
                 latest_firmware: document.getElementById('editVersion').value.trim(),
                 flash_tool: document.getElementById('editFlashTool').value.trim(),
                 flash_command: document.getElementById('editFlashCommand').value.trim(),

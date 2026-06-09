@@ -227,22 +227,6 @@ def match_device_to_manifest(device, manifest):
         # Check if device model matches the manifest pattern (regex)
         try:
             if re.search(model_pattern, device_model, re.IGNORECASE):
-                # For HDDs, also check part_match if specified
-                if device_type == "hdd":
-                    # Note: interface check removed - model number encodes SAS/SATA
-                    # and SATA drives behind SAS HBAs report as SAS transport
-
-                    # Check part_match if specified in manifest entry
-                    part_match = entry.get("part_match", "")
-                    device_part = device.get("part_number", "")
-                    if part_match:
-                        # If manifest requires part_match but device has no part number
-                        # (common with SAS "Product" field), skip to avoid ambiguity
-                        if not device_part:
-                            continue
-                        if not re.search(part_match, device_part, re.IGNORECASE):
-                            continue
-
                 return entry
         except re.error:
             # Invalid regex, try exact match
@@ -256,6 +240,9 @@ def compare_firmware(device_fw, manifest_fw):
     """
     Compare firmware versions.
     Returns: 'current', 'outdated', or 'unknown'
+    
+    Handles multi-part version strings (e.g. Intel NICs report
+    "9.56 0x80010136 1.3909.0" where the first token is the NVM version).
     """
     if not manifest_fw:
         return "unknown"
@@ -266,10 +253,19 @@ def compare_firmware(device_fw, manifest_fw):
     device_fw_norm = device_fw.strip().upper()
     manifest_fw_norm = manifest_fw.strip().upper()
 
+    # Exact match
     if device_fw_norm == manifest_fw_norm:
         return "current"
-    else:
-        return "outdated"
+
+    # Check if manifest version matches the first token of device firmware
+    # (Intel NICs: "9.56 0x80010136 1.3909.0" → first token is "9.56")
+    device_fw_first_token = device_fw_norm.split()[0] if device_fw_norm else ""
+    if device_fw_first_token and device_fw_first_token == manifest_fw_norm:
+        return "current"
+
+    # Check if manifest version is contained as a leading prefix/token
+    # (handles cases like device="SN04" manifest="SN04")
+    return "outdated"
 
 
 def check_mlxup_status(bus_info):
@@ -420,6 +416,7 @@ def main():
                 "requires_reboot": entry.get("requires_reboot", False),
                 "flash_tool": flash_tool,
                 "flash_command": entry.get("flash_command", ""),
+                "tool_package": entry.get("tool_package", ""),
                 "firmware_file": entry.get("firmware_file", ""),
                 "sha256": entry.get("sha256", ""),
                 "family": entry.get("family", ""),

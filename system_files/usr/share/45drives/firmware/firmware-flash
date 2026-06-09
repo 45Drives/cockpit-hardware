@@ -28,8 +28,11 @@ import hashlib
 
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
-SEACHEST_PATH = "/usr/share/45drives/firmware/tools/SeaChest_Firmware"
+SEACHEST_PATH = "/opt/45drives/tools/SeaChest_Firmware"
 REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
+
+# Global flag: set via --allow-download CLI arg (UI passes this after user confirms)
+ALLOW_DOWNLOAD = False
 
 # Environment overrides for development
 if os.environ.get("FIRMWARE_CACHE_PATH"):
@@ -134,6 +137,56 @@ def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
         return False
 
 
+def fetch_tool_from_repo(tool_name, dest_path):
+    """Download a flash tool binary from the repo if not available locally.
+    
+    Tools are served from the repo under tools/<tool_name>.
+    Returns True if tool is now available at dest_path, False otherwise.
+    """
+    if os.path.isfile(dest_path) and os.access(dest_path, os.X_OK):
+        return True
+
+    repo_url = get_repo_url()
+    if not repo_url:
+        print(f"  No firmware repo configured — cannot download {tool_name}")
+        return False
+
+    url = f"{repo_url}/tools/{tool_name}"
+    print(f"  {tool_name} not found locally. Downloading from repo...")
+    print(f"  URL: {url}")
+
+    try:
+        req = Request(url, headers={"User-Agent": "45drives-firmware-flash/1.0"})
+        response = urlopen(req, timeout=60)
+
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+        with open(dest_path, "wb") as f:
+            while True:
+                chunk = response.read(65536)
+                if not chunk:
+                    break
+                f.write(chunk)
+
+        # Make executable
+        os.chmod(dest_path, 0o755)
+        file_size = os.path.getsize(dest_path)
+        print(f"  Downloaded: {tool_name} ({file_size} bytes)")
+        return True
+
+    except HTTPError as e:
+        print(f"  Tool download failed: HTTP {e.code} - {e.reason}")
+        return False
+    except URLError as e:
+        print(f"  Tool download failed: {e.reason}")
+        return False
+    except Exception as e:
+        print(f"  Tool download failed: {e}")
+        if os.path.exists(dest_path):
+            os.unlink(dest_path)
+        return False
+
+
 def compute_sha256(filepath):
     """Compute SHA256 of a file."""
     sha256_hash = hashlib.sha256()
@@ -141,6 +194,30 @@ def compute_sha256(filepath):
         for chunk in iter(lambda: f.read(65536), b""):
             sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
+
+
+def confirm_download(item_description):
+    """Ask user for permission before downloading from repo.
+    
+    - If --allow-download was passed (user already confirmed in UI), proceeds.
+    - If stdin is a TTY, prompts the user interactively.
+    - Otherwise, refuses and informs the user what's needed.
+    """
+    if ALLOW_DOWNLOAD:
+        print(f"  ℹ {item_description} — downloading from repo (user approved)...")
+        return True
+
+    if sys.stdin.isatty():
+        try:
+            answer = input(f"  {item_description} not found locally. Download from repo? [y/N]: ").strip().lower()
+            return answer in ("y", "yes")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return False
+    else:
+        print(f"  ✗ {item_description} not found locally.")
+        print(f"    Approve the download and retry.")
+        return False
 
 
 # SeaChest exit codes
@@ -185,7 +262,14 @@ def flash_seachest(sg_device, firmware_path):
                 seachest_bin = path
                 break
         else:
-            return False, "SeaChest_Firmware binary not found"
+            # Try downloading from repo (with user permission)
+            if not confirm_download("SeaChest_Firmware"):
+                return False, "SeaChest_Firmware binary not found and download was declined."
+            print("  SeaChest_Firmware not found locally, downloading from repo...")
+            if fetch_tool_from_repo("SeaChest_Firmware", SEACHEST_PATH):
+                seachest_bin = SEACHEST_PATH
+            else:
+                return False, "SeaChest_Firmware binary not found and could not be downloaded from repo"
 
     cmd = f"{seachest_bin} -d {sg_device} --downloadFW {tmp_path}"
     print(f"Running: {cmd}")
@@ -231,6 +315,16 @@ def flash_storcli(device_info, firmware_path):
         if os.path.isfile(candidate):
             tool_path = candidate
             break
+    else:
+        # Not found locally — try downloading from repo (with user permission)
+        dest = f"/opt/45drives/tools/{tool}"
+        if not confirm_download(tool):
+            return False, f"{tool} binary not found and download was declined."
+        print(f"  {tool} not found locally, downloading from repo...")
+        if fetch_tool_from_repo(tool, dest):
+            tool_path = dest
+        else:
+            return False, f"{tool} binary not found and could not be downloaded from repo"
 
     # Build command — replace placeholders
     cmd_template = device_info.get("flash_command", "")
@@ -309,7 +403,14 @@ def flash_niccli(device_info, firmware_path):
     if not niccli_bin:
         niccli_bin = shutil.which("niccli")
     if not niccli_bin:
-        return False, "niccli not found. Install niccli from Broadcom driver package."
+        # Try downloading from repo
+        dest = "/opt/45drives/tools/niccli"
+        if not confirm_download("niccli"):
+            return False, "niccli not found and download was declined."
+        if fetch_tool_from_repo("niccli", dest):
+            niccli_bin = dest
+        else:
+            return False, "niccli not found and could not be downloaded from repo"
 
     # Get adapter list from niccli
     print(f"Discovering Broadcom adapter ID for PCI {bus_info}...")
@@ -392,7 +493,14 @@ def flash_mlxup(device_info):
     if not mlxup_bin:
         mlxup_bin = shutil.which("mlxup")
     if not mlxup_bin:
-        return False, "mlxup not found. Install mlxup from NVIDIA/Mellanox."
+        # Try downloading from repo
+        dest = "/opt/45drives/tools/mlxup"
+        if not confirm_download("mlxup"):
+            return False, "mlxup not found and download was declined."
+        if fetch_tool_from_repo("mlxup", dest):
+            mlxup_bin = dest
+        else:
+            return False, "mlxup not found and could not be downloaded from repo"
 
     # Build command
     if bus_info:
@@ -423,6 +531,117 @@ def flash_mlxup(device_info):
         return False, str(e)
 
 
+def flash_nvmupdate(device_info):
+    """Flash Intel NIC using nvmupdate64e from a per-family tool package.
+
+    The tool_package field in the manifest specifies which tarball to download
+    (e.g. nvmupdate_700Series.tar.gz). The tarball contains:
+      - nvmupdate64e (binary)
+      - nvmupdate.cfg (device config)
+      - *.bin firmware images
+
+    nvmupdate64e auto-detects the NIC by PCI EEPID and applies the correct image.
+    """
+    import tempfile
+    import tarfile as tarfile_mod
+
+    tool_package = device_info.get("tool_package", "")
+    if not tool_package:
+        return False, "No tool_package specified in manifest for nvmupdate"
+
+    # Derive a stable extraction directory name from the package
+    family_name = tool_package.replace("nvmupdate_", "").replace(".tar.gz", "")
+    extract_dir = f"/tmp/45drives-nvmupdate-{family_name}"
+
+    # Check if already extracted (re-use if nvmupdate64e exists there)
+    nvmupdate_bin = os.path.join(extract_dir, "nvmupdate64e")
+    nvmupdate_cfg = os.path.join(extract_dir, "nvmupdate.cfg")
+
+    if not (os.path.isfile(nvmupdate_bin) and os.path.isfile(nvmupdate_cfg)):
+        # Need to download and extract
+        tarball_path = os.path.join("/tmp", tool_package)
+
+        if not os.path.isfile(tarball_path):
+            if not confirm_download(f"Intel NVM update package '{tool_package}'"):
+                return False, f"nvmupdate package download was declined: {tool_package}"
+
+            repo_url = get_repo_url()
+            if not repo_url:
+                return False, "No firmware repo configured — cannot download nvmupdate package"
+
+            url = f"{repo_url}/tools/{tool_package}"
+            print(f"  Downloading {tool_package} from repo...")
+            print(f"  URL: {url}")
+
+            try:
+                req = Request(url, headers={"User-Agent": "45drives-firmware-flash/1.0"})
+                response = urlopen(req, timeout=120)
+
+                with open(tarball_path, "wb") as f:
+                    while True:
+                        chunk = response.read(65536)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+
+                file_size = os.path.getsize(tarball_path)
+                print(f"  Downloaded: {tool_package} ({file_size / 1024 / 1024:.1f} MB)")
+            except (HTTPError, URLError) as e:
+                if os.path.exists(tarball_path):
+                    os.unlink(tarball_path)
+                return False, f"Failed to download {tool_package}: {e}"
+            except Exception as e:
+                if os.path.exists(tarball_path):
+                    os.unlink(tarball_path)
+                return False, f"Failed to download {tool_package}: {e}"
+
+        # Extract tarball
+        print(f"  Extracting {tool_package} to {extract_dir}...")
+        if os.path.exists(extract_dir):
+            shutil.rmtree(extract_dir)
+        os.makedirs(extract_dir)
+
+        try:
+            with tarfile_mod.open(tarball_path, "r:gz") as tar:
+                tar.extractall(path=extract_dir)
+        except Exception as e:
+            shutil.rmtree(extract_dir, ignore_errors=True)
+            return False, f"Failed to extract {tool_package}: {e}"
+
+        # Ensure binary is executable
+        if os.path.isfile(nvmupdate_bin):
+            os.chmod(nvmupdate_bin, 0o755)
+
+    # Verify extraction
+    if not os.path.isfile(nvmupdate_bin):
+        return False, f"nvmupdate64e not found in extracted package at {extract_dir}"
+    if not os.path.isfile(nvmupdate_cfg):
+        return False, f"nvmupdate.cfg not found in extracted package at {extract_dir}"
+
+    # Run nvmupdate64e from the extraction directory
+    cmd = f"cd {extract_dir} && ./nvmupdate64e -u -l -c nvmupdate.cfg"
+    print(f"  Running: {cmd}")
+
+    try:
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=600, cwd=extract_dir
+        )
+        output = result.stdout + result.stderr
+        print(output)
+
+        if result.returncode == 0:
+            return True, output
+        elif "no update available" in output.lower() or "up to date" in output.lower():
+            return True, "NVM firmware already up-to-date."
+        else:
+            return False, f"nvmupdate64e exit code {result.returncode}: {output}"
+    except subprocess.TimeoutExpired:
+        return False, "nvmupdate64e timed out (600s)"
+    except Exception as e:
+        return False, str(e)
+
+
 def flash_device(device_info):
     """Flash a device based on its type and tool."""
     flash_tool = device_info.get("flash_tool", "")
@@ -430,13 +649,15 @@ def flash_device(device_info):
     device_type = device_info.get("type", "")
     expected_sha256 = device_info.get("sha256", "")
 
-    # Self-updating tools (no firmware_file needed — tool downloads its own)
-    SELF_UPDATING_TOOLS = ["mlxup"]
+    # Self-updating tools (no firmware_file needed — tool downloads its own package)
+    SELF_UPDATING_TOOLS = ["mlxup", "nvmupdate64e"]
     is_self_updating = any(t in flash_tool for t in SELF_UPDATING_TOOLS)
 
     if is_self_updating:
         if "mlxup" in flash_tool:
             return flash_mlxup(device_info)
+        if "nvmupdate" in flash_tool:
+            return flash_nvmupdate(device_info)
 
     if not firmware_file:
         return False, "No firmware file specified in manifest"
@@ -451,7 +672,9 @@ def flash_device(device_info):
                 firmware_path = candidate
                 break
         else:
-            # Not found locally — try to fetch from repo
+            # Not found locally — ask permission then fetch from repo
+            if not confirm_download(f"Firmware file '{firmware_file}'"):
+                return False, f"Firmware file not found locally and download was declined: {firmware_file}"
             if not fetch_firmware_from_repo(firmware_file, firmware_path, expected_sha256):
                 return False, f"Firmware file not found locally and could not be downloaded: {firmware_file}"
     else:
@@ -472,6 +695,8 @@ def flash_device(device_info):
         return flash_niccli(device_info, firmware_path)
     elif "mlxup" in flash_tool:
         return flash_mlxup(device_info)
+    elif "nvmupdate" in flash_tool:
+        return flash_nvmupdate(device_info)
     elif "nvme" in flash_tool:
         device_path = device_info.get("device", "")
         return flash_nvme(device_path, firmware_path)
@@ -661,7 +886,12 @@ def main():
     parser = argparse.ArgumentParser(description="Flash firmware to a device")
     parser.add_argument("--cache-index", type=int, required=True, help="Index of device in cache to flash")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without flashing")
+    parser.add_argument("--preflight", action="store_true", help="Output JSON describing what will happen (downloads needed, etc.)")
+    parser.add_argument("--allow-download", action="store_true", help="Allow downloading missing tools/firmware from repo (UI passes this after user confirms)")
     args = parser.parse_args()
+
+    global ALLOW_DOWNLOAD
+    ALLOW_DOWNLOAD = args.allow_download
 
     cache = load_cache()
     if not cache:
@@ -713,6 +943,106 @@ def main():
         print(f"  Target FW:  {device_info.get('latest_firmware', '')}")
         print(f"  Tool: {device_info.get('flash_tool', '')}")
         print(f"  File: {device_info.get('firmware_file', '')}")
+        return 0
+
+    if args.preflight:
+        # Output JSON describing what will happen
+        preflight_info = {
+            "model": device_info.get("model", ""),
+            "device": device_info.get("device", ""),
+            "type": device_info.get("type", ""),
+            "current_firmware": device_info.get("current_firmware", ""),
+            "latest_firmware": device_info.get("latest_firmware", ""),
+            "flash_tool": device_info.get("flash_tool", ""),
+            "firmware_file": device_info.get("firmware_file", ""),
+            "downloads": [],
+            "actions": [],
+        }
+
+        flash_tool = device_info.get("flash_tool", "")
+        firmware_file = device_info.get("firmware_file", "")
+
+        # Check if flash tool needs downloading
+        if "SeaChest" in flash_tool:
+            if not os.path.isfile(SEACHEST_PATH):
+                found = False
+                for path in ["/usr/local/bin/SeaChest_Firmware", "/opt/45drives/tools/SeaChest_Firmware", "/usr/bin/SeaChest_Firmware"]:
+                    if os.path.isfile(path):
+                        found = True
+                        break
+                if not found:
+                    preflight_info["downloads"].append({"type": "tool", "name": "SeaChest_Firmware", "reason": "Flash tool not installed locally"})
+        elif "storcli" in flash_tool:
+            tool = flash_tool if flash_tool else "storcli64"
+            for base in ("storcli64", "storcli"):
+                if base in tool:
+                    tool = base
+                    break
+            found = False
+            for candidate in [f"/opt/45drives/tools/{tool}", f"/opt/MegaRAID/storcli/{tool}", f"/usr/local/bin/{tool}", f"/usr/bin/{tool}"]:
+                if os.path.isfile(candidate):
+                    found = True
+                    break
+            if not found:
+                preflight_info["downloads"].append({"type": "tool", "name": tool, "reason": "Flash tool not installed locally"})
+        elif "niccli" in flash_tool:
+            found = False
+            for path in ["/opt/niccli/niccli", "/usr/local/bin/niccli", "/usr/bin/niccli", "/opt/45drives/tools/niccli"]:
+                if os.path.isfile(path):
+                    found = True
+                    break
+            if not found and not shutil.which("niccli"):
+                preflight_info["downloads"].append({"type": "tool", "name": "niccli", "reason": "Broadcom NIC flash tool not installed locally"})
+        elif "mlxup" in flash_tool:
+            found = False
+            for path in ["/usr/bin/mlxup", "/usr/local/bin/mlxup", "/opt/45drives/tools/mlxup", "/root/nic-firmware-tools/mlxup"]:
+                if os.path.isfile(path):
+                    found = True
+                    break
+            if not found and not shutil.which("mlxup"):
+                preflight_info["downloads"].append({"type": "tool", "name": "mlxup", "reason": "Mellanox/NVIDIA NIC flash tool not installed locally"})
+        elif "nvmupdate" in flash_tool:
+            tool_package = device_info.get("tool_package", "")
+            if tool_package:
+                family_name = tool_package.replace("nvmupdate_", "").replace(".tar.gz", "")
+                extract_dir = f"/tmp/45drives-nvmupdate-{family_name}"
+                nvmupdate_bin = os.path.join(extract_dir, "nvmupdate64e")
+                nvmupdate_cfg = os.path.join(extract_dir, "nvmupdate.cfg")
+                if not (os.path.isfile(nvmupdate_bin) and os.path.isfile(nvmupdate_cfg)):
+                    preflight_info["downloads"].append({"type": "tool", "name": tool_package, "reason": "Intel NVM update package not cached locally"})
+
+        # Check if firmware file needs downloading
+        SELF_UPDATING_TOOLS = ["mlxup", "nvmupdate64e"]
+        is_self_updating = any(t in flash_tool for t in SELF_UPDATING_TOOLS)
+        if not is_self_updating and firmware_file:
+            firmware_path = os.path.join(FIRMWARE_DIR, firmware_file)
+            if not os.path.isfile(firmware_path):
+                # Check subdirectories
+                device_type = device_info.get("type", "")
+                found = False
+                for subdir in [device_type, ""]:
+                    candidate = os.path.join(FIRMWARE_DIR, subdir, firmware_file) if subdir else firmware_path
+                    if os.path.isfile(candidate):
+                        found = True
+                        break
+                if not found:
+                    preflight_info["downloads"].append({"type": "firmware", "name": firmware_file, "reason": "Firmware file not cached locally"})
+
+        # Describe actions
+        if preflight_info["downloads"]:
+            for dl in preflight_info["downloads"]:
+                preflight_info["actions"].append(f"Download {dl['name']} from firmware repo")
+
+        if "mlxup" in flash_tool:
+            preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using mlxup (downloads firmware from NVIDIA servers)")
+        elif "nvmupdate" in flash_tool:
+            preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using nvmupdate64e (auto-detects NIC and applies correct firmware)")
+        else:
+            preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using {flash_tool}")
+        if device_info.get("requires_reboot"):
+            preflight_info["actions"].append("Reboot required after flash to activate new firmware")
+
+        print(json.dumps(preflight_info))
         return 0
 
     print(f"Flashing: {device_info.get('model', '')} ({device_info.get('device', '')})")

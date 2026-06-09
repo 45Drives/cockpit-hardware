@@ -226,7 +226,8 @@ def discover_nvme():
 
 
 def discover_hba():
-    """Discover HBA/RAID controller firmware using storcli64."""
+    """Discover HBA/RAID controller firmware using storcli64.
+    Falls back to lspci detection if storcli64 is not available."""
     devices = []
 
     # Try storcli64 at known paths
@@ -260,6 +261,35 @@ def discover_hba():
                 pass
             if devices:
                 break
+
+    # Fallback: use lspci to detect RAID/SAS controllers if storcli not available
+    if not devices:
+        stdout, _, rc = run_cmd("lspci -D")
+        if rc == 0 and stdout:
+            for line in stdout.strip().split("\n"):
+                if any(kw in line for kw in ["RAID", "SAS", "MegaRAID"]):
+                    # Extract PCI address and description
+                    parts = line.split(" ", 1)
+                    pci_addr = parts[0] if parts else ""
+                    desc = parts[1] if len(parts) > 1 else ""
+                    # Try to extract model name (after the colon)
+                    model = ""
+                    if ": " in desc:
+                        model = desc.split(": ", 1)[1].strip()
+                    # Skip if it looks like an expander or non-HBA device
+                    if "Expander" in model:
+                        continue
+                    if model:
+                        devices.append({
+                            "type": "hba",
+                            "model": model,
+                            "serial": "",
+                            "firmware": "",
+                            "tool": "",
+                            "controller_index": 0,
+                            "bus_info": pci_addr,
+                            "note": "storcli64 not available — firmware version unknown",
+                        })
 
     return devices
 

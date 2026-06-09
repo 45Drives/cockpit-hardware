@@ -165,6 +165,20 @@
           <span class="text-sm font-medium">Firmware Update:</span>
           <span class="text-sm font-mono text-muted ml-2">{{ confirmDevice.current_firmware }} → {{ confirmDevice.latest_firmware }}</span>
         </div>
+        <!-- What will happen -->
+        <div v-if="confirmActions.length > 0" class="mb-3 rounded-md bg-blue-50 border border-blue-200 p-3">
+          <h4 class="text-sm font-medium text-blue-800 mb-2">This will:</h4>
+          <ul class="text-sm text-blue-700 list-disc pl-5 space-y-1">
+            <li v-for="(action, i) in confirmActions" :key="i">{{ action }}</li>
+          </ul>
+        </div>
+        <!-- Downloads needed -->
+        <div v-if="confirmDownloads.length > 0" class="mb-3 rounded-md bg-amber-50 border border-amber-200 p-3">
+          <h4 class="text-sm font-medium text-amber-800 mb-2">Downloads required from firmware repo:</h4>
+          <ul class="text-sm text-amber-700 list-disc pl-5 space-y-1">
+            <li v-for="(dl, i) in confirmDownloads" :key="i"><strong>{{ dl.name }}</strong> — {{ dl.reason }}</li>
+          </ul>
+        </div>
         <div v-if="confirmWarnings.length > 0" class="rounded-md bg-red-50 p-4">
           <div class="flex">
             <div class="flex-shrink-0">
@@ -194,8 +208,11 @@
             </div>
           </div>
         </div>
-        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
+        <div v-if="confirmDevice?.type === 'hdd'" class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
           <p class="text-xs text-yellow-700"><strong>Important:</strong> Ensure your data is backed up. 45Drives and Seagate are not responsible for any data loss or product damage resulting from a firmware update. Do not power off the system during the flash process.</p>
+        </div>
+        <div v-else class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
+          <p class="text-xs text-yellow-700"><strong>Important:</strong> Do not power off the system during the flash process. A reboot may be required to activate the new firmware.</p>
         </div>
       </div>
     </div>
@@ -225,9 +242,10 @@
       <!-- Disclaimer -->
       <div v-if="!batchLoading" class="rounded-md bg-yellow-50 border border-yellow-200 p-3">
         <ul class="text-xs text-yellow-700 font-medium list-disc pl-4 space-y-1">
-          <li>Ensure all drives are backed up before proceeding.</li>
-          <li>Do not power off the system or remove drives during the update process.</li>
-          <li>45Drives and Seagate are not responsible for any data loss or product damage resulting from a firmware update.</li>
+          <li v-if="batchDrives.some(d => d.type === 'hdd')">Ensure all drives are backed up before proceeding.</li>
+          <li>Do not power off the system during the update process.</li>
+          <li v-if="batchDrives.some(d => d.type === 'hdd')">45Drives and Seagate are not responsible for any data loss or product damage resulting from a firmware update.</li>
+          <li v-else>45Drives is not responsible for any product damage resulting from a firmware update.</li>
         </ul>
       </div>
 
@@ -433,10 +451,17 @@ export default {
 
     const outdatedDevices = computed(() => devices.value.filter(d => d.update_available === 'outdated'));
 
-    // A device can be flashed if it has flashable flag and a firmware_file.
-    // We use --cache-index mode which handles device targeting server-side.
+    // A device can be flashed if it has flashable flag and either:
+    // - a firmware_file (normal flash), or
+    // - a tool_package (nvmupdate — self-contained package), or
+    // - a self-updating flash_tool (mlxup — downloads its own firmware)
+    const SELF_UPDATING_TOOLS = ['mlxup', 'nvmupdate64e'];
     const canFlash = (device) => {
-      return !!(device.flashable && device.firmware_file);
+      if (!device.flashable) return false;
+      if (device.firmware_file) return true;
+      if (device.tool_package) return true;
+      if (SELF_UPDATING_TOOLS.some(t => (device.flash_tool || '').includes(t))) return true;
+      return false;
     };
 
     // Devices eligible for batch flash (exclude reboot-pending ones)
@@ -454,6 +479,8 @@ export default {
     const confirmModalVisible = ref(false);
     const confirmLoading = ref(false);
     const confirmWarnings = ref([]);
+    const confirmActions = ref([]);
+    const confirmDownloads = ref([]);
     const confirmDevice = ref({});
     const confirmInput = ref('');
 
@@ -462,9 +489,27 @@ export default {
       if (device.type === 'hdd') {
         confirmDevice.value = device;
         confirmWarnings.value = [];
+        confirmActions.value = [];
+        confirmDownloads.value = [];
         confirmInput.value = '';
         confirmModalVisible.value = true;
         confirmLoading.value = true;
+
+        // Run preflight to determine what will be downloaded
+        try {
+          const pfProc = await unwrap(server.execute(
+            new Command([
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+              "--cache-index", String(device.cache_index),
+              "--preflight"
+            ], { superuser: "require" })
+          ));
+          const pfData = JSON.parse(pfProc.getStdout());
+          confirmActions.value = pfData.actions || [];
+          confirmDownloads.value = pfData.downloads || [];
+        } catch (e) {
+          confirmActions.value = [`Flash ${device.model} using ${device.flash_tool}`];
+        }
 
         const devName = (device.device || device.sg_device || '').replace('/dev/', '');
         try {
@@ -516,8 +561,30 @@ export default {
         }
         confirmLoading.value = false;
       } else {
-        // Non-HDD devices (NIC, BIOS, etc.) — flash directly
-        flashDevice(device);
+        // Non-HDD devices (NIC, HBA, etc.) — show preflight info then flash
+        confirmDevice.value = device;
+        confirmWarnings.value = [];
+        confirmActions.value = [];
+        confirmDownloads.value = [];
+        confirmInput.value = '';
+        confirmModalVisible.value = true;
+        confirmLoading.value = true;
+
+        try {
+          const pfProc = await unwrap(server.execute(
+            new Command([
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+              "--cache-index", String(device.cache_index),
+              "--preflight"
+            ], { superuser: "require" })
+          ));
+          const pfData = JSON.parse(pfProc.getStdout());
+          confirmActions.value = pfData.actions || [];
+          confirmDownloads.value = pfData.downloads || [];
+        } catch (e) {
+          confirmActions.value = [`Flash ${device.model} using ${device.flash_tool || 'unknown'}`];
+        }
+        confirmLoading.value = false;
       }
     };
 
@@ -624,8 +691,9 @@ export default {
       try {
         const proc = await unwrap(server.execute(
           new Command([
-            "python3", "/usr/share/45drives/firmware/firmware-flash",
-            "--cache-index", String(device.cache_index)
+            "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+            "--cache-index", String(device.cache_index),
+            "--allow-download"
           ], { superuser: "require" })
         ));
         const stdout = proc.getStdout();
@@ -643,6 +711,8 @@ export default {
         // Refresh
         await checkFirmware();
       } catch (e) {
+        if (e.stdout) flashLog.value += e.stdout + '\n';
+        if (e.stderr) flashLog.value += e.stderr + '\n';
         flashLog.value += `\n✗ FAILED: ${e.message || e}\n`;
         flashSuccess.value = false;
       }
@@ -723,8 +793,9 @@ export default {
         try {
           const proc = await unwrap(server.execute(
             new Command([
-              "python3", "/usr/share/45drives/firmware/firmware-flash",
-              "--cache-index", String(bd.cache_index)
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+              "--cache-index", String(bd.cache_index),
+              "--allow-download"
             ], { superuser: "require" })
           ));
           const stdout = proc.getStdout();
@@ -738,6 +809,8 @@ export default {
             await saveRebootPending();
           }
         } catch (e) {
+          if (e.stdout) batchLog.value += e.stdout + '\n';
+          if (e.stderr) batchLog.value += e.stderr + '\n';
           batchLog.value += `  ✗ FAILED: ${e.message || e}\n\n`;
           bd.flashStatus = 'failed';
           batchFailCount.value++;
@@ -784,7 +857,7 @@ export default {
       }
     };
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, flashAllDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
+    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, flashAllDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
   }
 };
 </script>
