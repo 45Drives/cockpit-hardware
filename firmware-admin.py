@@ -52,19 +52,29 @@ def load_manifest():
 
 
 def save_manifest(data):
-    """Save manifest to source location."""
+    """Save manifest to source location and auto-publish with GPG signature.
+    
+    This ensures the served manifest (firmware-repo/manifest.json) and its
+    signature (.sig) are always in sync with the source manifest.
+    """
     data["last_updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     with open(MANIFEST_SRC, "w") as f:
         json.dump(data, f, indent=2)
         f.write("\n")
 
+    # Auto-publish: copy to serve directory and re-sign
+    ok, msg = sign_and_publish()
+    if not ok:
+        print(f"Warning: Manifest saved but GPG signing failed: {msg}", file=sys.stderr)
+
 
 def sign_and_publish():
-    """Sign manifest and copy to serve directory."""
-    # Copy manifest to firmware-repo/
-    shutil.copy2(MANIFEST_SRC, MANIFEST_SERVED)
-
-    # Sign
+    """Sign manifest and copy both manifest + signature to serve directory atomically.
+    
+    The manifest is NOT copied to the serve directory until signing succeeds,
+    preventing clients from seeing an unsigned/mismatched manifest.
+    """
+    # Sign first — don't touch serve directory until we have a valid signature
     sig_path = MANIFEST_SRC + ".sig"
     if os.path.exists(sig_path):
         os.unlink(sig_path)
@@ -79,7 +89,8 @@ def sign_and_publish():
     if result.returncode != 0:
         return False, f"GPG signing failed: {result.stderr}"
 
-    # Copy sig to serve dir
+    # Signing succeeded — now publish both files together
+    shutil.copy2(MANIFEST_SRC, MANIFEST_SERVED)
     shutil.copy2(sig_path, SIGNATURE_SERVED)
     return True, "Signed and published"
 

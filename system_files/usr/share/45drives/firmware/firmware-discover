@@ -365,6 +365,10 @@ def discover_nic():
         fw_normalized = firmware
         if driver == "bnxt_en" and "/pkg " in firmware:
             fw_normalized = firmware.split("/pkg ")[-1].strip()
+        # Normalize firmware version for Mellanox/NVIDIA NICs
+        # ethtool reports "20.31.1014 (MT_0000000225)" — extract version before parenthetical
+        elif driver in ("mlx5_core", "mlx4_core") and "(" in firmware:
+            fw_normalized = firmware.split("(")[0].strip()
 
         devices.append({
             "type": "nic",

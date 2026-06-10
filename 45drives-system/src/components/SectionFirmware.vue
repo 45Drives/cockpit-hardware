@@ -179,35 +179,37 @@
             <li v-for="(dl, i) in confirmDownloads" :key="i"><strong>{{ dl.name }}</strong> — {{ dl.reason }}</li>
           </ul>
         </div>
-        <div v-if="confirmWarnings.length > 0" class="rounded-md bg-red-50 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-red-800">Drive is currently in use</h3>
-              <ul class="mt-2 text-sm text-red-700 list-disc pl-5 space-y-1">
-                <li v-for="(w, i) in confirmWarnings" :key="i">{{ w }}</li>
-              </ul>
-              <p class="mt-2 text-sm text-red-800 font-medium">Flashing firmware while the drive is active may cause data loss.</p>
-            </div>
-          </div>
-        </div>
-        <div v-else class="rounded-md bg-green-50 p-4">
-          <div class="flex">
-            <div class="flex-shrink-0">
-              <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <h3 class="text-sm font-medium text-green-800">Drive is idle</h3>
-              <p class="mt-1 text-sm text-green-700">No active I/O, mounts, or storage pools detected. Safe to proceed.</p>
+        <template v-if="confirmDevice?.type === 'hdd'">
+          <div v-if="confirmWarnings.length > 0" class="rounded-md bg-red-50 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Drive is currently in use</h3>
+                <ul class="mt-2 text-sm text-red-700 list-disc pl-5 space-y-1">
+                  <li v-for="(w, i) in confirmWarnings" :key="i">{{ w }}</li>
+                </ul>
+                <p class="mt-2 text-sm text-red-800 font-medium">Flashing firmware while the drive is active may cause data loss.</p>
+              </div>
             </div>
           </div>
-        </div>
+          <div v-else class="rounded-md bg-green-50 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-green-800">Drive is idle</h3>
+                <p class="mt-1 text-sm text-green-700">No active I/O, mounts, or storage pools detected. Safe to proceed.</p>
+              </div>
+            </div>
+          </div>
+        </template>
         <div v-if="confirmDevice?.type === 'hdd'" class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
           <p class="text-xs text-yellow-700"><strong>Important:</strong> Ensure your data is backed up. 45Drives and Seagate are not responsible for any data loss or product damage resulting from a firmware update. Do not power off the system during the flash process.</p>
         </div>
@@ -453,14 +455,11 @@ export default {
 
     // A device can be flashed if it has flashable flag and either:
     // - a firmware_file (normal flash), or
-    // - a tool_package (nvmupdate — self-contained package), or
-    // - a self-updating flash_tool (mlxup — downloads its own firmware)
-    const SELF_UPDATING_TOOLS = ['mlxup', 'nvmupdate64e'];
+    // - a tool_package (nvmupdate — self-contained package with its own firmware)
     const canFlash = (device) => {
       if (!device.flashable) return false;
       if (device.firmware_file) return true;
       if (device.tool_package) return true;
-      if (SELF_UPDATING_TOOLS.some(t => (device.flash_tool || '').includes(t))) return true;
       return false;
     };
 
@@ -626,6 +625,8 @@ export default {
           // System rebooted after the pending file was written — clear it
           rebootPendingDevices.value = new Set();
           await saveRebootPending();
+          // Re-run firmware-check to pick up newly-activated firmware versions
+          checkFirmware();
           return;
         }
 

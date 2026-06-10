@@ -480,8 +480,8 @@ def flash_niccli(device_info, firmware_path):
         return False, str(e)
 
 
-def flash_mlxup(device_info):
-    """Flash Mellanox/NVIDIA NIC using mlxup (self-updating — downloads firmware automatically)."""
+def flash_mlxup(device_info, firmware_path=None):
+    """Flash Mellanox/NVIDIA NIC using mlxup with a pinned firmware .bin file."""
     bus_info = device_info.get("bus_info", "")
 
     # Find mlxup binary
@@ -502,14 +502,22 @@ def flash_mlxup(device_info):
         else:
             return False, "mlxup not found and could not be downloaded from repo"
 
-    # Build command
-    if bus_info:
-        cmd = f"{mlxup_bin} --update --dev {bus_info} --yes"
+    # Build command — use --image-file if we have a pinned firmware file
+    if firmware_path and os.path.isfile(firmware_path):
+        if bus_info:
+            cmd = f"{mlxup_bin} --update --dev {bus_info} --image-file {firmware_path} --force --yes"
+        else:
+            cmd = f"{mlxup_bin} --update --image-file {firmware_path} --force --yes"
+        print(f"Running: {cmd}")
+        print(f"  (using pinned firmware image from 45Drives repo)")
     else:
-        cmd = f"{mlxup_bin} --update --yes"
-
-    print(f"Running: {cmd}")
-    print(f"  (mlxup downloads firmware from NVIDIA servers automatically)")
+        # Fallback to auto-update from NVIDIA (legacy behavior)
+        if bus_info:
+            cmd = f"{mlxup_bin} --update --dev {bus_info} --yes"
+        else:
+            cmd = f"{mlxup_bin} --update --yes"
+        print(f"Running: {cmd}")
+        print(f"  (mlxup downloads firmware from NVIDIA servers automatically)")
 
     try:
         result = subprocess.run(
@@ -650,12 +658,10 @@ def flash_device(device_info):
     expected_sha256 = device_info.get("sha256", "")
 
     # Self-updating tools (no firmware_file needed — tool downloads its own package)
-    SELF_UPDATING_TOOLS = ["mlxup", "nvmupdate64e"]
+    SELF_UPDATING_TOOLS = ["nvmupdate64e"]
     is_self_updating = any(t in flash_tool for t in SELF_UPDATING_TOOLS)
 
     if is_self_updating:
-        if "mlxup" in flash_tool:
-            return flash_mlxup(device_info)
         if "nvmupdate" in flash_tool:
             return flash_nvmupdate(device_info)
 
@@ -694,7 +700,7 @@ def flash_device(device_info):
     elif "niccli" in flash_tool:
         return flash_niccli(device_info, firmware_path)
     elif "mlxup" in flash_tool:
-        return flash_mlxup(device_info)
+        return flash_mlxup(device_info, firmware_path)
     elif "nvmupdate" in flash_tool:
         return flash_nvmupdate(device_info)
     elif "nvme" in flash_tool:
@@ -1012,7 +1018,7 @@ def main():
                     preflight_info["downloads"].append({"type": "tool", "name": tool_package, "reason": "Intel NVM update package not cached locally"})
 
         # Check if firmware file needs downloading
-        SELF_UPDATING_TOOLS = ["mlxup", "nvmupdate64e"]
+        SELF_UPDATING_TOOLS = ["nvmupdate64e"]
         is_self_updating = any(t in flash_tool for t in SELF_UPDATING_TOOLS)
         if not is_self_updating and firmware_file:
             firmware_path = os.path.join(FIRMWARE_DIR, firmware_file)
@@ -1034,7 +1040,7 @@ def main():
                 preflight_info["actions"].append(f"Download {dl['name']} from firmware repo")
 
         if "mlxup" in flash_tool:
-            preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using mlxup (downloads firmware from NVIDIA servers)")
+            preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using mlxup (pinned firmware image from 45Drives repo)")
         elif "nvmupdate" in flash_tool:
             preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using nvmupdate64e (auto-detects NIC and applies correct firmware)")
         else:

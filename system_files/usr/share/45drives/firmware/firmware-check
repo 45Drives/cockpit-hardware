@@ -207,6 +207,7 @@ def run_discover():
 def match_device_to_manifest(device, manifest):
     """
     Find the matching manifest entry for a discovered device.
+    Checks model_match against device model, part_number, and model_full.
     Returns the manifest entry or None.
     """
     device_type = device.get("type", "")
@@ -218,28 +219,66 @@ def match_device_to_manifest(device, manifest):
         return None
 
     device_model = device.get("model", "")
+    part_number = device.get("part_number", "")
+    model_full = device.get("model_full", "")
+
+    # Build list of candidate strings to match against (in priority order)
+    match_candidates = [s for s in [part_number, device_model, model_full] if s]
 
     for entry in section:
         model_pattern = entry.get("model_match", "")
         if not model_pattern:
             continue
 
-        # Check if device model matches the manifest pattern (regex)
+        # Check if any candidate string matches the manifest pattern (regex)
         try:
-            if re.search(model_pattern, device_model, re.IGNORECASE):
-                return entry
+            for candidate in match_candidates:
+                if re.search(model_pattern, candidate, re.IGNORECASE):
+                    return entry
         except re.error:
-            # Invalid regex, try exact match
-            if model_pattern.lower() in device_model.lower():
-                return entry
+            # Invalid regex, try substring match
+            for candidate in match_candidates:
+                if model_pattern.lower() in candidate.lower():
+                    return entry
 
     return None
+
+
+def parse_version_tuple(version_str):
+    """
+    Parse a version string into a comparable tuple of integers.
+    Handles formats like "16.35.8002", "9.56", "SN04", "24.22.0-0105".
+    Extracts ALL numeric sequences from the string.
+    Returns None if no numeric parts found.
+    """
+    import re
+    # Extract all numeric sequences from the string
+    parts = re.findall(r'\d+', version_str)
+    if parts:
+        return tuple(int(p) for p in parts)
+    return None
+
+
+def get_version_prefix(version_str):
+    """
+    Extract the leading non-numeric prefix from a version string.
+    E.g. "SN04" → "SN", "TN04" → "TN", "16.35.8002" → ""
+    Used to detect differing firmware tracks (e.g. Seagate SN vs TN).
+    """
+    import re
+    m = re.match(r'^([A-Za-z]+)', version_str.strip())
+    return m.group(1).upper() if m else ""
 
 
 def compare_firmware(device_fw, manifest_fw):
     """
     Compare firmware versions.
     Returns: 'current', 'outdated', or 'unknown'
+    
+    Logic:
+    - If device firmware >= manifest firmware → 'current' (meets or exceeds target)
+    - If device firmware < manifest firmware → 'outdated'
+    - Falls back to string comparison if numeric parsing fails
     
     Handles multi-part version strings (e.g. Intel NICs report
     "9.56 0x80010136 1.3909.0" where the first token is the NVM version).
@@ -253,18 +292,43 @@ def compare_firmware(device_fw, manifest_fw):
     device_fw_norm = device_fw.strip().upper()
     manifest_fw_norm = manifest_fw.strip().upper()
 
-    # Exact match
+    # Exact match (fast path)
     if device_fw_norm == manifest_fw_norm:
         return "current"
 
-    # Check if manifest version matches the first token of device firmware
+    # Extract first token for multi-part strings
     # (Intel NICs: "9.56 0x80010136 1.3909.0" → first token is "9.56")
     device_fw_first_token = device_fw_norm.split()[0] if device_fw_norm else ""
-    if device_fw_first_token and device_fw_first_token == manifest_fw_norm:
+    manifest_fw_first_token = manifest_fw_norm.split()[0] if manifest_fw_norm else ""
+
+    # Check first-token exact match
+    if device_fw_first_token and device_fw_first_token == manifest_fw_first_token:
         return "current"
 
-    # Check if manifest version is contained as a leading prefix/token
-    # (handles cases like device="SN04" manifest="SN04")
+    # Check for differing firmware track prefixes (e.g. SN04 vs TN04).
+    # These are different firmware trains and should never compare as equal,
+    # even if their numeric portions match.
+    device_prefix = get_version_prefix(device_fw_first_token)
+    manifest_prefix = get_version_prefix(manifest_fw_first_token)
+    if device_prefix and manifest_prefix and device_prefix != manifest_prefix:
+        return "outdated"
+
+    # Try numeric version comparison (device >= manifest means current)
+    device_ver = parse_version_tuple(device_fw_first_token)
+    manifest_ver = parse_version_tuple(manifest_fw_first_token)
+
+    if device_ver and manifest_ver:
+        # Only do numeric comparison if tuples are similar length (same format)
+        # e.g. (16, 35, 8002) vs (16, 35, 4030) — same structure, compare OK
+        # but (24, 22, 0, 105) vs (3324,) — different formats, skip numeric compare
+        if len(device_ver) == len(manifest_ver) or \
+           (len(device_ver) > 1 and len(manifest_ver) > 1):
+            if device_ver >= manifest_ver:
+                return "current"
+            else:
+                return "outdated"
+
+    # Fallback: string mismatch with no numeric parsing = outdated
     return "outdated"
 
 
@@ -389,14 +453,9 @@ def main():
         if entry:
             flash_tool = entry.get("flash_tool", "")
 
-            # For self-updating tools (mlxup), query the tool directly for status
-            if "mlxup" in flash_tool:
-                bus_info = device.get("bus_info", "")
-                status, available_fw = check_mlxup_status(bus_info)
-                latest_fw = available_fw if available_fw else device.get("firmware", "")
-            else:
-                status = compare_firmware(device.get("firmware", ""), entry.get("latest_firmware", ""))
-                latest_fw = entry.get("latest_firmware", "")
+            # Standard comparison: device firmware vs manifest latest_firmware
+            status = compare_firmware(device.get("firmware", ""), entry.get("latest_firmware", ""))
+            latest_fw = entry.get("latest_firmware", "")
 
             device_result = {
                 "cache_index": idx,

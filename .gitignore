@@ -34,3 +34,10 @@ version.js
 *.LOD
 *.bin
 *.rom
+
+# Large binary firmware/tool files (served by firmware-admin, not tracked in git)
+firmware-repo/tools/
+firmware-repo/*.bin
+firmware-repo/*.LOD
+firmware-repo/*.rom
+firmware-repo/*.pkg
