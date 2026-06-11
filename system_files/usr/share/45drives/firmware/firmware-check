@@ -476,6 +476,7 @@ def main():
                 "flash_tool": flash_tool,
                 "flash_command": entry.get("flash_command", ""),
                 "tool_package": entry.get("tool_package", ""),
+                "tool_package_sha256": entry.get("tool_package_sha256", ""),
                 "firmware_file": entry.get("firmware_file", ""),
                 "sha256": entry.get("sha256", ""),
                 "family": entry.get("family", ""),

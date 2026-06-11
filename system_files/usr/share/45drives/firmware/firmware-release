@@ -35,8 +35,13 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 MANIFEST_PATH = os.path.join(SCRIPT_DIR, "manifest.json")
 REPO_CONF_PATH = os.path.join(SCRIPT_DIR, "repo.conf")
 
-# Default firmware repo directory (development)
-DEFAULT_REPO_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", "..", "firmware-repo"))
+# Default firmware repo directory — check env, then alongside script, then legacy path
+DEFAULT_REPO_DIR = os.environ.get(
+    "FIRMWARE_REPO_DIR",
+    os.path.join(SCRIPT_DIR, "firmware-repo")
+    if os.path.isdir(os.path.join(SCRIPT_DIR, "firmware-repo"))
+    else os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", "..", "firmware-repo"))
+)
 
 
 def compute_sha256(filepath):

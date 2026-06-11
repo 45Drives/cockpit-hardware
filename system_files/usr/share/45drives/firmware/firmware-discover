@@ -16,6 +16,7 @@ import subprocess
 import sys
 import re
 import os
+import shutil
 from pathlib import Path
 
 
@@ -417,6 +418,38 @@ def discover_bios():
     return devices
 
 
+def discover_bmc():
+    """Discover BMC/IPMI firmware version using ipmitool."""
+    devices = []
+
+    ipmitool = shutil.which("ipmitool")
+    if not ipmitool:
+        return devices
+
+    stdout, _, rc = run_cmd("ipmitool mc info 2>/dev/null")
+    if rc != 0 or not stdout:
+        return devices
+
+    fw = ""
+    mfg = "Unknown"
+    for line in stdout.splitlines():
+        line = line.strip()
+        if "Firmware Revision" in line:
+            fw = line.split(":", 1)[-1].strip()
+        elif "Manufacturer Name" in line:
+            mfg = line.split(":", 1)[-1].strip()
+
+    if fw:
+        devices.append({
+            "type": "bmc",
+            "model": "BMC/IPMI",
+            "vendor": mfg,
+            "firmware": fw,
+        })
+
+    return devices
+
+
 def main():
     results = {
         "timestamp": "",
@@ -438,6 +471,7 @@ def main():
     results["devices"].extend(discover_hba())
     results["devices"].extend(discover_nic())
     results["devices"].extend(discover_bios())
+    results["devices"].extend(discover_bmc())
 
     print(json.dumps(results, indent=2))
     return 0

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-06-09T17:24:13Z",
+  "last_updated": "2026-06-11T13:35:26Z",
   "maintained_by": "45Drives R&D",
   "description": "Firmware manifest for 45Drives hardware. Used by 45d-firmware-check to compare installed firmware against latest validated versions.",
   "components": {
@@ -21,7 +21,7 @@
       {
         "model_match": "9305-16i",
         "vendor": "Broadcom",
-        "latest_firmware": "16.00.12.00",
+        "latest_firmware": "16.00.13.00",
         "flash_tool": "storcli64",
         "flash_command": "storcli64 /cX download file=<firmware_path>",
         "flashable": true,
@@ -29,7 +29,11 @@
         "release_date": "2026-06-09",
         "release_notes": "",
         "firmware_file": "SAS9305_16i_IT_P.bin",
-        "sha256": "917d0c11d78401339c8de06582c884e13d628d76fb9ad5c42e87ae4fcb316464"
+        "sha256": "917d0c11d78401339c8de06582c884e13d628d76fb9ad5c42e87ae4fcb316464",
+        "upgrade_from": "",
+        "family": "",
+        "interface": "",
+        "tool_package": ""
       },
       {
         "model_match": "9305-24i",
@@ -47,7 +51,7 @@
       {
         "model_match": "9361-16i",
         "vendor": "Broadcom",
-        "latest_firmware": "3324",
+        "latest_firmware": "24.23.0-0200",
         "flash_tool": "storcli64",
         "flash_command": "storcli64 /cX download file=<firmware_path>",
         "flashable": true,
@@ -60,7 +64,7 @@
       {
         "model_match": "9361-24i",
         "vendor": "Broadcom",
-        "latest_firmware": "3324",
+        "latest_firmware": "24.22.0-0105",
         "flash_tool": "storcli64",
         "flash_command": "storcli64 /cX download file=<firmware_path>",
         "flashable": true,
@@ -131,13 +135,12 @@
         "latest_firmware": "20.40.1000",
         "flash_tool": "mlxup",
         "flash_command": "mlxup --update --dev <bus_info>",
-        "flashable": true,
+        "flashable": false,
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "Mellanox ConnectX-6 NIC. Version pinned in manifest. mlxup downloaded on-demand for flashing.",
         "firmware_file": "",
-        "sha256": "",
-        "tool_package": "mlxup"
+        "sha256": ""
       },
       {
         "model_match": "MCX516A",
@@ -151,8 +154,7 @@
         "release_date": "2026-06-10",
         "release_notes": "ConnectX-5 100Gb QSFP28 (MCX516A-CCAT). Pinned firmware .bin flashed via mlxup --image-file.",
         "firmware_file": "fw-ConnectX5-rel-16_35_8008-MCX516A-CCA_Ax-UEFI-14.29.15-FlexBoot-3.6.902.bin",
-        "sha256": "b11057da599f2b6d6507e9e81ebbad0de10423b1bece3ae55b29925438c38ab1",
-        "tool_package": "mlxup"
+        "sha256": "b11057da599f2b6d6507e9e81ebbad0de10423b1bece3ae55b29925438c38ab1"
       },
       {
         "model_match": "MCX512A",
@@ -166,8 +168,7 @@
         "release_date": "2026-06-10",
         "release_notes": "ConnectX-5 25Gb SFP28 (MCX512A-ACAT). Pinned firmware .bin flashed via mlxup --image-file.",
         "firmware_file": "fw-ConnectX5-rel-16_35_8008-MCX512A-ACA_Ax_Bx-UEFI-14.29.15-FlexBoot-3.6.902.bin",
-        "sha256": "4296d2d585c1231c53e68904ec4ba3bd2cd0906ce77a9f31fa5190cae7dc5513",
-        "tool_package": "mlxup"
+        "sha256": "4296d2d585c1231c53e68904ec4ba3bd2cd0906ce77a9f31fa5190cae7dc5513"
       },
       {
         "model_match": "BCM57416",
@@ -207,10 +208,11 @@
         "tool_package": "nvmupdate_700Series.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel 700 Series (X710, XL710, XXV710, X722). Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "0740d902d40c4251323ce64fc64b232012da0024e9af05b579c5c77c8d7d6deb"
       },
       {
         "model_match": "E810",
@@ -222,85 +224,93 @@
         "tool_package": "nvmupdate_E810.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel E810 Series. Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "81df38f6672a689fa59cfa9c9a3830436887584cb2fe867b8b44e04af71193c8"
       },
       {
         "model_match": "E830",
         "vendor": "Intel",
         "family": "Intel E830",
-        "latest_firmware": "",
+        "latest_firmware": "3.00",
         "flash_tool": "nvmupdate64e",
         "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg",
         "tool_package": "nvmupdate_E830.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel E830 Series. Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "d28074aef60513c451497cefe3a679e8dcd125b537a1334da5e5ba5b8e281358",
+        "upgrade_from": "",
+        "interface": ""
       },
       {
         "model_match": "E610",
         "vendor": "Intel",
         "family": "Intel E610",
-        "latest_firmware": "",
+        "latest_firmware": "1.50",
         "flash_tool": "nvmupdate64e",
         "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg",
         "tool_package": "nvmupdate_E610.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel E610 Series. Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "b2e7a2e45b4d729631de06dc751375277eebb56e3fe9ca4af02e76a32ee01f88"
       },
       {
         "model_match": "I210",
         "vendor": "Intel",
         "family": "Intel I210",
-        "latest_firmware": "",
+        "latest_firmware": "2.00",
         "flash_tool": "nvmupdate64e",
         "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg",
         "tool_package": "nvmupdate_I210.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel I210 Series. Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "e2b4c5b072c20b7ffeae6f138d95c2dfc28fd3efed73bffc13d213e55efaa6d7"
       },
       {
         "model_match": "I225",
         "vendor": "Intel",
         "family": "Intel I225",
-        "latest_firmware": "",
+        "latest_firmware": "1.00",
         "flash_tool": "nvmupdate64e",
         "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg",
         "tool_package": "nvmupdate_I225.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel I225 Series. Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "3d8efc3b4d65f49f617b4df086c8d6f40268183a3075a9adef396f4c82f9ad97"
       },
       {
         "model_match": "X550",
         "vendor": "Intel",
         "family": "Intel X550",
-        "latest_firmware": "",
+        "latest_firmware": "3.70",
         "flash_tool": "nvmupdate64e",
         "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg",
         "tool_package": "nvmupdate_X550.tar.gz",
         "flashable": true,
         "requires_reboot": true,
-        "release_date": "",
+        "release_date": "2026-06-10",
         "release_notes": "Intel X550 Series. Flashed via nvmupdate64e.",
         "firmware_file": "",
-        "sha256": ""
+        "sha256": "",
+        "tool_package_sha256": "51b83c45b59745c29b0abcd4c5c6e25398d969ffae5d81db1bf5350a503472f5"
       }
     ],
     "bios": [
@@ -368,7 +378,7 @@
         "interface": "SATA",
         "vendor": "Seagate",
         "family": "Exos 7E10",
-        "latest_firmware": "SN04",
+        "latest_firmware": "SN09",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
@@ -376,7 +386,9 @@
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 10T",
         "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
-        "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
+        "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a",
+        "upgrade_from": "",
+        "tool_package": ""
       },
       {
         "model_match": "ST8000NM017B",
@@ -537,7 +549,7 @@
         "interface": "SATA",
         "vendor": "Seagate",
         "family": "Exos X18",
-        "latest_firmware": "SN06",
+        "latest_firmware": "SN08",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
@@ -545,7 +557,9 @@
         "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 20T",
         "firmware_file": "EvansBPExosX18SATA-STD-5xxE-SE06.LOD",
-        "sha256": "590ae464c4bb08511c7f450b51b2be0e01e2762fa84c673bd3c20daa518d91dc"
+        "sha256": "590ae464c4bb08511c7f450b51b2be0e01e2762fa84c673bd3c20daa518d91dc",
+        "upgrade_from": "",
+        "tool_package": ""
       },
       {
         "model_match": "ST18000NM000J",
@@ -612,7 +626,7 @@
         "interface": "SATA",
         "vendor": "Seagate",
         "family": "Exos X20",
-        "latest_firmware": "SN06",
+        "latest_firmware": "SN09",
         "flash_tool": "SeaChest_Firmware",
         "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
         "flashable": true,
@@ -620,7 +634,9 @@
         "release_date": "2026-06-05",
         "release_notes": "Exos X20 SATA 20T",
         "firmware_file": "LongsPeakExosX20SATA-STD-512E-SN06.LOD",
-        "sha256": "cd09246cc8dbc49a8d7438d328f26f662637d08a22b19e623586797b8046d5a2"
+        "sha256": "cd09246cc8dbc49a8d7438d328f26f662637d08a22b19e623586797b8046d5a2",
+        "upgrade_from": "",
+        "tool_package": ""
       },
       {
         "model_match": "ST18000NM003D",
@@ -699,5 +715,12 @@
       }
     ]
   },
-  "flash_tools": []
+  "flash_tools": [
+    {
+      "name": "stocli64",
+      "command": "storcli cx",
+      "description": "storcli tool for flashing hbas",
+      "install_check": "which storcli64"
+    }
+  ]
 }

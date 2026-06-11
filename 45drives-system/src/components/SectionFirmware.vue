@@ -5,6 +5,15 @@
     <div class="flex items-center gap-2">
       <span v-if="lastChecked" class="text-xs text-muted">Last checked: {{ lastChecked }}</span>
       <button
+        v-if="selectedDevices.size > 0"
+        type="button"
+        :disabled="checking"
+        @click="flashSelectedDevices()"
+        class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+      >
+        Update Selected ({{ selectedDevices.size }})
+      </button>
+      <button
         v-if="flashableDevices.length > 0"
         type="button"
         :disabled="checking"
@@ -39,7 +48,7 @@
       </button>
     </div>
   </div>
-  <div class="card-body">
+  <div class="card-body max-h-[32rem] overflow-y-auto">
     <div v-if="checking && devices.length === 0" class="text-sm text-muted py-4 text-center">
       Running firmware discovery and comparison...
     </div>
@@ -49,11 +58,14 @@
     <div v-else-if="outdatedDevices.length > 0" class="mt-2 flex flex-col">
       <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg max-h-[28rem] overflow-y-auto">
             <table class="min-w-full divide-y divide-default">
-              <thead class="bg-accent">
+              <thead class="bg-accent sticky top-0 z-10">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Type</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-2 w-8">
+                    <input type="checkbox" :checked="allFlashableSelected" :indeterminate="someSelected && !allFlashableSelected" @change="toggleSelectAll" class="rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  </th>
+                  <th scope="col" class="py-3.5 pl-2 pr-3 text-left text-sm font-semibold">Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Device</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Current FW</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Latest FW</th>
@@ -62,7 +74,10 @@
               </thead>
               <tbody class="divide-y divide-default">
                 <tr v-for="(device, idx) in outdatedDevices" :key="idx">
-                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6 uppercase">{{ device.type }}</td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-2 w-8">
+                    <input v-if="canFlash(device) && !rebootPendingDevices.has(device.cache_index)" type="checkbox" :checked="selectedDevices.has(device.cache_index)" @change="toggleDevice(device.cache_index)" class="rounded border-gray-300 text-green-600 focus:ring-green-500" />
+                  </td>
+                  <td class="whitespace-nowrap py-4 pl-2 pr-3 text-sm font-medium uppercase">{{ device.type }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ device.device || '-' }} <span class="text-xs text-gray-400">({{ device.model || '-' }})</span></td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-muted">{{ device.current_firmware || '-' }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-muted">{{ device.latest_firmware || '-' }}</td>
@@ -130,7 +145,7 @@
         </svg>
         <span class="text-sm font-medium text-yellow-600">Do NOT power off the system!</span>
       </div>
-      <div class="bg-gray-900 rounded-md p-3 font-mono text-xs max-h-64 overflow-y-auto whitespace-pre-wrap" v-html="colorizeLog(flashLog)"></div>
+      <div ref="flashLogEl" class="bg-gray-900 rounded-md p-3 font-mono text-xs max-h-64 overflow-y-auto whitespace-pre-wrap" v-html="colorizeLog(flashLog)"></div>
       <div v-if="flashComplete && flashSuccess && flashRebootRequired" class="rounded-md bg-yellow-50 border border-yellow-200 p-3">
         <p class="text-sm font-medium text-yellow-800">⚠ System reboot required to activate the new firmware.</p>
       </div>
@@ -221,7 +236,7 @@
     <div v-if="!confirmLoading" class="px-6 py-3 border-t border-default space-y-3">
       <div>
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
-        <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
+        <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
       </div>
       <div class="flex justify-end gap-2">
         <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
@@ -237,7 +252,7 @@
 <div v-if="batchModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
   <div class="bg-default rounded-lg shadow-xl max-w-2xl w-full mx-4 overflow-hidden">
     <div class="px-6 py-4 border-b border-default flex justify-between items-center">
-      <h3 class="text-lg font-semibold">{{ batchFlashing ? 'Batch Firmware Update' : batchComplete ? 'Batch Update Complete' : 'Update All — Pre-Check' }}</h3>
+      <h3 class="text-lg font-semibold">{{ batchFlashing ? 'Batch Firmware Update' : batchComplete ? 'Batch Update Complete' : (batchIsSelectedOnly ? 'Update Selected — Pre-Check' : 'Update All — Pre-Check') }}</h3>
       <button v-if="!batchFlashing" @click="batchModalVisible = false" class="text-muted hover:text-default text-xl">&times;</button>
     </div>
     <div class="px-6 py-4 space-y-4">
@@ -319,19 +334,13 @@
       <div v-if="!batchFlashing && !batchComplete" class="space-y-3">
         <div>
           <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
-          <input v-model="batchConfirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+          <input v-model="batchConfirmInput" type="text" placeholder="confirm flash" class="w-full bg-accent rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
         </div>
-        <div class="flex justify-between items-center">
-          <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" v-model="batchIncludeBusy" class="rounded" />
-            Include busy devices
-          </label>
-          <div class="flex gap-2">
+        <div class="flex justify-end items-center gap-2">
             <button @click="batchModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
             <button @click="proceedBatchFlash()" :disabled="batchConfirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              Flash All ({{ batchIncludeBusy ? batchDrives.length : batchDrives.filter(d => d.preCheck !== 'busy').length }})
+              {{ batchIsSelectedOnly ? 'Flash Selected' : 'Flash All' }} ({{ batchDrives.filter(d => d.preCheck !== 'busy').length }})
             </button>
-          </div>
         </div>
       </div>
       <div v-else-if="batchComplete" class="flex justify-end">
@@ -370,7 +379,7 @@
       <!-- Confirmation input -->
       <div>
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">reboot now</span> to confirm:</label>
-        <input v-model="rebootConfirmInput" type="text" placeholder="reboot now" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+        <input v-model="rebootConfirmInput" type="text" placeholder="reboot now" class="w-full bg-accent rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
       </div>
 
       <!-- Reboot error -->
@@ -397,7 +406,7 @@
 
 <script>
 import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
-import { ref, computed, inject } from "vue";
+import { ref, computed, inject, watch, nextTick } from "vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
 
 export default {
@@ -410,6 +419,9 @@ export default {
     const dismissBadge = inject('dismissBadge', () => {});
     const checkFirmwareBadge = inject('checkFirmwareBadge', () => {});
 
+    // Selection state for checkbox-based updates (declared early — loadCache clears it)
+    const selectedDevices = ref(new Set());
+
     const loadCache = async () => {
       try {
         const proc = await unwrap(server.execute(
@@ -421,6 +433,8 @@ export default {
           lastChecked.value = new Date(cache.timestamp).toLocaleString();
         }
         error.value = "";
+        // Clear selection — cache_index may have shifted after re-discovery
+        selectedDevices.value = new Set();
       } catch (e) {
         return false;
       }
@@ -452,6 +466,29 @@ export default {
     });
 
     const outdatedDevices = computed(() => devices.value.filter(d => d.update_available === 'outdated'));
+
+    // Selection toggle functions
+    const toggleDevice = (cacheIndex) => {
+      if (selectedDevices.value.has(cacheIndex)) {
+        selectedDevices.value.delete(cacheIndex);
+      } else {
+        selectedDevices.value.add(cacheIndex);
+      }
+      // Force reactivity
+      selectedDevices.value = new Set(selectedDevices.value);
+    };
+    const allFlashableSelected = computed(() => {
+      const flashable = flashableDevices.value;
+      return flashable.length > 0 && flashable.every(d => selectedDevices.value.has(d.cache_index));
+    });
+    const someSelected = computed(() => selectedDevices.value.size > 0);
+    const toggleSelectAll = () => {
+      if (allFlashableSelected.value) {
+        selectedDevices.value = new Set();
+      } else {
+        selectedDevices.value = new Set(flashableDevices.value.map(d => d.cache_index));
+      }
+    };
 
     // A device can be flashed if it has flashable flag and either:
     // - a firmware_file (normal flash), or
@@ -646,6 +683,7 @@ export default {
     // Flash
     const flashProgressVisible = ref(false);
     const flashLog = ref('');
+    const flashLogEl = ref(null);
     const flashComplete = ref(false);
     const flashSuccess = ref(false);
     const flashRebootRequired = ref(false);
@@ -690,17 +728,21 @@ export default {
       flashLog.value += `> Cache index: ${device.cache_index}\n\n--- Starting update ---\n\n`;
 
       try {
-        const proc = await unwrap(server.execute(
-          new Command([
-            "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
-            "--cache-index", String(device.cache_index),
-            "--allow-download"
-          ], { superuser: "require" })
-        ));
-        const stdout = proc.getStdout();
-        const stderr = proc.getStderr();
-        if (stdout) flashLog.value += stdout + '\n';
-        if (stderr) flashLog.value += stderr + '\n';
+        const cmd = new Command([
+          "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+          "--cache-index", String(device.cache_index),
+          "--allow-download"
+        ], { superuser: "require" });
+        const proc = server.spawnProcess(cmd);
+        // Stream stdout in real-time
+        proc.stream((chunk) => {
+          flashLog.value += chunk;
+        });
+        const result = await unwrap(proc.wait());
+        // Append any remaining buffered output
+        const finalStdout = result.getStdout();
+        const finalStderr = result.getStderr();
+        if (finalStderr) flashLog.value += finalStderr + '\n';
         flashLog.value += '\n--- ✓ Update completed successfully ---\n';
         if (device.requires_reboot) {
           flashRebootRequired.value = true;
@@ -721,6 +763,59 @@ export default {
       device.flashing = false;
     };
 
+    const batchIsSelectedOnly = ref(false);
+
+    const flashSelectedDevices = async () => {
+      const selected = flashableDevices.value.filter(d => selectedDevices.value.has(d.cache_index));
+      if (selected.length === 0) return;
+      batchDrives.value = selected.map(d => ({
+        ...d,
+        preCheck: d.type === 'hdd' ? 'checking' : 'na',
+        flashStatus: '',
+      }));
+      batchConfirmInput.value = '';
+      batchIncludeBusy.value = false;
+      batchComplete.value = false;
+      batchFlashing.value = false;
+      batchRebootRequired.value = false;
+      batchLog.value = '';
+      batchSuccessCount.value = 0;
+      batchFailCount.value = 0;
+      batchSkipCount.value = 0;
+      batchIsSelectedOnly.value = true;
+      batchModalVisible.value = true;
+      batchLoading.value = true;
+
+      // Run pre-checks for HDD devices
+      for (let bd of batchDrives.value) {
+        if (bd.type !== 'hdd') continue;
+        const devName = (bd.device || '').replace('/dev/', '');
+        if (!devName) { bd.preCheck = 'na'; continue; }
+        try {
+          const checkProc = await unwrap(server.execute(
+            new Command(["bash", "-c", `
+              DEV="/dev/${devName}"
+              MOUNTS=$(lsblk -n -o MOUNTPOINT "$DEV" 2>/dev/null | grep -v "^$")
+              ZFS=$(zpool status 2>/dev/null | grep -B5 "${devName}" | grep "pool:" | awk '{print $2}')
+              MD=$(grep "${devName}" /proc/mdstat 2>/dev/null)
+              INFLIGHT=$(cat /sys/block/${devName}/inflight 2>/dev/null | awk '{print $1+$2}')
+              FUSER=$(fuser "$DEV" 2>/dev/null)
+              if [ -n "$MOUNTS" ] || [ -n "$ZFS" ] || [ -n "$MD" ] || ([ -n "$INFLIGHT" ] && [ "$INFLIGHT" -gt 0 ]) || [ -n "$FUSER" ]; then
+                echo "BUSY"
+              else
+                echo "IDLE"
+              fi
+            `], { superuser: "require" })
+          ));
+          const result = checkProc.getStdout().trim();
+          bd.preCheck = result === 'IDLE' ? 'idle' : 'busy';
+        } catch (e) {
+          bd.preCheck = 'busy';
+        }
+      }
+      batchLoading.value = false;
+    };
+
     const flashAllDevices = async () => {
       batchDrives.value = flashableDevices.value.map(d => ({
         ...d,
@@ -731,10 +826,12 @@ export default {
       batchIncludeBusy.value = false;
       batchComplete.value = false;
       batchFlashing.value = false;
+      batchRebootRequired.value = false;
       batchLog.value = '';
       batchSuccessCount.value = 0;
       batchFailCount.value = 0;
       batchSkipCount.value = 0;
+      batchIsSelectedOnly.value = false;
       batchModalVisible.value = true;
       batchLoading.value = true;
 
@@ -772,9 +869,7 @@ export default {
       batchFlashing.value = true;
       batchLog.value = `Starting batch firmware update...\n\n`;
 
-      const toFlash = batchIncludeBusy.value
-        ? batchDrives.value
-        : batchDrives.value.filter(d => d.preCheck !== 'busy');
+      const toFlash = batchDrives.value.filter(d => d.preCheck !== 'busy');
 
       // Mark skipped
       for (let bd of batchDrives.value) {
@@ -858,7 +953,16 @@ export default {
       }
     };
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, flashAllDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
+    // Auto-scroll the flash log when new content arrives
+    watch(flashLog, () => {
+      nextTick(() => {
+        if (flashLogEl.value) {
+          flashLogEl.value.scrollTop = flashLogEl.value.scrollHeight;
+        }
+      });
+    });
+
+    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
   }
 };
 </script>

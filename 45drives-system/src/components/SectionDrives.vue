@@ -222,7 +222,7 @@
     <div v-if="!confirmLoading" class="px-6 py-3 border-t border-default space-y-3">
       <div>
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
-        <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedFlash()" />
+        <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border border-gray-300 bg-accent px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedFlash()" />
       </div>
       <div class="flex justify-end gap-2">
         <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
