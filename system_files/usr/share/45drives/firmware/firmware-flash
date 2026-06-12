@@ -144,6 +144,7 @@ def fetch_tool_from_repo(tool_name, dest_path, expected_sha256=""):
     
     Tools are served from the repo under tools/<tool_name>.
     If expected_sha256 is provided, verifies integrity after download.
+    If no SHA256 is available, refuses to download (security policy).
     Returns True if tool is now available at dest_path, False otherwise.
     """
     if os.path.isfile(dest_path) and os.access(dest_path, os.X_OK):
@@ -157,6 +158,13 @@ def fetch_tool_from_repo(tool_name, dest_path, expected_sha256=""):
                 return True
         else:
             return True
+
+    # Refuse to download without a SHA256 hash — tool binaries run as root
+    if not expected_sha256:
+        print(f"  ✗ REFUSED: No SHA256 hash in manifest for tool '{tool_name}'.")
+        print(f"    Tool binaries without integrity hashes cannot be safely downloaded.")
+        print(f"    The manifest must include a sha256 in flash_tools[] for this tool.")
+        return False
 
     repo_url = get_repo_url()
     if not repo_url:
@@ -262,7 +270,7 @@ def load_cache():
         return None
 
 
-def flash_seachest(sg_device, firmware_path):
+def flash_seachest(sg_device, firmware_path, tool_sha256=""):
     """Flash using SeaChest_Firmware."""
     if not sg_device:
         print("Error: No sg device path available for SeaChest", file=sys.stderr)
@@ -293,10 +301,27 @@ def flash_seachest(sg_device, firmware_path):
             if not confirm_download("SeaChest_Firmware"):
                 return False, "SeaChest_Firmware binary not found and download was declined."
             print("  SeaChest_Firmware not found locally, downloading from repo...")
-            if fetch_tool_from_repo("SeaChest_Firmware", SEACHEST_PATH):
+            if fetch_tool_from_repo("SeaChest_Firmware", SEACHEST_PATH, tool_sha256):
                 seachest_bin = SEACHEST_PATH
             else:
                 return False, "SeaChest_Firmware binary not found and could not be downloaded from repo"
+
+    # Verify local binary integrity against manifest hash (unconditional)
+    if not tool_sha256:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        print(f"  ✗ REFUSED: No tool_binary_sha256 in manifest for 'SeaChest_Firmware'.")
+        print(f"    Cannot execute flash tools without integrity verification.")
+        return False, "No tool_binary_sha256 for 'SeaChest_Firmware' — manifest flash_tools[] entry missing or incomplete"
+    actual = compute_sha256(seachest_bin)
+    if actual != tool_sha256:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: SeaChest_Firmware")
+        print(f"    Path:     {seachest_bin}")
+        print(f"    Expected: {tool_sha256}")
+        print(f"    Got:      {actual}")
+        return False, f"SeaChest_Firmware at {seachest_bin} failed integrity check (SHA256 mismatch)"
 
     cmd = f"{seachest_bin} -d {sg_device} --downloadFW {shlex.quote(tmp_path)}"
     print(f"Running: {cmd}")
@@ -330,6 +355,7 @@ def flash_storcli(device_info, firmware_path):
     """Flash HBA using storcli64."""
     tool = device_info.get("flash_tool", "storcli64")
     ctrl_idx = device_info.get("controller_index", 0)
+    tool_sha256 = device_info.get("tool_binary_sha256", "")
 
     # Resolve full path for storcli
     tool_path = tool
@@ -348,10 +374,23 @@ def flash_storcli(device_info, firmware_path):
         if not confirm_download(tool):
             return False, f"{tool} binary not found and download was declined."
         print(f"  {tool} not found locally, downloading from repo...")
-        if fetch_tool_from_repo(tool, dest):
+        if fetch_tool_from_repo(tool, dest, tool_sha256):
             tool_path = dest
         else:
             return False, f"{tool} binary not found and could not be downloaded from repo"
+
+    # Verify local binary integrity against manifest hash (unconditional)
+    if not tool_sha256:
+        print(f"  ✗ REFUSED: No tool_binary_sha256 in manifest for '{tool}'.")
+        print(f"    Cannot execute flash tools without integrity verification.")
+        return False, f"No tool_binary_sha256 for '{tool}' — manifest flash_tools[] entry missing or incomplete"
+    actual = compute_sha256(tool_path)
+    if actual != tool_sha256:
+        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: {tool}")
+        print(f"    Path:     {tool_path}")
+        print(f"    Expected: {tool_sha256}")
+        print(f"    Got:      {actual}")
+        return False, f"{tool} at {tool_path} failed integrity check (SHA256 mismatch)"
 
     # Build command — replace placeholders
     cmd_template = device_info.get("flash_command", "")
@@ -434,10 +473,25 @@ def flash_niccli(device_info, firmware_path):
         dest = "/opt/45drives/tools/niccli"
         if not confirm_download("niccli"):
             return False, "niccli not found and download was declined."
-        if fetch_tool_from_repo("niccli", dest):
+        tool_sha256 = device_info.get("tool_binary_sha256", "")
+        if fetch_tool_from_repo("niccli", dest, tool_sha256):
             niccli_bin = dest
         else:
             return False, "niccli not found and could not be downloaded from repo"
+
+    # Verify local binary integrity against manifest hash (unconditional)
+    tool_sha256 = device_info.get("tool_binary_sha256", "")
+    if not tool_sha256:
+        print(f"  ✗ REFUSED: No tool_binary_sha256 in manifest for 'niccli'.")
+        print(f"    Cannot execute flash tools without integrity verification.")
+        return False, "No tool_binary_sha256 for 'niccli' — manifest flash_tools[] entry missing or incomplete"
+    actual = compute_sha256(niccli_bin)
+    if actual != tool_sha256:
+        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: niccli")
+        print(f"    Path:     {niccli_bin}")
+        print(f"    Expected: {tool_sha256}")
+        print(f"    Got:      {actual}")
+        return False, f"niccli at {niccli_bin} failed integrity check (SHA256 mismatch)"
 
     # Get adapter list from niccli
     print(f"Discovering Broadcom adapter ID for PCI {bus_info}...")
@@ -524,10 +578,25 @@ def flash_mlxup(device_info, firmware_path=None):
         dest = "/opt/45drives/tools/mlxup"
         if not confirm_download("mlxup"):
             return False, "mlxup not found and download was declined."
-        if fetch_tool_from_repo("mlxup", dest):
+        tool_sha256 = device_info.get("tool_binary_sha256", "")
+        if fetch_tool_from_repo("mlxup", dest, tool_sha256):
             mlxup_bin = dest
         else:
             return False, "mlxup not found and could not be downloaded from repo"
+
+    # Verify local binary integrity against manifest hash (unconditional)
+    tool_sha256 = device_info.get("tool_binary_sha256", "")
+    if not tool_sha256:
+        print(f"  ✗ REFUSED: No tool_binary_sha256 in manifest for 'mlxup'.")
+        print(f"    Cannot execute flash tools without integrity verification.")
+        return False, "No tool_binary_sha256 for 'mlxup' — manifest flash_tools[] entry missing or incomplete"
+    actual = compute_sha256(mlxup_bin)
+    if actual != tool_sha256:
+        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: mlxup")
+        print(f"    Path:     {mlxup_bin}")
+        print(f"    Expected: {tool_sha256}")
+        print(f"    Got:      {actual}")
+        return False, f"mlxup at {mlxup_bin} failed integrity check (SHA256 mismatch)"
 
     # Build command — use --image-file if we have a pinned firmware file
     if firmware_path and os.path.isfile(firmware_path):
@@ -588,6 +657,13 @@ def flash_tool_package(device_info):
     flash_tool = device_info.get("flash_tool", "")
     flash_command = device_info.get("flash_command", "")
     expected_sha256 = device_info.get("tool_package_sha256", "")
+
+    # Fail-closed: refuse to proceed without an integrity hash — tool packages run as root
+    if not expected_sha256:
+        print(f"  ✗ REFUSED: No tool_package_sha256 in manifest for '{tool_package}'.")
+        print(f"    Tool packages without integrity hashes cannot be safely used.")
+        print(f"    The manifest must include tool_package_sha256 for this entry.")
+        return False, f"No tool_package_sha256 in manifest for '{tool_package}' — cannot safely proceed"
 
     if not flash_command:
         return False, f"No flash_command specified in manifest for tool_package '{tool_package}'"
@@ -656,17 +732,14 @@ def flash_tool_package(device_info):
                 print(f"  Downloaded: {tool_package} ({file_size / 1024 / 1024:.1f} MB)")
                 print(f"  SHA256: {actual_sha256}")
 
-                # Verify integrity if hash is in manifest
-                if expected_sha256:
-                    if actual_sha256 != expected_sha256:
-                        print(f"  ✗ INTEGRITY FAILURE: SHA256 mismatch!")
-                        print(f"    Expected: {expected_sha256}")
-                        print(f"    Got:      {actual_sha256}")
-                        os.unlink(tarball_path)
-                        return False, f"Integrity check failed for {tool_package}: SHA256 mismatch"
-                    print(f"  ✓ Integrity verified")
-                else:
-                    print(f"  ⚠ No SHA256 in manifest — skipping integrity check")
+                # Verify integrity against manifest hash
+                if actual_sha256 != expected_sha256:
+                    print(f"  ✗ INTEGRITY FAILURE: SHA256 mismatch!")
+                    print(f"    Expected: {expected_sha256}")
+                    print(f"    Got:      {actual_sha256}")
+                    os.unlink(tarball_path)
+                    return False, f"Integrity check failed for {tool_package}: SHA256 mismatch"
+                print(f"  ✓ Integrity verified")
 
             except (HTTPError, URLError) as e:
                 if os.path.exists(tarball_path):
@@ -819,7 +892,8 @@ def flash_device(device_info):
     # Route to appropriate flash function
     if "SeaChest" in flash_tool:
         sg_device = device_info.get("sg_device", "")
-        return flash_seachest(sg_device, firmware_path)
+        tool_sha256 = device_info.get("tool_binary_sha256", "")
+        return flash_seachest(sg_device, firmware_path, tool_sha256)
     elif "storcli" in flash_tool:
         return flash_storcli(device_info, firmware_path)
     elif "niccli" in flash_tool:

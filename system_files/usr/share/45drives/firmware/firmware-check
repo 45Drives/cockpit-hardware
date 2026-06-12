@@ -484,6 +484,15 @@ def main():
                 "upgrade_from": entry.get("upgrade_from", ""),
             }
 
+            # Look up flash tool binary SHA256 from manifest.flash_tools[]
+            tool_binary_sha256 = ""
+            if flash_tool:
+                for ft in manifest.get("flash_tools", []):
+                    if ft.get("name", "").lower() == flash_tool.lower():
+                        tool_binary_sha256 = ft.get("sha256", "")
+                        break
+            device_result["tool_binary_sha256"] = tool_binary_sha256
+
             # Verify firmware payload exists on disk if device is flashable
             fw_file = device_result.get("firmware_file", "")
             expected_sha256 = device_result.get("sha256", "")

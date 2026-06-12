@@ -717,10 +717,44 @@
   },
   "flash_tools": [
     {
-      "name": "stocli64",
-      "command": "storcli cx",
-      "description": "storcli tool for flashing hbas",
-      "install_check": "which storcli64"
+      "name": "storcli64",
+      "command": "storcli64 /cX download file=<firmware_path>",
+      "description": "Broadcom MegaRAID StorCLI tool for HBA/RAID controller firmware flashing",
+      "install_check": "which storcli64 || test -f /opt/45drives/tools/storcli64",
+      "binary": "tools/storcli64",
+      "sha256": "646b1583d47f81502b839c4d8124335becf85b0e5c181302e9dbf6e9236b718b"
+    },
+    {
+      "name": "mlxup",
+      "command": "mlxup --update --dev <bus_info> --image-file <firmware_path> --force --yes",
+      "description": "NVIDIA/Mellanox firmware update utility for ConnectX NICs",
+      "install_check": "which mlxup || test -f /opt/45drives/tools/mlxup",
+      "binary": "tools/mlxup",
+      "sha256": "9d7604678e91e0fa5484793e2caa5b0c4d83d0d4a77c36e554a3781defa535fc"
+    },
+    {
+      "name": "SeaChest_Firmware",
+      "command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
+      "description": "Seagate SeaChest utility for HDD firmware updates",
+      "install_check": "which SeaChest_Firmware || test -f /opt/45drives/tools/SeaChest_Firmware",
+      "binary": "tools/SeaChest_Firmware",
+      "sha256": "69b887f0543100169f5b0afdfe502cabe2ef5014d06d557808b464f807312bbc"
+    },
+    {
+      "name": "niccli",
+      "command": "niccli -i <adapter_id> fw --update -f <firmware_path> --yes",
+      "description": "Broadcom niccli utility for NetXtreme-E NIC firmware updates",
+      "install_check": "which niccli || test -f /opt/45drives/tools/niccli",
+      "binary": "tools/niccli",
+      "sha256": "f81bf431f228114ea98743e4a255dc9923443cbb33e13e5e70723e82aeb73505"
+    },
+    {
+      "name": "nvmupdate64e",
+      "command": "nvmupdate64e -u -l -c nvmupdate.cfg",
+      "description": "Intel NVM Update utility for Intel NICs (bundled in tool_package .tar.gz)",
+      "install_check": "test -f /tmp/45drives-nvmupdate-*/nvmupdate64e",
+      "binary": "",
+      "sha256": ""
     }
   ]
 }
