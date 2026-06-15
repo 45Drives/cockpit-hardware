@@ -34,7 +34,8 @@ import urllib.error
 ###############################################################################
 
 REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
-FIRMWARE_DOWNLOAD_DIR = "/tmp/45drives-firmware"
+# Use the packaged on-disk cache so downloads persist and match firmware-check/docs
+FIRMWARE_DOWNLOAD_DIR = "/usr/share/45drives/firmware/files"
 # Primary cache: written by cockpit firmware-check
 CACHE_FILE = "/var/cache/45drives/firmware.json"
 # Fallback cache: written by system firmware-check (installed version)
@@ -252,7 +253,8 @@ def get_device_from_cache(device_type, device_path):
             with open(cache_path) as f:
                 cache = json.load(f)
             for dev in cache.get("devices", []):
-                if dev.get("type") == device_type and dev.get("device_path") == device_path:
+                dev_path = dev.get("device_path") or dev.get("bus_info") or dev.get("device")
+                if dev.get("type") == device_type and dev_path == device_path:
                     return dev
         except (FileNotFoundError, json.JSONDecodeError):
             continue

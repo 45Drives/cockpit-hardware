@@ -149,10 +149,12 @@ def verify_gpg_signature(data_bytes, sig_bytes, pubkey_path):
         return False
     finally:
         # Clean up temp files
-        for f in [data_path, sig_path]:
+        for f in (locals().get("data_path"), locals().get("sig_path")):
+            if not f:
+                continue
             try:
                 os.unlink(f)
-            except:
+            except OSError:
                 pass
 
 

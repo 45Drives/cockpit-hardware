@@ -37,7 +37,10 @@ const checkFirmwareBadge = () => {
             page_status: {
               type: "error",
               status: updatesAvailable,
-              title: cockpit.gettext(`${updatesAvailable} firmware update${updatesAvailable > 1 ? "s" : ""} available (reboot required)`)
+              title: cockpit.format(
+                cockpit.ngettext("$0 firmware update available (reboot required)", "$0 firmware updates available (reboot required)", updatesAvailable),
+                updatesAvailable
+              )
             }
           });
         } else if (updatesAvailable > 0) {
@@ -45,7 +48,10 @@ const checkFirmwareBadge = () => {
             page_status: {
               type: "warning",
               status: updatesAvailable,
-              title: cockpit.gettext(`${updatesAvailable} firmware update${updatesAvailable > 1 ? "s" : ""} available`)
+              title: cockpit.format(
+                cockpit.ngettext("$0 firmware update available", "$0 firmware updates available", updatesAvailable),
+                updatesAvailable
+              )
             }
           });
         } else {

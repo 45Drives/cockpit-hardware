@@ -2,10 +2,11 @@
 #define GET_ERROR_H_FILE
 
 #include <linux/errno.h>
+#include <linux/kernel.h>
 
 static const char *get_error(int error)
 {
-    int er = abs(error);
+    int er = (error < 0) ? -error : error;
     switch (er)
     {
     case EPERM:
