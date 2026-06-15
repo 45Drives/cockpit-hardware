@@ -3,10 +3,76 @@ import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import SectionContainer from "./components/SectionContainer.vue";
-import { ref , onMounted} from "vue";
+import { ref , onMounted, provide} from "vue";
 
 const adminCheck = ref(false);
 const adminFlag = ref(false);
+
+/**
+ * Clear the sidebar notification badge.
+ */
+const dismissBadge = () => {
+  cockpit.transport.control("notify", {
+    page_status: null
+  });
+};
+
+/**
+ * Check firmware cache and set sidebar badge notification.
+ * Badge types: "warning" (updates available), "error" (reboot required)
+ */
+const checkFirmwareBadge = () => {
+  const cacheFile = cockpit.file("/var/cache/45drives/firmware/status.json", { superuser: "try" });
+  cacheFile.read()
+    .then((content) => {
+      if (!content) return;
+      try {
+        const cache = JSON.parse(content);
+        const devices = cache.devices || [];
+        const updatesAvailable = devices.filter(d => d.update_available === "outdated").length;
+        const rebootRequired = devices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
+
+        if (rebootRequired) {
+          cockpit.transport.control("notify", {
+            page_status: {
+              type: "error",
+              status: updatesAvailable,
+              title: cockpit.format(
+                cockpit.ngettext("$0 firmware update available (reboot required)", "$0 firmware updates available (reboot required)", updatesAvailable),
+                updatesAvailable
+              )
+            }
+          });
+        } else if (updatesAvailable > 0) {
+          cockpit.transport.control("notify", {
+            page_status: {
+              type: "warning",
+              status: updatesAvailable,
+              title: cockpit.format(
+                cockpit.ngettext("$0 firmware update available", "$0 firmware updates available", updatesAvailable),
+                updatesAvailable
+              )
+            }
+          });
+        } else {
+          cockpit.transport.control("notify", {
+            page_status: null
+          });
+        }
+      } catch (e) {
+        console.warn("45drives-system: failed to parse firmware cache for badge", e);
+      }
+    })
+    .catch(() => {
+      // Cache doesn't exist yet - no badge
+    })
+    .finally(() => {
+      cacheFile.close();
+    });
+};
+
+provide('dismissBadge', dismissBadge);
+provide('checkFirmwareBadge', checkFirmwareBadge);
 
 const rootCheck = async () => {
   let root_check = cockpit.permission({ admin: true });
@@ -26,6 +92,7 @@ const rootCheck = async () => {
 
 onMounted(()=>{
   rootCheck();
+  checkFirmwareBadge();
 });
 
 </script>

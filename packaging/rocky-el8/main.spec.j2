@@ -37,8 +37,19 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
 %dir /usr/share/cockpit/45drives-fan-controller
+%dir /etc/45drives/fan-controller
+%config(noreplace) /etc/45drives/fan-controller/profiles.json
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 /usr/lib/systemd/system/45d-fancontroller.service
+/usr/lib/systemd/system/45d-firmware-check.timer
+/usr/lib/systemd/system/45d-firmware-check.service
+%dir /usr/share/45drives/firmware
+%dir /usr/share/45drives/firmware/files
+%config(noreplace) /usr/share/45drives/firmware/repo.conf
+/usr/share/45drives/firmware/*
+/usr/share/45drives/firmware/files/*
+%dir /var/cache/45drives/firmware
+/var/cache/45drives/firmware/.gitkeep
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
@@ -48,16 +59,23 @@ make DESTDIR=%{buildroot} install
 %post
 systemctl daemon-reload
 systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
+mkdir -p /var/cache/45drives/firmware
+mkdir -p /var/log/45drives
+mkdir -p /opt/45drives/tools
+systemctl enable --now 45d-firmware-check.timer 2>/dev/null || true
 
 %preun
 if [ $1 -eq 0 ]; then
     systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
+    systemctl disable --now 45d-firmware-check.timer 2>/dev/null || true
 fi
 
 %postun
 systemctl daemon-reload
 
 %changelog
+* Mon Jun 15 2026 Rachit Hans <rhans@45drives.com> 2.7.3-1
+- added functionality toi update the firmware from system tab
 * Tue May 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.2-1
 - Adds support for GENOAD8X-2T/BCM mobo
 * Mon Apr 27 2026 Jordan Keough <jkeough@45drives.com> 2.7.1-1

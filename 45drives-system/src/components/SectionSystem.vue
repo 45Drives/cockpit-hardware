@@ -58,6 +58,26 @@
                   {{ moboSerial }}
                 </dd>
               </div>
+              <div
+                class="bg-default px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+              >
+                <dt class="text-sm font-medium">BIOS Version</dt>
+                <dd class="mt-1 text-sm sm:mt-0 sm:col-span-2 flex items-center gap-2">
+                  <span class="text-muted">{{ biosFirmware }}</span>
+                  <span v-if="biosStatus === 'outdated'" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Update Available ({{ biosLatest }})</span>
+                  <span v-else-if="biosStatus === 'current'" class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Up to Date</span>
+                </dd>
+              </div>
+              <div
+                class="bg-accent px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6"
+              >
+                <dt class="text-sm font-medium">BMC Version</dt>
+                <dd class="mt-1 text-sm sm:mt-0 sm:col-span-2 flex items-center gap-2">
+                  <span class="text-muted">{{ bmcFirmware }}</span>
+                  <span v-if="bmcStatus === 'outdated'" class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Update Available ({{ bmcLatest }})</span>
+                  <span v-else-if="bmcStatus === 'current'" class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Up to Date</span>
+                </dd>
+              </div>
             </dl>
           </div>
         </div>
@@ -96,6 +116,12 @@ export default {
     const moboModel = ref("");
     const moboSerial = ref("");
     const serverImgPath = ref("img/45dlogo.png");
+    const biosFirmware = ref("-");
+    const biosLatest = ref("");
+    const biosStatus = ref("");
+    const bmcFirmware = ref("-");
+    const bmcLatest = ref("");
+    const bmcStatus = ref("");
     const fatalError = ref(false);
     const fatalErrorMsg = ref([]);
     const showFixButton = ref(false);
@@ -230,8 +256,53 @@ export default {
       }
     };
 
+    const loadFirmwareStatus = async () => {
+      let cacheData = null;
+      try {
+        const cacheProc = await unwrap(server.execute(
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
+        ));
+        cacheData = JSON.parse(cacheProc.getStdout());
+      } catch (e) {
+        // Cache doesn't exist yet — generate it
+        console.log("Firmware cache not found, running firmware-check...");
+        try {
+          const fwProc = await unwrap(server.execute(
+            new Command(["python3", "/usr/share/45drives/firmware/firmware-check"], { superuser: "require" }),
+            false
+          ));
+          if (fwProc.exitStatus === 1) {
+            console.log("Firmware check failed (exit 1):", fwProc.getStderr());
+            return;
+          }
+          const retryProc = await unwrap(server.execute(
+            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
+          ));
+          cacheData = JSON.parse(retryProc.getStdout());
+        } catch (e2) {
+          console.log("Firmware check failed:", e2);
+          return;
+        }
+      }
+      if (cacheData && cacheData.devices) {
+        const bios = cacheData.devices.find(d => d.type === 'bios');
+        const bmc = cacheData.devices.find(d => d.type === 'bmc');
+        if (bios) {
+          biosFirmware.value = bios.current_firmware || '-';
+          biosLatest.value = bios.latest_firmware || '';
+          biosStatus.value = bios.update_available || '';
+        }
+        if (bmc) {
+          bmcFirmware.value = bmc.current_firmware || '-';
+          bmcLatest.value = bmc.latest_firmware || '';
+          bmcStatus.value = bmc.update_available || '';
+        }
+      }
+    };
+
     // start by gathering system info
     getSystemInfo();
+    loadFirmwareStatus();
 
     return {
       sysModel,
@@ -240,8 +311,15 @@ export default {
       moboModel,
       moboSerial,
       serverImgPath,
+      biosFirmware,
+      biosLatest,
+      biosStatus,
+      bmcFirmware,
+      bmcLatest,
+      bmcStatus,
       getSystemInfo,
       getSystemImgPath,
+      loadFirmwareStatus,
       fatalError,
       fatalErrorMsg,
       showFixButton,
