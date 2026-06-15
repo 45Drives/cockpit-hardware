@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "last_updated": "2026-06-11T13:35:26Z",
+  "last_updated": "2026-06-12T20:53:16Z",
   "maintained_by": "45Drives R&D",
   "description": "Firmware manifest for 45Drives hardware. Used by 45d-firmware-check to compare installed firmware against latest validated versions.",
   "components": {
@@ -15,7 +15,7 @@
         "requires_reboot": true,
         "release_date": "2024-06-01",
         "release_notes": "Latest validated SAS3616 firmware for 9400-16i HBA",
-        "firmware_file": "HBA_9400-16i_SAS_SATA_Profile.bin",
+        "firmware_file": "hba/9400-16i/HBA_9400-16i_SAS_SATA_Profile.bin",
         "sha256": "b7a715d23646dcf5713a2548ddd231c72b1c0e35b23d9cec1d829b9c2c2719be"
       },
       {
@@ -28,7 +28,7 @@
         "requires_reboot": true,
         "release_date": "2026-06-09",
         "release_notes": "",
-        "firmware_file": "SAS9305_16i_IT_P.bin",
+        "firmware_file": "hba/9305-16i/SAS9305_16i_IT_P.bin",
         "sha256": "917d0c11d78401339c8de06582c884e13d628d76fb9ad5c42e87ae4fcb316464",
         "upgrade_from": "",
         "family": "",
@@ -45,7 +45,7 @@
         "requires_reboot": true,
         "release_date": "2026-06-09",
         "release_notes": "",
-        "firmware_file": "SAS9305_24i_IT_P.bin",
+        "firmware_file": "hba/9305-24i/SAS9305_24i_IT_P.bin",
         "sha256": "3ed68273cea40d07fdd2170c98aeee084c18358ca38493a085126887eb74a65b"
       },
       {
@@ -58,7 +58,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "MegaRAID controller firmware",
-        "firmware_file": "MR_FW_3324_4MB.rom",
+        "firmware_file": "hba/9361-16i/MR_FW_3324_4MB.rom",
         "sha256": "cb87637fc54ecb7a94f1102141e1359a07dea549ee37df840a8426293cdfe099"
       },
       {
@@ -71,7 +71,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "MegaRAID controller firmware",
-        "firmware_file": "MR_FW_3324_4MB.rom",
+        "firmware_file": "hba/9361-24i/MR_FW_3324_4MB.rom",
         "sha256": "cb87637fc54ecb7a94f1102141e1359a07dea549ee37df840a8426293cdfe099"
       },
       {
@@ -84,7 +84,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "",
-        "firmware_file": "9600-16i_full_fw_vsn_pldm_pkg_signed.rom",
+        "firmware_file": "hba/9600-16i/9600-16i_full_fw_vsn_pldm_pkg_signed.rom",
         "sha256": "a69cac9b97a3bb56468e6ed3de2dc848578426deaea22f757f3d4d5ae149a918"
       },
       {
@@ -97,7 +97,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "",
-        "firmware_file": "9600-24i_full_fw_vsn_pldm_pkg_signed.rom",
+        "firmware_file": "hba/9600-24i/9600-24i_full_fw_vsn_pldm_pkg_signed.rom",
         "sha256": "5572042af358ef940394d23d5857c9bbb066c2afa6a82d8970b6d8dd1048a094"
       },
       {
@@ -110,7 +110,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "",
-        "firmware_file": "9660-16i_full_fw_vsn_pldm_pkg_signed.rom",
+        "firmware_file": "hba/9660-16i/9660-16i_full_fw_vsn_pldm_pkg_signed.rom",
         "sha256": "118500adac80b7668af894d2fb5cd0a1df38131e2f54651bfa1910447f3b0949"
       },
       {
@@ -129,20 +129,6 @@
     ],
     "nic": [
       {
-        "model_match": "ConnectX-6|MCX631",
-        "vendor": "NVIDIA/Mellanox",
-        "family": "ConnectX-6",
-        "latest_firmware": "20.40.1000",
-        "flash_tool": "mlxup",
-        "flash_command": "mlxup --update --dev <bus_info>",
-        "flashable": false,
-        "requires_reboot": true,
-        "release_date": "",
-        "release_notes": "Mellanox ConnectX-6 NIC. Version pinned in manifest. mlxup downloaded on-demand for flashing.",
-        "firmware_file": "",
-        "sha256": ""
-      },
-      {
         "model_match": "MCX516A",
         "vendor": "NVIDIA/Mellanox",
         "family": "ConnectX-5",
@@ -153,7 +139,7 @@
         "requires_reboot": true,
         "release_date": "2026-06-10",
         "release_notes": "ConnectX-5 100Gb QSFP28 (MCX516A-CCAT). Pinned firmware .bin flashed via mlxup --image-file.",
-        "firmware_file": "fw-ConnectX5-rel-16_35_8008-MCX516A-CCA_Ax-UEFI-14.29.15-FlexBoot-3.6.902.bin",
+        "firmware_file": "nic/connectx-5/fw-ConnectX5-rel-16_35_8008-MCX516A-CCA_Ax-UEFI-14.29.15-FlexBoot-3.6.902.bin",
         "sha256": "b11057da599f2b6d6507e9e81ebbad0de10423b1bece3ae55b29925438c38ab1"
       },
       {
@@ -167,7 +153,7 @@
         "requires_reboot": true,
         "release_date": "2026-06-10",
         "release_notes": "ConnectX-5 25Gb SFP28 (MCX512A-ACAT). Pinned firmware .bin flashed via mlxup --image-file.",
-        "firmware_file": "fw-ConnectX5-rel-16_35_8008-MCX512A-ACA_Ax_Bx-UEFI-14.29.15-FlexBoot-3.6.902.bin",
+        "firmware_file": "nic/connectx-5/fw-ConnectX5-rel-16_35_8008-MCX512A-ACA_Ax_Bx-UEFI-14.29.15-FlexBoot-3.6.902.bin",
         "sha256": "4296d2d585c1231c53e68904ec4ba3bd2cd0906ce77a9f31fa5190cae7dc5513"
       },
       {
@@ -181,7 +167,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "Broadcom BCM57416 onboard NIC. Flashed via niccli.",
-        "firmware_file": "BCM957416_v228.pkg",
+        "firmware_file": "nic/broadcom/BCM957416_v228.pkg",
         "sha256": "d781aefa5fe6e9c69de55b21df6a785730b8f4d78823813703c1138c817e0d03"
       },
       {
@@ -195,7 +181,7 @@
         "requires_reboot": true,
         "release_date": "",
         "release_notes": "Broadcom BCM57412 P210p add-in NIC. Flashed via niccli.",
-        "firmware_file": "BCM957412A4120AC.pkg",
+        "firmware_file": "nic/broadcom/BCM957412A4120AC.pkg",
         "sha256": "7596b93a0476cf6868ccc446de20c8a3d1e4b2d09da0340d4b5069aca68852d4"
       },
       {
@@ -313,64 +299,6 @@
         "tool_package_sha256": "51b83c45b59745c29b0abcd4c5c6e25398d969ffae5d81db1bf5350a503472f5"
       }
     ],
-    "bios": [
-      {
-        "model_match": "System BIOS",
-        "vendor": "GIGABYTE",
-        "latest_firmware": "",
-        "flash_tool": null,
-        "flash_command": null,
-        "flashable": false,
-        "requires_reboot": true,
-        "release_date": "",
-        "release_notes": "BIOS updates require manual flash via BIOS recovery or vendor utility. Download from Gigabyte support site.",
-        "firmware_file": "",
-        "sha256": ""
-      },
-      {
-        "model_match": "System BIOS",
-        "vendor": "American Megatrends",
-        "latest_firmware": "",
-        "flash_tool": null,
-        "flash_command": null,
-        "flashable": false,
-        "requires_reboot": true,
-        "release_date": "",
-        "release_notes": "BIOS updates require manual flash. Download from motherboard vendor support site.",
-        "firmware_file": "",
-        "sha256": ""
-      }
-    ],
-    "bmc": [
-      {
-        "model_match": "BMC/IPMI",
-        "vendor": ".*",
-        "latest_firmware": "",
-        "flash_tool": null,
-        "flash_command": null,
-        "flashable": false,
-        "requires_reboot": false,
-        "release_date": "",
-        "release_notes": "BMC updates typically performed via IPMI web interface or vendor-specific tool.",
-        "firmware_file": "",
-        "sha256": ""
-      }
-    ],
-    "expander": [
-      {
-        "model_match": "VirtualSES|SAS.*Expander",
-        "vendor": "BROADCOM",
-        "latest_firmware": "",
-        "flash_tool": null,
-        "flash_command": null,
-        "flashable": false,
-        "requires_reboot": true,
-        "release_date": "",
-        "release_notes": "SAS Expander firmware updates require specialized tools and careful sequencing. Contact 45Drives support.",
-        "firmware_file": "",
-        "sha256": ""
-      }
-    ],
     "nvme": [],
     "hdd": [
       {
@@ -385,7 +313,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 10T",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a",
         "upgrade_from": "",
         "tool_package": ""
@@ -402,7 +330,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 8T",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
       },
       {
@@ -417,7 +345,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 6T",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
       },
       {
@@ -432,7 +360,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 4T (SN-series)",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
       },
       {
@@ -447,7 +375,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 4T (TN-series)",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
       },
       {
@@ -462,7 +390,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 2T (SN-series)",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
       },
       {
@@ -477,7 +405,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos 7E10 SATA 2T (TN-series)",
-        "firmware_file": "CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e10/CimarronBPExos7E10SATA-STD-512E-SN04.LOD",
         "sha256": "c15a4c35b978c39a71d5cf35cd3be080e545443699932d60fa6a03d8228a725a"
       },
       {
@@ -492,7 +420,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-08",
         "release_notes": "Exos X16 SATA 16T",
-        "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-x16/EvansExosX16SATA-STD-512E-SN04.LOD",
         "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
         "upgrade_from": "SN01,SN02,SN03"
       },
@@ -508,7 +436,7 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "Exos X16 SATA 14T",
-        "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-x16/EvansExosX16SATA-STD-512E-SN04.LOD",
         "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
         "upgrade_from": "SN01,SN02,SN03"
       },
@@ -524,7 +452,7 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "Exos X16 SATA 12T",
-        "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-x16/EvansExosX16SATA-STD-512E-SN04.LOD",
         "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
         "upgrade_from": "SN01,SN02,SN03"
       },
@@ -540,7 +468,7 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "Exos X16 SATA 10T",
-        "firmware_file": "EvansExosX16SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-x16/EvansExosX16SATA-STD-512E-SN04.LOD",
         "sha256": "d3cbfa721fadcc9808a853df44140f3d6991e7fe25bb9298dd284d761d9a6cff",
         "upgrade_from": "SN01,SN02,SN03"
       },
@@ -556,7 +484,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 20T",
-        "firmware_file": "EvansBPExosX18SATA-STD-5xxE-SE06.LOD",
+        "firmware_file": "hdd/seagate/exos-x18/EvansBPExosX18SATA-STD-5xxE-SE06.LOD",
         "sha256": "590ae464c4bb08511c7f450b51b2be0e01e2762fa84c673bd3c20daa518d91dc",
         "upgrade_from": "",
         "tool_package": ""
@@ -573,7 +501,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 18T",
-        "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
+        "firmware_file": "hdd/seagate/exos-x18/EvansBPExosX18SATA-STD-512E-SN06.LOD",
         "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
@@ -588,7 +516,7 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "Exos X18 SATA 16T",
-        "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
+        "firmware_file": "hdd/seagate/exos-x18/EvansBPExosX18SATA-STD-512E-SN06.LOD",
         "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
@@ -603,7 +531,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-08",
         "release_notes": "Exos X18 SATA 14T",
-        "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
+        "firmware_file": "hdd/seagate/exos-x18/EvansBPExosX18SATA-STD-512E-SN06.LOD",
         "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
@@ -618,7 +546,7 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "Exos X18 SATA 12T",
-        "firmware_file": "EvansBPExosX18SATA-STD-512E-SN06.LOD",
+        "firmware_file": "hdd/seagate/exos-x18/EvansBPExosX18SATA-STD-512E-SN06.LOD",
         "sha256": "aef9c703f5a0fd0c200296431030215699080604e536874bacf3147f1a39106e"
       },
       {
@@ -633,7 +561,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos X20 SATA 20T",
-        "firmware_file": "LongsPeakExosX20SATA-STD-512E-SN06.LOD",
+        "firmware_file": "hdd/seagate/exos-x20/LongsPeakExosX20SATA-STD-512E-SN06.LOD",
         "sha256": "cd09246cc8dbc49a8d7438d328f26f662637d08a22b19e623586797b8046d5a2",
         "upgrade_from": "",
         "tool_package": ""
@@ -650,7 +578,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-05",
         "release_notes": "Exos X20 SATA 18T",
-        "firmware_file": "LongsPeakExosX20SATA-STD-512E-SN06.LOD",
+        "firmware_file": "hdd/seagate/exos-x20/LongsPeakExosX20SATA-STD-512E-SN06.LOD",
         "sha256": "cd09246cc8dbc49a8d7438d328f26f662637d08a22b19e623586797b8046d5a2"
       },
       {
@@ -665,7 +593,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-08",
         "release_notes": "MobulaBP SATA 14T",
-        "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
+        "firmware_file": "hdd/seagate/exos-x14/MobulaBPExosX14SATA-STD-512E-SN03.LOD",
         "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835"
       },
       {
@@ -680,7 +608,7 @@
         "requires_reboot": false,
         "release_date": "",
         "release_notes": "MobulaBP SATA 12T",
-        "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
+        "firmware_file": "hdd/seagate/exos-x14/MobulaBPExosX14SATA-STD-512E-SN03.LOD",
         "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835"
       },
       {
@@ -695,7 +623,7 @@
         "requires_reboot": false,
         "release_date": "2026-06-08",
         "release_notes": "MobulaBP SATA 10T",
-        "firmware_file": "MobulaBPExosX14SATA-STD-512E-SN03.LOD",
+        "firmware_file": "hdd/seagate/exos-x14/MobulaBPExosX14SATA-STD-512E-SN03.LOD",
         "sha256": "c33bd27194eff2d5254cff877a906d511bf83ccaff06817c45eb8eb9b17d3835"
       },
       {
@@ -708,10 +636,40 @@
         "requires_reboot": false,
         "release_date": "2026-06-09",
         "release_notes": "",
-        "firmware_file": "CimarronExos7E8SATA-STD-512E-SN04.LOD",
+        "firmware_file": "hdd/seagate/exos-7e8/CimarronExos7E8SATA-STD-512E-SN04.LOD",
         "sha256": "610c0b1ecdda01feae556c0576b9531d494128baa05cc61f16ebaaef0a932920",
         "family": "Exos 7E8",
         "upgrade_from": "SN02,SN03"
+      },
+      {
+        "model_match": "ST25000NM000E",
+        "vendor": "Seagate",
+        "latest_firmware": "SE04",
+        "flash_tool": "SeaChest_Firmware",
+        "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
+        "flashable": true,
+        "requires_reboot": false,
+        "release_date": "2026-06-12",
+        "release_notes": "",
+        "firmware_file": "hdd/seagate/exos-x22/LongsPeakBPExosX22SATA-STD-512E-SE04.LOD",
+        "sha256": "064e200fe54b65e36c3cb30a6aa505cec27a899c3ba5952fe4f9fa665166cfc0",
+        "family": "Exos X22",
+        "upgrade_from": "SE04,SE05,SE06"
+      },
+      {
+        "model_match": "ST24000NM002H",
+        "vendor": "Seagate",
+        "latest_firmware": "SE07",
+        "flash_tool": "SeaChest_Firmware",
+        "flash_command": "SeaChest_Firmware --device <device_path> --downloadFW <firmware_path>",
+        "flashable": true,
+        "requires_reboot": false,
+        "release_date": "",
+        "release_notes": "",
+        "firmware_file": "hdd/seagate/exos-x24/SummitExosSATA-ISE-512E-SE07.LOD",
+        "sha256": "24e5af94ae279cce9d018e28b835f3b2f57fdcdc001f05e2dd580959aafd82b6",
+        "family": "Exos X24",
+        "upgrade_from": "SE04,SE05,SE06"
       }
     ]
   },

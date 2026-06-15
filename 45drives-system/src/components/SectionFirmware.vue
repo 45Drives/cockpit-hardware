@@ -275,8 +275,16 @@
         <span class="ml-3 text-sm text-muted">Running pre-flight checks on {{ batchDrives.length }} devices...</span>
       </div>
 
+      <!-- Downloads required -->
+      <div v-if="!batchLoading && !batchFlashing && !batchComplete && batchDownloads.length > 0" class="rounded-md bg-amber-50 border border-amber-200 p-3">
+        <h4 class="text-sm font-medium text-amber-800 mb-2">Downloads required from firmware repo:</h4>
+        <ul class="text-sm text-amber-700 list-disc pl-5 space-y-1">
+          <li v-for="(dl, i) in batchDownloads" :key="i"><strong>{{ dl.name }}</strong> — {{ dl.reason }}</li>
+        </ul>
+      </div>
+
       <!-- Pre-check results / progress -->
-      <div v-else class="max-h-80 overflow-y-auto">
+      <div v-if="!batchLoading" class="max-h-80 overflow-y-auto">
         <table class="min-w-full text-sm">
           <thead>
             <tr class="border-b border-default">
@@ -702,6 +710,7 @@ export default {
     const batchSkipCount = ref(0);
     const batchRebootRequired = ref(false);
     const batchBusyCount = computed(() => batchDrives.value.filter(d => d.preCheck === 'busy').length);
+    const batchDownloads = ref([]);
 
     const colorizeLog = (text) => {
       return text.split('\n').map(line => {
@@ -785,6 +794,28 @@ export default {
       batchIsSelectedOnly.value = true;
       batchModalVisible.value = true;
       batchLoading.value = true;
+      batchDownloads.value = [];
+
+      // Run preflight checks for download requirements
+      for (let bd of batchDrives.value) {
+        try {
+          const pfProc = await unwrap(server.execute(
+            new Command([
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+              "--cache-index", String(bd.cache_index),
+              "--preflight"
+            ], { superuser: "require" })
+          ));
+          const pfData = JSON.parse(pfProc.getStdout());
+          if (pfData.downloads && pfData.downloads.length > 0) {
+            for (const dl of pfData.downloads) {
+              if (!batchDownloads.value.some(d => d.name === dl.name)) {
+                batchDownloads.value.push(dl);
+              }
+            }
+          }
+        } catch (e) { /* preflight failed, flash will handle it */ }
+      }
 
       // Run pre-checks for HDD devices
       for (let bd of batchDrives.value) {
@@ -834,6 +865,28 @@ export default {
       batchIsSelectedOnly.value = false;
       batchModalVisible.value = true;
       batchLoading.value = true;
+      batchDownloads.value = [];
+
+      // Run preflight checks for download requirements
+      for (let bd of batchDrives.value) {
+        try {
+          const pfProc = await unwrap(server.execute(
+            new Command([
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
+              "--cache-index", String(bd.cache_index),
+              "--preflight"
+            ], { superuser: "require" })
+          ));
+          const pfData = JSON.parse(pfProc.getStdout());
+          if (pfData.downloads && pfData.downloads.length > 0) {
+            for (const dl of pfData.downloads) {
+              if (!batchDownloads.value.some(d => d.name === dl.name)) {
+                batchDownloads.value.push(dl);
+              }
+            }
+          }
+        } catch (e) { /* preflight failed, flash will handle it */ }
+      }
 
       // Run pre-checks for HDD devices (check if in use)
       for (let bd of batchDrives.value) {
@@ -962,7 +1015,7 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
+    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchDownloads, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
   }
 };
 </script>

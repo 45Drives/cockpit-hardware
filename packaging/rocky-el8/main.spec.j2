@@ -41,6 +41,13 @@ make DESTDIR=%{buildroot} install
 %config(noreplace) /etc/45drives/fan-controller/profiles.json
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 /usr/lib/systemd/system/45d-fancontroller.service
+/etc/systemd/system/45d-firmware-check.timer
+/etc/systemd/system/45d-firmware-check.service
+%dir /usr/share/45drives/firmware
+/usr/share/45drives/firmware/*
+%dir /var/cache/45drives/firmware
+%dir /var/log/45drives
+%dir /opt/45drives/tools
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
@@ -55,10 +62,15 @@ dkms install -m ipmb-bus -v 1.0 2>/dev/null || true
 modprobe ipmb_bus 2>/dev/null || true
 systemctl daemon-reload
 systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
+mkdir -p /var/cache/45drives/firmware
+mkdir -p /var/log/45drives
+mkdir -p /opt/45drives/tools
+systemctl enable --now 45d-firmware-check.timer 2>/dev/null || true
 
 %preun
 if [ $1 -eq 0 ]; then
     systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
+    systemctl disable --now 45d-firmware-check.timer 2>/dev/null || true
     modprobe -r ipmb_bus 2>/dev/null || true
     dkms remove -m ipmb-bus -v 1.0 --all 2>/dev/null || true
 fi

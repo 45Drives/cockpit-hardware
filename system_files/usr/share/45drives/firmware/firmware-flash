@@ -32,9 +32,35 @@ CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
 SEACHEST_PATH = "/opt/45drives/tools/SeaChest_Firmware"
 REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
+LOG_DIR = "/var/log/45drives"
+LOG_FILE = os.path.join(LOG_DIR, "firmware-flash.log")
 
 # Global flag: set via --allow-download CLI arg (UI passes this after user confirms)
 ALLOW_DOWNLOAD = False
+
+
+def log_flash_event(device_info, success, message=""):
+    """Append a structured log entry for every flash attempt."""
+    try:
+        os.makedirs(LOG_DIR, mode=0o755, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        status = "SUCCESS" if success else "FAILED"
+        model = device_info.get("model", "unknown")
+        device = device_info.get("device", device_info.get("sg_device", "?"))
+        dev_type = device_info.get("type", "?")
+        current_fw = device_info.get("current_firmware", "?")
+        target_fw = device_info.get("latest_firmware", "?")
+        flash_tool = device_info.get("flash_tool", "?")
+        fw_file = device_info.get("firmware_file", "?")
+        line = (f"{timestamp}  {status}  {dev_type}/{model}  "
+                f"{current_fw} -> {target_fw}  tool={flash_tool}  "
+                f"device={device}  file={fw_file}")
+        if not success and message:
+            line += f"  error={message}"
+        with open(LOG_FILE, "a") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass  # Never let logging break the flash process
 
 # Environment overrides for development
 if os.environ.get("FIRMWARE_CACHE_PATH"):
@@ -315,13 +341,25 @@ def flash_seachest(sg_device, firmware_path, tool_sha256=""):
         return False, "No tool_binary_sha256 for 'SeaChest_Firmware' — manifest flash_tools[] entry missing or incomplete"
     actual = compute_sha256(seachest_bin)
     if actual != tool_sha256:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: SeaChest_Firmware")
+        # Local binary is stale/wrong — try re-downloading the correct version
+        print(f"  ⚠ Local SeaChest_Firmware SHA256 mismatch, re-downloading from repo...")
         print(f"    Path:     {seachest_bin}")
         print(f"    Expected: {tool_sha256}")
         print(f"    Got:      {actual}")
-        return False, f"SeaChest_Firmware at {seachest_bin} failed integrity check (SHA256 mismatch)"
+        dest = SEACHEST_PATH
+        if not confirm_download("SeaChest_Firmware (integrity mismatch — re-download)"):
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            return False, "SeaChest_Firmware integrity check failed and re-download was declined."
+        # Only remove the binary if it's in our managed directory
+        if seachest_bin.startswith("/opt/45drives/tools/") and os.path.isfile(seachest_bin):
+            os.unlink(seachest_bin)
+        if fetch_tool_from_repo("SeaChest_Firmware", dest, tool_sha256):
+            seachest_bin = dest
+        else:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+            return False, f"SeaChest_Firmware integrity check failed and re-download from repo also failed"
 
     cmd = f"{seachest_bin} -d {sg_device} --downloadFW {shlex.quote(tmp_path)}"
     print(f"Running: {cmd}")
@@ -386,11 +424,21 @@ def flash_storcli(device_info, firmware_path):
         return False, f"No tool_binary_sha256 for '{tool}' — manifest flash_tools[] entry missing or incomplete"
     actual = compute_sha256(tool_path)
     if actual != tool_sha256:
-        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: {tool}")
+        # Local binary is stale/wrong — try re-downloading the correct version
+        print(f"  ⚠ Local {tool} SHA256 mismatch, re-downloading from repo...")
         print(f"    Path:     {tool_path}")
         print(f"    Expected: {tool_sha256}")
         print(f"    Got:      {actual}")
-        return False, f"{tool} at {tool_path} failed integrity check (SHA256 mismatch)"
+        dest = f"/opt/45drives/tools/{tool}"
+        if not confirm_download(f"{tool} (integrity mismatch — re-download)"):
+            return False, f"{tool} integrity check failed and re-download was declined."
+        # Only remove the binary if it's in our managed directory
+        if tool_path.startswith("/opt/45drives/tools/") and os.path.isfile(tool_path):
+            os.unlink(tool_path)
+        if fetch_tool_from_repo(tool, dest, tool_sha256):
+            tool_path = dest
+        else:
+            return False, f"{tool} integrity check failed and re-download from repo also failed"
 
     # Build command — replace placeholders
     cmd_template = device_info.get("flash_command", "")
@@ -487,11 +535,19 @@ def flash_niccli(device_info, firmware_path):
         return False, "No tool_binary_sha256 for 'niccli' — manifest flash_tools[] entry missing or incomplete"
     actual = compute_sha256(niccli_bin)
     if actual != tool_sha256:
-        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: niccli")
+        # Local binary is stale/wrong — try re-downloading the correct version
+        print(f"  ⚠ Local niccli SHA256 mismatch, re-downloading from repo...")
         print(f"    Path:     {niccli_bin}")
         print(f"    Expected: {tool_sha256}")
         print(f"    Got:      {actual}")
-        return False, f"niccli at {niccli_bin} failed integrity check (SHA256 mismatch)"
+        dest = "/opt/45drives/tools/niccli"
+        if not confirm_download("niccli (integrity mismatch — re-download)"):
+            return False, "niccli integrity check failed and re-download was declined."
+        # Don't delete the old binary if it's not ours (e.g. /opt/niccli/niccli from vendor package)
+        if fetch_tool_from_repo("niccli", dest, tool_sha256):
+            niccli_bin = dest
+        else:
+            return False, "niccli integrity check failed and re-download from repo also failed"
 
     # Get adapter list from niccli
     print(f"Discovering Broadcom adapter ID for PCI {bus_info}...")
@@ -592,11 +648,21 @@ def flash_mlxup(device_info, firmware_path=None):
         return False, "No tool_binary_sha256 for 'mlxup' — manifest flash_tools[] entry missing or incomplete"
     actual = compute_sha256(mlxup_bin)
     if actual != tool_sha256:
-        print(f"  ✗ LOCAL TOOL INTEGRITY FAILURE: mlxup")
+        # Local binary is stale/wrong — try re-downloading the correct version
+        print(f"  ⚠ Local mlxup SHA256 mismatch, re-downloading from repo...")
         print(f"    Path:     {mlxup_bin}")
         print(f"    Expected: {tool_sha256}")
         print(f"    Got:      {actual}")
-        return False, f"mlxup at {mlxup_bin} failed integrity check (SHA256 mismatch)"
+        dest = "/opt/45drives/tools/mlxup"
+        if not confirm_download("mlxup (integrity mismatch — re-download)"):
+            return False, "mlxup integrity check failed and re-download was declined."
+        # Only remove the binary if it's in our managed directory
+        if mlxup_bin.startswith("/opt/45drives/tools/") and os.path.isfile(mlxup_bin):
+            os.unlink(mlxup_bin)
+        if fetch_tool_from_repo("mlxup", dest, tool_sha256):
+            mlxup_bin = dest
+        else:
+            return False, "mlxup integrity check failed and re-download from repo also failed"
 
     # Build command — use --image-file if we have a pinned firmware file
     if firmware_path and os.path.isfile(firmware_path):
@@ -1143,9 +1209,11 @@ def main():
             print(f"✗ REFUSED: Drive is part of a RAID virtual disk.", file=sys.stderr)
             print(f"  Seagate strongly warns against firmware updates on RAID-member drives.", file=sys.stderr)
             print(f"  Remove the drive from the RAID array first, or use your RAID controller's tools.", file=sys.stderr)
+            log_flash_event(device_info, False, "REFUSED: drive is RAID member")
             return 4
         elif raid_status == "rebuilding":
             print(f"✗ REFUSED: Drive is currently rebuilding in a RAID array.", file=sys.stderr)
+            log_flash_event(device_info, False, "REFUSED: drive is rebuilding in RAID")
             return 4
         elif raid_status == "jbod":
             pass  # Safe to flash
@@ -1160,6 +1228,7 @@ def main():
             print(f"✗ REFUSED: Current firmware '{current_fw}' is not compatible with this upgrade.", file=sys.stderr)
             print(f"  This firmware can only be applied to drives running: {', '.join(compatible_prefixes)}", file=sys.stderr)
             print(f"  Your drive may have an OEM firmware variant. Contact your vendor.", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: current FW '{current_fw}' not in upgrade_from list")
             return 5
 
     if args.dry_run:
@@ -1274,6 +1343,7 @@ def main():
     print(f"  Current: {device_info.get('current_firmware', '')} -> Target: {device_info.get('latest_firmware', '')}")
 
     success, message = flash_device(device_info)
+    log_flash_event(device_info, success, message)
 
     if success:
         print(f"\n✓ Flash successful")
