@@ -39,6 +39,7 @@ export default {
 				"EC266D2I-2T/AQC": "EC266D2I-2T_AQC",
 				"ROMED8-2T/BCM" : "ROMED8-2T",
 				"GENOAD8X-2T/BCM": "GENOAD8X-2TBCM",
+				"GENOAD8UD-2T/X550": "GENOAD8UD-2TX550",
 				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI"
 			};
 
@@ -569,14 +570,14 @@ export default {
 									components[c]["id"] == pci_info["PCI Info"][i]["ID"] &&
 									(
 										(isM2Component && isM2PciEntry && pci_info["PCI Info"][i]["Designation"] == components[c]["type"]) ||
-										(!isM2Component && !isM2PciEntry && (components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1))
+							(!isM2Component && !isM2PciEntry && (components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1 || components[c]["type"].search("MCIO") != -1))
 									)
 								) {
 
 									components[c].popup.content = JSON.stringify(
 										pci_info["PCI Info"][i],
 										null,
-										" "
+										" "			
 									)
 										.replaceAll("{\n", "")
 										.replaceAll('"', "")

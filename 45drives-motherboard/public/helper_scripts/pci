@@ -136,7 +136,7 @@ BA_LUT_MH53 = {
 
 # ASRock GENOAD8X-2T/BCM – BIOS gives duplicate ID 22 to PCIE4 and PCIE6.
 # Static map ensures unique IDs.
-GENOA_SLOT_IDS = {
+GENOAD8X_SLOT_IDS = {
     "PCIE0": "16",
     "PCIE1": "17",
     "PCIE2": "18",
@@ -593,6 +593,10 @@ def dmidecode():
         if motherboard_model.startswith("GENOAD8X") and "/" in stripped_designation:
             stripped_designation = stripped_designation.split("/")[-1]
 
+        # GENOAD8UD: normalize compound MCIO designations (e.g. "MCIO1-1" → "MCIO1")
+        if motherboard_model.startswith("GENOAD8UD") and re.match(r"MCIO\d+-[12]$", stripped_designation):
+            stripped_designation = re.sub(r"-[12]$", "", stripped_designation)
+
         current_slot["Designation"] = stripped_designation
 
         if designation == "N/A":
@@ -642,8 +646,8 @@ def dmidecode():
     if motherboard_model.startswith("GENOAD8X"):
         for slot in cards:
             desig = slot.get("Designation", "")
-            if desig in GENOA_SLOT_IDS:
-                slot["ID"] = GENOA_SLOT_IDS[desig]
+            if desig in GENOAD8X_SLOT_IDS:
+                slot["ID"] = GENOAD8X_SLOT_IDS[desig]
 
     return cards
 
