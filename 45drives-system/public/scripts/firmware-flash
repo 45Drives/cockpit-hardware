@@ -33,10 +33,12 @@ import urllib.error
 # Configuration
 ###############################################################################
 
-FIRMWARE_BASE_URL = "https://assets.assembly.45d.io/firmware"
-TOOLS_BASE_URL = "https://assets.assembly.45d.io/bin"
+REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
 FIRMWARE_DOWNLOAD_DIR = "/tmp/45drives-firmware"
+# Primary cache: written by cockpit firmware-check
 CACHE_FILE = "/var/cache/45drives/firmware.json"
+# Fallback cache: written by system firmware-check (installed version)
+CACHE_FILE_SYSTEM = "/var/cache/45drives/firmware/status.json"
 
 # Tool paths
 TOOL_PATHS = {
@@ -46,14 +48,6 @@ TOOL_PATHS = {
     "niccli": ["/opt/45drives/niccli/niccli", "/usr/local/bin/niccli"],
     "sas3flash": ["/opt/45drives/bin/sas3flash", "/usr/local/bin/sas3flash"],
     "nvme-cli": ["/usr/sbin/nvme", "/usr/bin/nvme"],
-}
-
-# Tool download URLs (from 45Drives asset server)
-# Note: storcli2 is not on asset server — it's typically pre-installed or from Broadcom
-TOOL_DOWNLOAD_URLS = {
-    "storcli64": "https://assets.assembly.45d.io/bin/storcli64",
-    "mlxup": "https://assets.assembly.45d.io/bin/mlxup",
-    "sas3flash": "https://assets.assembly.45d.io/bin/sas3flash",
 }
 
 # Where to install downloaded tools
@@ -70,6 +64,21 @@ def compute_sha256(filepath):
         for chunk in iter(lambda: f.read(65536), b""):
             sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
+
+
+def get_repo_url():
+    """Read the firmware repo URL from repo.conf."""
+    try:
+        with open(REPO_CONF, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or not line:
+                    continue
+                if line.startswith("REPO_URL="):
+                    return line.split("=", 1)[1].strip()
+    except FileNotFoundError:
+        pass
+    return None
 
 
 def find_tool(tool_name, expected_sha256=""):
@@ -107,9 +116,10 @@ def find_tool(tool_name, expected_sha256=""):
 
 
 def download_tool(tool_name, expected_sha256=""):
-    """Download a tool binary from the 45Drives asset server with SHA256 verification."""
-    url = TOOL_DOWNLOAD_URLS.get(tool_name)
-    if not url:
+    """Download a tool binary from the firmware repo with SHA256 verification."""
+    repo_url = get_repo_url()
+    if not repo_url:
+        print(f"No firmware repo configured (repo.conf missing) — cannot download {tool_name}", file=sys.stderr)
         return None
 
     # Refuse to download tool binaries without a SHA256 hash — they run as root
@@ -118,6 +128,7 @@ def download_tool(tool_name, expected_sha256=""):
               f"Cannot safely download and execute unverified binaries.", file=sys.stderr)
         return None
 
+    url = f"{repo_url}/tools/{tool_name}"
     os.makedirs(TOOL_INSTALL_DIR, exist_ok=True)
     dest = os.path.join(TOOL_INSTALL_DIR, tool_name)
 
@@ -169,9 +180,9 @@ def install_nvme_cli():
 
 
 def download_firmware(firmware_file, device_type, model, expected_sha256=""):
-    """Download firmware binary with SHA256 verification. Returns local path or None."""
+    """Download firmware binary from repo with SHA256 verification. Returns local path or None."""
     os.makedirs(FIRMWARE_DOWNLOAD_DIR, exist_ok=True)
-    local_path = os.path.join(FIRMWARE_DOWNLOAD_DIR, firmware_file)
+    local_path = os.path.join(FIRMWARE_DOWNLOAD_DIR, os.path.basename(firmware_file))
 
     # If already downloaded, verify integrity if hash is available
     if os.path.isfile(local_path):
@@ -191,72 +202,60 @@ def download_firmware(firmware_file, device_type, model, expected_sha256=""):
               f"Cannot safely download unverified firmware.", file=sys.stderr)
         return None
 
-    # Build URL based on asset server structure:
-    # HBA: firmware/lsi<model_family>/<port_count>/<file>
-    #   e.g. firmware/lsi9400/16i/HBA_9400-16i_SAS_SATA_Profile.bin
-    # Broadcom NIC: firmware/broadcom/<file>
-    urls_to_try = []
+    # Get repo URL from repo.conf
+    repo_url = get_repo_url()
+    if not repo_url:
+        print(f"No firmware repo configured (repo.conf missing) — cannot download firmware", file=sys.stderr)
+        return None
 
-    if device_type == "hba":
-        # Extract model family and port count from model string (e.g. "9400-16i" -> "9400", "16i")
-        hba_match = re.search(r'(9305|9361|9400|9600|9660)[_-]?(\d+i)?', model, re.IGNORECASE)
-        if hba_match:
-            family = hba_match.group(1)
-            port = hba_match.group(2) or "16i"
-            urls_to_try.append(f"{FIRMWARE_BASE_URL}/lsi{family}/{port}/{firmware_file}")
-            urls_to_try.append(f"{FIRMWARE_BASE_URL}/lsi{family}/{firmware_file}")
-    elif device_type == "nic":
-        # Broadcom NICs: firmware/broadcom/P210p/<file> or firmware/broadcom/onboard/<file>
-        if re.search(r'P210p', model, re.IGNORECASE):
-            urls_to_try.append(f"{FIRMWARE_BASE_URL}/broadcom/P210p/{firmware_file}")
-        else:
-            urls_to_try.append(f"{FIRMWARE_BASE_URL}/broadcom/onboard/{firmware_file}")
-        urls_to_try.append(f"{FIRMWARE_BASE_URL}/broadcom/{firmware_file}")
-    
-    # Generic fallbacks
-    urls_to_try.append(f"{FIRMWARE_BASE_URL}/{firmware_file}")
+    # The manifest's firmware_file field contains the relative path within the repo
+    # e.g. "hba/9400-16i/HBA_9400-16i_SAS_SATA_Profile.bin"
+    url = f"{repo_url}/{firmware_file}"
 
-    for url in urls_to_try:
-        try:
-            print(f"Trying to download firmware from {url}...", file=sys.stderr)
-            req = urllib.request.Request(url, headers={"User-Agent": "45d-firmware-flash/1.0"})
-            sha256_hash = hashlib.sha256()
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                with open(local_path, "wb") as f:
-                    while True:
-                        chunk = resp.read(65536)
-                        if not chunk:
-                            break
-                        f.write(chunk)
-                        sha256_hash.update(chunk)
+    try:
+        print(f"Downloading firmware from {url}...", file=sys.stderr)
+        req = urllib.request.Request(url, headers={"User-Agent": "45d-firmware-flash/1.0"})
+        sha256_hash = hashlib.sha256()
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            with open(local_path, "wb") as f:
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    sha256_hash.update(chunk)
 
-            actual_sha256 = sha256_hash.hexdigest()
-            if actual_sha256 != expected_sha256:
-                print(f"INTEGRITY FAILURE: firmware SHA256 mismatch!", file=sys.stderr)
-                print(f"  Expected: {expected_sha256}", file=sys.stderr)
-                print(f"  Got:      {actual_sha256}", file=sys.stderr)
-                os.unlink(local_path)
-                return None
+        actual_sha256 = sha256_hash.hexdigest()
+        if actual_sha256 != expected_sha256:
+            print(f"INTEGRITY FAILURE: firmware SHA256 mismatch!", file=sys.stderr)
+            print(f"  Expected: {expected_sha256}", file=sys.stderr)
+            print(f"  Got:      {actual_sha256}", file=sys.stderr)
+            os.unlink(local_path)
+            return None
 
-            print(f"Downloaded firmware to {local_path} (SHA256 verified)", file=sys.stderr)
-            return local_path
-        except Exception as e:
-            print(f"  Failed: {e}", file=sys.stderr)
-            continue
-
-    return None
+        print(f"Downloaded firmware to {local_path} (SHA256 verified)", file=sys.stderr)
+        return local_path
+    except Exception as e:
+        print(f"  Failed: {e}", file=sys.stderr)
+        if os.path.exists(local_path):
+            os.unlink(local_path)
+        return None
 
 
 def get_device_from_cache(device_type, device_path):
-    """Load the matching device entry from firmware cache."""
-    try:
-        with open(CACHE_FILE) as f:
-            cache = json.load(f)
-        for dev in cache.get("devices", []):
-            if dev.get("type") == device_type and dev.get("device_path") == device_path:
-                return dev
-    except Exception:
-        pass
+    """Load the matching device entry from firmware cache.
+    
+    Tries the cockpit cache first, then falls back to the system cache.
+    """
+    for cache_path in [CACHE_FILE, CACHE_FILE_SYSTEM]:
+        try:
+            with open(cache_path) as f:
+                cache = json.load(f)
+            for dev in cache.get("devices", []):
+                if dev.get("type") == device_type and dev.get("device_path") == device_path:
+                    return dev
+        except (FileNotFoundError, json.JSONDecodeError):
+            continue
     return None
 
 
