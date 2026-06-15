@@ -41,7 +41,9 @@ make DESTDIR=%{buildroot} install
 /usr/lib/systemd/system/45d-firmware-check.timer
 /usr/lib/systemd/system/45d-firmware-check.service
 %dir /usr/share/45drives/firmware
+%dir /usr/share/45drives/firmware/files
 /usr/share/45drives/firmware/*
+/usr/share/45drives/firmware/files/*
 %dir /var/cache/45drives/firmware
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*

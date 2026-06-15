@@ -311,7 +311,7 @@ def discover_nic():
 
         # Skip virtual/bridge/vlan interfaces
         if os.path.exists(f"/sys/class/net/{iface}/bridge") or \
-           os.path.isfile(f"/sys/class/net/{iface}/bonding") or \
+           os.path.exists(f"/sys/class/net/{iface}/bonding") or \
            not os.path.exists(f"/sys/class/net/{iface}/device"):
             continue
 

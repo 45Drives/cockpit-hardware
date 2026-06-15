@@ -182,8 +182,11 @@ def install_nvme_cli():
 
 def download_firmware(firmware_file, device_type, model, expected_sha256=""):
     """Download firmware binary from repo with SHA256 verification. Returns local path or None."""
-    os.makedirs(FIRMWARE_DOWNLOAD_DIR, exist_ok=True)
-    local_path = os.path.join(FIRMWARE_DOWNLOAD_DIR, os.path.basename(firmware_file))
+    rel_path = os.path.normpath(firmware_file).lstrip(os.sep)
+    if rel_path.startswith(".."):  # path traversal guard
+        return None
+    local_path = os.path.join(FIRMWARE_DOWNLOAD_DIR, rel_path)
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
     # If already downloaded, verify integrity if hash is available
     if os.path.isfile(local_path):
