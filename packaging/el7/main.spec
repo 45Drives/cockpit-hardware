@@ -38,8 +38,8 @@ make DESTDIR=%{buildroot} install
 %dir /etc/45drives/fan-controller
 %config(noreplace) /etc/45drives/fan-controller/profiles.json
 /usr/lib/systemd/system/45d-fancontroller.service
-/etc/systemd/system/45d-firmware-check.timer
-/etc/systemd/system/45d-firmware-check.service
+/usr/lib/systemd/system/45d-firmware-check.timer
+/usr/lib/systemd/system/45d-firmware-check.service
 %dir /usr/share/45drives/firmware
 /usr/share/45drives/firmware/*
 %dir /var/cache/45drives/firmware
