@@ -236,6 +236,7 @@ def build_cache(devices, manifest, manifest_url=""):
             result["flash_tool"] = entry.get("flash_tool")
             result["flash_command"] = entry.get("flash_command", "")
             result["firmware_file"] = entry.get("firmware_file", "")
+            result["sha256"] = entry.get("sha256", "")
             result["flashable"] = entry.get("flashable", False)
             result["requires_reboot"] = entry.get("requires_reboot", False)
             result["release_notes"] = entry.get("release_notes", "")
@@ -244,6 +245,16 @@ def build_cache(devices, manifest, manifest_url=""):
                 device.get("firmware", ""),
                 entry.get("latest_firmware", "")
             )
+
+            # Look up flash tool binary SHA256 from manifest.flash_tools[]
+            flash_tool = entry.get("flash_tool", "")
+            tool_binary_sha256 = ""
+            if flash_tool and manifest:
+                for ft in manifest.get("flash_tools", []):
+                    if ft.get("name", "").lower() == flash_tool.lower():
+                        tool_binary_sha256 = ft.get("sha256", "")
+                        break
+            result["tool_binary_sha256"] = tool_binary_sha256
 
         results.append(result)
 

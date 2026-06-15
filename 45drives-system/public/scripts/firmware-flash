@@ -20,13 +20,12 @@ Exit codes:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
-import tempfile
 import urllib.request
 import urllib.error
 
@@ -64,29 +63,59 @@ TOOL_INSTALL_DIR = "/opt/45drives/tools"
 # Helpers
 ###############################################################################
 
-def find_tool(tool_name):
+def compute_sha256(filepath):
+    """Compute SHA256 of a file."""
+    sha256_hash = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha256_hash.update(chunk)
+    return sha256_hash.hexdigest()
+
+
+def find_tool(tool_name, expected_sha256=""):
     """Find a flash tool on the system. Downloads it if not found."""
     # Check known paths
     for path in TOOL_PATHS.get(tool_name, []):
         if os.path.isfile(path) and os.access(path, os.X_OK):
+            # Verify existing binary if we have a hash
+            if expected_sha256:
+                actual = compute_sha256(path)
+                if actual != expected_sha256:
+                    print(f"WARNING: {path} SHA256 mismatch (expected {expected_sha256[:12]}..., got {actual[:12]}...). Re-downloading.", file=sys.stderr)
+                    os.unlink(path)
+                    break
             return path
     # Try which
     result = subprocess.run(["which", tool_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
     if result.returncode == 0:
-        return result.stdout.strip()
+        found_path = result.stdout.strip()
+        if expected_sha256:
+            actual = compute_sha256(found_path)
+            if actual != expected_sha256:
+                print(f"WARNING: {found_path} SHA256 mismatch. Will download verified copy.", file=sys.stderr)
+            else:
+                return found_path
+        else:
+            return found_path
 
     # For nvme-cli, try installing via package manager
     if tool_name == "nvme-cli":
         return install_nvme_cli()
 
     # Try downloading from asset server
-    return download_tool(tool_name)
+    return download_tool(tool_name, expected_sha256)
 
 
-def download_tool(tool_name):
-    """Download a tool binary from the 45Drives asset server."""
+def download_tool(tool_name, expected_sha256=""):
+    """Download a tool binary from the 45Drives asset server with SHA256 verification."""
     url = TOOL_DOWNLOAD_URLS.get(tool_name)
     if not url:
+        return None
+
+    # Refuse to download tool binaries without a SHA256 hash — they run as root
+    if not expected_sha256:
+        print(f"REFUSED: No SHA256 hash available for tool '{tool_name}'. "
+              f"Cannot safely download and execute unverified binaries.", file=sys.stderr)
         return None
 
     os.makedirs(TOOL_INSTALL_DIR, exist_ok=True)
@@ -95,14 +124,31 @@ def download_tool(tool_name):
     try:
         print(f"Downloading {tool_name} from {url}...", file=sys.stderr)
         req = urllib.request.Request(url, headers={"User-Agent": "45d-firmware-flash/1.0"})
+        sha256_hash = hashlib.sha256()
         with urllib.request.urlopen(req, timeout=60) as resp:
             with open(dest, "wb") as f:
-                shutil.copyfileobj(resp, f)
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    sha256_hash.update(chunk)
+
+        actual_sha256 = sha256_hash.hexdigest()
+        if actual_sha256 != expected_sha256:
+            print(f"INTEGRITY FAILURE: {tool_name} SHA256 mismatch!", file=sys.stderr)
+            print(f"  Expected: {expected_sha256}", file=sys.stderr)
+            print(f"  Got:      {actual_sha256}", file=sys.stderr)
+            os.unlink(dest)
+            return None
+
         os.chmod(dest, 0o755)
-        print(f"Installed {tool_name} to {dest}", file=sys.stderr)
+        print(f"Installed {tool_name} to {dest} (SHA256 verified)", file=sys.stderr)
         return dest
     except Exception as e:
         print(f"Failed to download {tool_name}: {e}", file=sys.stderr)
+        if os.path.exists(dest):
+            os.unlink(dest)
         return None
 
 
@@ -122,14 +168,28 @@ def install_nvme_cli():
     return None
 
 
-def download_firmware(firmware_file, device_type, model):
-    """Download firmware binary. Returns local path or None."""
+def download_firmware(firmware_file, device_type, model, expected_sha256=""):
+    """Download firmware binary with SHA256 verification. Returns local path or None."""
     os.makedirs(FIRMWARE_DOWNLOAD_DIR, exist_ok=True)
     local_path = os.path.join(FIRMWARE_DOWNLOAD_DIR, firmware_file)
 
-    # If already downloaded, use it
+    # If already downloaded, verify integrity if hash is available
     if os.path.isfile(local_path):
-        return local_path
+        if expected_sha256:
+            actual = compute_sha256(local_path)
+            if actual != expected_sha256:
+                print(f"Cached firmware SHA256 mismatch, re-downloading...", file=sys.stderr)
+                os.unlink(local_path)
+            else:
+                return local_path
+        else:
+            return local_path
+
+    # Refuse to download firmware without a SHA256 hash
+    if not expected_sha256:
+        print(f"REFUSED: No SHA256 hash available for firmware '{firmware_file}'. "
+              f"Cannot safely download unverified firmware.", file=sys.stderr)
+        return None
 
     # Build URL based on asset server structure:
     # HBA: firmware/lsi<model_family>/<port_count>/<file>
@@ -160,10 +220,25 @@ def download_firmware(firmware_file, device_type, model):
         try:
             print(f"Trying to download firmware from {url}...", file=sys.stderr)
             req = urllib.request.Request(url, headers={"User-Agent": "45d-firmware-flash/1.0"})
+            sha256_hash = hashlib.sha256()
             with urllib.request.urlopen(req, timeout=120) as resp:
                 with open(local_path, "wb") as f:
-                    shutil.copyfileobj(resp, f)
-            print(f"Downloaded firmware to {local_path}", file=sys.stderr)
+                    while True:
+                        chunk = resp.read(65536)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        sha256_hash.update(chunk)
+
+            actual_sha256 = sha256_hash.hexdigest()
+            if actual_sha256 != expected_sha256:
+                print(f"INTEGRITY FAILURE: firmware SHA256 mismatch!", file=sys.stderr)
+                print(f"  Expected: {expected_sha256}", file=sys.stderr)
+                print(f"  Got:      {actual_sha256}", file=sys.stderr)
+                os.unlink(local_path)
+                return None
+
+            print(f"Downloaded firmware to {local_path} (SHA256 verified)", file=sys.stderr)
             return local_path
         except Exception as e:
             print(f"  Failed: {e}", file=sys.stderr)
@@ -200,11 +275,11 @@ def is_hba_noop_flash(output):
 # Flash handlers
 ###############################################################################
 
-def flash_hba(device, firmware_path):
+def flash_hba(device, firmware_path, tool_sha256=""):
     """Flash HBA firmware using storcli64 or storcli2."""
     model = device.get("model", "")
     flash_tool = device.get("flash_tool", "storcli2")
-    tool_path = find_tool(flash_tool)
+    tool_path = find_tool(flash_tool, tool_sha256)
 
     # Build list of tools to try (primary + fallback)
     tools_to_try = []
@@ -301,9 +376,9 @@ def get_controller_index(tool_path, pci_address):
     return None
 
 
-def flash_mellanox(device, firmware_path=None):
+def flash_mellanox(device, tool_sha256=""):
     """Flash Mellanox NIC using mlxup (self-updating from NVIDIA servers)."""
-    tool_path = find_tool("mlxup")
+    tool_path = find_tool("mlxup", tool_sha256)
     if not tool_path:
         return {"success": False, "error": "mlxup not found on system", "reboot_needed": False}
 
@@ -329,9 +404,9 @@ def flash_mellanox(device, firmware_path=None):
         return {"success": False, "error": str(e), "reboot_needed": False}
 
 
-def flash_broadcom_nic(device, firmware_path):
+def flash_broadcom_nic(device, firmware_path, tool_sha256=""):
     """Flash Broadcom NIC using niccli."""
-    tool_path = find_tool("niccli")
+    tool_path = find_tool("niccli", tool_sha256)
     if not tool_path:
         return {"success": False, "error": "niccli not found on system", "reboot_needed": False}
 
@@ -413,17 +488,19 @@ def main():
     flash_tool = device.get("flash_tool", "")
     firmware_file = device.get("firmware_file", "")
     model = device.get("model", args.model)
+    firmware_sha256 = device.get("sha256", "")
+    tool_sha256 = device.get("tool_binary_sha256", "")
 
     # Mellanox NICs are self-updating (mlxup downloads from NVIDIA)
     if flash_tool == "mlxup":
-        result = flash_mellanox(device)
+        result = flash_mellanox(device, tool_sha256)
         print(json.dumps(result))
         sys.exit(0 if result["success"] else 1)
 
     # For other devices, download firmware first
     firmware_path = None
     if firmware_file:
-        firmware_path = download_firmware(firmware_file, args.type, model)
+        firmware_path = download_firmware(firmware_file, args.type, model, firmware_sha256)
         if not firmware_path:
             # Try local path (firmware might be pre-staged)
             local_candidates = [
@@ -432,6 +509,12 @@ def main():
             ]
             for candidate in local_candidates:
                 if os.path.isfile(candidate):
+                    # Verify pre-staged file if hash is available
+                    if firmware_sha256:
+                        actual = compute_sha256(candidate)
+                        if actual != firmware_sha256:
+                            print(f"WARNING: Pre-staged {candidate} SHA256 mismatch, skipping.", file=sys.stderr)
+                            continue
                     firmware_path = candidate
                     break
 
@@ -446,14 +529,14 @@ def main():
             output = {"success": False, "error": "No firmware file specified for HBA", "reboot_needed": False}
             print(json.dumps(output))
             sys.exit(2)
-        result = flash_hba(device, firmware_path)
+        result = flash_hba(device, firmware_path, tool_sha256)
     elif args.type == "nic":
         if "broadcom" in (device.get("vendor", "")).lower() or "P210p" in model:
             if not firmware_path:
                 output = {"success": False, "error": "No firmware file specified for Broadcom NIC", "reboot_needed": False}
                 print(json.dumps(output))
                 sys.exit(2)
-            result = flash_broadcom_nic(device, firmware_path)
+            result = flash_broadcom_nic(device, firmware_path, tool_sha256)
         else:
             result = {"success": False, "error": f"Unsupported NIC type: {model}", "reboot_needed": False}
     elif args.type == "nvme":

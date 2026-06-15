@@ -553,7 +553,7 @@ def main():
     print(f"Firmware check complete: {s['total']} devices, "
           f"{s['current']} current, {s['outdated']} outdated, {s['unknown']} unknown")
 
-    return 0
+    return 2 if has_outdated else 0
 
 
 if __name__ == "__main__":
