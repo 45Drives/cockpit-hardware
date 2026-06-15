@@ -41,3 +41,5 @@ firmware-repo/*.bin
 firmware-repo/*.LOD
 firmware-repo/*.rom
 firmware-repo/*.pkg
+documentation/Firmware_Distribution_Architecture.md
+documentation/Firmware_Project_DNA.md

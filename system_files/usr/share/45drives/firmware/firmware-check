@@ -265,7 +265,7 @@ def compare_firmware(device_fw, manifest_fw):
     Logic:
     - If device firmware >= manifest firmware → 'current' (meets or exceeds target)
     - If device firmware < manifest firmware → 'outdated'
-    - Falls back to string comparison if numeric parsing fails
+    - If versions can't be parsed/compared numerically, treat a mismatch as 'outdated' (conservative)
     
     Handles multi-part version strings (e.g. Intel NICs report
     "9.56 0x80010136 1.3909.0" where the first token is the NVM version).
@@ -317,83 +317,6 @@ def compare_firmware(device_fw, manifest_fw):
 
     # Fallback: string mismatch with no numeric parsing = outdated
     return "outdated"
-
-
-def check_mlxup_status(bus_info):
-    """
-    Query mlxup to determine if a Mellanox/NVIDIA NIC has an update available.
-    Returns (status, available_version) where status is 'current', 'outdated', or 'unknown'.
-    """
-    # Find mlxup binary
-    mlxup_bin = None
-    for path in ["/usr/bin/mlxup", "/usr/local/bin/mlxup", "/opt/45drives/tools/mlxup",
-                 "/root/nic-firmware-tools/mlxup"]:
-        if os.path.isfile(path):
-            mlxup_bin = path
-            break
-    if not mlxup_bin:
-        # Try PATH
-        try:
-            result = subprocess.run(["which", "mlxup"], stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, universal_newlines=True, timeout=5)
-            if result.returncode == 0:
-                mlxup_bin = result.stdout.strip()
-        except:
-            pass
-
-    if not mlxup_bin:
-        print("  mlxup not found — cannot check Mellanox NIC status", file=sys.stderr)
-        return "unknown", ""
-
-    # Build query command
-    cmd = [mlxup_bin, "--query"]
-    if bus_info:
-        # mlxup uses the PCI device path, strip domain if present
-        dev_path = bus_info
-        cmd.extend(["--dev", dev_path])
-
-    try:
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=30
-        )
-        output = result.stdout + result.stderr
-
-        # Parse mlxup output for update status
-        # Look for "Status:" line
-        available_version = ""
-        update_available = False
-
-        for line in output.splitlines():
-            line_stripped = line.strip()
-            # Extract available FW version
-            if "FW" in line and "Available" in line:
-                # Header line like "FW         Current        Available"
-                continue
-            if line_stripped.startswith("FW"):
-                # Data line like "FW         20.31.1014     20.38.1002"
-                parts = line_stripped.split()
-                if len(parts) >= 3:
-                    available_version = parts[-1]
-            if "update available" in line_stripped.lower():
-                update_available = True
-            elif "up to date" in line_stripped.lower() or "no updates" in line_stripped.lower():
-                return "current", available_version
-
-        if update_available:
-            return "outdated", available_version
-
-        # If we couldn't determine status from output, check return code
-        # mlxup returns 0 for success regardless of update status
-        return "unknown", ""
-
-    except subprocess.TimeoutExpired:
-        print("  mlxup query timed out", file=sys.stderr)
-        return "unknown", ""
-    except Exception as e:
-        print(f"  mlxup query failed: {e}", file=sys.stderr)
-        return "unknown", ""
-
 
 def write_cache(results):
     """Write results to cache file atomically (temp file + rename)."""
