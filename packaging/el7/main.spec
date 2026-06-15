@@ -45,6 +45,8 @@ make DESTDIR=%{buildroot} install
 /usr/share/45drives/firmware/*
 /usr/share/45drives/firmware/files/*
 %dir /var/cache/45drives/firmware
+%dir /var/log/45drives
+%dir /opt/45drives/tools
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*

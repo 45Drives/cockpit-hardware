@@ -165,18 +165,8 @@ def download_tool(tool_name, expected_sha256=""):
 
 
 def install_nvme_cli():
-    """Install nvme-cli via package manager."""
-    # Try dnf first (RHEL/Rocky), then apt
-    for cmd in [["dnf", "install", "-y", "nvme-cli"], ["apt-get", "install", "-y", "nvme-cli"]]:
-        try:
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, timeout=120)
-            if result.returncode == 0:
-                # Find the installed binary
-                for path in TOOL_PATHS["nvme-cli"]:
-                    if os.path.isfile(path):
-                        return path
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            continue
+    """nvme-cli must be installed via the OS package manager (no auto-install here)."""
+    print("nvme-cli is not installed. Please install the 'nvme-cli' package and retry.", file=sys.stderr)
     return None
 
 
@@ -297,7 +287,7 @@ def flash_hba(device, firmware_path, tool_sha256=""):
     if not tools_to_try:
         return {"success": False, "error": f"Flash tool '{flash_tool}' not found on system (tried both storcli2 and storcli64)", "reboot_needed": False}
 
-    device_path = device.get("device_path", "")
+    device_path = device.get("device_path") or device.get("bus_info") or ""
 
     # Try each tool until one works
     last_error = ""
