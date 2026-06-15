@@ -394,15 +394,21 @@ def check_mlxup_status(bus_info):
 
 
 def write_cache(results):
-    """Write results to cache file."""
+    """Write results to cache file atomically (temp file + rename)."""
     cache_dir = os.path.dirname(CACHE_PATH)
     os.makedirs(cache_dir, exist_ok=True)
 
+    tmp_path = CACHE_PATH + ".tmp"
     try:
-        with open(CACHE_PATH, "w") as f:
+        with open(tmp_path, "w") as f:
             json.dump(results, f, indent=2)
+        os.replace(tmp_path, CACHE_PATH)
     except OSError as e:
         print(f"Error writing cache: {e}", file=sys.stderr)
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
 
 
 def main():
