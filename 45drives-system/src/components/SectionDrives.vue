@@ -290,6 +290,7 @@ export default {
             );
             if (match) {
               matchedSerials.add(match.serial);
+              drive.cacheIndex = match.cache_index;
               drive.latestFirmware = match.latest_firmware || "";
               drive.updateStatus = match.update_available || "";
               drive.flashable = match.flashable || false;

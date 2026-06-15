@@ -331,7 +331,7 @@ export default {
       if (!cache || !cache.devices) return;
       cache.devices.forEach(device => {
         if (device.type !== 'hba' && device.type !== 'nic') return;
-        const match = pciList.find(pci => pci.busAddress === device.device_path);
+        const match = pciList.find(pci => pci.busAddress === (device.bus_info || device.device_path));
         if (match) {
           match.latestFirmware = device.latest_firmware || null;
           match.updateStatus = device.update_available || 'unknown';
