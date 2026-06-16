@@ -4,8 +4,8 @@
     "title": "cockpit-45drives-hardware",
     "description": "A Cockpit Module for 45Drives Server Products",
     "version": "2.7.3",
-    "build_number": "1",
-    "stable": true,
+    "build_number": "4",
+    "stable": false,
     "author": "Mark Hooper <mhooper@45drives.com>",
     "git_url": "https://github.com/45Drives/cockpit-hardware",
     "license": "GPL-3.0+",
@@ -77,7 +77,7 @@
     "changelog": {
         "urgency": "medium",
         "version": "2.7.3",
-        "build_number": "1",
+        "build_number": "4",
         "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",
         "changes": []

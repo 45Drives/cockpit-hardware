@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.7.3-1
+## cockpit-45drives-hardware 2.7.3-4
 
-* added functionality toi update the firmware from system tab
+* fixed UI bug for drives table
