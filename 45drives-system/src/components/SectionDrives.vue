@@ -20,24 +20,22 @@
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Model</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Family</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Serial</th>
-                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Size</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Firmware</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-default bg-default">
                 <tr v-if="loading">
-                  <td colspan="7" class="py-4 text-center text-sm text-muted">Loading drives...</td>
+                  <td colspan="6" class="py-4 text-center text-sm text-muted">Loading drives...</td>
                 </tr>
                 <tr v-else-if="drives.length === 0">
-                  <td colspan="7" class="py-4 text-center text-sm text-muted">No drives detected</td>
+                  <td colspan="6" class="py-4 text-center text-sm text-muted">No drives detected</td>
                 </tr>
                 <tr v-for="drive in drives" :key="drive.device" class="cursor-pointer hover:bg-accent" @click="showDriveInfo(drive)">
                   <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-default sm:pl-6">/dev/{{ drive.device }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.model || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-muted">{{ drive.family || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-xs text-muted font-mono">{{ drive.serial || '—' }}</td>
-                  <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.type }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.size }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-default">{{ drive.firmware || '—' }}</td>
                 </tr>
@@ -311,6 +309,34 @@ export default {
           // by the Firmware Updates section (SectionFirmware.vue), not here.
         } catch (e) {
           console.log("Firmware cache not available:", e);
+        }
+
+        // Fallback: for drives missing family, query smartctl directly
+        const missingFamily = driveList.filter(d => !d.family && d.device);
+        if (missingFamily.length > 0) {
+          const devArgs = missingFamily.map(d => `/dev/${d.device}`).join(" ");
+          try {
+            const smartProc = await unwrap(server.execute(
+              new Command(["bash", "-c", `for d in ${devArgs}; do echo "===DEV===$d"; smartctl -i "$d" 2>/dev/null | grep -E "^(Model Family|Product):"; done`], { superuser: "try" })
+            ));
+            const smartOut = smartProc.getStdout();
+            let currentDev = "";
+            for (const line of smartOut.split("\n")) {
+              if (line.startsWith("===DEV===")) {
+                currentDev = line.replace("===DEV===", "").replace("/dev/", "").trim();
+              } else if (line.includes(":") && currentDev) {
+                const val = line.split(":").slice(1).join(":").trim();
+                if (val) {
+                  const drive = driveList.find(d => d.device === currentDev);
+                  if (drive && !drive.family) {
+                    drive.family = val;
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.log("smartctl family fallback failed:", e);
+          }
         }
 
         drives.value = driveList;
