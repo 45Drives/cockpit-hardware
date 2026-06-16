@@ -85,6 +85,22 @@ BA_LUT_MZ73 = {
     "M2_0": ["0000:61:00.0"]
 }
 
+# Gigabyte MS03-6L0-000 (Intel Xeon Sapphire Rapids)
+# PCIE_1: 69:05.0 (empty on test unit — x8 slot, typically HBA/NIC)
+# PCIE_2: 6a:00.0 direct endpoint (BCM57412 NIC)
+# PCIE_3: 40:00.0 direct endpoint (Emulex NIC)
+# PCIE_4: 16:00.0 direct endpoint (XXV710 NIC)
+# PCIE_5: be:00.0 direct endpoint (MegaRAID 9361-24i)
+# PCIE_6: 93:01.0 is bridge → 93:03.0 bridge → 94:00.0 (SAS9305-16i)
+BA_LUT_MS03 = {
+    "PCIE_1": ["0000:69:05.0"],
+    "PCIE_2": ["0000:6a:00.0"],
+    "PCIE_3": ["0000:40:00.0"],
+    "PCIE_4": ["0000:16:00.0"],
+    "PCIE_5": ["0000:be:00.0"],
+    "PCIE_6": ["0000:94:00.0", "0000:93:03.0"],
+}
+
 PCIE_SLOT_TYPE_GIGABYTE_MH53 = {
     "PCIE_1": "PCI Express 5 x16",
     "PCIE_2": "PCI Express 5 x16",
@@ -182,6 +198,29 @@ BA_LUT_MW34 = {
 
 
 def get_motherboard_model_server_info():
+    # Prefer dmidecode for motherboard identification (server_info.json can be stale)
+    try:
+        dmi_product = subprocess.Popen(
+            ["dmidecode", "-s", "baseboard-product-name"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+        ).communicate()[0].strip()
+        dmi_manufacturer = subprocess.Popen(
+            ["dmidecode", "-s", "baseboard-manufacturer"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+        ).communicate()[0].strip()
+        if dmi_product:
+            mobo_obj = {
+                "Motherboard": [{
+                    "Manufacturer": dmi_manufacturer or "?",
+                    "Product Name": dmi_product,
+                    "Serial Number": ""
+                }]
+            }
+            return json.dumps(mobo_obj)
+    except (OSError, FileNotFoundError):
+        pass
+
+    # Fallback to server_info.json
     json_path = "/etc/45drives/server_info/server_info.json"
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
@@ -706,6 +745,18 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
             matched_devices.setdefault(designation, slot)
             continue
 
+        # ---------- MS03 special handling ----------
+        if motherboard_model.startswith("MS03"):
+            slot["Current Usage"] = "Available"
+            if slot_key in BA_LUT_MS03:
+                for cand in BA_LUT_MS03[slot_key]:
+                    if cand in lspci_devices:
+                        slot["Bus Address"] = cand
+                        slot["Current Usage"] = "In Use"
+                        break
+            matched_devices.setdefault(designation, slot)
+            continue
+
         # ---------- MW34 special handling (claim-and-remove) ----------
         if motherboard_model.startswith("MW34"):
             slot["Current Usage"] = "Available"
@@ -1016,6 +1067,10 @@ def main():
             desig = slot.get("Designation")
             if motherboard_model.startswith("MZ73") and desig in BA_LUT_MZ73:
                 if hba["Bus Address"] in BA_LUT_MZ73[desig]:
+                    slot["Card Type"] = "HBA"
+                    slot["Card Model"] = hba["Model"]
+            elif motherboard_model.startswith("MS03") and desig in BA_LUT_MS03:
+                if hba["Bus Address"] in BA_LUT_MS03[desig]:
                     slot["Card Type"] = "HBA"
                     slot["Card Model"] = hba["Model"]
             elif hba["Bus Address"] == slot.get("Bus Address"):

@@ -266,6 +266,23 @@ def discover_hba():
                         if len(parts) == 4:
                             domain, bus, dev, func = parts
                             bus_info = f"{int(domain, 16):04x}:{bus}:{dev}.{int(func, 16)}"
+                    # IT-mode HBAs (9305, 9400 in IT mode) report 00.00.00.00 via storcli.
+                    # Fall back to sysfs scsi_host version_fw matched by PCI address.
+                    if (not fw or fw == "00.00.00.00") and bus_info:
+                        try:
+                            import glob
+                            for host_dir in glob.glob("/sys/class/scsi_host/host*"):
+                                host_pci = os.path.realpath(os.path.join(host_dir, "device"))
+                                if bus_info in host_pci:
+                                    fw_path = os.path.join(host_dir, "version_fw")
+                                    if os.path.isfile(fw_path):
+                                        sysfs_fw = open(fw_path).read().strip()
+                                        if sysfs_fw and sysfs_fw != "00.00.00.00":
+                                            fw = sysfs_fw
+                                            break
+                        except (OSError, IOError):
+                            pass
+
                     if model:
                         devices.append({
                             "type": "hba",
