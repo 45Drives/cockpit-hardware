@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.7.3-1
+## cockpit-45drives-hardware 2.7.4-1
 
-* Adds new GENOAD8UD-2T/X550 mobo support
+* Adds new chassis renders and removes firmware update stuff from this build
