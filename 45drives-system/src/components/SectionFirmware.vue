@@ -32,14 +32,6 @@
       </button>
       <button
         type="button"
-        class="btn btn-sm btn-default"
-        title="Dismiss notification badge"
-        @click="dismissBadge()"
-      >
-        Dismiss
-      </button>
-      <button
-        type="button"
         class="card-refresh-btn"
         :disabled="checking"
         @click="checkFirmware()"
@@ -86,8 +78,10 @@
                       <span v-if="rebootPendingDevices.has(device.cache_index)" class="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">⚠ Reboot Required</span>
                       <span v-else-if="device.payload_missing" class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Payload Not Deployed</span>
                       <span v-else class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Update Available</span>
-                      <button @click="showInfo(device)" class="inline-flex items-center rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white hover:bg-blue-700">Info</button>
-                      <button v-if="canFlash(device) && !rebootPendingDevices.has(device.cache_index)" :disabled="device.flashing" @click="startFlash(device)" class="inline-flex items-center rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50">{{ device.flashing ? 'Flashing...' : 'Update' }}</button>
+                      <button @click="showInfo(device)" class="inline-flex items-center justify-center rounded-md bg-blue-600 p-1.5 text-white hover:bg-blue-700 transition-colors" title="View device details">
+                        <InformationCircleIcon class="h-4 w-4" aria-hidden="true" />
+                      </button>
+                      <button v-if="canFlash(device) && !rebootPendingDevices.has(device.cache_index)" :disabled="device.flashing" @click="startFlash(device)" class="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors">{{ device.flashing ? 'Flashing...' : 'Update' }}</button>
                     </div>
                   </td>
                 </tr>
@@ -413,18 +407,17 @@
 </template>
 
 <script>
-import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
+import { RefreshIcon as RefreshIconOutline, InformationCircleIcon } from "@heroicons/vue/outline";
 import { ref, computed, inject, watch, nextTick } from "vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
 
 export default {
-  components: { RefreshIconOutline },
+  components: { RefreshIconOutline, InformationCircleIcon },
   setup() {
     const devices = ref([]);
     const checking = ref(false);
     const error = ref("");
     const lastChecked = ref("");
-    const dismissBadge = inject('dismissBadge', () => {});
     const checkFirmwareBadge = inject('checkFirmwareBadge', () => {});
 
     // Selection state for checkbox-based updates (declared early — loadCache clears it)
@@ -1026,7 +1019,7 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, dismissBadge, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchDownloads, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
+    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchDownloads, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
   }
 };
 </script>

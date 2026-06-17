@@ -8,10 +8,47 @@ import { ref , onMounted, provide} from "vue";
 const adminCheck = ref(false);
 const adminFlag = ref(false);
 
+const BADGE_DISMISS_KEY = "45drives.firmware.badge.dismissed";
+
+const getBadgeFingerprint = (cache) => {
+  const devices = cache?.devices || [];
+  const updatesAvailable = devices.filter(d => d.update_available === "outdated").length;
+  const rebootRequired = devices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
+  return `${cache?.timestamp || ""}:${updatesAvailable}:${rebootRequired ? 1 : 0}`;
+};
+
+const getDismissedFingerprint = () => {
+  try {
+    return window.localStorage.getItem(BADGE_DISMISS_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const setDismissedFingerprint = (fingerprint) => {
+  try {
+    window.localStorage.setItem(BADGE_DISMISS_KEY, fingerprint);
+  } catch {
+    // ignore storage issues; dismiss still clears the current badge
+  }
+};
+
 /**
  * Clear the sidebar notification badge.
  */
-const dismissBadge = () => {
+const dismissBadge = async () => {
+  try {
+    const cacheFile = cockpit.file("/var/cache/45drives/firmware/status.json", { superuser: "try" });
+    const content = await cacheFile.read();
+    if (content) {
+      const cache = JSON.parse(content);
+      setDismissedFingerprint(getBadgeFingerprint(cache));
+    }
+    cacheFile.close();
+  } catch {
+    // ignore read/parse errors; still dismiss in UI
+  }
+
   cockpit.transport.control("notify", {
     page_status: null
   });
@@ -31,6 +68,15 @@ const checkFirmwareBadge = () => {
         const devices = cache.devices || [];
         const updatesAvailable = devices.filter(d => d.update_available === "outdated").length;
         const rebootRequired = devices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
+        const currentFingerprint = getBadgeFingerprint(cache);
+        const dismissedFingerprint = getDismissedFingerprint();
+
+        if (dismissedFingerprint && dismissedFingerprint === currentFingerprint) {
+          cockpit.transport.control("notify", {
+            page_status: null
+          });
+          return;
+        }
 
         if (rebootRequired) {
           cockpit.transport.control("notify", {
