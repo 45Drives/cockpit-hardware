@@ -77,6 +77,7 @@
                     <div class="flex items-center gap-2">
                       <span v-if="rebootPendingDevices.has(device.cache_index)" class="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">⚠ Reboot Required</span>
                       <span v-else-if="device.payload_missing" class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Payload Not Deployed</span>
+                      <span v-else-if="device.type === 'hdd' && !canFlash(device)" class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">Coming Soon</span>
                       <span v-else class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Update Available</span>
                       <button @click="showInfo(device)" class="inline-flex items-center justify-center rounded-md bg-blue-600 p-1.5 text-white hover:bg-blue-700 transition-colors" title="View device details">
                         <InformationCircleIcon class="h-4 w-4" aria-hidden="true" />
@@ -500,8 +501,13 @@ export default {
     // A device can be flashed if it has flashable flag and either:
     // - a firmware_file (normal flash), or
     // - a tool_package (nvmupdate — self-contained package with its own firmware)
+    // NOTE: HDD flashing is disabled in this release pending further testing
+    //       with live data (ZFS pools, mounted filesystems). HDD devices will
+    //       still appear in the table as "Update Available" but with no flash button.
     const canFlash = (device) => {
       if (!device.flashable) return false;
+      // Block HDD flash — display only for now
+      if (device.type === 'hdd') return false;
       if (device.firmware_file) return true;
       if (device.tool_package) return true;
       return false;
