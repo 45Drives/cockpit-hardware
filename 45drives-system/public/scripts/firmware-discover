@@ -147,9 +147,9 @@ def discover_hba_fallback():
                         continue
                     basics = resp.get("Basics", {})
                     model = basics.get("Model", "")
-                    fw = resp.get("Version", {}).get("Firmware Package Build", "")
+                    fw = resp.get("Version", {}).get("Firmware Version", "")
                     if not fw:
-                        fw = resp.get("Version", {}).get("Firmware Version", "")
+                        fw = resp.get("Version", {}).get("Firmware Package Build", "")
                     # Extract PCI address (storcli format "DD:BB:DD:FF" → "DDDD:BB:DD.F")
                     bus_info = ""
                     pci_raw = basics.get("PCI Address", "")
