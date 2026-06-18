@@ -303,7 +303,7 @@ export default {
               drive.cacheIndex = match.cache_index;
               drive.latestFirmware = match.latest_firmware || "";
               drive.updateStatus = match.update_available || "";
-              drive.flashable = (match.flashable || false) && !drive.isHdd && match.type !== 'hdd';
+              drive.flashable = false; // Drive flashing is intentionally disabled in this release (HBA/NIC only)
               drive.flashTool = match.flash_tool || "";
               drive.firmwareFile = match.firmware_file || "";
               drive.sgDevice = match.sg_device || "";

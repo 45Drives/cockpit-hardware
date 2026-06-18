@@ -353,7 +353,7 @@ export default {
     };
 
     const rebootModalVisible = ref(false);
-    const REBOOT_PENDING_FILE = '/var/cache/45drives/reboot-pending.json';
+    const REBOOT_PENDING_FILE = '/var/cache/45drives/firmware/reboot-pending.json';
 
     const saveRebootPending = async (busAddress) => {
       try {

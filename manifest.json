@@ -28,6 +28,7 @@
             "lshw",
             "45drives-tools (>= 3.0.1)",
             "iproute2",
+            "gpgv",
             "dkms"
         ],
         "rocky_common": [
@@ -39,6 +40,7 @@
             "ipmitool",
             "lshw",
             "45drives-tools >= 3.0.1",
+            "gnupg2",
             "dkms",
             "kernel-devel"
         ]

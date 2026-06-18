@@ -391,8 +391,10 @@ def flash_seachest(sg_device, firmware_path, tool_sha256=""):
 
 def flash_storcli(device_info, firmware_path):
     """Flash HBA using storcli64 or storcli2."""
-    tool = device_info.get("flash_tool", "storcli64")
+    original_tool = device_info.get("flash_tool", "storcli64")
+    tool = original_tool
     ctrl_idx = device_info.get("controller_index", 0)
+    flash_tool_sha256s = device_info.get("flash_tool_sha256s", {})
     tool_sha256 = device_info.get("tool_binary_sha256", "")
 
     # Resolve full path for storcli — only check /opt/45drives/tools
@@ -410,6 +412,10 @@ def flash_storcli(device_info, firmware_path):
             tool_path = candidate
             tool = t
             break
+
+    # Use the correct SHA256 for whichever tool was actually selected
+    if tool != original_tool:
+        tool_sha256 = flash_tool_sha256s.get(tool.lower(), "")
 
     if not tool_path:
         # Not found locally — try downloading from repo (with user permission)
@@ -450,7 +456,12 @@ def flash_storcli(device_info, firmware_path):
     if not cmd_template:
         cmd_template = f"{tool_path} /c{ctrl_idx} download file={shlex.quote(firmware_path)}"
     else:
-        cmd_template = cmd_template.replace(tool, tool_path)
+        # Replace tool name with full path — try original manifest name first,
+        # then the selected tool name (handles fallback case)
+        if original_tool in cmd_template:
+            cmd_template = cmd_template.replace(original_tool, tool_path)
+        else:
+            cmd_template = cmd_template.replace(tool, tool_path)
         cmd_template = cmd_template.replace("<firmware_path>", shlex.quote(firmware_path))
         # Replace controller index placeholder with actual index
         cmd_template = cmd_template.replace("/cX", f"/c{ctrl_idx}")

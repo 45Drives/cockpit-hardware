@@ -25,34 +25,7 @@ const getDismissedFingerprint = () => {
   }
 };
 
-const setDismissedFingerprint = (fingerprint) => {
-  try {
-    window.localStorage.setItem(BADGE_DISMISS_KEY, fingerprint);
-  } catch {
-    // ignore storage issues; dismiss still clears the current badge
-  }
-};
 
-/**
- * Clear the sidebar notification badge.
- */
-const dismissBadge = async () => {
-  try {
-    const cacheFile = cockpit.file("/var/cache/45drives/firmware/status.json", { superuser: "try" });
-    const content = await cacheFile.read();
-    if (content) {
-      const cache = JSON.parse(content);
-      setDismissedFingerprint(getBadgeFingerprint(cache));
-    }
-    cacheFile.close();
-  } catch {
-    // ignore read/parse errors; still dismiss in UI
-  }
-
-  cockpit.transport.control("notify", {
-    page_status: null
-  });
-};
 
 /**
  * Check firmware cache and set sidebar badge notification.
@@ -117,7 +90,6 @@ const checkFirmwareBadge = () => {
     });
 };
 
-provide('dismissBadge', dismissBadge);
 provide('checkFirmwareBadge', checkFirmwareBadge);
 
 const rootCheck = async () => {

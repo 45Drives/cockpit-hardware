@@ -406,12 +406,16 @@ def main():
 
             # Look up flash tool binary SHA256 from manifest.flash_tools[]
             tool_binary_sha256 = ""
+            flash_tool_sha256s = {}
+            for ft in manifest.get("flash_tools", []):
+                name = ft.get("name", "")
+                sha = ft.get("sha256", "")
+                if name and sha:
+                    flash_tool_sha256s[name.lower()] = sha
             if flash_tool:
-                for ft in manifest.get("flash_tools", []):
-                    if ft.get("name", "").lower() == flash_tool.lower():
-                        tool_binary_sha256 = ft.get("sha256", "")
-                        break
+                tool_binary_sha256 = flash_tool_sha256s.get(flash_tool.lower(), "")
             device_result["tool_binary_sha256"] = tool_binary_sha256
+            device_result["flash_tool_sha256s"] = flash_tool_sha256s
 
             # Verify firmware payload exists on disk if device is flashable
             fw_file = device_result.get("firmware_file", "")

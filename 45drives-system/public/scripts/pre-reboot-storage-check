@@ -103,7 +103,7 @@ def discover_storage_controllers():
                     # Try to match with full domain prefix
                     for pci_addr in pci_to_hosts:
                         if pci_addr.endswith(slot):
-                            pci_descriptions[pci_addr] = parts[3] if len(parts) > 3 else ""
+                            pci_descriptions[pci_addr] = parts[5].strip() if len(parts) > 5 else ""
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
     
