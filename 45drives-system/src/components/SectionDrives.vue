@@ -10,7 +10,7 @@
   </div>
   <div class="card-body">
     <div class="mt-2 flex flex-col">
-      <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="-my-2 -mx-4 overflow-x-auto overflow-y-auto max-h-96 sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
           <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
             <table class="min-w-full divide-y divide-default">
@@ -91,6 +91,9 @@
       <div v-if="modalData.releaseNotes">
         <span class="text-sm font-medium">Notes:</span>
         <p class="text-sm text-muted mt-1">{{ modalData.releaseNotes }}</p>
+      </div>
+      <div v-if="modalData.isHdd" class="rounded-md bg-blue-50 border border-blue-200 p-3">
+        <p class="text-xs text-blue-800 font-medium">HDD firmware updates are currently disabled in this UI.</p>
       </div>
     </div>
     <div class="px-6 py-3 border-t border-default flex justify-end gap-2">
@@ -252,6 +255,13 @@ export default {
     const confirmDrive = ref({});
     const confirmInput = ref('');
 
+    const isHddDevice = (d) => {
+      if (d.tran === "nvme") return false;
+      if (d.tran === "sas" || d.tran === "sata") return d.rota === "1" || d.rota === true;
+      if (d.rota === "0" || d.rota === false) return false;
+      return true;
+    };
+
     const loadDrives = async () => {
       loading.value = true;
       drives.value = [];
@@ -268,10 +278,12 @@ export default {
             model: (d.model || "").trim(),
             serial: (d.serial || "").trim(),
             type: getDriveType(d),
+            isHdd: isHddDevice(d),
             size: d.size || "",
             firmware: (d.rev || "").trim(),
             latestFirmware: "",
             updateStatus: "",
+            flashable: false,
           }));
 
         // Load firmware cache and merge status
@@ -291,7 +303,7 @@ export default {
               drive.cacheIndex = match.cache_index;
               drive.latestFirmware = match.latest_firmware || "";
               drive.updateStatus = match.update_available || "";
-              drive.flashable = match.flashable || false;
+              drive.flashable = (match.flashable || false) && !drive.isHdd && match.type !== 'hdd';
               drive.flashTool = match.flash_tool || "";
               drive.firmwareFile = match.firmware_file || "";
               drive.sgDevice = match.sg_device || "";

@@ -601,6 +601,21 @@ def flash_niccli(device_info, firmware_path):
         output = result.stdout + result.stderr
         print(output)
 
+        lower_output = output.lower()
+        explicit_failure_markers = [
+            "command fw failed",
+            "internal hwrm command ipc failed",
+            "description :",
+            "exit code :",
+            "firmware update failed",
+        ]
+        has_explicit_failure = any(marker in lower_output for marker in explicit_failure_markers)
+
+        # Some niccli outputs include "already up-to-date" and then emit an explicit
+        # fw failure block. Treat explicit failure markers as authoritative.
+        if has_explicit_failure:
+            return False, f"niccli reported firmware update failure: {output}"
+
         if "already up-to-date" in output.lower():
             return True, "Firmware already up-to-date. Reboot to activate."
         elif "update is in progress" in output.lower() or \
