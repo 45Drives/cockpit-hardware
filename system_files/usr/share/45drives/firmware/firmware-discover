@@ -236,12 +236,12 @@ def discover_nvme():
 
 
 def discover_hba():
-    """Discover HBA/RAID controller firmware using storcli64.
-    Falls back to lspci detection if storcli64 is not available."""
+    """Discover HBA/RAID controller firmware using storcli64 or storcli2.
+    Falls back to lspci detection if neither is available."""
     devices = []
 
-    # Try storcli64 at known paths
-    for tool in ["/opt/45drives/tools/storcli64", "storcli64", "/opt/MegaRAID/storcli/storcli64", "/usr/local/bin/storcli64"]:
+    # Try storcli at /opt/45drives/tools (storcli64 or storcli2)
+    for tool in ["/opt/45drives/tools/storcli64", "/opt/45drives/tools/storcli2"]:
         stdout, _, rc = run_cmd([tool, "/call", "show", "all", "J"])
         if rc == 0 and stdout:
             try:
@@ -255,9 +255,9 @@ def discover_hba():
                     model = basics.get("Model", "")
                     serial = basics.get("Serial Number", "")
                     ctrl_idx = basics.get("Controller", idx)
-                    fw = resp.get("Version", {}).get("Firmware Package Build", "")
+                    fw = resp.get("Version", {}).get("Firmware Version", "")
                     if not fw:
-                        fw = resp.get("Version", {}).get("Firmware Version", "")
+                        fw = resp.get("Version", {}).get("Firmware Package Build", "")
                     # Extract PCI bus address (storcli format "DD:BB:DD:FF" → "DDDD:BB:DD.F")
                     bus_info = ""
                     pci_raw = basics.get("PCI Address", "")

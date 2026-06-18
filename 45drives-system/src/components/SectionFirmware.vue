@@ -357,7 +357,6 @@ export default {
 
     const startFlash = async (device) => {
       confirmDevice.value = device;
-      confirmWarnings.value = [];
       confirmActions.value = [];
       confirmDownloads.value = [];
       confirmInput.value = '';

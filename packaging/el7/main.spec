@@ -43,6 +43,7 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/45drives/firmware
 %dir /usr/share/45drives/firmware/files
 %config(noreplace) /usr/share/45drives/firmware/repo.conf
+%exclude /usr/share/45drives/firmware/repo.conf
 /usr/share/45drives/firmware/*
 /usr/share/45drives/firmware/files/*
 %dir /var/cache/45drives/firmware

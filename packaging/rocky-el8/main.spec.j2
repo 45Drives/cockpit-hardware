@@ -46,6 +46,7 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/45drives/firmware
 %dir /usr/share/45drives/firmware/files
 %config(noreplace) /usr/share/45drives/firmware/repo.conf
+%exclude /usr/share/45drives/firmware/repo.conf
 /usr/share/45drives/firmware/*
 /usr/share/45drives/firmware/files/*
 %dir /var/cache/45drives/firmware
@@ -76,9 +77,9 @@ systemctl daemon-reload
 %changelog
 * Tue Jun 16 2026 Rachit Hans <rhans@45drives.com> 2.7.3-4
 - fixed UI bug for drives table
-* Mon Jun 15 2026 Rachit Hans <rhans@45drives.com> 2.7.3-1
-- added functionality toi update the firmware from system tab
-* Fri Jun 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.3-1
+* Mon Jun 15 2026 Rachit Hans <rhans@45drives.com> 2.7.3-3
+- added functionality to update the firmware from system tab
+* Fri Jun 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.3-2
 - Adds new GENOAD8UD-2T/X550 mobo support
 * Tue May 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.2-2
 - Updates 45d-fancontroller.service to no longer auto-start when sentinel file does

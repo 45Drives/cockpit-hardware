@@ -381,7 +381,7 @@ def get_mdraid_arrays(devices):
                 md_match = re.match(r'^(md\d+)\s+:', line)
                 if md_match:
                     array_info = {"name": md_match.group(1), "devices_on_controller": [dev]}
-                    if "recovery" in content or "resync" in content:
+                    if "recovery" in line or "resync" in line:
                         array_info["rebuilding"] = True
                     arrays.append(array_info)
     return arrays

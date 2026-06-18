@@ -390,23 +390,28 @@ def flash_seachest(sg_device, firmware_path, tool_sha256=""):
 
 
 def flash_storcli(device_info, firmware_path):
-    """Flash HBA using storcli64."""
+    """Flash HBA using storcli64 or storcli2."""
     tool = device_info.get("flash_tool", "storcli64")
     ctrl_idx = device_info.get("controller_index", 0)
     tool_sha256 = device_info.get("tool_binary_sha256", "")
 
-    # Resolve full path for storcli
-    tool_path = tool
-    for candidate in [
-        f"/opt/45drives/tools/{tool}",
-        f"/opt/MegaRAID/storcli/{tool}",
-        f"/usr/local/bin/{tool}",
-        f"/usr/bin/{tool}",
-    ]:
+    # Resolve full path for storcli — only check /opt/45drives/tools
+    # Try the manifest-specified tool first, then fall back to the alternative
+    tool_path = None
+    tools_to_try = [tool]
+    if tool == "storcli64":
+        tools_to_try.append("storcli2")
+    elif tool == "storcli2":
+        tools_to_try.append("storcli64")
+
+    for t in tools_to_try:
+        candidate = f"/opt/45drives/tools/{t}"
         if os.path.isfile(candidate):
             tool_path = candidate
+            tool = t
             break
-    else:
+
+    if not tool_path:
         # Not found locally — try downloading from repo (with user permission)
         dest = f"/opt/45drives/tools/{tool}"
         if not confirm_download(tool):
@@ -605,8 +610,6 @@ def flash_niccli(device_info, firmware_path):
         explicit_failure_markers = [
             "command fw failed",
             "internal hwrm command ipc failed",
-            "description :",
-            "exit code :",
             "firmware update failed",
         ]
         has_explicit_failure = any(marker in lower_output for marker in explicit_failure_markers)

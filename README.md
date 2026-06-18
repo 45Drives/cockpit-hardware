@@ -24,7 +24,7 @@ Monitors and manages firmware versions for all permanent hardware components in 
 * **Device Discovery** — Automatically detects HBAs, NICs, NVMe drives, and HDDs with their current firmware versions
 * **Update Notifications** — Sidebar badge shows when firmware updates are available (🟡 warning) or reboot needed (🔴 error)
 * **Firmware Table** — Lists all detected devices with current version, latest available version, and update status
-* **One-Click Updates** — Flash firmware directly from the UI for supported devices (HBAs, NICs, NVMe, HDDs)
+* **One-Click Updates** — Flash firmware directly from the UI for supported devices (HBAs, NICs, NVMe). HDD flashing is currently disabled pending further validation.
 * **Integrity Verification** — All firmware downloads verified via GPG-signed manifest + SHA256 checksums
 * **Safe Operations** — Pre-flight checks prevent flashing during ZFS scrub/rebuild; risky devices (BIOS, BMC) are display-only
 * **Automatic Checking** — systemd timer (`45d-firmware-check.timer`) runs daily to check for updates
