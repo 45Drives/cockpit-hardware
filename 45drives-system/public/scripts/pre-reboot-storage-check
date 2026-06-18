@@ -374,16 +374,34 @@ def get_mdraid_arrays(devices):
             content = f.read()
     except IOError:
         return arrays
-    
-    for line in content.split('\n'):
+
+    # Split mdstat into per-array blocks (each starts with mdX :)
+    lines = content.split('\n')
+    current_block = []
+    blocks = []
+    for line in lines:
+        if re.match(r'^md\d+\s+:', line):
+            if current_block:
+                blocks.append(current_block)
+            current_block = [line]
+        elif current_block:
+            current_block.append(line)
+    if current_block:
+        blocks.append(current_block)
+
+    for block in blocks:
+        header = block[0]
+        block_text = '\n'.join(block)
+        md_match = re.match(r'^(md\d+)\s+:', header)
+        if not md_match:
+            continue
         for dev in devices:
-            if dev in line:
-                md_match = re.match(r'^(md\d+)\s+:', line)
-                if md_match:
-                    array_info = {"name": md_match.group(1), "devices_on_controller": [dev]}
-                    if "recovery" in line or "resync" in line:
-                        array_info["rebuilding"] = True
-                    arrays.append(array_info)
+            if dev in header:
+                array_info = {"name": md_match.group(1), "devices_on_controller": [dev]}
+                if "recovery" in block_text or "resync" in block_text:
+                    array_info["rebuilding"] = True
+                arrays.append(array_info)
+                break
     return arrays
 
 
