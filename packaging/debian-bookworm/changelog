@@ -6,7 +6,7 @@ cockpit-45drives-hardware (2.7.3-4bookworm) bookworm; urgency=medium
 
 cockpit-45drives-hardware (2.7.3-1bookworm) bookworm; urgency=medium
 
-  * added functionality toi update the firmware from system tab
+  * added functionality to update the firmware from system tab
 
  -- Rachit Hans <rhans@45drives.com>  Mon, 15 Jun 2026 15:01:13 -0300
 
