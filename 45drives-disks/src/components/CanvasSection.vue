@@ -34,6 +34,7 @@
       <P5F8X1NVME v-if="activeSketchStr === 'StorinatorF8X1NVME'" />
       <P5F8X2NVME v-if="activeSketchStr === 'StorinatorF8X2NVME'" />
       <P5F8X3NVME v-if="activeSketchStr === 'StorinatorF8X3NVME'" />
+      <P5StornadoE16 v-if="activeSketchStr === 'StornadoE16'" />
       <P5Stornado2U v-if="activeSketchStr === 'Stornado2U'" />
       <P5StorinatorQ30 v-else-if="activeSketchStr === 'StorinatorQ30'" />
       <P5Stornado v-else-if="activeSketchStr === 'StornadoAV15'" />
@@ -78,6 +79,7 @@ import P5F8X3 from "./P5F8X3.vue";
 import P5F8X1NVME from "./P5F8X1NVME.vue";
 import P5F8X2NVME from "./P5F8X2NVME.vue";
 import P5F8X3NVME from "./P5F8X3NVME.vue";
+import P5StornadoE16 from "./P5StornadoE16.vue";
 import P5Stornado2U from "./P5Stornado2U.vue";
 import P5StorinatorQ30 from "./P5StorinatorQ30.vue";
 import P5Stornado from "./P5Stornado.vue";
@@ -117,6 +119,7 @@ export default {
     P5F8X1NVME,
     P5F8X2NVME,
     P5F8X3NVME,
+    P5StornadoE16,
     P5Stornado2U,
     P5StorinatorQ30,
     P5Stornado,
@@ -158,7 +161,7 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|NVME-F8X1|NVME-F8X2|NVME-F8X3|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|F8X1|F8X2|F8X3|NVME-F8X1|NVME-F8X2|NVME-F8X3|E16|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
           modelString
         );
       let enableString = testString

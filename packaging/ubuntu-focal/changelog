@@ -10,6 +10,19 @@ cockpit-45drives-hardware (2.7.3-1focal) focal; urgency=medium
 
  -- Rachit Hans <rhans@45drives.com>  Mon, 15 Jun 2026 15:01:13 -0300
 
+cockpit-45drives-hardware (2.7.3-1focal) focal; urgency=medium
+
+  * Adds new GENOAD8UD-2T/X550 mobo support
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 05 Jun 2026 08:47:10 -0300
+
+cockpit-45drives-hardware (2.7.2-2focal) focal; urgency=medium
+
+  * Updates 45d-fancontroller.service to no longer auto-start when sentinel file
+    does not exist
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 05 May 2026 12:52:19 -0300
+
 cockpit-45drives-hardware (2.7.2-1focal) focal; urgency=medium
 
   * Adds support for GENOAD8X-2T/BCM mobo

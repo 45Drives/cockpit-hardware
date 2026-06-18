@@ -63,6 +63,9 @@ import { ref, reactive } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
 
+// DEV MODE: Set to true to limit lsdev to chassis template size (for testing on spoofed servers)
+const DEV_MODE = false;
+
 export default {
   setup() {
     const serverInfo = ref();
@@ -112,8 +115,12 @@ export default {
 
     const runLsdev = async () => {
       try {
+        const lsdevArgs = ["/opt/45drives/tools/lsdev", "--json"];
+        if (DEV_MODE) {
+          lsdevArgs.push("--dev-mode");
+        }
         const proc = await unwrap(server.execute(
-          new Command(["/opt/45drives/tools/lsdev", "--json"], { superuser: "require" })
+          new Command(lsdevArgs, { superuser: "require" })
         ));
         let result = JSON.parse(proc.getStdout());
         console.log(result);
