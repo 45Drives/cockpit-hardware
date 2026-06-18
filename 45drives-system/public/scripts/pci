@@ -4,6 +4,7 @@ import re
 import json
 import os
 import sys
+import shutil
 
 # ---------------------------------------------------------------------------
 # CONSTANTS
@@ -868,27 +869,47 @@ def find_primary_bus_for_port(port_bus_address):
 
 
 def getNetworkCardModel(busAddress):
-    trimmed = busAddress[5:]
+    trimmed = busAddress[5:] if busAddress.startswith("0000:") else busAddress
     primary = find_primary_bus_for_port(trimmed) or ""
 
     try:
-        lspci = subprocess.Popen(
-            ["lspci"],
-            stdout=subprocess.PIPE,
-            universal_newlines=True
-        ).stdout
+        out = subprocess.check_output(
+            ["lspci", "-D", "-s", primary, "-nn"],
+            universal_newlines=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
     except Exception:
-        return "-"
-    if lspci is None:
+        out = ""
+
+    if not out:
+        try:
+            lspci = subprocess.Popen(
+                ["lspci", "-D", "-nn"],
+                stdout=subprocess.PIPE,
+                universal_newlines=True
+            ).stdout
+        except Exception:
+            return "-"
+        if lspci is None:
+            return "-"
+        for line in lspci:
+            if line.lower().startswith(("0000:" + primary).lower()) or line.lower().startswith(primary.lower()):
+                out = line.strip()
+                break
+
+    if not out:
         return "-"
 
-    for line in lspci:
-        if not line.startswith(primary):
-            continue
-        for mdl in g_network_card_models:
-            if re.search(mdl, line):
-                return mdl
-        return "-"
+    for mdl in g_network_card_models:
+        if re.search(mdl, out):
+            return mdl
+
+    m = re.search(r":\s+(.+?)\s+\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\](?:\s+\(rev\s+[^)]+\))?$", out)
+    if m:
+        name = m.group(1).strip()
+        name = re.sub(r"^(Intel|Emulex|Broadcom|NVIDIA|Mellanox)(\s+Corporation|\s+Inc\.?|\s+Technologies)?\s+", "", name, flags=re.IGNORECASE)
+        return name or "-"
+
     return "-"
 
 
@@ -980,6 +1001,185 @@ def get_hba_server_info():
     with open(json_path, "r") as f:
         si = json.load(f)
     return si.get("HBA", [])
+
+
+def _storcli_candidates():
+    candidates = [
+        "/opt/45drives/tools/storcli64",
+        "/opt/45drives/tools/storcli2",
+        "/opt/45drives/bin/storcli64",
+    ]
+    for name in ("storcli64", "storcli2"):
+        p = shutil.which(name)
+        if p and p not in candidates:
+            candidates.append(p)
+    return candidates
+
+
+def _normalize_pci_for_match(pci_addr):
+    if not pci_addr:
+        return ""
+    addr = str(pci_addr).strip().lower()
+    # Convert storcli style DD:BB:DD:FF -> DDDD:BB:DD.F
+    m = re.match(r"^([0-9a-f]{2,4}):([0-9a-f]{2}):([0-9a-f]{2}):([0-9a-f]{1,2})$", addr)
+    if m:
+        domain = int(m.group(1), 16)
+        bus = m.group(2)
+        dev = m.group(3)
+        fn = int(m.group(4), 16)
+        return "{:04x}:{}:{}.{:x}".format(domain, bus, dev, fn)
+    if re.match(r"^[0-9a-f]{2}:[0-9a-f]{2}\.[0-9a-f]$", addr):
+        return "0000:" + addr
+    return addr
+
+
+def _fw_from_version_obj(version_obj):
+    if not isinstance(version_obj, dict):
+        return ""
+    for key in (
+        "Firmware Version",
+        "FW Version",
+        "Firmware Package Build",
+        "FW Package Build",
+    ):
+        val = version_obj.get(key, "")
+        if val:
+            return str(val).strip()
+    return ""
+
+
+def get_hba_fw_by_bus_storcli():
+    """Return map of PCI bus addresses to HBA firmware versions via storcli."""
+    fw_map = {}
+
+    for storcli in _storcli_candidates():
+        if not os.path.isfile(storcli) or not os.access(storcli, os.X_OK):
+            continue
+
+        # Prefer JSON mode (more stable parsing)
+        try:
+            proc = subprocess.Popen(
+                [storcli, "/call", "show", "all", "J"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            stdout, _ = proc.communicate(timeout=60)
+        except Exception:
+            stdout = ""
+
+        if stdout:
+            try:
+                data = json.loads(stdout)
+                controllers = data.get("Controllers", [])
+                for ctrl in controllers:
+                    resp = ctrl.get("Response Data", {})
+                    basics = resp.get("Basics", {}) if isinstance(resp, dict) else {}
+                    version = resp.get("Version", {}) if isinstance(resp, dict) else {}
+                    fw = _fw_from_version_obj(version)
+                    pci = _normalize_pci_for_match(basics.get("PCI Address", ""))
+                    if fw and pci:
+                        fw_map[pci] = fw
+                        fw_map[pci[5:] if pci.startswith("0000:") else pci] = fw
+            except Exception:
+                pass
+
+        if fw_map:
+            return fw_map
+
+        # Fallback text mode
+        try:
+            proc = subprocess.Popen(
+                [storcli, "/call", "show", "all"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            text_out, _ = proc.communicate(timeout=60)
+        except Exception:
+            text_out = ""
+
+        if not text_out:
+            continue
+
+        sections = re.split(r"^Controller\s*=\s*\d+", text_out, flags=re.MULTILINE)
+        for sec in sections:
+            if not sec.strip():
+                continue
+            fw = ""
+            pci = ""
+            for line in sec.splitlines():
+                if "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key = key.strip().lower()
+                val = val.strip()
+                if key in ("pci address",):
+                    pci = _normalize_pci_for_match(val)
+                elif key in (
+                    "fw package build",
+                    "firmware package build",
+                    "fw version",
+                    "firmware version",
+                ) and not fw:
+                    fw = val
+            if fw and pci:
+                fw_map[pci] = fw
+                fw_map[pci[5:] if pci.startswith("0000:") else pci] = fw
+
+        if fw_map:
+            return fw_map
+
+    return fw_map
+
+
+def get_nic_fw_by_bus():
+    """Return map of PCI bus addresses to NIC firmware versions via ethtool."""
+    fw_map = {}
+
+    # Query all NICs via ethtool -i
+    net_dir = "/sys/class/net"
+    if os.path.isdir(net_dir):
+        for iface in sorted(os.listdir(net_dir)):
+            if iface == "lo":
+                continue
+            dev_link = os.path.join(net_dir, iface, "device")
+            if not os.path.islink(dev_link):
+                continue
+            if os.path.isdir(f"/sys/devices/virtual/net/{iface}"):
+                continue
+            try:
+                proc = subprocess.Popen(
+                    ["ethtool", "-i", iface],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+                out, _ = proc.communicate(timeout=10)
+            except Exception:
+                continue
+
+            if not out:
+                continue
+
+            bus = ""
+            fw = ""
+            for line in out.splitlines():
+                if ":" not in line:
+                    continue
+                key, _, val = line.partition(":")
+                key = key.strip().lower()
+                val = val.strip()
+                if key == "bus-info":
+                    bus = _normalize_pci_for_match(val)
+                elif key == "firmware-version":
+                    fw = val.split()[0] if val else ""
+
+            if fw and bus:
+                fw_map[bus] = fw
+                fw_map[bus[5:] if bus.startswith("0000:") else bus] = fw
+
+    return fw_map
 
 
 def get_disk_by_path():
@@ -1196,6 +1396,8 @@ def main():
 
     # ---------- append firmware info ----------
     hba_info = get_hba_server_info()
+    hba_fw_by_bus = get_hba_fw_by_bus_storcli()
+    nic_fw_by_bus = get_nic_fw_by_bus()
     for slot in matched:
         bus = slot.get("Bus Address", "")
         if not bus:
@@ -1209,6 +1411,28 @@ def main():
             if bus_short and bus_short == card_bus_short:
                 slot["Firmware Version"] = card.get("Firmware Version", "-")
                 break
+
+        # If server_info lacks firmware (common on some MegaRAID cards),
+        # fall back to live storcli query by PCI bus.
+        current_fw = str(slot.get("Firmware Version", "")).strip()
+        card_type = str(slot.get("Card Type", "")).strip()
+        if current_fw in ("", "-", "unknown", "Unknown") and card_type == "HBA":
+            fw = hba_fw_by_bus.get(bus_short) or hba_fw_by_bus.get(bus.lower())
+            if fw:
+                slot["Firmware Version"] = fw
+
+        # Network card fallback: fill model and firmware from live tools
+        if card_type == "Network Card":
+            if str(slot.get("Card Model", "")).strip() in ("", "-"):
+                model = getNetworkCardModel(bus)
+                if model and model != "-":
+                    slot["Card Model"] = model
+
+            current_fw = str(slot.get("Firmware Version", "")).strip()
+            if current_fw in ("", "-", "unknown", "Unknown"):
+                fw = nic_fw_by_bus.get(bus_short) or nic_fw_by_bus.get(bus.lower())
+                if fw:
+                    slot["Firmware Version"] = fw
 
     if motherboard_model == "MH53-G40-000":
         matched = reassign_mh53_slot_ids(matched)
