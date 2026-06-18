@@ -170,6 +170,7 @@
         </div>
         <div class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
           <p class="text-xs text-yellow-700"><strong>Important:</strong> Do not power off the system during the flash process. A reboot may be required to activate the new firmware.</p>
+          <p class="text-xs text-yellow-700 mt-1"><strong>Recommendation:</strong> Perform firmware updates during a scheduled maintenance window.</p>
         </div>
       </div>
     </div>

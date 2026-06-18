@@ -329,7 +329,7 @@ export default {
           const devArgs = missingFamily.map(d => `/dev/${d.device}`).join(" ");
           try {
             const smartProc = await unwrap(server.execute(
-              new Command(["bash", "-c", `for d in ${devArgs}; do echo "===DEV===$d"; smartctl -i "$d" 2>/dev/null | grep -E "^(Model Family|Product):"; done`], { superuser: "try" })
+              new Command(["bash", "-c", `for d in ${devArgs}; do echo "===DEV===$d"; smartctl -i "$d" 2>/dev/null | grep -E "^(Model Family|Product):" || true; done`], { superuser: "try" })
             ));
             const smartOut = smartProc.getStdout();
             let currentDev = "";

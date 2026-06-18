@@ -54,6 +54,11 @@ _SR_TABLE = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 32, 7: 32}
 # --- Persistent fan speed configuration ---
 SPEED_CONFIG_PATH = "/etc/45drives/fan-controller/fan-speeds.json"
 
+# --- Path to pre-built ipmb-bus kernel module ---
+_IPMB_MODULE_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "ipmb-bus.ko"
+)
+
 
 # ====================================================
 #  Module / device setup
@@ -72,19 +77,20 @@ def _is_module_loaded(mod_name):
 
 
 def _load_ipmb_bus():
-    """Load ipmb_bus via modprobe (DKMS-installed).  Returns True on success."""
+    """Load ipmb-bus.ko if not already loaded.  Returns True on success."""
     if _is_module_loaded("ipmb_bus"):
         return True
-    try:
-        r = subprocess.run(
-            ["modprobe", "ipmb_bus"],
-            capture_output=True, text=True, timeout=15,
-        )
-        if r.returncode == 0:
-            time.sleep(1)
-            return True
-    except Exception:
-        pass
+    if os.path.isfile(_IPMB_MODULE_PATH):
+        try:
+            r = subprocess.run(
+                ["insmod", _IPMB_MODULE_PATH],
+                capture_output=True, text=True, timeout=15,
+            )
+            if r.returncode == 0:
+                time.sleep(1)
+                return True
+        except Exception:
+            pass
     return False
 
 
@@ -205,11 +211,10 @@ def _ensure_setup():
     _load_ipmb_bus()
     bus = _find_ipmb_bus()
     if bus is not None:
-        if _load_max31790():
-            _ipmb_bus_num_cache = bus
-            _transport = "hwmon"
-            return bus
-        # IPMB bus found but max31790 driver unavailable — fall through to i2c
+        _load_max31790()
+        _ipmb_bus_num_cache = bus
+        _transport = "hwmon"
+        return bus
 
     # Fallback: verify that ipmitool I2C bridge works for at least one board
     for addr in BOARDS.values():

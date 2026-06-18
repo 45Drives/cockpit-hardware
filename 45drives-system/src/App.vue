@@ -39,8 +39,10 @@ const checkFirmwareBadge = () => {
       try {
         const cache = JSON.parse(content);
         const devices = cache.devices || [];
-        const updatesAvailable = devices.filter(d => d.update_available === "outdated").length;
-        const rebootRequired = devices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
+        // Only count HBA/NIC devices for badge (drive flashing not yet enabled)
+        const actionableDevices = devices.filter(d => d.type === 'hba' || d.type === 'nic');
+        const updatesAvailable = actionableDevices.filter(d => d.update_available === "outdated").length;
+        const rebootRequired = actionableDevices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
         const currentFingerprint = getBadgeFingerprint(cache);
         const dismissedFingerprint = getDismissedFingerprint();
 
