@@ -276,7 +276,8 @@ def discover_hba():
                                 if bus_info in host_pci:
                                     fw_path = os.path.join(host_dir, "version_fw")
                                     if os.path.isfile(fw_path):
-                                        sysfs_fw = open(fw_path).read().strip()
+                                        with open(fw_path, "r") as f:
+                                            sysfs_fw = f.read().strip()
                                         if sysfs_fw and sysfs_fw != "00.00.00.00":
                                             fw = sysfs_fw
                                             break

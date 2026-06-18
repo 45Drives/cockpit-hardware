@@ -260,7 +260,7 @@ export default {
       let cacheData = null;
       try {
         const cacheProc = await unwrap(server.execute(
-          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
         ));
         cacheData = JSON.parse(cacheProc.getStdout());
       } catch (e) {

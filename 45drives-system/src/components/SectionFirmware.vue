@@ -254,7 +254,7 @@ export default {
     const loadCache = async () => {
       try {
         const proc = await unwrap(server.execute(
-          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
         ));
         const cache = JSON.parse(proc.getStdout());
         devices.value = cache.devices || [];
@@ -485,6 +485,7 @@ export default {
         // Append any remaining buffered output
         const finalStdout = result.getStdout();
         const finalStderr = result.getStderr();
+        if (finalStdout) flashLog.value += finalStdout;
         if (finalStderr) flashLog.value += finalStderr + '\n';
         flashLog.value += '\n--- ✓ Update completed successfully ---\n';
         if (device.requires_reboot) {
