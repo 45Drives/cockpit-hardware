@@ -338,6 +338,7 @@ export default {
         if (device.type !== 'hba' && device.type !== 'nic') return;
         const match = pciList.find(pci => (pci.busAddress || '').toLowerCase() === String(device.bus_info || device.device_path || '').toLowerCase());
         if (match) {
+          match.cacheIndex = device.cache_index;
           match.latestFirmware = device.latest_firmware || null;
           match.updateStatus = device.update_available || 'unknown';
           match.flashTool = device.flash_tool || null;
@@ -355,7 +356,7 @@ export default {
     const rebootModalVisible = ref(false);
     const REBOOT_PENDING_FILE = '/var/cache/45drives/firmware/reboot-pending.json';
 
-    const saveRebootPending = async (busAddress) => {
+    const saveRebootPending = async (cacheIndex) => {
       try {
         // Read existing pending list
         let pending = [];
@@ -365,8 +366,14 @@ export default {
           ));
           pending = JSON.parse(proc.getStdout());
         } catch (e) { /* file doesn't exist yet */ }
-        if (!pending.includes(busAddress)) {
-          pending.push(busAddress);
+        // Normalize to numeric values for compatibility with SectionFirmware
+        pending = Array.isArray(pending)
+          ? pending.map(Number).filter(n => Number.isFinite(n))
+          : [];
+        const idx = Number(cacheIndex);
+        if (!Number.isFinite(idx)) return;
+        if (!pending.includes(idx)) {
+          pending.push(idx);
         }
         const data = JSON.stringify(pending);
         await unwrap(server.execute(
@@ -382,7 +389,10 @@ export default {
         const proc = await unwrap(server.execute(
           new Command(["cat", REBOOT_PENDING_FILE], { superuser: "try" })
         ));
-        return JSON.parse(proc.getStdout());
+        const pending = JSON.parse(proc.getStdout());
+        return Array.isArray(pending)
+          ? pending.map(Number).filter(n => Number.isFinite(n))
+          : [];
       } catch (e) {
         return [];
       }
@@ -534,7 +544,7 @@ export default {
           isFlashing.value = false;
           if (result.reboot_needed) {
             pci.rebootRequired = true;
-            await saveRebootPending(pci.busAddress);
+            await saveRebootPending(pci.cacheIndex);
             rebootModalVisible.value = true;
           } else {
             pci.updateStatus = 'current';
@@ -580,8 +590,8 @@ export default {
         }
         // Restore reboot-pending state from disk
         const pendingList = await loadRebootPending();
-        pendingList.forEach(addr => {
-          const match = pciInfo.find(pci => pci.busAddress === addr);
+        pendingList.forEach(idx => {
+          const match = pciInfo.find(pci => pci.cacheIndex === idx);
           if (match) match.rebootRequired = true;
         });
         pcis.value.length = 0;

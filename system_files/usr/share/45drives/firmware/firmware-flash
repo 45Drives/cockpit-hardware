@@ -399,11 +399,12 @@ def flash_storcli(device_info, firmware_path):
 
     # Resolve full path for storcli — only check /opt/45drives/tools
     # Try the manifest-specified tool first, then fall back to the alternative
+    # (only if the manifest includes a SHA256 for the alternative)
     tool_path = None
     tools_to_try = [tool]
-    if tool == "storcli64":
+    if tool == "storcli64" and flash_tool_sha256s.get("storcli2", ""):
         tools_to_try.append("storcli2")
-    elif tool == "storcli2":
+    elif tool == "storcli2" and flash_tool_sha256s.get("storcli64", ""):
         tools_to_try.append("storcli64")
 
     for t in tools_to_try:
