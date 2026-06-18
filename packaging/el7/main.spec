@@ -42,7 +42,6 @@ make DESTDIR=%{buildroot} install
 /usr/lib/systemd/system/45d-firmware-check.service
 %dir /usr/share/45drives/firmware
 %dir /usr/share/45drives/firmware/files
-%config(noreplace) /usr/share/45drives/firmware/repo.conf
 /usr/share/45drives/firmware/*
 /usr/share/45drives/firmware/files/*
 %dir /var/cache/45drives/firmware

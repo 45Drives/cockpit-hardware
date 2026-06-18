@@ -3,6 +3,4 @@
 if [ "$1" == "remove" ] || [ "$1" == "purge" ]; then
 	systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
 	systemctl disable --now 45d-firmware-check.timer 2>/dev/null || true
-	modprobe -r ipmb_bus 2>/dev/null || true
-	dkms remove -m ipmb-bus -v 1.0 --all 2>/dev/null || true
 fi

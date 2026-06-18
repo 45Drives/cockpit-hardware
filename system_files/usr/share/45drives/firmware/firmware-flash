@@ -72,7 +72,7 @@ if os.environ.get("SEACHEST_PATH"):
 
 
 def get_repo_url():
-    """Read the firmware repo URL from config."""
+    """Read the firmware repo URL from config. Falls back to fw.45drives.com."""
     conf_path = REPO_CONF
     if os.environ.get("FIRMWARE_REPO_CONF"):
         conf_path = os.environ["FIRMWARE_REPO_CONF"]
@@ -86,7 +86,7 @@ def get_repo_url():
                     return line.split("=", 1)[1].strip()
     except FileNotFoundError:
         pass
-    return None
+    return "https://fw.45drives.com"
 
 
 def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
