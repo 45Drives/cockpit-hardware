@@ -43,11 +43,11 @@ CACHE_FILE_SYSTEM = "/var/cache/45drives/firmware/status.json"
 
 # Tool paths
 TOOL_PATHS = {
-    "storcli2": ["/opt/45drives/tools/storcli2"],
-    "storcli64": ["/opt/45drives/tools/storcli64"],
-    "mlxup": ["/opt/45drives/tools/mlxup"],
-    "niccli": ["/opt/45drives/tools/niccli"],
-    "sas3flash": ["/opt/45drives/tools/sas3flash"],
+    "storcli2": ["/opt/45drives/tools/storcli2", "/usr/local/bin/storcli2", "/opt/MegaRAID/storcli/storcli2"],
+    "storcli64": ["/opt/45drives/tools/storcli64", "/opt/45drives/bin/storcli64", "/opt/MegaRAID/storcli/storcli64"],
+    "mlxup": ["/opt/45drives/tools/mlxup", "/root/nic-firmware-tools/mlxup", "/usr/local/bin/mlxup"],
+    "niccli": ["/opt/45drives/niccli/niccli", "/usr/local/bin/niccli"],
+    "sas3flash": ["/opt/45drives/bin/sas3flash", "/usr/local/bin/sas3flash"],
     "nvme-cli": ["/usr/sbin/nvme", "/usr/bin/nvme"],
 }
 
@@ -83,12 +83,7 @@ def get_repo_url():
 
 
 def find_tool(tool_name, expected_sha256=""):
-    """Find a flash tool on the system. Downloads it if not found.
-    
-    For most tools, only checks /opt/45drives/tools. If not present or
-    hash mismatches, downloads a verified copy there.
-    nvme-cli is special (system package).
-    """
+    """Find a flash tool on the system. Downloads it if not found."""
     # Check known paths
     for path in TOOL_PATHS.get(tool_name, []):
         if os.path.isfile(path) and os.access(path, os.X_OK):
@@ -96,15 +91,28 @@ def find_tool(tool_name, expected_sha256=""):
             if expected_sha256:
                 actual = compute_sha256(path)
                 if actual != expected_sha256:
-                    print(f"WARNING: {path} SHA256 mismatch (expected {expected_sha256[:12]}..., got {actual[:12]}...). Will download verified copy.", file=sys.stderr)
-                    continue
+                    print(f"WARNING: {path} SHA256 mismatch (expected {expected_sha256[:12]}..., got {actual[:12]}...). Re-downloading.", file=sys.stderr)
+                    os.unlink(path)
+                    break
             return path
+    # Try which
+    result = subprocess.run(["which", tool_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    if result.returncode == 0:
+        found_path = result.stdout.strip()
+        if expected_sha256:
+            actual = compute_sha256(found_path)
+            if actual != expected_sha256:
+                print(f"WARNING: {found_path} SHA256 mismatch. Will download verified copy.", file=sys.stderr)
+            else:
+                return found_path
+        else:
+            return found_path
 
     # For nvme-cli, try installing via package manager
     if tool_name == "nvme-cli":
         return install_nvme_cli()
 
-    # Download to /opt/45drives/tools
+    # Try downloading from asset server
     return download_tool(tool_name, expected_sha256)
 
 

@@ -72,7 +72,7 @@ if os.environ.get("SEACHEST_PATH"):
 
 
 def get_repo_url():
-    """Read the firmware repo URL from config. Falls back to fw.45drives.com."""
+    """Read the firmware repo URL from config."""
     conf_path = REPO_CONF
     if os.environ.get("FIRMWARE_REPO_CONF"):
         conf_path = os.environ["FIRMWARE_REPO_CONF"]
@@ -86,7 +86,7 @@ def get_repo_url():
                     return line.split("=", 1)[1].strip()
     except FileNotFoundError:
         pass
-    return "https://fw.45drives.com"
+    return None
 
 
 def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
@@ -390,35 +390,23 @@ def flash_seachest(sg_device, firmware_path, tool_sha256=""):
 
 
 def flash_storcli(device_info, firmware_path):
-    """Flash HBA using storcli64 or storcli2."""
-    original_tool = device_info.get("flash_tool", "storcli64")
-    tool = original_tool
+    """Flash HBA using storcli64."""
+    tool = device_info.get("flash_tool", "storcli64")
     ctrl_idx = device_info.get("controller_index", 0)
-    flash_tool_sha256s = device_info.get("flash_tool_sha256s", {})
     tool_sha256 = device_info.get("tool_binary_sha256", "")
 
-    # Resolve full path for storcli — only check /opt/45drives/tools
-    # Try the manifest-specified tool first, then fall back to the alternative
-    # (only if the manifest includes a SHA256 for the alternative)
-    tool_path = None
-    tools_to_try = [tool]
-    if tool == "storcli64" and flash_tool_sha256s.get("storcli2", ""):
-        tools_to_try.append("storcli2")
-    elif tool == "storcli2" and flash_tool_sha256s.get("storcli64", ""):
-        tools_to_try.append("storcli64")
-
-    for t in tools_to_try:
-        candidate = f"/opt/45drives/tools/{t}"
+    # Resolve full path for storcli
+    tool_path = tool
+    for candidate in [
+        f"/opt/45drives/tools/{tool}",
+        f"/opt/MegaRAID/storcli/{tool}",
+        f"/usr/local/bin/{tool}",
+        f"/usr/bin/{tool}",
+    ]:
         if os.path.isfile(candidate):
             tool_path = candidate
-            tool = t
             break
-
-    # Use the correct SHA256 for whichever tool was actually selected
-    if tool != original_tool:
-        tool_sha256 = flash_tool_sha256s.get(tool.lower(), "")
-
-    if not tool_path:
+    else:
         # Not found locally — try downloading from repo (with user permission)
         dest = f"/opt/45drives/tools/{tool}"
         if not confirm_download(tool):
@@ -457,12 +445,7 @@ def flash_storcli(device_info, firmware_path):
     if not cmd_template:
         cmd_template = f"{tool_path} /c{ctrl_idx} download file={shlex.quote(firmware_path)}"
     else:
-        # Replace tool name with full path — try original manifest name first,
-        # then the selected tool name (handles fallback case)
-        if original_tool in cmd_template:
-            cmd_template = cmd_template.replace(original_tool, tool_path)
-        else:
-            cmd_template = cmd_template.replace(tool, tool_path)
+        cmd_template = cmd_template.replace(tool, tool_path)
         cmd_template = cmd_template.replace("<firmware_path>", shlex.quote(firmware_path))
         # Replace controller index placeholder with actual index
         cmd_template = cmd_template.replace("/cX", f"/c{ctrl_idx}")
@@ -617,19 +600,6 @@ def flash_niccli(device_info, firmware_path):
         )
         output = result.stdout + result.stderr
         print(output)
-
-        lower_output = output.lower()
-        explicit_failure_markers = [
-            "command fw failed",
-            "internal hwrm command ipc failed",
-            "firmware update failed",
-        ]
-        has_explicit_failure = any(marker in lower_output for marker in explicit_failure_markers)
-
-        # Some niccli outputs include "already up-to-date" and then emit an explicit
-        # fw failure block. Treat explicit failure markers as authoritative.
-        if has_explicit_failure:
-            return False, f"niccli reported firmware update failure: {output}"
 
         if "already up-to-date" in output.lower():
             return True, "Firmware already up-to-date. Reboot to activate."

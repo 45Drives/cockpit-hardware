@@ -336,9 +336,8 @@ export default {
       if (!cache || !cache.devices) return;
       cache.devices.forEach(device => {
         if (device.type !== 'hba' && device.type !== 'nic') return;
-        const match = pciList.find(pci => (pci.busAddress || '').toLowerCase() === String(device.bus_info || device.device_path || '').toLowerCase());
+        const match = pciList.find(pci => pci.busAddress === (device.bus_info || device.device_path));
         if (match) {
-          match.cacheIndex = device.cache_index;
           match.latestFirmware = device.latest_firmware || null;
           match.updateStatus = device.update_available || 'unknown';
           match.flashTool = device.flash_tool || null;
@@ -354,9 +353,9 @@ export default {
     };
 
     const rebootModalVisible = ref(false);
-    const REBOOT_PENDING_FILE = '/var/cache/45drives/firmware/reboot-pending.json';
+    const REBOOT_PENDING_FILE = '/var/cache/45drives/reboot-pending.json';
 
-    const saveRebootPending = async (cacheIndex) => {
+    const saveRebootPending = async (busAddress) => {
       try {
         // Read existing pending list
         let pending = [];
@@ -366,14 +365,8 @@ export default {
           ));
           pending = JSON.parse(proc.getStdout());
         } catch (e) { /* file doesn't exist yet */ }
-        // Normalize to numeric values for compatibility with SectionFirmware
-        pending = Array.isArray(pending)
-          ? pending.map(Number).filter(n => Number.isFinite(n))
-          : [];
-        const idx = Number(cacheIndex);
-        if (!Number.isFinite(idx)) return;
-        if (!pending.includes(idx)) {
-          pending.push(idx);
+        if (!pending.includes(busAddress)) {
+          pending.push(busAddress);
         }
         const data = JSON.stringify(pending);
         await unwrap(server.execute(
@@ -389,10 +382,7 @@ export default {
         const proc = await unwrap(server.execute(
           new Command(["cat", REBOOT_PENDING_FILE], { superuser: "try" })
         ));
-        const pending = JSON.parse(proc.getStdout());
-        return Array.isArray(pending)
-          ? pending.map(Number).filter(n => Number.isFinite(n))
-          : [];
+        return JSON.parse(proc.getStdout());
       } catch (e) {
         return [];
       }
@@ -544,7 +534,7 @@ export default {
           isFlashing.value = false;
           if (result.reboot_needed) {
             pci.rebootRequired = true;
-            await saveRebootPending(pci.cacheIndex);
+            await saveRebootPending(pci.busAddress);
             rebootModalVisible.value = true;
           } else {
             pci.updateStatus = 'current';
@@ -590,8 +580,8 @@ export default {
         }
         // Restore reboot-pending state from disk
         const pendingList = await loadRebootPending();
-        pendingList.forEach(idx => {
-          const match = pciInfo.find(pci => pci.cacheIndex === idx);
+        pendingList.forEach(addr => {
+          const match = pciInfo.find(pci => pci.busAddress === addr);
           if (match) match.rebootRequired = true;
         });
         pcis.value.length = 0;

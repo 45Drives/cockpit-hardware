@@ -44,15 +44,11 @@ if os.environ.get("FIRMWARE_DIR"):
 
 
 def get_repo_config():
-    """Read repo.conf and return dict of key=value pairs. Falls back to built-in defaults."""
-    config = {
-        "REPO_URL": "https://fw.45drives.com",
-        "MANIFEST_URL": "https://fw.45drives.com/manifest.json",
-        "VERIFY_GPG": "true",
-    }
+    """Read repo.conf and return dict of key=value pairs."""
     conf_path = REPO_CONF
     if os.environ.get("FIRMWARE_REPO_CONF"):
         conf_path = os.environ["FIRMWARE_REPO_CONF"]
+    config = {}
     try:
         with open(conf_path, "r") as f:
             for line in f:
@@ -410,16 +406,12 @@ def main():
 
             # Look up flash tool binary SHA256 from manifest.flash_tools[]
             tool_binary_sha256 = ""
-            flash_tool_sha256s = {}
-            for ft in manifest.get("flash_tools", []):
-                name = ft.get("name", "")
-                sha = ft.get("sha256", "")
-                if name and sha:
-                    flash_tool_sha256s[name.lower()] = sha
             if flash_tool:
-                tool_binary_sha256 = flash_tool_sha256s.get(flash_tool.lower(), "")
+                for ft in manifest.get("flash_tools", []):
+                    if ft.get("name", "").lower() == flash_tool.lower():
+                        tool_binary_sha256 = ft.get("sha256", "")
+                        break
             device_result["tool_binary_sha256"] = tool_binary_sha256
-            device_result["flash_tool_sha256s"] = flash_tool_sha256s
 
             # Verify firmware payload exists on disk if device is flashable
             fw_file = device_result.get("firmware_file", "")

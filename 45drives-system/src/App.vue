@@ -25,7 +25,34 @@ const getDismissedFingerprint = () => {
   }
 };
 
+const setDismissedFingerprint = (fingerprint) => {
+  try {
+    window.localStorage.setItem(BADGE_DISMISS_KEY, fingerprint);
+  } catch {
+    // ignore storage issues; dismiss still clears the current badge
+  }
+};
 
+/**
+ * Clear the sidebar notification badge.
+ */
+const dismissBadge = async () => {
+  try {
+    const cacheFile = cockpit.file("/var/cache/45drives/firmware/status.json", { superuser: "try" });
+    const content = await cacheFile.read();
+    if (content) {
+      const cache = JSON.parse(content);
+      setDismissedFingerprint(getBadgeFingerprint(cache));
+    }
+    cacheFile.close();
+  } catch {
+    // ignore read/parse errors; still dismiss in UI
+  }
+
+  cockpit.transport.control("notify", {
+    page_status: null
+  });
+};
 
 /**
  * Check firmware cache and set sidebar badge notification.
@@ -39,10 +66,8 @@ const checkFirmwareBadge = () => {
       try {
         const cache = JSON.parse(content);
         const devices = cache.devices || [];
-        // Only count HBA/NIC devices for badge (drive flashing not yet enabled)
-        const actionableDevices = devices.filter(d => d.type === 'hba' || d.type === 'nic');
-        const updatesAvailable = actionableDevices.filter(d => d.update_available === "outdated").length;
-        const rebootRequired = actionableDevices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
+        const updatesAvailable = devices.filter(d => d.update_available === "outdated").length;
+        const rebootRequired = devices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
         const currentFingerprint = getBadgeFingerprint(cache);
         const dismissedFingerprint = getDismissedFingerprint();
 
@@ -92,6 +117,7 @@ const checkFirmwareBadge = () => {
     });
 };
 
+provide('dismissBadge', dismissBadge);
 provide('checkFirmwareBadge', checkFirmwareBadge);
 
 const rootCheck = async () => {
