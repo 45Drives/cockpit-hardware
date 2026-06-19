@@ -135,7 +135,7 @@ export default {
       }
       console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|X15|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|F2|VM8|VM16|VM32|STUDIO8|F16|VM2|2UGW_REV2|1UGW|2U).*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*(HL15_BEAST|HL15|HL4|HL8|X15|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|F2|VM2|VM4|VM8|VM16|VM32|STUDIO8|STUDIO15|F16|2UGW_REV2|1UGW|2U).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -172,12 +172,14 @@ export default {
         },
         "Proxinator":{
           "VM2": "img/proxinatorVM2.png",
-          "VM8": "img/proxinator.png",
-          "VM16": "img/proxinator.png",
-          "VM32": "img/proxinator.png",
+          "VM4": "img/proxinatorVM4.png",
+          "VM8": "img/proxinatorVM8.png",
+          "VM16": "img/proxinatorVM16.png",
+          "VM32": "img/proxinatorVM32.png",
         },
         "Studio":{
-          "STUDIO8": "img/studioSTUDIO8.png"
+          "STUDIO8": "img/studioSTUDIO8.png",
+          "STUDIO15": "img/studioSTUDIO15.png"
         },
         "Gateway": {
           "2UGW_REV2": "img/gateway2U.png",
