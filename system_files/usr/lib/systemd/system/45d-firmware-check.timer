@@ -1,0 +1,17 @@
+[Unit]
+Description=Daily 45Drives Firmware Version Check
+Documentation=https://github.com/45Drives/cockpit-hardware
+
+[Timer]
+# Run 2 minutes after boot to refresh firmware status (catches post-flash reboots)
+OnBootSec=2min
+# Run once per day with a random delay up to 12 hours to avoid thundering herd
+OnCalendar=daily
+RandomizedDelaySec=12h
+# Run immediately on first boot if we missed a scheduled run
+Persistent=true
+# Don't wake the system from suspend
+WakeSystem=false
+
+[Install]
+WantedBy=timers.target

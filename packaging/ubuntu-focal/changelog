@@ -1,4 +1,16 @@
-cockpit-45drives-hardware (2.7.3-1focal) focal; urgency=medium
+cockpit-45drives-hardware (2.7.3-4focal) focal; urgency=medium
+
+  * fixed UI bug for drives table
+
+ -- Rachit Hans <rhans@45drives.com>  Tue, 16 Jun 2026 14:48:17 -0300
+
+cockpit-45drives-hardware (2.7.3-3focal) focal; urgency=medium
+
+  * added functionality to update the firmware from system tab
+
+ -- Rachit Hans <rhans@45drives.com>  Mon, 15 Jun 2026 15:01:13 -0300
+
+cockpit-45drives-hardware (2.7.3-2focal) focal; urgency=medium
 
   * Adds new GENOAD8UD-2T/X550 mobo support
 

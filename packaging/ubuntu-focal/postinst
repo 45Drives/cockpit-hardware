@@ -3,4 +3,8 @@
 if [ "$1" == "configure" ]; then
 	systemctl daemon-reload
 	systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
+	mkdir -p /var/cache/45drives/firmware
+	mkdir -p /var/log/45drives
+	mkdir -p /opt/45drives/tools
+	systemctl enable --now 45d-firmware-check.timer 2>/dev/null || true
 fi
