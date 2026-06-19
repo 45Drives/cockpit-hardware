@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.7.4-1
+## cockpit-45drives-hardware 2.8.1-1
 
-* Adds new chassis renders and removes firmware update stuff from this build
+* Feature: 45drive system to allow HBA and NIC cards firmware update
