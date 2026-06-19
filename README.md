@@ -18,6 +18,36 @@ Lists information about your 45Drives Storinator product including:
 * Network Information (Connection Names, States, MAC & IP Addresses, and PCI information if detected)
 * IPMI address information
 
+### Firmware Updates
+Monitors and manages firmware versions for all permanent hardware components in your 45Drives server. Provides:
+
+* **Device Discovery** — Automatically detects HBAs, NICs, NVMe drives, and HDDs with their current firmware versions
+* **Update Notifications** — Sidebar badge shows when firmware updates are available (🟡 warning) or reboot needed (🔴 error)
+* **Firmware Table** — Lists all detected devices with current version, latest available version, and update status
+* **One-Click Updates** — Flash firmware directly from the UI for supported HBAs and NICs. Drive flashing (NVMe, HDD) is planned for a future release.
+* **Integrity Verification** — All firmware downloads verified via GPG-signed manifest + SHA256 checksums
+* **Safe Operations** — Pre-flight checks prevent flashing during ZFS scrub/rebuild; risky devices (BIOS, BMC) are display-only
+* **Automatic Checking** — systemd timer (`45d-firmware-check.timer`) runs daily to check for updates
+
+#### Firmware Architecture
+```
+fw.45drives.com (GPG-signed manifest + firmware files)
+        │
+        ▼ firmware-check (gpgv verify → version compare)
+/var/cache/45drives/firmware/status.json
+        │
+        ▼ firmware-flash (SHA256 verify → flash tool execute)
+Device firmware updated
+```
+
+#### Supported Device Categories
+| Category | Vendors | Flash Tool | Status |
+|----------|---------|------------|--------|
+| HBA | Broadcom (9305, 9361, 9400, 9600, 9660) | storcli64, storcli2 | ✅ Flash enabled |
+| NIC | NVIDIA/Mellanox ConnectX-5, Broadcom NetXtreme, Intel E810 | mlxup, bnxtnvm, nvmupdate64e | ✅ Flash enabled |
+| NVMe | Micron 7400, 7450 | nvme-cli | 🔍 Detection only |
+| HDD | Seagate Exos (X14–X24, 2X18) | SeaChest_Firmware | 🔍 Detection only |
+
 ### Disks
 Displays disks as they appear physically on your 45Drives Storage Server.
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-disks.png">  

@@ -35,7 +35,17 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
 %dir /usr/share/cockpit/45drives-fan-controller
+%dir /etc/45drives/fan-controller
+%config(noreplace) /etc/45drives/fan-controller/profiles.json
 /usr/lib/systemd/system/45d-fancontroller.service
+/usr/lib/systemd/system/45d-firmware-check.timer
+/usr/lib/systemd/system/45d-firmware-check.service
+%dir /usr/share/45drives/firmware
+%dir /usr/share/45drives/firmware/files
+/usr/share/45drives/firmware/*
+/usr/share/45drives/firmware/files/*
+%dir /var/cache/45drives/firmware
+/var/cache/45drives/firmware/.gitkeep
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
@@ -45,10 +55,15 @@ make DESTDIR=%{buildroot} install
 %post
 systemctl daemon-reload
 systemctl enable --now 45d-fancontroller.service 2>/dev/null || true
+mkdir -p /var/cache/45drives/firmware
+mkdir -p /var/log/45drives
+mkdir -p /opt/45drives/tools
+systemctl enable --now 45d-firmware-check.timer 2>/dev/null || true
 
 %preun
 if [ $1 -eq 0 ]; then
     systemctl disable --now 45d-fancontroller.service 2>/dev/null || true
+    systemctl disable --now 45d-firmware-check.timer 2>/dev/null || true
 fi
 
 %postun

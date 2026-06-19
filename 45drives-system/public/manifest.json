@@ -7,5 +7,6 @@
             "path": "index.html",
         	"order": 112
         }
-    }
+    },
+    "preload": ["index"]
 }
