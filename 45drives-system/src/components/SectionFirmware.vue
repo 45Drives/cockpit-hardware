@@ -228,13 +228,16 @@
       </div>
     </div>
     <div v-if="!confirmLoading" class="px-6 py-3 border-t border-default space-y-3">
-      <div>
+      <div v-if="confirmBlocked" class="rounded-md bg-red-50 border border-red-200 p-3">
+        <p class="text-sm font-medium text-red-800">🛑 Update blocked — critical safety check(s) failed. Resolve the issue(s) above before retrying.</p>
+      </div>
+      <div v-else>
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
         <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
       </div>
       <div class="flex justify-end gap-2">
         <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
-        <button @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed" :class="confirmWarnings.length > 0 ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
+        <button v-if="!confirmBlocked" @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed" :class="confirmWarnings.length > 0 ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'">
           {{ confirmWarnings.length > 0 ? 'Flash Anyway' : 'Proceed with Flash' }}
         </button>
       </div>
@@ -522,16 +525,21 @@ export default {
     const confirmModalVisible = ref(false);
     const confirmLoading = ref(false);
     const confirmWarnings = ref([]);
+    const confirmBlocked = ref(false);
     const confirmActions = ref([]);
     const confirmDownloads = ref([]);
     const confirmDevice = ref({});
     const confirmInput = ref('');
+
+    // Track firmware files that failed in this session
+    const failedFirmwareFiles = ref(new Set());
 
     const startFlash = async (device) => {
       // For HDD type, run pre-flight activity check
       if (device.type === 'hdd') {
         confirmDevice.value = device;
         confirmWarnings.value = [];
+        confirmBlocked.value = false;
         confirmActions.value = [];
         confirmDownloads.value = [];
         confirmInput.value = '';
@@ -554,26 +562,80 @@ export default {
           confirmActions.value = [`Flash ${device.model} using ${device.flash_tool}`];
         }
 
+        // Check if this firmware file previously failed in this session
+        if (failedFirmwareFiles.value.has(device.firmware_file)) {
+          confirmWarnings.value.push(`⚠ This firmware file failed on a previous drive in this session. It may fail again.`);
+        }
+
         const devName = (device.device || device.sg_device || '').replace('/dev/', '');
         try {
           const checkProc = await unwrap(server.execute(
             new Command(["bash", "-c", `
               DEV="/dev/${devName}"
               WARNINGS=""
+              BLOCKERS=""
+
+              # SMART health check — block if FAILED
+              SMART=$(smartctl -H "$DEV" 2>/dev/null)
+              if echo "$SMART" | grep -q "FAILED"; then
+                BLOCKERS="$BLOCKERS\n🛑 SMART health status: FAILED — drive is failing, do not flash"
+              fi
+
+              # ZFS scrub/resilver check
+              ZPOOL_STATUS=$(zpool status 2>/dev/null)
+              # Find which pool this drive belongs to (handles long status output)
+              DRIVE_POOL=""
+              for pool in $(zpool list -H -o name 2>/dev/null); do
+                if zpool status "$pool" 2>/dev/null | grep -qw "${devName}"; then
+                  DRIVE_POOL="$pool"
+                  break
+                fi
+              done
+              SCRUB_ACTIVE=$(echo "$ZPOOL_STATUS" | grep -qE "scrub in progress|resilver in progress" && echo "yes" || echo "no")
+
+              if [ "$SCRUB_ACTIVE" = "yes" ] && [ -n "$DRIVE_POOL" ]; then
+                # Check if THIS drive's pool is the one scrubbing
+                POOL_SCRUBBING=$(zpool status "$DRIVE_POOL" 2>/dev/null | grep -qE "scrub in progress|resilver in progress" && echo "yes" || echo "no")
+                if [ "$POOL_SCRUBBING" = "yes" ]; then
+                  BLOCKERS="$BLOCKERS\n🛑 Drive is in pool '$DRIVE_POOL' which is scrubbing/resilvering — wait for it to complete"
+                else
+                  WARNINGS="$WARNINGS\nA ZFS scrub/resilver is running on another pool (drive not affected)"
+                fi
+              elif [ "$SCRUB_ACTIVE" = "yes" ]; then
+                # Drive is free but a scrub is happening elsewhere — warn only
+                WARNINGS="$WARNINGS\nA ZFS scrub/resilver is running on another pool (drive not in any pool)"
+              fi
+
+              # Root/boot drive check — block if OS drive
+              BOOT_MOUNTS=$(lsblk -n -o MOUNTPOINT "$DEV" 2>/dev/null | grep -E '^/$|^/boot$|^/boot/efi$')
+              if [ -n "$BOOT_MOUNTS" ]; then
+                BLOCKERS="$BLOCKERS\n🛑 Drive is the system boot disk (mounted at: $BOOT_MOUNTS) — do not flash"
+              fi
 
               MOUNTS=$(lsblk -n -o MOUNTPOINT "$DEV" 2>/dev/null | grep -v "^$")
               if [ -n "$MOUNTS" ]; then
                 WARNINGS="$WARNINGS\nDrive has mounted filesystems: $MOUNTS"
               fi
 
-              ZFS=$(zpool status 2>/dev/null | grep -B5 "${devName}" | grep "pool:" | awk '{print $2}')
-              if [ -n "$ZFS" ]; then
-                WARNINGS="$WARNINGS\nDrive is part of ZFS pool: $ZFS"
+              if [ -n "$DRIVE_POOL" ]; then
+                # Check if pool is DEGRADED — block if so (no fault tolerance left)
+                POOL_STATE=$(zpool status "$DRIVE_POOL" 2>/dev/null | grep "state:" | awk '{print $2}')
+                if [ "$POOL_STATE" = "DEGRADED" ]; then
+                  BLOCKERS="$BLOCKERS\n🛑 Pool '$DRIVE_POOL' is DEGRADED — flashing any member risks total data loss"
+                fi
+
+                # Check pool redundancy
+                POOL_CONFIG=$(zpool status "$DRIVE_POOL" 2>/dev/null)
+                if echo "$POOL_CONFIG" | grep -qE "mirror|raidz"; then
+                  WARNINGS="$WARNINGS\nDrive is part of ZFS pool: $DRIVE_POOL (redundant — pool will remain online)"
+                else
+                  WARNINGS="$WARNINGS\n⚠️ Drive is part of ZFS pool: $DRIVE_POOL (NO REDUNDANCY — if this flash fails, data may be lost. Make sure your data is backed up!)"
+                fi
               fi
 
               MD=$(grep "${devName}" /proc/mdstat 2>/dev/null)
               if [ -n "$MD" ]; then
-                WARNINGS="$WARNINGS\nDrive is part of MD RAID array"
+                BLOCKERS="$BLOCKERS\n🛑 Drive is part of a Linux MD RAID array — do not flash while array is active"
               fi
 
               INFLIGHT=$(cat /sys/block/${devName}/inflight 2>/dev/null | awk '{print $1+$2}')
@@ -586,7 +648,10 @@ export default {
                 WARNINGS="$WARNINGS\nDrive is open by process(es): $FUSER"
               fi
 
-              if [ -n "$WARNINGS" ]; then
+              if [ -n "$BLOCKERS" ]; then
+                echo "BLOCKED"
+                echo -e "$BLOCKERS"
+              elif [ -n "$WARNINGS" ]; then
                 echo "BUSY"
                 echo -e "$WARNINGS"
               else
@@ -596,17 +661,21 @@ export default {
           ));
           const checkOutput = checkProc.getStdout().trim();
           const lines = checkOutput.split("\n");
-          if (lines[0] === "BUSY") {
-            confirmWarnings.value = lines.slice(1).filter(l => l.trim());
+          if (lines[0] === "BLOCKED") {
+            confirmWarnings.value = [...confirmWarnings.value, ...lines.slice(1).filter(l => l.trim())];
+            confirmBlocked.value = true;
+          } else if (lines[0] === "BUSY") {
+            confirmWarnings.value = [...confirmWarnings.value, ...lines.slice(1).filter(l => l.trim())];
           }
         } catch (e) {
-          confirmWarnings.value = ["Unable to determine drive activity status"];
+          confirmWarnings.value = [...confirmWarnings.value, "Unable to determine drive activity status"];
         }
         confirmLoading.value = false;
       } else {
         // Non-HDD devices (NIC, HBA, etc.) — show preflight info then flash
         confirmDevice.value = device;
         confirmWarnings.value = [];
+        confirmBlocked.value = false;
         confirmActions.value = [];
         confirmDownloads.value = [];
         confirmInput.value = '';
@@ -766,6 +835,10 @@ export default {
         if (e.stderr) flashLog.value += e.stderr + '\n';
         flashLog.value += `\n✗ FAILED: ${e.message || e}\n`;
         flashSuccess.value = false;
+        // Track this firmware file as failed for this session
+        if (device.firmware_file) {
+          failedFirmwareFiles.value.add(device.firmware_file);
+        }
       }
       flashComplete.value = true;
       device.flashing = false;
@@ -1019,7 +1092,7 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchDownloads, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
+    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmBlocked, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchDownloads, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
   }
 };
 </script>

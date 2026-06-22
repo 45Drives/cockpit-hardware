@@ -75,6 +75,11 @@ def discover_hdds():
         # SAS drives use "Product" / "Revision"
         model = info.get("Device Model", "") or info.get("Product", "")
         serial = info.get("Serial Number", "") or info.get("Serial number", "")
+        wwn = (
+            info.get("LU WWN Device Id", "")
+            or info.get("Logical Unit id", "")
+            or info.get("WWN", "")
+        )
         firmware = info.get("Firmware Version", "") or info.get("Revision", "")
         family = info.get("Model Family", "")
         capacity = info.get("User Capacity", "")
@@ -174,6 +179,7 @@ def discover_hdds():
             "model_full": model,
             "part_number": part_match,
             "serial": serial,
+            "wwn": wwn,
             "firmware": firmware,
             "family": family,
             "interface": interface,

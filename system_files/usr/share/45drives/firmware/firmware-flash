@@ -20,6 +20,7 @@ import os
 import shutil
 import shlex
 import argparse
+import re
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen, Request
@@ -1236,6 +1237,67 @@ def main():
             log_flash_event(device_info, False, f"REFUSED: current FW '{current_fw}' not in upgrade_from list")
             return 5
 
+    # Pre-flight: SMART health check for HDDs — don't flash a dying drive
+    if device_info.get("type") == "hdd":
+        device_path = device_info.get("device", "")
+        if device_path:
+            try:
+                result = subprocess.run(
+                    ["smartctl", "-H", device_path],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=30
+                )
+                if "FAILED" in result.stdout:
+                    print(f"✗ REFUSED: SMART health status is FAILED for {device_path}.", file=sys.stderr)
+                    print(f"  This drive is reporting hardware failure. Firmware update will not proceed.", file=sys.stderr)
+                    print(f"  Replace the drive instead.", file=sys.stderr)
+                    log_flash_event(device_info, False, "REFUSED: SMART health FAILED")
+                    return 6
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                print(f"  ⚠ Could not check SMART health: {e} — proceeding with caution", file=sys.stderr)
+
+    # Pre-flight: ZFS scrub/resilver in progress — don't flash during active pool operations
+    if device_info.get("type") == "hdd":
+        device_path = device_info.get("device", "")
+        if device_path:
+            dev_name = os.path.basename(device_path)
+            try:
+                result = subprocess.run(
+                    ["zpool", "status"],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=15
+                )
+                if result.returncode == 0 and dev_name in result.stdout:
+                    if "scrub in progress" in result.stdout or "resilver in progress" in result.stdout:
+                        print(f"✗ REFUSED: A ZFS scrub or resilver is in progress.", file=sys.stderr)
+                        print(f"  Flashing drive firmware during active pool operations risks data loss.", file=sys.stderr)
+                        print(f"  Wait for the operation to complete, then retry.", file=sys.stderr)
+                        log_flash_event(device_info, False, "REFUSED: ZFS scrub/resilver in progress")
+                        return 7
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass  # zpool not installed or timed out — not a ZFS system
+
+    # Pre-flight: Root/boot drive detection — don't flash the OS drive
+    if device_info.get("type") == "hdd":
+        device_path = device_info.get("device", "")
+        if device_path:
+            try:
+                result = subprocess.run(
+                    ["lsblk", "-n", "-o", "MOUNTPOINT", device_path],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=10
+                )
+                mounts = [m.strip() for m in result.stdout.splitlines() if m.strip()]
+                boot_mounts = {"/", "/boot", "/boot/efi"}
+                if boot_mounts & set(mounts):
+                    print(f"✗ REFUSED: {device_path} is the system boot drive.", file=sys.stderr)
+                    print(f"  Mounted at: {', '.join(m for m in mounts if m in boot_mounts)}", file=sys.stderr)
+                    print(f"  Flashing the OS drive risks making the system unbootable.", file=sys.stderr)
+                    log_flash_event(device_info, False, f"REFUSED: boot drive ({', '.join(m for m in mounts if m in boot_mounts)})")
+                    return 8
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+                pass
+
     if args.dry_run:
         print(f"Would flash: {device_info.get('model', '')} ({device_info.get('device', '')})")
         print(f"  Current FW: {device_info.get('current_firmware', '')}")
@@ -1354,6 +1416,9 @@ def main():
         print(f"\n✓ Flash successful")
         # Post-flash verification: re-read firmware version from device
         verify_firmware_after_flash(device_info)
+        # Post-flash: SMART health re-check for HDDs
+        if device_info.get("type") == "hdd":
+            post_flash_hdd_checks(device_info)
         return 0
     else:
         print(f"\n✗ Flash failed: {message}", file=sys.stderr)
@@ -1379,6 +1444,85 @@ def resolve_storcli_path(flash_tool):
     # Fallback to PATH lookup
     found = shutil.which(tool)
     return found if found else tool
+
+
+def post_flash_hdd_checks(device_info):
+    """Run HDD-specific post-flash health checks. Best-effort, does not affect exit code."""
+    device_path = device_info.get("device", "")
+    pre_serial = device_info.get("serial", "")
+
+    print(f"\n── Post-flash HDD health checks ──")
+
+    # 1. SMART health re-check
+    try:
+        result = subprocess.run(
+            ["smartctl", "-H", device_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=30
+        )
+        if "PASSED" in result.stdout:
+            print(f"  ✓ SMART health: PASSED")
+        elif "FAILED" in result.stdout:
+            print(f"  ✗ WARNING: SMART health reports FAILED after flash!")
+            print(f"    The drive may have had a pre-existing issue exposed by the firmware update.")
+            print(f"    Recommend replacing this drive.")
+        else:
+            print(f"  ⚠ SMART health: could not determine status")
+    except Exception as e:
+        print(f"  ⚠ SMART health check skipped: {e}")
+
+    # 2. ZFS pool status — check if pool degraded after flash
+    if device_path:
+        dev_name = os.path.basename(device_path)
+        try:
+            result = subprocess.run(
+                ["zpool", "status", "-x"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=15
+            )
+            if result.returncode == 0:
+                output = result.stdout.strip()
+                if output == "all pools are healthy":
+                    print(f"  ✓ ZFS pools: all healthy")
+                elif "DEGRADED" in output or "FAULTED" in output:
+                    print(f"  ✗ WARNING: ZFS pool status changed after flash!")
+                    # Find which pool is affected
+                    for line in output.splitlines():
+                        if "pool:" in line or "state:" in line:
+                            print(f"    {line.strip()}")
+                    print(f"    Check 'zpool status -v' for details.")
+                else:
+                    print(f"  ⚠ ZFS pool status: {output[:100]}")
+        except FileNotFoundError:
+            pass  # zpool not installed — not a ZFS system
+        except Exception as e:
+            print(f"  ⚠ ZFS pool check skipped: {e}")
+
+    # 3. Serial/identity verification — confirm same drive responded
+    if pre_serial and device_path:
+        try:
+            result = subprocess.run(
+                ["smartctl", "-i", device_path],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=30
+            )
+            post_serial = ""
+            if result.returncode in (0, 4):
+                for line in result.stdout.splitlines():
+                    if ":" in line:
+                        key, _, val = line.partition(":")
+                        if key.strip() in ("Serial Number", "Serial number"):
+                            post_serial = val.strip()
+                            break
+            if post_serial and post_serial == pre_serial:
+                print(f"  ✓ Drive identity: serial {post_serial} confirmed")
+            elif post_serial and post_serial != pre_serial:
+                print(f"  ✗ WARNING: Drive serial changed! Before: {pre_serial}, After: {post_serial}")
+                print(f"    Device names may have shifted. Verify the correct drive was updated.")
+            else:
+                print(f"  ⚠ Could not re-read drive serial for verification")
+        except Exception as e:
+            print(f"  ⚠ Serial verification skipped: {e}")
 
 
 def verify_firmware_after_flash(device_info):
