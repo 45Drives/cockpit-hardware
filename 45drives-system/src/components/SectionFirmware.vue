@@ -5,24 +5,6 @@
     <div class="flex items-center gap-2">
       <span v-if="lastChecked" class="text-xs text-muted">Last checked: {{ lastChecked }}</span>
       <button
-        v-if="selectedDevices.size > 0"
-        type="button"
-        :disabled="checking"
-        @click="flashSelectedDevices()"
-        class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-      >
-        Update Selected ({{ selectedDevices.size }})
-      </button>
-      <button
-        v-if="flashableDevices.length > 0"
-        type="button"
-        :disabled="checking"
-        @click="flashAllDevices()"
-        class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-      >
-        Update All ({{ flashableDevices.length }})
-      </button>
-      <button
         v-if="rebootPendingDevices.size > 0"
         type="button"
         @click="safeReboot()"
@@ -54,10 +36,7 @@
             <table class="min-w-full divide-y divide-default">
               <thead class="bg-accent sticky top-0 z-10">
                 <tr>
-                  <th scope="col" class="py-3.5 pl-4 pr-2 w-8">
-                    <input type="checkbox" :checked="allFlashableSelected" :indeterminate="someSelected && !allFlashableSelected" @change="toggleSelectAll" class="rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                  </th>
-                  <th scope="col" class="py-3.5 pl-2 pr-3 text-left text-sm font-semibold">Type</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold">Type</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Device</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Current FW</th>
                   <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Latest FW</th>
@@ -66,10 +45,7 @@
               </thead>
               <tbody class="divide-y divide-default">
                 <tr v-for="(device, idx) in outdatedDevices" :key="idx">
-                  <td class="whitespace-nowrap py-4 pl-4 pr-2 w-8">
-                    <input v-if="canFlash(device) && !rebootPendingDevices.has(device.cache_index)" type="checkbox" :checked="selectedDevices.has(device.cache_index)" @change="toggleDevice(device.cache_index)" class="rounded border-gray-300 text-green-600 focus:ring-green-500" />
-                  </td>
-                  <td class="whitespace-nowrap py-4 pl-2 pr-3 text-sm font-medium uppercase">{{ device.type }}</td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium uppercase">{{ device.type }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm text-muted">{{ device.device || '-' }} <span class="text-xs text-gray-400">({{ device.model || '-' }})</span></td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-muted">{{ device.current_firmware || '-' }}</td>
                   <td class="whitespace-nowrap px-3 py-4 text-sm font-mono text-muted">{{ device.latest_firmware || '-' }}</td>
@@ -245,123 +221,6 @@
   </div>
 </div>
 
-<!-- Batch Flash Modal -->
-<div v-if="batchModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-  <div class="bg-default rounded-lg shadow-xl max-w-2xl w-full mx-4 overflow-hidden">
-    <div class="px-6 py-4 border-b border-default flex justify-between items-center">
-      <h3 class="text-lg font-semibold">{{ batchFlashing ? 'Batch Firmware Update' : batchComplete ? 'Batch Update Complete' : (batchIsSelectedOnly ? 'Update Selected — Pre-Check' : 'Update All — Pre-Check') }}</h3>
-      <button v-if="!batchFlashing" @click="batchModalVisible = false" class="text-muted hover:text-default text-xl">&times;</button>
-    </div>
-    <div class="px-6 py-4 space-y-4">
-      <!-- Disclaimer -->
-      <div v-if="!batchLoading" class="rounded-md bg-yellow-50 border border-yellow-200 p-3">
-        <ul class="text-xs text-yellow-700 font-medium list-disc pl-4 space-y-1">
-          <li v-if="batchDrives.some(d => d.type === 'hdd')">Ensure all drives are backed up before proceeding.</li>
-          <li>Do not power off the system during the update process.</li>
-          <li v-if="batchDrives.some(d => d.type === 'hdd')">45Drives and Seagate are not responsible for any data loss or product damage resulting from a firmware update.</li>
-          <li v-else>45Drives is not responsible for any product damage resulting from a firmware update.</li>
-        </ul>
-      </div>
-
-      <!-- Loading pre-checks -->
-      <div v-if="batchLoading" class="flex items-center justify-center py-6">
-        <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-        <span class="ml-3 text-sm text-muted">Running pre-flight checks on {{ batchDrives.length }} devices...</span>
-      </div>
-
-      <!-- Downloads required -->
-      <div v-if="!batchLoading && !batchFlashing && !batchComplete && batchDownloads.length > 0" class="rounded-md bg-amber-50 border border-amber-200 p-3">
-        <h4 class="text-sm font-medium text-amber-800 mb-2">Downloads required from firmware repo:</h4>
-        <ul class="text-sm text-amber-700 list-disc pl-5 space-y-1">
-          <li v-for="(dl, i) in batchDownloads" :key="i"><strong>{{ dl.name }}</strong> — {{ dl.reason }}</li>
-        </ul>
-      </div>
-
-      <!-- Pre-check results / progress -->
-      <div v-if="!batchLoading" class="max-h-80 overflow-y-auto">
-        <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b border-default">
-              <th class="text-left py-2 pr-3 font-medium">Device</th>
-              <th class="text-left py-2 pr-3 font-medium">FW</th>
-              <th class="text-left py-2 pr-3 font-medium">Pre-Check</th>
-              <th class="text-left py-2 font-medium">Flash</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="bd in batchDrives" :key="bd.device" class="border-b border-default">
-              <td class="py-2 pr-3 font-mono text-xs">{{ bd.device }} <span class="text-muted">({{ bd.model }})</span></td>
-              <td class="py-2 pr-3 font-mono text-xs">{{ bd.current_firmware }} → {{ bd.latest_firmware }}</td>
-              <td class="py-2 pr-3">
-                <span v-if="bd.preCheck === 'idle'" class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Idle</span>
-                <span v-else-if="bd.preCheck === 'busy'" class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700">Busy</span>
-                <span v-else-if="bd.preCheck === 'checking'" class="text-xs text-muted">Checking...</span>
-                <span v-else-if="bd.preCheck === 'na'" class="text-xs text-muted">N/A</span>
-                <span v-else class="text-xs text-muted">—</span>
-              </td>
-              <td class="py-2">
-                <span v-if="bd.flashStatus === 'pending'" class="text-xs text-muted">Pending</span>
-                <span v-else-if="bd.flashStatus === 'flashing'" class="text-xs text-blue-600 font-medium">Flashing...</span>
-                <span v-else-if="bd.flashStatus === 'success'" class="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">✓ Success</span>
-                <span v-else-if="bd.flashStatus === 'failed'" class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">✗ Failed</span>
-                <span v-else-if="bd.flashStatus === 'skipped'" class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">Skipped</span>
-                <span v-else class="text-xs text-muted">—</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- Summary after completion -->
-        <div v-if="batchComplete" class="mt-4 p-3 rounded-md" :class="batchFailCount > 0 ? 'bg-yellow-50' : 'bg-green-50'">
-          <p class="text-sm font-medium" :class="batchFailCount > 0 ? 'text-yellow-800' : 'text-green-800'">
-            Batch complete: {{ batchSuccessCount }} succeeded, {{ batchFailCount }} failed, {{ batchSkipCount }} skipped
-          </p>
-        </div>
-        <div v-if="batchComplete && batchRebootRequired" class="mt-3 rounded-md bg-yellow-50 border border-yellow-200 p-3">
-          <p class="text-sm font-medium text-yellow-800">⚠ System reboot required to activate new firmware on one or more devices.</p>
-        </div>
-
-        <!-- Busy drive warning -->
-        <div v-if="!batchFlashing && !batchComplete && batchBusyCount > 0" class="mt-3 rounded-md bg-yellow-50 border border-yellow-200 p-3">
-          <p class="text-xs text-yellow-800"><strong>Warning:</strong> {{ batchBusyCount }} device(s) are currently in use. They will be skipped unless you choose to include them.</p>
-        </div>
-      </div>
-
-      <!-- Batch log -->
-      <div v-if="batchFlashing || batchComplete" class="bg-gray-900 rounded-md p-3 font-mono text-xs max-h-40 overflow-y-auto whitespace-pre-wrap" v-html="colorizeLog(batchLog || 'Starting batch flash...')"></div>
-    </div>
-
-    <!-- Actions -->
-    <div v-if="!batchLoading" class="px-6 py-3 border-t border-default">
-      <div v-if="!batchFlashing && !batchComplete" class="space-y-3">
-        <div>
-          <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
-          <input v-model="batchConfirmInput" type="text" placeholder="confirm flash" class="w-full bg-accent rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-        </div>
-        <div class="flex justify-end items-center gap-2">
-            <button @click="batchModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
-            <button @click="proceedBatchFlash()" :disabled="batchConfirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-              {{ batchIsSelectedOnly ? 'Flash Selected' : 'Flash All' }} ({{ batchDrives.filter(d => d.preCheck !== 'busy').length }})
-            </button>
-        </div>
-      </div>
-      <div v-else-if="batchComplete" class="flex justify-end">
-        <button @click="batchModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Close</button>
-      </div>
-      <div v-else class="flex items-center gap-3">
-        <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-        </svg>
-        <span class="text-sm font-medium text-yellow-600">Flashing in progress — do NOT power off!</span>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Safe Reboot Modal -->
 <div v-if="rebootModalVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
   <div class="bg-default rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
@@ -423,9 +282,6 @@ export default {
     const lastChecked = ref("");
     const checkFirmwareBadge = inject('checkFirmwareBadge', () => {});
 
-    // Selection state for checkbox-based updates (declared early — loadCache clears it)
-    const selectedDevices = ref(new Set());
-
     const loadCache = async () => {
       try {
         const proc = await unwrap(server.execute(
@@ -437,8 +293,6 @@ export default {
           lastChecked.value = new Date(cache.timestamp).toLocaleString();
         }
         error.value = "";
-        // Clear selection — cache_index may have shifted after re-discovery
-        selectedDevices.value = new Set();
       } catch (e) {
         return false;
       }
@@ -477,29 +331,6 @@ export default {
 
     const outdatedDevices = computed(() => devices.value.filter(d => d.update_available === 'outdated'));
 
-    // Selection toggle functions
-    const toggleDevice = (cacheIndex) => {
-      if (selectedDevices.value.has(cacheIndex)) {
-        selectedDevices.value.delete(cacheIndex);
-      } else {
-        selectedDevices.value.add(cacheIndex);
-      }
-      // Force reactivity
-      selectedDevices.value = new Set(selectedDevices.value);
-    };
-    const allFlashableSelected = computed(() => {
-      const flashable = flashableDevices.value;
-      return flashable.length > 0 && flashable.every(d => selectedDevices.value.has(d.cache_index));
-    });
-    const someSelected = computed(() => selectedDevices.value.size > 0);
-    const toggleSelectAll = () => {
-      if (allFlashableSelected.value) {
-        selectedDevices.value = new Set();
-      } else {
-        selectedDevices.value = new Set(flashableDevices.value.map(d => d.cache_index));
-      }
-    };
-
     // A device can be flashed if it has flashable flag and either:
     // - a firmware_file (normal flash), or
     // - a tool_package (nvmupdate — self-contained package with its own firmware)
@@ -509,9 +340,6 @@ export default {
       if (device.tool_package) return true;
       return false;
     };
-
-    // Devices eligible for batch flash (exclude reboot-pending ones)
-    const flashableDevices = computed(() => outdatedDevices.value.filter(d => canFlash(d) && !rebootPendingDevices.value.has(d.cache_index)));
 
     // Info modal
     const infoVisible = ref(false);
@@ -764,22 +592,6 @@ export default {
     const flashSuccess = ref(false);
     const flashRebootRequired = ref(false);
 
-    // Batch flash state
-    const batchModalVisible = ref(false);
-    const batchLoading = ref(false);
-    const batchFlashing = ref(false);
-    const batchComplete = ref(false);
-    const batchDrives = ref([]);
-    const batchConfirmInput = ref('');
-    const batchIncludeBusy = ref(false);
-    const batchLog = ref('');
-    const batchSuccessCount = ref(0);
-    const batchFailCount = ref(0);
-    const batchSkipCount = ref(0);
-    const batchRebootRequired = ref(false);
-    const batchBusyCount = computed(() => batchDrives.value.filter(d => d.preCheck === 'busy').length);
-    const batchDownloads = ref([]);
-
     const colorizeLog = (text) => {
       return text.split('\n').map(line => {
         const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -844,220 +656,6 @@ export default {
       device.flashing = false;
     };
 
-    const batchIsSelectedOnly = ref(false);
-
-    const flashSelectedDevices = async () => {
-      const selected = flashableDevices.value.filter(d => selectedDevices.value.has(d.cache_index));
-      if (selected.length === 0) return;
-      batchDrives.value = selected.map(d => ({
-        ...d,
-        preCheck: d.type === 'hdd' ? 'checking' : 'na',
-        flashStatus: '',
-      }));
-      batchConfirmInput.value = '';
-      batchIncludeBusy.value = false;
-      batchComplete.value = false;
-      batchFlashing.value = false;
-      batchRebootRequired.value = false;
-      batchLog.value = '';
-      batchSuccessCount.value = 0;
-      batchFailCount.value = 0;
-      batchSkipCount.value = 0;
-      batchIsSelectedOnly.value = true;
-      batchModalVisible.value = true;
-      batchLoading.value = true;
-      batchDownloads.value = [];
-
-      // Run preflight checks for download requirements
-      for (let bd of batchDrives.value) {
-        try {
-          const pfProc = await unwrap(server.execute(
-            new Command([
-              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
-              "--cache-index", String(bd.cache_index),
-              "--preflight"
-            ], { superuser: "require" })
-          ));
-          const pfData = JSON.parse(pfProc.getStdout());
-          if (pfData.downloads && pfData.downloads.length > 0) {
-            for (const dl of pfData.downloads) {
-              if (!batchDownloads.value.some(d => d.name === dl.name)) {
-                batchDownloads.value.push(dl);
-              }
-            }
-          }
-        } catch (e) { /* preflight failed, flash will handle it */ }
-      }
-
-      // Run pre-checks for HDD devices
-      for (let bd of batchDrives.value) {
-        if (bd.type !== 'hdd') continue;
-        const devName = (bd.device || '').replace('/dev/', '');
-        if (!devName) { bd.preCheck = 'na'; continue; }
-        try {
-          const checkProc = await unwrap(server.execute(
-            new Command(["bash", "-c", `
-              DEV="/dev/${devName}"
-              MOUNTS=$(lsblk -n -o MOUNTPOINT "$DEV" 2>/dev/null | grep -v "^$")
-              ZFS=$(zpool status 2>/dev/null | grep -B5 "${devName}" | grep "pool:" | awk '{print $2}')
-              MD=$(grep "${devName}" /proc/mdstat 2>/dev/null)
-              INFLIGHT=$(cat /sys/block/${devName}/inflight 2>/dev/null | awk '{print $1+$2}')
-              FUSER=$(fuser "$DEV" 2>/dev/null)
-              if [ -n "$MOUNTS" ] || [ -n "$ZFS" ] || [ -n "$MD" ] || ([ -n "$INFLIGHT" ] && [ "$INFLIGHT" -gt 0 ]) || [ -n "$FUSER" ]; then
-                echo "BUSY"
-              else
-                echo "IDLE"
-              fi
-            `], { superuser: "require" })
-          ));
-          const result = checkProc.getStdout().trim();
-          bd.preCheck = result === 'IDLE' ? 'idle' : 'busy';
-        } catch (e) {
-          bd.preCheck = 'busy';
-        }
-      }
-      batchLoading.value = false;
-    };
-
-    const flashAllDevices = async () => {
-      batchDrives.value = flashableDevices.value.map(d => ({
-        ...d,
-        preCheck: d.type === 'hdd' ? 'checking' : 'na',
-        flashStatus: '',
-      }));
-      batchConfirmInput.value = '';
-      batchIncludeBusy.value = false;
-      batchComplete.value = false;
-      batchFlashing.value = false;
-      batchRebootRequired.value = false;
-      batchLog.value = '';
-      batchSuccessCount.value = 0;
-      batchFailCount.value = 0;
-      batchSkipCount.value = 0;
-      batchIsSelectedOnly.value = false;
-      batchModalVisible.value = true;
-      batchLoading.value = true;
-      batchDownloads.value = [];
-
-      // Run preflight checks for download requirements
-      for (let bd of batchDrives.value) {
-        try {
-          const pfProc = await unwrap(server.execute(
-            new Command([
-              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
-              "--cache-index", String(bd.cache_index),
-              "--preflight"
-            ], { superuser: "require" })
-          ));
-          const pfData = JSON.parse(pfProc.getStdout());
-          if (pfData.downloads && pfData.downloads.length > 0) {
-            for (const dl of pfData.downloads) {
-              if (!batchDownloads.value.some(d => d.name === dl.name)) {
-                batchDownloads.value.push(dl);
-              }
-            }
-          }
-        } catch (e) { /* preflight failed, flash will handle it */ }
-      }
-
-      // Run pre-checks for HDD devices (check if in use)
-      for (let bd of batchDrives.value) {
-        if (bd.type !== 'hdd') continue;
-        const devName = (bd.device || '').replace('/dev/', '');
-        if (!devName) { bd.preCheck = 'na'; continue; }
-        try {
-          const checkProc = await unwrap(server.execute(
-            new Command(["bash", "-c", `
-              DEV="/dev/${devName}"
-              MOUNTS=$(lsblk -n -o MOUNTPOINT "$DEV" 2>/dev/null | grep -v "^$")
-              ZFS=$(zpool status 2>/dev/null | grep -B5 "${devName}" | grep "pool:" | awk '{print $2}')
-              MD=$(grep "${devName}" /proc/mdstat 2>/dev/null)
-              INFLIGHT=$(cat /sys/block/${devName}/inflight 2>/dev/null | awk '{print $1+$2}')
-              FUSER=$(fuser "$DEV" 2>/dev/null)
-              if [ -n "$MOUNTS" ] || [ -n "$ZFS" ] || [ -n "$MD" ] || ([ -n "$INFLIGHT" ] && [ "$INFLIGHT" -gt 0 ]) || [ -n "$FUSER" ]; then
-                echo "BUSY"
-              else
-                echo "IDLE"
-              fi
-            `], { superuser: "require" })
-          ));
-          const result = checkProc.getStdout().trim();
-          bd.preCheck = result === 'IDLE' ? 'idle' : 'busy';
-        } catch (e) {
-          bd.preCheck = 'busy';
-        }
-      }
-      batchLoading.value = false;
-    };
-
-    const proceedBatchFlash = async () => {
-      batchFlashing.value = true;
-      batchLog.value = `Starting batch firmware update...\n\n`;
-
-      const toFlash = batchDrives.value.filter(d => d.preCheck !== 'busy');
-
-      // Mark skipped
-      for (let bd of batchDrives.value) {
-        if (!toFlash.includes(bd)) {
-          bd.flashStatus = 'skipped';
-          batchSkipCount.value++;
-        } else {
-          bd.flashStatus = 'pending';
-        }
-      }
-
-      for (let bd of toFlash) {
-        bd.flashStatus = 'flashing';
-        batchLog.value += `--- ${bd.device || bd.model} (${bd.type}) ---\n`;
-        batchLog.value += `  ${bd.current_firmware} → ${bd.latest_firmware}\n`;
-
-        try {
-          const proc = await unwrap(server.execute(
-            new Command([
-              "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
-              "--cache-index", String(bd.cache_index),
-              "--allow-download"
-            ], { superuser: "require" })
-          ));
-          const stdout = proc.getStdout();
-          if (stdout) batchLog.value += stdout.trim() + '\n';
-          batchLog.value += `  ✓ Success\n\n`;
-          bd.flashStatus = 'success';
-          batchSuccessCount.value++;
-          if (bd.requires_reboot) {
-            batchRebootRequired.value = true;
-            rebootPendingDevices.value.add(bd.cache_index);
-            await saveRebootPending();
-          }
-        } catch (e) {
-          if (e.stdout) batchLog.value += e.stdout + '\n';
-          if (e.stderr) batchLog.value += e.stderr + '\n';
-          batchLog.value += `  ✗ FAILED: ${e.message || e}\n\n`;
-          bd.flashStatus = 'failed';
-          batchFailCount.value++;
-        }
-      }
-
-      // Refresh cache
-      batchLog.value += `\nRefreshing firmware status...\n`;
-      try {
-        const refreshProc = await unwrap(server.execute(
-          new Command(["python3", "/usr/share/45drives/firmware/firmware-check"], { superuser: "require" }),
-          false
-        ));
-        if (refreshProc.exitStatus === 1) {
-          batchLog.value += 'Warning: cache refresh failed.\n';
-        } else {
-          await loadCache();
-          batchLog.value += 'Done.\n';
-        }
-      } catch (e) {
-        batchLog.value += 'Warning: cache refresh failed.\n';
-      }
-      batchFlashing.value = false;
-      batchComplete.value = true;
-    };
-
     // Safe Reboot
     const rebootModalVisible = ref(false);
     const rebootConfirmInput = ref('');
@@ -1092,7 +690,7 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, flashableDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmBlocked, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, batchModalVisible, batchLoading, batchFlashing, batchComplete, batchDrives, batchConfirmInput, batchIncludeBusy, batchLog, batchSuccessCount, batchFailCount, batchSkipCount, batchRebootRequired, batchBusyCount, batchDownloads, batchIsSelectedOnly, flashAllDevices, flashSelectedDevices, proceedBatchFlash, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, selectedDevices, toggleDevice, allFlashableSelected, someSelected, toggleSelectAll };
+    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmBlocked, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
   }
 };
 </script>
