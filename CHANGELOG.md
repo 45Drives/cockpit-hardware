@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.1-1
+## cockpit-45drives-hardware 2.8.2-1
 
-* Feature: 45drive system to allow HBA and NIC cards firmware update
+* Adds support for MS73-HB2 mobo (same as MS73-HB0 but with different network chip)
