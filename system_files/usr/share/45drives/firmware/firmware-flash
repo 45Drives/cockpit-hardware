@@ -11,6 +11,8 @@ Exit codes:
     1 = error (bad args, file not found, etc.)
     2 = flash failed (tool reported failure)
     3 = device not found or not flashable
+    9 = ZFS pool DEGRADED
+    10 = MD RAID member
 """
 
 import json
@@ -396,18 +398,53 @@ def flash_storcli(device_info, firmware_path):
     ctrl_idx = device_info.get("controller_index", 0)
     tool_sha256 = device_info.get("tool_binary_sha256", "")
 
-    # Resolve full path for storcli
+    # Resolve full path for storcli (try storcli64 and storcli2)
     tool_path = tool
-    for candidate in [
-        f"/opt/45drives/tools/{tool}",
-        f"/opt/MegaRAID/storcli/{tool}",
-        f"/usr/local/bin/{tool}",
-        f"/usr/bin/{tool}",
-    ]:
-        if os.path.isfile(candidate):
-            tool_path = candidate
+    tool_candidates = [tool]
+    # If manifest says storcli64, also try storcli2 as fallback (and vice versa)
+    if "storcli64" in tool and "storcli2" not in tool:
+        tool_candidates.append(tool.replace("storcli64", "storcli2"))
+    elif "storcli2" in tool and "storcli64" not in tool:
+        tool_candidates.append(tool.replace("storcli2", "storcli64"))
+
+    found_tool = False
+    for t in tool_candidates:
+        for candidate in [
+            f"/opt/45drives/tools/{t}",
+            f"/opt/MegaRAID/storcli/{t}",
+            f"/usr/local/bin/{t}",
+            f"/usr/bin/{t}",
+        ]:
+            if os.path.isfile(candidate):
+                tool_path = candidate
+                # If we fell back to a different tool, look up its hash from the cache/manifest
+                if t != device_info.get("flash_tool", ""):
+                    print(f"  ⚠ Manifest specifies '{device_info.get('flash_tool', '')}' but found '{t}' — using fallback")
+                    try:
+                        cache = load_cache()
+                        for ft in cache.get("_manifest_flash_tools", []):
+                            if ft.get("name", "").lower() == t.lower():
+                                tool_sha256 = ft.get("sha256", "")
+                                break
+                        else:
+                            # Not in cache — try loading manifest directly
+                            import json as _json
+                            manifest_path = "/usr/share/45drives/firmware/manifest.json"
+                            if os.path.isfile(manifest_path):
+                                with open(manifest_path) as _mf:
+                                    _manifest = _json.load(_mf)
+                                for ft in _manifest.get("flash_tools", []):
+                                    if ft.get("name", "").lower() == t.lower():
+                                        tool_sha256 = ft.get("sha256", "")
+                                        break
+                    except Exception:
+                        pass  # Will fail at hash check below if sha256 is empty
+                tool = t
+                found_tool = True
+                break
+        if found_tool:
             break
-    else:
+    if not found_tool:
         # Not found locally — try downloading from repo (with user permission)
         dest = f"/opt/45drives/tools/{tool}"
         if not confirm_download(tool):
@@ -1256,26 +1293,281 @@ def main():
             except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
                 print(f"  ⚠ Could not check SMART health: {e} — proceeding with caution", file=sys.stderr)
 
-    # Pre-flight: ZFS scrub/resilver in progress — don't flash during active pool operations
+    # Pre-flight: ZFS checks — scrub/resilver, DEGRADED pool
     if device_info.get("type") == "hdd":
         device_path = device_info.get("device", "")
         if device_path:
             dev_name = os.path.basename(device_path)
             try:
-                result = subprocess.run(
-                    ["zpool", "status"],
+                # Build a set of all names/paths that reference this drive.
+                # Pools may use kernel names, by-id, by-vdev, by-path, or WWN paths.
+                dev_aliases = {dev_name}
+                try:
+                    for entry in os.listdir(f"/sys/block/{dev_name}/"):
+                        if entry.startswith(dev_name):
+                            dev_aliases.add(entry)  # partitions: sda1, sda2, ...
+                except OSError:
+                    pass
+                for by_dir in ("/dev/disk/by-id", "/dev/disk/by-vdev", "/dev/disk/by-path"):
+                    try:
+                        for entry in os.listdir(by_dir):
+                            real = os.path.realpath(os.path.join(by_dir, entry))
+                            real_base = os.path.basename(real)
+                            if real_base == dev_name or real_base in dev_aliases:
+                                dev_aliases.add(entry)
+                                dev_aliases.add(os.path.join(by_dir, entry))
+                    except OSError:
+                        pass
+
+                # Find which pool this drive belongs to
+                drive_pool = None
+                pool_list = subprocess.run(
+                    ["zpool", "list", "-H", "-o", "name"],
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     universal_newlines=True, timeout=15
                 )
-                if result.returncode == 0 and dev_name in result.stdout:
-                    if "scrub in progress" in result.stdout or "resilver in progress" in result.stdout:
-                        print(f"✗ REFUSED: A ZFS scrub or resilver is in progress.", file=sys.stderr)
-                        print(f"  Flashing drive firmware during active pool operations risks data loss.", file=sys.stderr)
-                        print(f"  Wait for the operation to complete, then retry.", file=sys.stderr)
-                        log_flash_event(device_info, False, "REFUSED: ZFS scrub/resilver in progress")
-                        return 7
+                if pool_list.returncode == 0:
+                    for pool_name in pool_list.stdout.strip().splitlines():
+                        pool_name = pool_name.strip()
+                        if not pool_name:
+                            continue
+                        pool_status = subprocess.run(
+                            ["zpool", "status", pool_name],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            universal_newlines=True, timeout=15
+                        )
+                        if pool_status.returncode == 0:
+                            for line in pool_status.stdout.splitlines():
+                                tokens = line.split()
+                                for token in tokens:
+                                    # Match kernel name, full path, or symlink name
+                                    if token in dev_aliases or os.path.basename(token) in dev_aliases:
+                                        drive_pool = pool_name
+                                        break
+                                    # Resolve symlink-style token to real device
+                                    if token.startswith("/dev/"):
+                                        try:
+                                            real_base = os.path.basename(os.path.realpath(token))
+                                            if real_base == dev_name or real_base in dev_aliases:
+                                                drive_pool = pool_name
+                                                break
+                                        except OSError:
+                                            pass
+                                if drive_pool:
+                                    break
+                        if drive_pool:
+                            break
+
+                # If drive is in a pool, check pool health
+                if drive_pool:
+                    pool_status_out = subprocess.run(
+                        ["zpool", "status", drive_pool],
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                        universal_newlines=True, timeout=15
+                    )
+                    if pool_status_out.returncode == 0:
+                        status_text = pool_status_out.stdout
+
+                        # Block: scrub/resilver on THIS drive's pool
+                        if "scrub in progress" in status_text or "resilver in progress" in status_text:
+                            print(f"✗ REFUSED: Pool '{drive_pool}' is scrubbing/resilvering.", file=sys.stderr)
+                            print(f"  Flashing drive firmware during active pool operations risks data loss.", file=sys.stderr)
+                            print(f"  Wait for the operation to complete, then retry.", file=sys.stderr)
+                            log_flash_event(device_info, False, f"REFUSED: ZFS scrub/resilver on pool '{drive_pool}'")
+                            return 7
+
+                        # Check DEGRADED — only block if the target drive's own vdev has no remaining redundancy
+                        for line in status_text.splitlines():
+                            if line.strip().startswith("state:"):
+                                pool_state = line.split(":", 1)[1].strip()
+                                if pool_state == "DEGRADED":
+                                    # Parse config into per-vdev groups, find the target drive's vdev
+                                    vdevs = []  # list of {"type": str, "children": [{"name": str, "state": str}]}
+                                    current_vdev = None
+                                    in_config = False
+                                    pool_name_line_seen = False
+                                    for cfg_line in status_text.splitlines():
+                                        stripped = cfg_line.strip()
+                                        if stripped.startswith("config:"):
+                                            in_config = True
+                                            continue
+                                        if not in_config:
+                                            continue
+                                        if stripped.startswith("errors:") or not stripped:
+                                            if stripped.startswith("errors:"):
+                                                break
+                                            continue
+                                        tokens = stripped.split()
+                                        if not tokens:
+                                            continue
+                                        name = tokens[0]
+                                        state = tokens[1] if len(tokens) > 1 else ""
+                                        # Header line (NAME STATE ...)
+                                        if name == "NAME":
+                                            continue
+                                        # Pool name line (top-level) — skip
+                                        if name == drive_pool:
+                                            pool_name_line_seen = True
+                                            continue
+                                        # Detect vdev group headers
+                                        is_vdev_header = False
+                                        vdev_type = ""
+                                        for prefix in ("raidz3", "raidz2", "raidz1", "raidz", "mirror"):
+                                            if name.startswith(prefix):
+                                                is_vdev_header = True
+                                                vdev_type = prefix if prefix != "raidz" else "raidz1"
+                                                break
+                                        if is_vdev_header:
+                                            current_vdev = {"type": vdev_type, "children": []}
+                                            vdevs.append(current_vdev)
+                                        elif current_vdev is not None:
+                                            # Child disk of current vdev
+                                            current_vdev["children"].append({"name": name, "state": state})
+                                        elif pool_name_line_seen:
+                                            # No vdev header — stripe/single (top-level disk)
+                                            vdev = {"type": "stripe", "children": [{"name": name, "state": state}]}
+                                            vdevs.append(vdev)
+
+                                    # Find which vdev contains our target drive
+                                    target_vdev = None
+                                    for vdev in vdevs:
+                                        for child in vdev["children"]:
+                                            child_name = child["name"]
+                                            if child_name in dev_aliases or os.path.basename(child_name) in dev_aliases:
+                                                target_vdev = vdev
+                                                break
+                                            if child_name.startswith("/dev/"):
+                                                try:
+                                                    real_base = os.path.basename(os.path.realpath(child_name))
+                                                    if real_base in dev_aliases:
+                                                        target_vdev = vdev
+                                                        break
+                                                except OSError:
+                                                    pass
+                                        if target_vdev:
+                                            break
+
+                                    if target_vdev:
+                                        vt = target_vdev["type"]
+                                        faulted = sum(1 for c in target_vdev["children"]
+                                                      if c["state"] in ("FAULTED", "OFFLINE", "UNAVAIL", "REMOVED"))
+                                        total = len(target_vdev["children"])
+                                        has_remaining = False
+                                        if vt == "raidz3" and faulted < 3:
+                                            has_remaining = True
+                                        elif vt == "raidz2" and faulted < 2:
+                                            has_remaining = True
+                                        elif vt == "raidz1" and faulted < 1:
+                                            has_remaining = True
+                                        elif vt == "mirror" and (total - faulted) >= 2:
+                                            has_remaining = True
+
+                                        if has_remaining:
+                                            print(f"  ⚠ WARNING: Drive's vdev ({vt}) in pool '{drive_pool}' is DEGRADED"
+                                                  f" but has remaining redundancy ({faulted} faulted of {total}).", file=sys.stderr)
+                                        else:
+                                            print(f"✗ REFUSED: Drive's vdev ({vt}) in pool '{drive_pool}' has no remaining"
+                                                  f" redundancy ({faulted} faulted of {total}).", file=sys.stderr)
+                                            print(f"  Flashing this drive risks total data loss in this vdev.", file=sys.stderr)
+                                            print(f"  Repair the pool first, then retry.", file=sys.stderr)
+                                            log_flash_event(device_info, False,
+                                                f"REFUSED: pool '{drive_pool}' vdev {vt} DEGRADED, "
+                                                f"{faulted}/{total} faulted, no remaining redundancy")
+                                            return 9
+                                    else:
+                                        # Could not locate drive in config — conservative block
+                                        print(f"✗ REFUSED: Pool '{drive_pool}' is DEGRADED and drive's vdev"
+                                              f" could not be identified.", file=sys.stderr)
+                                        print(f"  Repair the pool first, then retry.", file=sys.stderr)
+                                        log_flash_event(device_info, False,
+                                            f"REFUSED: pool '{drive_pool}' DEGRADED, could not identify target vdev")
+                                        return 9
+                                elif pool_state == "ONLINE":
+                                    # Pool is healthy — but warn if the drive's vdev has NO redundancy
+                                    # (stripe or single-disk vdev)
+                                    vdevs = []
+                                    current_vdev = None
+                                    in_config = False
+                                    pool_name_line_seen = False
+                                    for cfg_line in status_text.splitlines():
+                                        stripped = cfg_line.strip()
+                                        if stripped.startswith("config:"):
+                                            in_config = True
+                                            continue
+                                        if not in_config:
+                                            continue
+                                        if stripped.startswith("errors:") or not stripped:
+                                            if stripped.startswith("errors:"):
+                                                break
+                                            continue
+                                        tokens = stripped.split()
+                                        if not tokens:
+                                            continue
+                                        name = tokens[0]
+                                        if name == "NAME":
+                                            continue
+                                        if name == drive_pool:
+                                            pool_name_line_seen = True
+                                            continue
+                                        is_vdev_header = False
+                                        vdev_type = ""
+                                        for prefix in ("raidz3", "raidz2", "raidz1", "raidz", "mirror"):
+                                            if name.startswith(prefix):
+                                                is_vdev_header = True
+                                                vdev_type = prefix if prefix != "raidz" else "raidz1"
+                                                break
+                                        if is_vdev_header:
+                                            current_vdev = {"type": vdev_type, "children": []}
+                                            vdevs.append(current_vdev)
+                                        elif current_vdev is not None:
+                                            current_vdev["children"].append({"name": name})
+                                        elif pool_name_line_seen:
+                                            vdev = {"type": "stripe", "children": [{"name": name}]}
+                                            vdevs.append(vdev)
+
+                                    # Find which vdev contains our target drive
+                                    target_vdev = None
+                                    for vdev in vdevs:
+                                        for child in vdev["children"]:
+                                            child_name = child["name"]
+                                            if child_name in dev_aliases or os.path.basename(child_name) in dev_aliases:
+                                                target_vdev = vdev
+                                                break
+                                            if child_name.startswith("/dev/"):
+                                                try:
+                                                    real_base = os.path.basename(os.path.realpath(child_name))
+                                                    if real_base in dev_aliases:
+                                                        target_vdev = vdev
+                                                        break
+                                                except OSError:
+                                                    pass
+                                        if target_vdev:
+                                            break
+
+                                    if target_vdev and target_vdev["type"] == "stripe":
+                                        pass  # no-redundancy warning removed (not useful post-flash)
+                                break
+
             except (subprocess.TimeoutExpired, FileNotFoundError):
                 pass  # zpool not installed or timed out — not a ZFS system
+
+    # Pre-flight: MD RAID membership — hard block (check drive AND its partitions)
+    if device_info.get("type") == "hdd":
+        device_path = device_info.get("device", "")
+        if device_path:
+            dev_name = os.path.basename(device_path)
+            try:
+                with open("/proc/mdstat", "r") as f:
+                    mdstat = f.read()
+                # Match sda, sda1, sda2, etc. — mdstat format: "sda1[0]"
+                if re.search(r'\b' + re.escape(dev_name) + r'\d*\[', mdstat):
+                    print(f"✗ REFUSED: {device_path} (or a partition) is part of a Linux MD RAID array.", file=sys.stderr)
+                    print(f"  Flashing a drive while it's in an active RAID array risks data loss.", file=sys.stderr)
+                    print(f"  Remove the drive from the array first, then retry.", file=sys.stderr)
+                    log_flash_event(device_info, False, "REFUSED: drive is MD RAID member")
+                    return 10
+            except (FileNotFoundError, IOError):
+                pass  # No mdstat = no MD RAID
 
     # Pre-flight: Root/boot drive detection — don't flash the OS drive
     if device_info.get("type") == "hdd":
@@ -1471,30 +1763,53 @@ def post_flash_hdd_checks(device_info):
     except Exception as e:
         print(f"  ⚠ SMART health check skipped: {e}")
 
-    # 2. ZFS pool status — check if pool degraded after flash
+    # 2. ZFS pool status — check only the pool this drive belongs to
     if device_path:
         dev_name = os.path.basename(device_path)
         try:
-            result = subprocess.run(
-                ["zpool", "status", "-x"],
+            # Find which pool this drive is in
+            drive_pool = None
+            list_result = subprocess.run(
+                ["zpool", "list", "-H", "-o", "name"],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                universal_newlines=True, timeout=15
+                universal_newlines=True, timeout=10
             )
-            if result.returncode == 0:
-                output = result.stdout.strip()
-                if output == "all pools are healthy":
-                    print(f"  ✓ ZFS pools: all healthy")
-                elif "DEGRADED" in output or "FAULTED" in output:
-                    print(f"  ✗ WARNING: ZFS pool status changed after flash!")
-                    # Find which pool is affected
+            if list_result.returncode == 0:
+                for pool_name in list_result.stdout.strip().splitlines():
+                    pool_stat = subprocess.run(
+                        ["zpool", "status", pool_name],
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                        universal_newlines=True, timeout=10
+                    )
+                    if pool_stat.returncode == 0 and dev_name in pool_stat.stdout:
+                        drive_pool = pool_name
+                        break
+
+            if drive_pool:
+                result = subprocess.run(
+                    ["zpool", "status", drive_pool],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=15
+                )
+                if result.returncode == 0:
+                    output = result.stdout
+                    pool_state = ""
                     for line in output.splitlines():
-                        if "pool:" in line or "state:" in line:
-                            print(f"    {line.strip()}")
-                    print(f"    Check 'zpool status -v' for details.")
-                else:
-                    print(f"  ⚠ ZFS pool status: {output[:100]}")
+                        if "state:" in line:
+                            pool_state = line.split(":", 1)[1].strip()
+                            break
+                    if pool_state == "ONLINE":
+                        print(f"  ✓ ZFS pool '{drive_pool}': ONLINE")
+                    elif pool_state in ("DEGRADED", "FAULTED"):
+                        print(f"  ✗ WARNING: ZFS pool '{drive_pool}' is {pool_state} after flash!")
+                        print(f"    Check 'zpool status -v {drive_pool}' for details.")
+                    else:
+                        print(f"  ⚠ ZFS pool '{drive_pool}' state: {pool_state}")
+            else:
+                # Drive not in any pool
+                print(f"  ✓ Drive not in any ZFS pool")
         except FileNotFoundError:
-            pass  # zpool not installed — not a ZFS system
+            pass  # zpool not installed
         except Exception as e:
             print(f"  ⚠ ZFS pool check skipped: {e}")
 

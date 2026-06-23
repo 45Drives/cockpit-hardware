@@ -149,7 +149,11 @@ def verify_gpg_signature(data_bytes, sig_bytes, pubkey_path):
 
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
-        print(f"GPG: Verification error: {e}", file=sys.stderr)
+        if isinstance(e, FileNotFoundError):
+            print(f"GPG: 'gpgv' not installed — cannot verify manifest signature.", file=sys.stderr)
+            print(f"GPG: Install gpgv (apt install gpgv / dnf install gnupg2) or set VERIFY_GPG=false in repo.conf", file=sys.stderr)
+        else:
+            print(f"GPG: Verification error: {e}", file=sys.stderr)
         return False
     finally:
         # Clean up temp files

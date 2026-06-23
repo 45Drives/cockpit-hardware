@@ -246,8 +246,9 @@ def discover_hba():
     Falls back to lspci detection if storcli64 is not available."""
     devices = []
 
-    # Try storcli64 at known paths
-    for tool in ["/opt/45drives/tools/storcli64", "storcli64", "/opt/MegaRAID/storcli/storcli64", "/usr/local/bin/storcli64"]:
+    # Try storcli64 and storcli2 at known paths
+    for tool in ["/opt/45drives/tools/storcli64", "storcli64", "/opt/MegaRAID/storcli/storcli64", "/usr/local/bin/storcli64",
+                 "/opt/45drives/tools/storcli2", "storcli2", "/opt/MegaRAID/storcli/storcli2", "/usr/local/bin/storcli2"]:
         stdout, _, rc = run_cmd([tool, "/call", "show", "all", "J"])
         if rc == 0 and stdout:
             try:

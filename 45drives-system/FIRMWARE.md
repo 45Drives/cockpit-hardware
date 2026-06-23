@@ -129,15 +129,15 @@ Traditional firmware workflows often require administrators to move between vend
 | **NVIDIA/Mellanox NICs** | ConnectX-5, ConnectX-6 | Supported |
 | **Broadcom NICs** | BCM57416, BCM57504 NetXtreme | Supported |
 | **Intel NICs** | E810 series | Supported |
+| **HDDs** | Seagate Exos 7E8, 7E10, X16 (SATA & SAS) | Supported |
 
 ### Not Exposed For One-Click Flashing In This Release
 
-- HDD firmware updates
 - NVMe firmware updates
 - BIOS/UEFI updates
 - BMC/IPMI updates
 
-These categories may be inventoried or considered for future releases, but the current customer-facing update workflow is scoped to HBA and NIC devices.
+These categories may be inventoried or considered for future releases.
 
 ---
 

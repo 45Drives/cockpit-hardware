@@ -58,6 +58,7 @@
                         <InformationCircleIcon class="h-4 w-4" aria-hidden="true" />
                       </button>
                       <button v-if="canFlash(device) && !rebootPendingDevices.has(device.cache_index)" :disabled="device.flashing" @click="startFlash(device)" class="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 transition-colors">{{ device.flashing ? 'Flashing...' : 'Update' }}</button>
+                      <button v-if="device.type === 'hdd'" :disabled="device.reverting" @click="revertDevice(device)" class="inline-flex items-center gap-1 rounded-md bg-orange-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors">{{ device.reverting ? 'Reverting...' : '↩ Revert' }}</button>
                     </div>
                   </td>
                 </tr>
@@ -69,6 +70,19 @@
     </div>
     <div v-else class="text-sm text-muted py-4 text-center">
       All firmware is up to date.
+    </div>
+    <!-- Revert section: show current HDDs so testers can revert after flashing -->
+    <div v-if="currentHddDevices.length > 0" class="mt-3 border-t border-default pt-3">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-xs font-medium text-muted uppercase tracking-wide">Up-to-date HDDs (testing: revert available)</h4>
+        <button :disabled="revertingAll" @click="revertAll()" class="inline-flex items-center gap-1 rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors">{{ revertingAll ? 'Reverting All...' : '↩ Revert All' }}</button>
+      </div>
+      <div class="space-y-1">
+        <div v-for="(device, idx) in currentHddDevices" :key="'cur-'+idx" class="flex items-center justify-between px-3 py-1.5 rounded bg-accent text-sm">
+          <span class="text-muted">{{ device.device }} <span class="text-xs text-gray-400">({{ device.model }})</span> — <span class="font-mono text-xs">{{ device.current_firmware }}</span></span>
+          <button :disabled="device.reverting" @click="revertDevice(device)" class="inline-flex items-center gap-1 rounded-md bg-orange-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors">{{ device.reverting ? 'Reverting...' : '↩ Revert' }}</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -165,7 +179,8 @@
           </ul>
         </div>
         <template v-if="confirmDevice?.type === 'hdd'">
-          <div v-if="confirmWarnings.length > 0" class="rounded-md bg-red-50 p-4">
+          <!-- Red: real warnings (degraded, no-redundancy pool, in-flight IO) -->
+          <div v-if="confirmWarnings.length > 0" class="rounded-md bg-red-50 border border-red-200 p-4">
             <div class="flex">
               <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -173,15 +188,32 @@
                 </svg>
               </div>
               <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800">Drive is currently in use</h3>
+                <h3 class="text-sm font-medium text-red-800">{{ confirmBlocked ? 'Update blocked' : 'Caution — drive is in use' }}</h3>
                 <ul class="mt-2 text-sm text-red-700 list-disc pl-5 space-y-1">
                   <li v-for="(w, i) in confirmWarnings" :key="i">{{ w }}</li>
                 </ul>
-                <p class="mt-2 text-sm text-red-800 font-medium">Flashing firmware while the drive is active may cause data loss.</p>
+                <p v-if="!confirmBlocked" class="mt-2 text-sm text-red-700">Proceed only if you understand the risk.</p>
               </div>
             </div>
           </div>
-          <div v-else class="rounded-md bg-green-50 p-4">
+          <!-- Blue: safe informational (redundant pool, scrub on another pool) -->
+          <div v-else-if="confirmInfo.length > 0" class="rounded-md bg-blue-50 border border-blue-200 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+              </div>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Safe to proceed</h3>
+                <ul class="mt-1 text-sm text-blue-700 list-disc pl-5 space-y-1">
+                  <li v-for="(info, i) in confirmInfo" :key="i">{{ info }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <!-- Green: completely idle -->
+          <div v-else class="rounded-md bg-green-50 border border-green-200 p-4">
             <div class="flex">
               <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -195,8 +227,8 @@
             </div>
           </div>
         </template>
-        <div v-if="confirmDevice?.type === 'hdd'" class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
-          <p class="text-xs text-yellow-700"><strong>Important:</strong> Ensure your data is backed up. 45Drives and Seagate are not responsible for any data loss or product damage resulting from a firmware update. Do not power off the system during the flash process.</p>
+        <div v-if="confirmDevice?.type === 'hdd'" class="rounded-md bg-gray-50 border border-gray-200 p-3 mt-4">
+          <p class="text-xs text-gray-600"><strong>Note:</strong> Do not power off or reboot the system during the flash — an interrupted write can brick the drive.</p>
         </div>
         <div v-else class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
           <p class="text-xs text-yellow-700"><strong>Important:</strong> Do not power off the system during the flash process. A reboot may be required to activate the new firmware.</p>
@@ -204,10 +236,7 @@
       </div>
     </div>
     <div v-if="!confirmLoading" class="px-6 py-3 border-t border-default space-y-3">
-      <div v-if="confirmBlocked" class="rounded-md bg-red-50 border border-red-200 p-3">
-        <p class="text-sm font-medium text-red-800">🛑 Update blocked — critical safety check(s) failed. Resolve the issue(s) above before retrying.</p>
-      </div>
-      <div v-else>
+      <div v-if="!confirmBlocked">
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
         <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
       </div>
@@ -330,6 +359,9 @@ export default {
     });
 
     const outdatedDevices = computed(() => devices.value.filter(d => d.update_available === 'outdated'));
+    // Models that have revert firmware available (testing only)
+    const REVERTABLE_MODELS = ['ST6000NM019B', 'ST4000NM024B', 'ST10000NM017B', 'ST8000NM017B', 'ST2000NM017B', 'ST16000NM001G', 'ST12000NM001G', 'ST4000NM002A', 'ST6000NM021A'];
+    const currentHddDevices = computed(() => devices.value.filter(d => d.type === 'hdd' && d.update_available === 'current' && REVERTABLE_MODELS.includes(d.model)));
 
     // A device can be flashed if it has flashable flag and either:
     // - a firmware_file (normal flash), or
@@ -353,6 +385,7 @@ export default {
     const confirmModalVisible = ref(false);
     const confirmLoading = ref(false);
     const confirmWarnings = ref([]);
+    const confirmInfo = ref([]);
     const confirmBlocked = ref(false);
     const confirmActions = ref([]);
     const confirmDownloads = ref([]);
@@ -367,6 +400,7 @@ export default {
       if (device.type === 'hdd') {
         confirmDevice.value = device;
         confirmWarnings.value = [];
+        confirmInfo.value = [];
         confirmBlocked.value = false;
         confirmActions.value = [];
         confirmDownloads.value = [];
@@ -402,6 +436,7 @@ export default {
               DEV="/dev/${devName}"
               WARNINGS=""
               BLOCKERS=""
+              INFO=""
 
               # SMART health check — block if FAILED
               SMART=$(smartctl -H "$DEV" 2>/dev/null)
@@ -409,29 +444,51 @@ export default {
                 BLOCKERS="$BLOCKERS\n🛑 SMART health status: FAILED — drive is failing, do not flash"
               fi
 
+              # Build list of all names that reference this drive (kernel, by-id, by-vdev, by-path)
+              DEV_ALIASES="${devName}"
+              for part in /sys/block/${devName}/${devName}*; do
+                [ -e "$part" ] && DEV_ALIASES="$DEV_ALIASES $(basename $part)"
+              done
+              for by_dir in /dev/disk/by-id /dev/disk/by-vdev /dev/disk/by-path; do
+                [ -d "$by_dir" ] || continue
+                for link in "$by_dir"/*; do
+                  real=$(readlink -f "$link" 2>/dev/null)
+                  real_base=$(basename "$real" 2>/dev/null)
+                  for alias in $DEV_ALIASES; do
+                    if [ "$real_base" = "$alias" ]; then
+                      DEV_ALIASES="$DEV_ALIASES $(basename $link) $link"
+                      break
+                    fi
+                  done
+                done
+              done
+
               # ZFS scrub/resilver check
               ZPOOL_STATUS=$(zpool status 2>/dev/null)
-              # Find which pool this drive belongs to (handles long status output)
+              # Find which pool this drive belongs to using all known aliases
               DRIVE_POOL=""
               for pool in $(zpool list -H -o name 2>/dev/null); do
-                if zpool status "$pool" 2>/dev/null | grep -qw "${devName}"; then
-                  DRIVE_POOL="$pool"
-                  break
-                fi
+                POOL_STATUS=$(zpool status "$pool" 2>/dev/null)
+                for alias in $DEV_ALIASES; do
+                  if echo "$POOL_STATUS" | grep -qF "$alias"; then
+                    DRIVE_POOL="$pool"
+                    break 2
+                  fi
+                done
               done
               SCRUB_ACTIVE=$(echo "$ZPOOL_STATUS" | grep -qE "scrub in progress|resilver in progress" && echo "yes" || echo "no")
 
               if [ "$SCRUB_ACTIVE" = "yes" ] && [ -n "$DRIVE_POOL" ]; then
-                # Check if THIS drive's pool is the one scrubbing
-                POOL_SCRUBBING=$(zpool status "$DRIVE_POOL" 2>/dev/null | grep -qE "scrub in progress|resilver in progress" && echo "yes" || echo "no")
-                if [ "$POOL_SCRUBBING" = "yes" ]; then
-                  BLOCKERS="$BLOCKERS\n🛑 Drive is in pool '$DRIVE_POOL' which is scrubbing/resilvering — wait for it to complete"
+                POOL_STATUS_TEXT=$(zpool status "$DRIVE_POOL" 2>/dev/null)
+                if echo "$POOL_STATUS_TEXT" | grep -q "resilver in progress"; then
+                  BLOCKERS="$BLOCKERS\n🛑 Drive is in pool '$DRIVE_POOL' which is resilvering — wait for it to complete"
+                elif echo "$POOL_STATUS_TEXT" | grep -q "scrub in progress"; then
+                  BLOCKERS="$BLOCKERS\n🛑 Drive is in pool '$DRIVE_POOL' which is scrubbing — wait for it to complete"
                 else
-                  WARNINGS="$WARNINGS\nA ZFS scrub/resilver is running on another pool (drive not affected)"
+                  INFO="$INFO\nA ZFS operation is running on another pool (drive not affected)"
                 fi
               elif [ "$SCRUB_ACTIVE" = "yes" ]; then
-                # Drive is free but a scrub is happening elsewhere — warn only
-                WARNINGS="$WARNINGS\nA ZFS scrub/resilver is running on another pool (drive not in any pool)"
+                INFO="$INFO\nA ZFS operation is running on another pool (drive not in any pool)"
               fi
 
               # Root/boot drive check — block if OS drive
@@ -446,24 +503,99 @@ export default {
               fi
 
               if [ -n "$DRIVE_POOL" ]; then
-                # Check if pool is DEGRADED — block if so (no fault tolerance left)
                 POOL_STATE=$(zpool status "$DRIVE_POOL" 2>/dev/null | grep "state:" | awk '{print $2}')
+                POOL_CONFIG=$(zpool status "$DRIVE_POOL" 2>/dev/null)
+
                 if [ "$POOL_STATE" = "DEGRADED" ]; then
-                  BLOCKERS="$BLOCKERS\n🛑 Pool '$DRIVE_POOL' is DEGRADED — flashing any member risks total data loss"
+                  # Find the target drive's vdev and count faults only within it.
+                  # Parse zpool status config section into vdev groups.
+                  TARGET_VDEV_TYPE=""
+                  TARGET_VDEV_FAULTED=0
+                  TARGET_VDEV_TOTAL=0
+                  FOUND_TARGET=0
+
+                  # Use awk to extract per-vdev info for the target drive.
+                  # Strategy: track current vdev type and its children.
+                  # When we see a child matching any of our aliases, record that vdev's stats.
+                  VDEV_INFO=$(echo "$POOL_CONFIG" | awk -v aliases="$DEV_ALIASES" '
+                    BEGIN {
+                      split(aliases, a, " ")
+                      for (i in a) alias_set[a[i]] = 1
+                      in_config = 0; vdev_type = ""; faulted = 0; total = 0; found = 0
+                    }
+                    /^\tconfig:/ || /^  config:/ { in_config = 1; next }
+                    !in_config { next }
+                    /errors:/ { exit }
+                    {
+                      # Strip leading whitespace and get tokens
+                      line = $0; sub(/^[\t ]+/, "", line)
+                      if (line == "" || line ~ /^NAME/) next
+                      name = $1; state = $2
+                      # Detect vdev header
+                      if (name ~ /^(mirror|raidz3|raidz2|raidz1|raidz)/) {
+                        if (found) exit  # already found target, stop
+                        if (name ~ /^raidz3/) vdev_type = "raidz3"
+                        else if (name ~ /^raidz2/) vdev_type = "raidz2"
+                        else if (name ~ /^raidz[^0-9]/ || name ~ /^raidz$/) vdev_type = "raidz1"
+                        else if (name ~ /^mirror/) vdev_type = "mirror"
+                        faulted = 0; total = 0
+                        next
+                      }
+                      # Skip pool name line
+                      if (vdev_type == "" && total == 0) next
+                      # Child of current vdev
+                      total++
+                      if (state ~ /FAULTED|OFFLINE|UNAVAIL|REMOVED/) faulted++
+                      # Check if this child is our target drive
+                      basename = name; sub(/.*\//, "", basename)
+                      if (basename in alias_set || name in alias_set) found = 1
+                    }
+                    END {
+                      if (found) print vdev_type " " faulted " " total
+                      else print "NOTFOUND"
+                    }
+                  ')
+
+                  if [ "$VDEV_INFO" != "NOTFOUND" ] && [ -n "$VDEV_INFO" ]; then
+                    TARGET_VDEV_TYPE=$(echo "$VDEV_INFO" | awk '{print $1}')
+                    TARGET_VDEV_FAULTED=$(echo "$VDEV_INFO" | awk '{print $2}')
+                    TARGET_VDEV_TOTAL=$(echo "$VDEV_INFO" | awk '{print $3}')
+                    HAS_REDUNDANCY="no"
+                    if [ "$TARGET_VDEV_TYPE" = "raidz3" ] && [ "$TARGET_VDEV_FAULTED" -lt 3 ]; then
+                      HAS_REDUNDANCY="yes"
+                    elif [ "$TARGET_VDEV_TYPE" = "raidz2" ] && [ "$TARGET_VDEV_FAULTED" -lt 2 ]; then
+                      HAS_REDUNDANCY="yes"
+                    elif [ "$TARGET_VDEV_TYPE" = "raidz1" ] && [ "$TARGET_VDEV_FAULTED" -lt 1 ]; then
+                      HAS_REDUNDANCY="yes"
+                    elif [ "$TARGET_VDEV_TYPE" = "mirror" ]; then
+                      ONLINE_COUNT=$((TARGET_VDEV_TOTAL - TARGET_VDEV_FAULTED))
+                      if [ "$ONLINE_COUNT" -ge 2 ]; then
+                        HAS_REDUNDANCY="yes"
+                      fi
+                    fi
+                    if [ "$HAS_REDUNDANCY" = "yes" ]; then
+                      WARNINGS="$WARNINGS\n⚠️ Drive's vdev ($TARGET_VDEV_TYPE) in pool '$DRIVE_POOL' is DEGRADED but has remaining redundancy ($TARGET_VDEV_FAULTED faulted of $TARGET_VDEV_TOTAL)"
+                    else
+                      BLOCKERS="$BLOCKERS\n🛑 Drive's vdev ($TARGET_VDEV_TYPE) in pool '$DRIVE_POOL' has no remaining redundancy ($TARGET_VDEV_FAULTED faulted of $TARGET_VDEV_TOTAL) — flashing risks total data loss"
+                    fi
+                  else
+                    # Could not locate drive in config — conservative block
+                    BLOCKERS="$BLOCKERS\n🛑 Pool '$DRIVE_POOL' is DEGRADED and drive's vdev could not be identified"
+                  fi
                 fi
 
-                # Check pool redundancy
-                POOL_CONFIG=$(zpool status "$DRIVE_POOL" 2>/dev/null)
+                # Check pool redundancy type
                 if echo "$POOL_CONFIG" | grep -qE "mirror|raidz"; then
-                  WARNINGS="$WARNINGS\nDrive is part of ZFS pool: $DRIVE_POOL (redundant — pool will remain online)"
+                  INFO="$INFO\nDrive is part of ZFS pool: $DRIVE_POOL (redundant — pool will remain online)"
                 else
-                  WARNINGS="$WARNINGS\n⚠️ Drive is part of ZFS pool: $DRIVE_POOL (NO REDUNDANCY — if this flash fails, data may be lost. Make sure your data is backed up!)"
+                  INFO="$INFO\nDrive is part of ZFS pool: $DRIVE_POOL (no redundancy)"
                 fi
               fi
 
-              MD=$(grep "${devName}" /proc/mdstat 2>/dev/null)
+              # MD RAID check — match drive AND its partitions (mdstat: sda1[0])
+              MD=$(grep -E "${devName}[0-9]*\[" /proc/mdstat 2>/dev/null)
               if [ -n "$MD" ]; then
-                BLOCKERS="$BLOCKERS\n🛑 Drive is part of a Linux MD RAID array — do not flash while array is active"
+                BLOCKERS="$BLOCKERS\n🛑 Drive (or a partition) is part of a Linux MD RAID array — do not flash while array is active"
               fi
 
               INFLIGHT=$(cat /sys/block/${devName}/inflight 2>/dev/null | awk '{print $1+$2}')
@@ -482,6 +614,9 @@ export default {
               elif [ -n "$WARNINGS" ]; then
                 echo "BUSY"
                 echo -e "$WARNINGS"
+              elif [ -n "$INFO" ]; then
+                echo "SAFE"
+                echo -e "$INFO"
               else
                 echo "IDLE"
               fi
@@ -494,6 +629,8 @@ export default {
             confirmBlocked.value = true;
           } else if (lines[0] === "BUSY") {
             confirmWarnings.value = [...confirmWarnings.value, ...lines.slice(1).filter(l => l.trim())];
+          } else if (lines[0] === "SAFE") {
+            confirmInfo.value = [...confirmInfo.value, ...lines.slice(1).filter(l => l.trim())];
           }
         } catch (e) {
           confirmWarnings.value = [...confirmWarnings.value, "Unable to determine drive activity status"];
@@ -502,8 +639,7 @@ export default {
       } else {
         // Non-HDD devices (NIC, HBA, etc.) — show preflight info then flash
         confirmDevice.value = device;
-        confirmWarnings.value = [];
-        confirmBlocked.value = false;
+        confirmWarnings.value = [];        confirmInfo.value = [];        confirmBlocked.value = false;
         confirmActions.value = [];
         confirmDownloads.value = [];
         confirmInput.value = '';
@@ -690,7 +826,62 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmBlocked, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
+    // Revert firmware (TESTING ONLY)
+    const revertingAll = ref(false);
+
+    const revertDevice = async (device) => {
+      if (!confirm(`Revert ${device.model} (${device.device}) to previous firmware? (TESTING ONLY)`)) return;
+      device.reverting = true;
+      try {
+        const proc = await unwrap(server.execute(
+          new Command([
+            "python3", "-u", "/usr/share/45drives/firmware/firmware-revert",
+            "--cache-index", String(device.cache_index)
+          ], { superuser: "require" })
+        ));
+        const output = proc.getStdout() + proc.getStderr();
+        if (output.includes("Revert successful")) {
+          alert("✓ Revert successful for " + device.model + ". Run Check for Updates to refresh.");
+          await checkFirmware();
+        } else {
+          alert("✗ Revert failed:\n" + output);
+        }
+      } catch (e) {
+        alert("✗ Revert error: " + (e.message || e));
+      }
+      device.reverting = false;
+    };
+
+    const revertAll = async () => {
+      if (!confirm(`Revert ALL ${currentHddDevices.value.length} up-to-date HDDs to previous firmware? (TESTING ONLY)`)) return;
+      revertingAll.value = true;
+      let success = 0, failed = 0;
+      for (const device of currentHddDevices.value) {
+        device.reverting = true;
+        try {
+          const proc = await unwrap(server.execute(
+            new Command([
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-revert",
+              "--cache-index", String(device.cache_index)
+            ], { superuser: "require" })
+          ));
+          const output = proc.getStdout() + proc.getStderr();
+          if (output.includes("Revert successful")) {
+            success++;
+          } else {
+            failed++;
+          }
+        } catch (e) {
+          failed++;
+        }
+        device.reverting = false;
+      }
+      revertingAll.value = false;
+      alert(`Revert All complete: ${success} succeeded, ${failed} failed.`);
+      await checkFirmware();
+    };
+
+    return { devices, outdatedDevices, currentHddDevices, canFlash, checking, error, lastChecked, checkFirmware, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmWarnings, confirmInfo, confirmBlocked, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, revertDevice, revertAll, revertingAll };
   }
 };
 </script>
