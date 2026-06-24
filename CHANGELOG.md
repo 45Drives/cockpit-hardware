@@ -1,9 +1,3 @@
-## cockpit-45drives-hardware 2.7.3-4
+## cockpit-45drives-hardware 2.8.2-1
 
-* fixed UI bug for drives table
-
-## cockpit-45drives-hardware 2.7.3-1
-
-* added functionality to update the firmware from system tab
-
-* Adds new GENOAD8UD-2T/X550 mobo support
+* Adds support for MS73-HB2 mobo (same as MS73-HB0 but with different network chip)

@@ -37,23 +37,17 @@ make DESTDIR=%{buildroot} install
 %dir /usr/share/cockpit/45drives-disks
 %dir /usr/share/cockpit/45drives-motherboard
 %dir /usr/share/cockpit/45drives-fan-controller
-%dir /etc/45drives/fan-controller
-%config(noreplace) /etc/45drives/fan-controller/profiles.json
+%dir /usr/share/45drives/firmware
 /usr/lib/udev/rules.d/68-cockpit-45drives-disks.rules
 /usr/lib/systemd/system/45d-fancontroller.service
-/usr/lib/systemd/system/45d-firmware-check.timer
 /usr/lib/systemd/system/45d-firmware-check.service
-%dir /usr/share/45drives/firmware
-%dir /usr/share/45drives/firmware/files
-/usr/share/45drives/firmware/*
-/usr/share/45drives/firmware/files/*
-%dir /var/cache/45drives/firmware
-/var/cache/45drives/firmware/.gitkeep
+/usr/lib/systemd/system/45d-firmware-check.timer
 %defattr(-,root,root,-)
 /usr/share/cockpit/45drives-disks/*
 /usr/share/cockpit/45drives-motherboard/*
 /usr/share/cockpit/45drives-system/*
 /usr/share/cockpit/45drives-fan-controller/*
+/usr/share/45drives/firmware/*
 
 %post
 systemctl daemon-reload
@@ -73,11 +67,13 @@ fi
 systemctl daemon-reload
 
 %changelog
-* Tue Jun 16 2026 Rachit Hans <rhans@45drives.com> 2.7.3-4
-- fixed UI bug for drives table
-* Mon Jun 15 2026 Rachit Hans <rhans@45drives.com> 2.7.3-3
-- added functionality to update the firmware from system tab
-* Fri Jun 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.3-2
+* Mon Jun 22 2026 Jordan Keough <jkeough@45drives.com> 2.8.2-1
+- Adds support for MS73-HB2 mobo (same as MS73-HB0 but with different network chip)
+* Fri Jun 19 2026 Rachit Hans <rhans@45drives.com> 2.8.1-1
+- Feature: 45drive system to allow HBA and NIC cards firmware update
+* Wed Jun 17 2026 Jordan Keough <jkeough@45drives.com> 2.7.4-1
+- Adds new chassis renders and removes firmware update stuff from this build
+* Fri Jun 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.3-1
 - Adds new GENOAD8UD-2T/X550 mobo support
 * Tue May 05 2026 Jordan Keough <jkeough@45drives.com> 2.7.2-2
 - Updates 45d-fancontroller.service to no longer auto-start when sentinel file does

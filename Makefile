@@ -16,7 +16,7 @@
 # You can leave it empty for automatic detection based on directories containing a package.json file.
 PLUGIN_SRCS= 45drives-system 
 # For installing to a remote machine for testing with `make install-remote`
-REMOTE_TEST_HOST=192.168.207.217
+REMOTE_TEST_HOST=192.168.123.5
 REMOTE_TEST_USER=root
 
 # Restarts cockpit after install
@@ -134,7 +134,7 @@ system-files-install-local:
 	-cp -af system_files/* $(DESTDIR)/
 
 system-files-install-remote:
-	-rsync -avh --checksum system_files/* $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST):$(DESTDIR)/
+	-rsync -avh system_files/* $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST):$(DESTDIR)/
 
 
 clean: FORCE

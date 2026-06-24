@@ -1,16 +1,22 @@
-cockpit-45drives-hardware (2.7.3-4jammy) jammy; urgency=medium
+cockpit-45drives-hardware (2.8.2-1jammy) jammy; urgency=medium
 
-  * fixed UI bug for drives table
+  * Adds support for MS73-HB2 mobo (same as MS73-HB0 but with different network chip)
 
- -- Rachit Hans <rhans@45drives.com>  Tue, 16 Jun 2026 14:48:17 -0300
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 22 Jun 2026 08:38:26 -0300
 
-cockpit-45drives-hardware (2.7.3-3jammy) jammy; urgency=medium
+cockpit-45drives-hardware (2.8.1-1jammy) jammy; urgency=medium
 
-  * added functionality to update the firmware from system tab
+  * Feature: 45drive system to allow HBA and NIC cards firmware update
 
- -- Rachit Hans <rhans@45drives.com>  Mon, 15 Jun 2026 15:01:13 -0300
+ -- Rachit Hans <rhans@45drives.com>  Fri, 19 Jun 2026 07:07:52 -0300
 
-cockpit-45drives-hardware (2.7.3-2jammy) jammy; urgency=medium
+cockpit-45drives-hardware (2.7.4-1jammy) jammy; urgency=medium
+
+  * Adds new chassis renders and removes firmware update stuff from this build
+
+ -- Jordan Keough <jkeough@45drives.com>  Wed, 17 Jun 2026 12:52:31 -0300
+
+cockpit-45drives-hardware (2.7.3-1jammy) jammy; urgency=medium
 
   * Adds new GENOAD8UD-2T/X550 mobo support
 
