@@ -648,6 +648,7 @@ def flash_niccli(device_info, firmware_path):
             return False, f"niccli exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
         proc.kill()
+        proc.wait()
         return False, "niccli firmware update timed out (300s)"
     except Exception as e:
         return False, str(e)
@@ -741,6 +742,7 @@ def flash_mlxup(device_info, firmware_path=None):
             return False, f"mlxup exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
         proc.kill()
+        proc.wait()
         return False, "mlxup firmware update timed out (300s)"
     except Exception as e:
         return False, str(e)
@@ -958,6 +960,7 @@ def flash_tool_package(device_info):
             return False, f"{flash_tool or tool_package} exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
         proc.kill()
+        proc.wait()
         return False, f"{flash_tool or tool_package} timed out (600s)"
     except Exception as e:
         return False, str(e)
