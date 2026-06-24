@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.2-2
+## cockpit-45drives-hardware 2.8.3-1
 
-* cold rebooting on firmware update, showing live progress for firmware update
+* fix version umber + build package
