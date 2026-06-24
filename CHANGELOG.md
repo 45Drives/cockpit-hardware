@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.2-1
+## cockpit-45drives-hardware 2.8.2-2
 
-* Adds support for MS73-HB2 mobo (same as MS73-HB0 but with different network chip)
+* cold rebooting on firmware update, showing live progress for firmware update

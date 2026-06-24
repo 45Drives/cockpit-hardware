@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.8.2-2bookworm) bookworm; urgency=medium
+
+  * cold rebooting on firmware update, showing live progress for firmware update
+
+ -- Rachit Hans <rhans@45drives.com>  Wed, 24 Jun 2026 13:04:50 -0300
+
 cockpit-45drives-hardware (2.8.2-1bookworm) bookworm; urgency=medium
 
   * Adds support for MS73-HB2 mobo (same as MS73-HB0 but with different network chip)
