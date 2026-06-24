@@ -553,17 +553,16 @@ export default {
       rebootExecuting.value = true;
       rebootError.value = '';
       try {
-        if (ipmiAvailable.value) {
-          // IPMI power cycle — true cold boot, PCIe devices reload firmware from NVM
-          server.execute(
-            new Command(["bash", "-c", "sync && ipmitool chassis power cycle"], { superuser: "require" })
-          );
-        } else {
-          // Fallback: soft reboot (may not activate NIC firmware — warn user)
-          server.execute(
-            new Command(["bash", "-c", "sync && systemctl reboot"], { superuser: "require" })
-          );
-        }
+        const cmd = ipmiAvailable.value
+          ? ["bash", "-c", "sync && ipmitool chassis power cycle"]
+          : ["bash", "-c", "sync && systemctl reboot"];
+        server.execute(
+          new Command(cmd, { superuser: "require" })
+        ).catch((e) => {
+          rebootError.value = `Reboot command failed: ${e}`;
+          rebootExecuting.value = false;
+        });
+        // Don't await — Cockpit will detect the connection drop and show reconnect overlay.
       } catch (e) {
         rebootError.value = `Reboot command failed: ${e}`;
         rebootExecuting.value = false;
