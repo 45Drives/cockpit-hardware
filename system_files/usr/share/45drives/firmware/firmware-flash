@@ -608,15 +608,20 @@ def flash_niccli(device_info, firmware_path):
 
     # Flash using niccli
     cmd = f"{niccli_bin} -i {adapter_id} fw --update -f {shlex.quote(firmware_path)} --yes"
-    print(f"Running: {cmd}")
+    print(f"Running: {cmd}", flush=True)
 
     try:
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=300, input="y\n"
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True
         )
-        output = result.stdout + result.stderr
-        print(output)
+        output_lines = []
+        for line in proc.stdout:
+            line = line.rstrip('\n')
+            print(line, flush=True)
+            output_lines.append(line)
+        proc.wait(timeout=300)
+        output = '\n'.join(output_lines)
 
         lower_output = output.lower()
         explicit_failure_markers = [
@@ -637,11 +642,12 @@ def flash_niccli(device_info, firmware_path):
              "updated to package version" in output.lower() or \
              "update successful" in output.lower():
             return True, output
-        elif result.returncode == 0:
+        elif proc.returncode == 0:
             return True, output
         else:
-            return False, f"niccli exit code {result.returncode}: {output}"
+            return False, f"niccli exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
+        proc.kill()
         return False, "niccli firmware update timed out (300s)"
     except Exception as e:
         return False, str(e)
@@ -712,20 +718,29 @@ def flash_mlxup(device_info, firmware_path=None):
         print(f"  (mlxup downloads firmware from NVIDIA servers automatically)")
 
     try:
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=300
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True
         )
-        output = result.stdout + result.stderr
-        print(output)
+        output_lines = []
+        for line in proc.stdout:
+            line = line.rstrip('\n')
+            print(line, flush=True)
+            output_lines.append(line)
+        proc.wait(timeout=300)
+        output = '\n'.join(output_lines)
 
-        if result.returncode == 0:
+        if proc.returncode == 0:
             return True, output
+        elif "pending reset" in output.lower() or "pending reboot" in output.lower():
+            # Card has a pending NVM update from a previous flash — needs reboot first
+            return False, "Device has a pending firmware update — reboot required before flashing again."
         elif "already updated" in output.lower() or "up to date" in output.lower():
             return True, "Firmware already up-to-date."
         else:
-            return False, f"mlxup exit code {result.returncode}: {output}"
+            return False, f"mlxup exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
+        proc.kill()
         return False, "mlxup firmware update timed out (300s)"
     except Exception as e:
         return False, str(e)
@@ -920,23 +935,29 @@ def flash_tool_package(device_info):
     if not cmd.strip().startswith("cd "):
         cmd = f"cd {extract_dir} && {cmd}"
 
-    print(f"  Running: {cmd}")
+    print(f"  Running: {cmd}", flush=True)
 
     try:
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=600, cwd=extract_dir
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True, cwd=extract_dir
         )
-        output = result.stdout + result.stderr
-        print(output)
+        output_lines = []
+        for line in proc.stdout:
+            line = line.rstrip('\n')
+            print(line, flush=True)
+            output_lines.append(line)
+        proc.wait(timeout=600)
+        output = '\n'.join(output_lines)
 
-        if result.returncode == 0:
+        if proc.returncode == 0:
             return True, output
         elif "no update available" in output.lower() or "up to date" in output.lower():
             return True, "Firmware already up-to-date."
         else:
-            return False, f"{flash_tool or tool_package} exit code {result.returncode}: {output}"
+            return False, f"{flash_tool or tool_package} exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
+        proc.kill()
         return False, f"{flash_tool or tool_package} timed out (600s)"
     except Exception as e:
         return False, str(e)
