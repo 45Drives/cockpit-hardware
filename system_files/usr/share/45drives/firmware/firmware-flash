@@ -41,8 +41,65 @@ LOG_FILE = os.path.join(LOG_DIR, "firmware-flash.log")
 # Global flag: set via --allow-download CLI arg (UI passes this after user confirms)
 ALLOW_DOWNLOAD = False
 
+# Critical SMART attributes to report when health check fails
+SMART_CRITICAL_IDS = {5, 187, 197, 198}
+# ID 5   = Reallocated_Sector_Ct
+# ID 187 = Reported_Uncorrect
+# ID 197 = Current_Pending_Sector
+# ID 198 = Offline_Uncorrectable
 
-def log_flash_event(device_info, success, message=""):
+
+def get_smart_status(device_path):
+    """Check SMART health and return (status, reason).
+
+    status: "PASSED", "FAILED", or "UNKNOWN"
+    reason: empty string if PASSED, or comma-separated failing attributes if FAILED
+            e.g. "Reallocated_Sector_Ct:152,Current_Pending_Sector:3"
+    """
+    if not device_path:
+        return "UNKNOWN", ""
+    try:
+        # Check overall health
+        result = subprocess.run(
+            ["smartctl", "-H", device_path],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=30
+        )
+        if "PASSED" in result.stdout:
+            return "PASSED", ""
+        elif "FAILED" not in result.stdout:
+            return "UNKNOWN", ""
+
+        # Health is FAILED — extract critical attributes for the reason
+        reason_parts = []
+        try:
+            attr_result = subprocess.run(
+                ["smartctl", "-A", device_path],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=30
+            )
+            for line in attr_result.stdout.splitlines():
+                parts = line.split()
+                if len(parts) >= 10:
+                    try:
+                        attr_id = int(parts[0])
+                        if attr_id in SMART_CRITICAL_IDS:
+                            attr_name = parts[1]
+                            raw_value = parts[9]
+                            if int(raw_value) > 0:
+                                reason_parts.append(f"{attr_name}:{raw_value}")
+                    except (ValueError, IndexError):
+                        continue
+        except Exception:
+            pass
+
+        reason = ",".join(reason_parts) if reason_parts else "health_test_failed"
+        return "FAILED", reason
+    except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
+        return "UNKNOWN", ""
+
+
+def log_flash_event(device_info, success, message="", smart_pre="", smart_post=""):
     """Append a structured log entry for every flash attempt."""
     try:
         os.makedirs(LOG_DIR, mode=0o755, exist_ok=True)
@@ -55,9 +112,14 @@ def log_flash_event(device_info, success, message=""):
         target_fw = device_info.get("latest_firmware", "?")
         flash_tool = device_info.get("flash_tool", "?")
         fw_file = device_info.get("firmware_file", "?")
+        serial = device_info.get("serial", "?")
         line = (f"{timestamp}  {status}  {dev_type}/{model}  "
-                f"{current_fw} -> {target_fw}  tool={flash_tool}  "
+                f"{current_fw} -> {target_fw}  serial={serial}  tool={flash_tool}  "
                 f"device={device}  file={fw_file}")
+        if smart_pre:
+            line += f"  smart_pre={smart_pre}"
+        if smart_post:
+            line += f"  smart_post={smart_post}"
         if not success and message:
             line += f"  error={message}"
         with open(LOG_FILE, "a") as f:
@@ -1275,23 +1337,24 @@ def main():
             return 5
 
     # Pre-flight: SMART health check for HDDs — don't flash a dying drive
+    smart_pre_status = ""
+    smart_pre_reason = ""
     if device_info.get("type") == "hdd":
         device_path = device_info.get("device", "")
         if device_path:
-            try:
-                result = subprocess.run(
-                    ["smartctl", "-H", device_path],
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    universal_newlines=True, timeout=30
-                )
-                if "FAILED" in result.stdout:
-                    print(f"✗ REFUSED: SMART health status is FAILED for {device_path}.", file=sys.stderr)
-                    print(f"  This drive is reporting hardware failure. Firmware update will not proceed.", file=sys.stderr)
-                    print(f"  Replace the drive instead.", file=sys.stderr)
-                    log_flash_event(device_info, False, "REFUSED: SMART health FAILED")
-                    return 6
-            except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
-                print(f"  ⚠ Could not check SMART health: {e} — proceeding with caution", file=sys.stderr)
+            smart_pre_status, smart_pre_reason = get_smart_status(device_path)
+            if smart_pre_status == "FAILED":
+                smart_pre_str = f"FAILED({smart_pre_reason})" if smart_pre_reason else "FAILED"
+                print(f"✗ REFUSED: SMART health status is FAILED for {device_path}.", file=sys.stderr)
+                print(f"  This drive is reporting hardware failure. Firmware update will not proceed.", file=sys.stderr)
+                if smart_pre_reason:
+                    print(f"  Failing attributes: {smart_pre_reason}", file=sys.stderr)
+                print(f"  Replace the drive instead.", file=sys.stderr)
+                log_flash_event(device_info, False, "REFUSED: SMART health FAILED",
+                                smart_pre=smart_pre_str)
+                return 6
+            elif smart_pre_status == "UNKNOWN":
+                print(f"  ⚠ Could not determine SMART health — proceeding with caution", file=sys.stderr)
 
     # Pre-flight: ZFS checks — scrub/resilver, DEGRADED pool
     if device_info.get("type") == "hdd":
@@ -1702,7 +1765,18 @@ def main():
     print(f"  Current: {device_info.get('current_firmware', '')} -> Target: {device_info.get('latest_firmware', '')}")
 
     success, message = flash_device(device_info)
-    log_flash_event(device_info, success, message)
+
+    # Build SMART log fields
+    smart_pre_log = ""
+    smart_post_log = ""
+    if device_info.get("type") == "hdd":
+        # smart_pre_status was captured earlier in pre-flight
+        if smart_pre_status == "PASSED":
+            smart_pre_log = "PASSED"
+        elif smart_pre_status == "FAILED":
+            smart_pre_log = f"FAILED({smart_pre_reason})" if smart_pre_reason else "FAILED"
+        elif smart_pre_status == "UNKNOWN":
+            smart_pre_log = "UNKNOWN"
 
     if success:
         print(f"\n✓ Flash successful")
@@ -1710,10 +1784,19 @@ def main():
         verify_firmware_after_flash(device_info)
         # Post-flash: SMART health re-check for HDDs
         if device_info.get("type") == "hdd":
+            post_status, post_reason = get_smart_status(device_info.get("device", ""))
+            if post_status == "PASSED":
+                smart_post_log = "PASSED"
+            elif post_status == "FAILED":
+                smart_post_log = f"FAILED({post_reason})" if post_reason else "FAILED"
+            else:
+                smart_post_log = "UNKNOWN"
             post_flash_hdd_checks(device_info)
+        log_flash_event(device_info, True, "", smart_pre=smart_pre_log, smart_post=smart_post_log)
         return 0
     else:
         print(f"\n✗ Flash failed: {message}", file=sys.stderr)
+        log_flash_event(device_info, False, message, smart_pre=smart_pre_log)
         return 2
 
 
