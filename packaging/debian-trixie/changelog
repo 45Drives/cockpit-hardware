@@ -1,0 +1,148 @@
+cockpit-45drives-hardware (2.8.1-1trixie) trixie; urgency=medium
+
+  * Feature: 45drive system to allow HBA and NIC cards firmware update
+
+ -- Rachit Hans <rhans@45drives.com>  Fri, 19 Jun 2026 07:07:52 -0300
+
+cockpit-45drives-hardware (2.7.4-1trixie) trixie; urgency=medium
+
+  * Adds new chassis renders and removes firmware update stuff from this build
+
+ -- Jordan Keough <jkeough@45drives.com>  Wed, 17 Jun 2026 12:52:31 -0300
+
+cockpit-45drives-hardware (2.7.3-1trixie) trixie; urgency=medium
+
+  * Adds new GENOAD8UD-2T/X550 mobo support
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 05 Jun 2026 08:47:10 -0300
+
+cockpit-45drives-hardware (2.7.2-2trixie) trixie; urgency=medium
+
+  * Updates 45d-fancontroller.service to no longer auto-start when sentinel file
+    does not exist
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 05 May 2026 12:52:19 -0300
+
+cockpit-45drives-hardware (2.7.2-1trixie) trixie; urgency=medium
+
+  * Adds support for GENOAD8X-2T/BCM mobo
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 05 May 2026 06:31:43 -0300
+
+cockpit-45drives-hardware (2.7.1-1trixie) trixie; urgency=medium
+
+  * Adds X13SAE-F mobo and fixes handling for RAM with horizontal image in motherboard
+    module and extra handling for m.2 in pci slot ID json
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 27 Apr 2026 12:36:19 -0300
+
+cockpit-45drives-hardware (2.7.0-2trixie) trixie; urgency=medium
+
+  * Pushes 45Drives Fan Controller module to stable for use with new NVME-F8X* servers -> unsure
+    why package version incremented so far but matching latest testing package +
+    incrementing build number
+
+ -- Jordan Keough <jkeough@45drives.com>  Thu, 23 Apr 2026 12:06:25 -0300
+
+cockpit-45drives-hardware (2.7.0-1trixie) trixie; urgency=medium
+
+  * Adds 45Drives Fan Controller module with persistent speed control and systemd
+    service
+
+ -- Harmin Patel <hpatel@45drives.com>  Mon, 21 Apr 2026 10:00:00 -0300
+
+cockpit-45drives-hardware (2.5.14-1trixie) trixie; urgency=medium
+
+  * Adds support for Unraid X15 unit & its new mobo, also adds support for new NVME
+    Hybrid F8X units and fixes some bugs with Motherboard tab displaying some PCIE/M2
+    data
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 17 Apr 2026 06:19:52 -0300
+
+cockpit-45drives-hardware (2.5.13-1trixie) trixie; urgency=medium
+
+  * Fixes some pci script issues (previous change was not backwards compatible)
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 30 Mar 2026 09:52:23 -0300
+
+cockpit-45drives-hardware (2.5.12-1trixie) trixie; urgency=medium
+
+  * Fixes potential none-type errors in python scripts (motherboard helpers and system
+    scripts)
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 24 Mar 2026 08:55:04 -0300
+
+cockpit-45drives-hardware (2.5.11-2trixie) trixie; urgency=medium
+
+  * Rebuilding with proper reference to submodule
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 09 Mar 2026 12:37:33 -0300
+
+cockpit-45drives-hardware (2.5.11-1trixie) trixie; urgency=medium
+
+  * Updates build to latest version using houston-common libraries
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 09 Mar 2026 12:27:12 -0300
+
+cockpit-45drives-hardware (2.5.10-2trixie) trixie; urgency=medium
+
+  * Updates write perms and rebuilding
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 06 Mar 2026 05:33:45 -0400
+
+cockpit-45drives-hardware (2.5.10-1trixie) trixie; urgency=medium
+
+  * Adds support for new mobo 'MH53-G40-000' used in 2UGW
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 06 Mar 2026 04:53:51 -0400
+
+cockpit-45drives-hardware (2.5.9-2trixie) trixie; urgency=medium
+
+  * added missing debian arch in manifest.json
+
+ -- Jordan Keough <jkeough@45drives.com>  Tue, 30 Dec 2025 04:09:10 -0400
+
+cockpit-45drives-hardware (2.5.9-1trixie) trixie; urgency=medium
+
+  * Adds VM2 support
+
+ -- Jordan Keough <jkeough@45drives.com>  Wed, 24 Dec 2025 07:54:55 -0400
+
+cockpit-45drives-hardware (2.5.8-1trixie) trixie; urgency=medium
+
+  * Fixes F16 not showing in Disks + System tabs, Fixes PCIE slots showing Available
+    when a HBA card was detected, removes unused system script from System module
+    code
+
+ -- Jordan Keough <jkeough@45drives.com>  Thu, 04 Dec 2025 07:30:26 -0400
+
+cockpit-45drives-hardware (2.5.7-1trixie) trixie; urgency=medium
+
+  * update for f16 support
+
+ -- Mark Hooper <mhooper@45drives.com>  Wed, 03 Dec 2025 13:11:18 -0400
+
+cockpit-45drives-hardware (2.5.6-1trixie) trixie; urgency=medium
+
+  * Adds HL15_BEAST support
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 22 Sep 2025 05:42:01 -0300
+
+cockpit-45drives-hardware (2.5.5-1trixie) trixie; urgency=medium
+
+  * Adds support for new 45Studio 8-bay server
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 05 Sep 2025 12:13:52 -0300
+
+cockpit-45drives-hardware (2.5.2-2trixie) trixie; urgency=medium
+
+  * Fixes some issues with CPU/RAM temperature reporting, and data display in Motherboard
+    popups having final character cut off
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 24 Feb 2025 11:32:16 -0400
+
+cockpit-45drives-hardware (2.5.1-1trixie) trixie; urgency=medium
+
+  * Initial build for trixie
+
+ -- Brett Kelly <bkelly@45drives.com>  Tue, 11 Feb 2025 07:37:59 -0400
