@@ -3,7 +3,7 @@
     "name": "cockpit-45drives-hardware",
     "title": "cockpit-45drives-hardware",
     "description": "A Cockpit Module for 45Drives Server Products",
-    "version": "2.8.1",
+    "version": "2.8.3",
     "build_number": "1",
     "stable": true,
     "author": "Mark Hooper <mhooper@45drives.com>",
@@ -65,6 +65,11 @@
             "group": "debian",
             "os_name": "debian-bookworm",
             "image": "ci.cr.45d.io/ci/simple/ubuntu-jammy:1"
+        },
+        {
+            "group": "debian",
+            "os_name": "debian-trixie",
+            "image": "ci.cr.45d.io/ci/simple/debian-trixie:1"
         }
     ],
     "repos": [
@@ -73,7 +78,7 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "2.8.1",
+        "version": "2.8.3",
         "build_number": "1",
         "date": null,
         "packager": "Mark Hooper <mhooper@45drives.com>",

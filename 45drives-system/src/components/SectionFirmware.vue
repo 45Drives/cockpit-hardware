@@ -210,6 +210,15 @@
         <p class="text-xs font-medium text-blue-800">{{ rebootPendingDevices.size }} firmware update(s) pending activation.</p>
       </div>
 
+      <!-- IPMI status -->
+      <div v-if="ipmiAvailable === true" class="rounded-md bg-green-50 border border-green-200 p-3">
+        <p class="text-xs font-medium text-green-800">✓ IPMI detected — will perform a full power cycle (cold boot) to activate firmware.</p>
+      </div>
+      <div v-else-if="ipmiAvailable === false" class="rounded-md bg-orange-50 border border-orange-200 p-3">
+        <p class="text-xs font-medium text-orange-800">⚠ IPMI not available — performing soft reboot only.</p>
+        <p class="text-xs text-orange-700 mt-1">Some NIC firmware (e.g. ConnectX-5) may not activate until a full power cycle is performed manually.</p>
+      </div>
+
       <!-- Confirmation input -->
       <div>
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">reboot now</span> to confirm:</label>
@@ -316,6 +325,10 @@ export default {
 
     const outdatedDevices = computed(() => devices.value.filter(d => {
       if (!allowedTypes.includes(d.type)) return false;
+
+      // Always show devices with a pending reboot (they were just flashed)
+      if (rebootPendingDevices.value.has(d.cache_index)) return true;
+
       if (d.update_available !== 'outdated') return false;
 
       const latest = normalizeFirmwareVersion(d.latest_firmware);
@@ -520,15 +533,36 @@ export default {
       rebootModalVisible.value = true;
       rebootConfirmInput.value = '';
       rebootError.value = '';
+      checkIpmi();
+    };
+
+    const ipmiAvailable = ref(null); // null = not checked, true/false
+
+    const checkIpmi = async () => {
+      try {
+        const result = await unwrap(server.execute(
+          new Command(["bash", "-c", "which ipmitool && ipmitool chassis status"], { superuser: "try" })
+        ));
+        ipmiAvailable.value = result.getStdout().includes('System Power');
+      } catch (e) {
+        ipmiAvailable.value = false;
+      }
     };
 
     const executeReboot = async () => {
       rebootExecuting.value = true;
       rebootError.value = '';
       try {
-        await unwrap(server.execute(
-          new Command(["systemctl", "reboot"], { superuser: "require" })
-        ));
+        const cmd = ipmiAvailable.value
+          ? ["bash", "-c", "sync && ipmitool chassis power cycle"]
+          : ["bash", "-c", "sync && systemctl reboot"];
+        server.execute(
+          new Command(cmd, { superuser: "require" })
+        ).catch((e) => {
+          rebootError.value = `Reboot command failed: ${e}`;
+          rebootExecuting.value = false;
+        });
+        // Don't await — Cockpit will detect the connection drop and show reconnect overlay.
       } catch (e) {
         rebootError.value = `Reboot command failed: ${e}`;
         rebootExecuting.value = false;
@@ -544,7 +578,7 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
+    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
   }
 };
 </script>

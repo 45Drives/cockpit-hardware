@@ -1349,6 +1349,28 @@ def main():
                     slot["Connections"] = card["Connections"]
                     break
 
+    # MS03: network helper may not report PCI Slot for all NICs (e.g. XXV710).
+    # Fallback to lspci_devices classification (same approach as MW34).
+    if motherboard_model.startswith("MS03"):
+        for slot in matched:
+            bus = slot.get("Bus Address", "")
+            if not bus or bus == "0000:00:00.0":
+                continue
+            if slot.get("Card Type", "-") not in ("", "-"):
+                continue  # already identified
+            desig = slot.get("Designation", "")
+            if desig not in BA_LUT_MS03:
+                continue
+            # Detect network card from lspci class
+            devinfo = lspci_devices.get(bus)
+            if devinfo and "ethernet" in str(devinfo[0]).strip('"').lower():
+                slot["Card Type"] = "Network Card"
+                model = getNetworkCardModel(bus)
+                if model not in ("-", "unknown"):
+                    slot["Card Model"] = model
+                elif len(devinfo) > 2:
+                    slot["Card Model"] = devinfo[2].strip('"')
+
     # Final type cleanup for bad firmware strings (e.g. <OUT OF SPEC>)
     for slot in matched:
         fix_slot_type(slot, motherboard_model)
@@ -1410,6 +1432,13 @@ def main():
             card_bus_short = card_bus[5:] if card_bus.startswith("0000:") else card_bus
             if bus_short and bus_short == card_bus_short:
                 slot["Firmware Version"] = card.get("Firmware Version", "-")
+                # Also fill Card Type/Model if lspci_hba() missed this device
+                # (e.g. 9361-24i in JBOD mode has subsystem "Device 9a71")
+                if slot.get("Card Type", "-") in ("", "-"):
+                    slot["Card Type"] = "HBA"
+                    model = card.get("Model", "-")
+                    if model and model != "-":
+                        slot["Card Model"] = model
                 break
 
         # If server_info lacks firmware (common on some MegaRAID cards),
