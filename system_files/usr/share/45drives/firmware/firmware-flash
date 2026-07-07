@@ -1385,10 +1385,12 @@ def check_zpool_membership(device_info):
         except (subprocess.TimeoutExpired, Exception):
             pass
 
-    # --- Method 2: blkid fallback (runs independently — no zpool binary needed) ---
-    # Check the whole disk AND all partitions for zfs_member superblock.
-    # This catches cases where zpool is uninstalled but ZFS data remains on disk.
-    if short_dev:
+    # --- Method 2: blkid fallback (ONLY when zpool binary is missing) ---
+    # If zpool was available and ran successfully, the drive is NOT in any
+    # active/imported pool — even if blkid still shows zfs_member (exported
+    # pools leave the superblock intact). Only fall back to blkid when we
+    # cannot query pool state at all.
+    if not shutil.which("zpool") and short_dev:
         try:
             devs_to_check = [f"/dev/{short_dev}"]
             child_devs = _get_child_devices(short_dev)
