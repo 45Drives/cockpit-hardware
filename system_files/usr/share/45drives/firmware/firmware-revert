@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""
+firmware-revert - Reverts HDD firmware to the previous version.
+
+Usage:
+    firmware-revert --cache-index 3   (revert device at index 3 from cache)
+
+This is intended for testing workflows where a drive was flashed to
+the latest firmware and needs to be rolled back to its previous version.
+
+Exit codes:
+    0 = success
+    1 = error (bad args, file not found, etc.)
+    2 = flash failed (tool reported failure)
+    3 = device not found or not revertable
+    4 = blocked by storage membership
+"""
+
+import json
+import subprocess
+import sys
+import os
+import shutil
+import argparse
+import hashlib
+from pathlib import Path
+from datetime import datetime, timezone
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+from urllib.parse import quote
+
+
+CACHE_PATH = "/var/cache/45drives/firmware/status.json"
+FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
+SEACHEST_PATH = "/opt/45drives/tools/SeaChest_Firmware"
+REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
+LOG_DIR = "/var/log/45drives"
+LOG_FILE = os.path.join(LOG_DIR, "firmware-flash.log")
+
+# Environment overrides for development
+if os.environ.get("FIRMWARE_CACHE_PATH"):
+    CACHE_PATH = os.environ["FIRMWARE_CACHE_PATH"]
+if os.environ.get("FIRMWARE_DIR"):
+    FIRMWARE_DIR = os.environ["FIRMWARE_DIR"]
+if os.environ.get("SEACHEST_PATH"):
+    SEACHEST_PATH = os.environ["SEACHEST_PATH"]
+
+
+def log_revert_event(device_info, success, message=""):
+    """Append a structured log entry for every revert attempt."""
+    try:
+        os.makedirs(LOG_DIR, mode=0o755, exist_ok=True)
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        status = "REVERT-SUCCESS" if success else "REVERT-FAILED"
+        model = device_info.get("model", "unknown")
+        device = device_info.get("device", device_info.get("sg_device", "?"))
+        current_fw = device_info.get("current_firmware", "?")
+        target_fw = device_info.get("previous_firmware", "?")
+        line = (f"{timestamp}  {status}  hdd/{model}  "
+                f"{current_fw} -> {target_fw} (REVERT)  "
+                f"device={device}")
+        if not success and message:
+            line += f"  error={message}"
+        with open(LOG_FILE, "a") as f:
+            f.write(line + "\n")
+    except Exception:
+        pass
+
+
+def get_repo_url():
+    """Read the firmware repo URL from config."""
+    conf_path = REPO_CONF
+    if os.environ.get("FIRMWARE_REPO_CONF"):
+        conf_path = os.environ["FIRMWARE_REPO_CONF"]
+    try:
+        with open(conf_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or not line:
+                    continue
+                if line.startswith("REPO_URL="):
+                    return line.split("=", 1)[1].strip()
+    except FileNotFoundError:
+        pass
+    return "https://fw.45drives.com"
+
+
+def compute_sha256(filepath):
+    """Compute SHA256 of a file."""
+    h = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while True:
+            chunk = f.read(65536)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
+    """Download a firmware file from the repo.
+    
+    Returns True if file is available at dest_path, False otherwise.
+    """
+    if not expected_sha256:
+        print(f"  ✗ REFUSED: No SHA256 hash for previous firmware file.")
+        return False
+
+    if os.path.isfile(dest_path):
+        actual = compute_sha256(dest_path)
+        if actual == expected_sha256:
+            return True
+        else:
+            print(f"  Local file SHA256 mismatch, re-downloading...")
+            os.unlink(dest_path)
+
+    repo_url = get_repo_url()
+    if not repo_url:
+        print("  No firmware repo configured (repo.conf missing or no REPO_URL)")
+        return False
+
+    url = f"{repo_url}/{quote(firmware_file)}"
+    print(f"  Downloading previous firmware from repo...")
+    print(f"  URL: {url}")
+
+    try:
+        req = Request(url, headers={"User-Agent": "45drives-firmware-revert/1.0"})
+        response = urlopen(req, timeout=60)
+
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+        sha256_hash = hashlib.sha256()
+        with open(dest_path, "wb") as f:
+            while True:
+                chunk = response.read(65536)
+                if not chunk:
+                    break
+                f.write(chunk)
+                sha256_hash.update(chunk)
+
+        file_size = os.path.getsize(dest_path)
+        actual_sha256 = sha256_hash.hexdigest()
+        print(f"  Downloaded: {firmware_file} ({file_size} bytes)")
+
+        if actual_sha256 != expected_sha256:
+            print(f"  ✗ INTEGRITY FAILURE: SHA256 mismatch!")
+            print(f"    Expected: {expected_sha256}")
+            print(f"    Got:      {actual_sha256}")
+            os.unlink(dest_path)
+            return False
+
+        return True
+
+    except HTTPError as e:
+        print(f"  Download failed: HTTP {e.code} - {e.reason}")
+        return False
+    except URLError as e:
+        print(f"  Download failed: {e.reason}")
+        return False
+    except Exception as e:
+        print(f"  Download error: {e}")
+        return False
+
+
+def find_seachest():
+    """Find SeaChest_Firmware binary."""
+    for path in [
+        SEACHEST_PATH,
+        "/opt/45drives/tools/SeaChest_Firmware",
+        "/usr/local/bin/SeaChest_Firmware",
+        "/usr/bin/SeaChest_Firmware",
+    ]:
+        if os.path.isfile(path):
+            return path
+    found = shutil.which("SeaChest_Firmware")
+    return found
+
+
+def flash_seachest(sg_device, firmware_path):
+    """Flash HDD firmware using SeaChest_Firmware."""
+    seachest = find_seachest()
+    if not seachest:
+        return False, "SeaChest_Firmware not found"
+
+    if not sg_device:
+        return False, "No sg_device path available for SeaChest"
+
+    if not os.path.isfile(firmware_path):
+        return False, f"Firmware file not found: {firmware_path}"
+
+    cmd = f"{seachest} -d {sg_device} --downloadFW {firmware_path}"
+    print(f"  Running: {cmd}")
+
+    try:
+        result = subprocess.run(
+            cmd, shell=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=600
+        )
+        output = result.stdout + result.stderr
+        print(output)
+
+        if result.returncode == 0:
+            return True, output
+        # SeaChest exit code 1 with "successfully" in output still means success
+        if "successfully" in output.lower() or "firmware download successful" in output.lower():
+            return True, output
+        return False, f"SeaChest exit code {result.returncode}: {output}"
+    except subprocess.TimeoutExpired:
+        return False, "SeaChest timed out (600s)"
+    except Exception as e:
+        return False, str(e)
+
+
+def load_cache():
+    """Load the firmware status cache."""
+    try:
+        with open(CACHE_PATH, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"Error: Cache file not found: {CACHE_PATH}", file=sys.stderr)
+        print("  Run 'firmware-check' first to populate the cache.", file=sys.stderr)
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Error: Cache file is corrupted: {e}", file=sys.stderr)
+        return None
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Revert HDD firmware to previous version")
+    parser.add_argument("--cache-index", type=int, required=True, help="Index of device in cache to revert")
+    args = parser.parse_args()
+
+    cache = load_cache()
+    if not cache:
+        return 1
+
+    devices = cache.get("devices", [])
+    if args.cache_index < 0 or args.cache_index >= len(devices):
+        print(f"Error: Invalid cache index {args.cache_index} (have {len(devices)} devices)", file=sys.stderr)
+        return 1
+
+    device_info = devices[args.cache_index]
+
+    # Only HDD revert is supported
+    if device_info.get("type") != "hdd":
+        print(f"Error: Revert is only supported for HDD devices (got type={device_info.get('type')})", file=sys.stderr)
+        return 3
+
+    # Must have previous firmware info
+    previous_fw = device_info.get("previous_firmware", "")
+    previous_file = device_info.get("previous_firmware_file", "")
+    previous_sha256 = device_info.get("previous_sha256", "")
+
+    if not previous_file:
+        print(f"Error: No previous firmware file defined for {device_info.get('model', 'unknown')}", file=sys.stderr)
+        print(f"  This model may not have a revert path configured in the manifest.", file=sys.stderr)
+        return 3
+
+    if not previous_fw:
+        print(f"Warning: No previous firmware version string set (will still attempt revert)", file=sys.stderr)
+
+    # Check if the device is already at the previous firmware version
+    current_fw = device_info.get("current_firmware", "")
+    if current_fw and previous_fw and current_fw == previous_fw:
+        print(f"Device is already at the previous firmware version ({current_fw})")
+        print(f"Nothing to revert.")
+        return 0
+
+    print(f"Reverting: {device_info.get('model', '')} ({device_info.get('device', '')})")
+    print(f"  Current: {current_fw}")
+    print(f"  Revert to: {previous_fw or '(previous version)'}")
+    print(f"  File: {previous_file}")
+
+    # Resolve firmware path
+    firmware_path = os.path.join(FIRMWARE_DIR, previous_file)
+    if not os.path.isfile(firmware_path):
+        # Try to download from repo
+        if not fetch_firmware_from_repo(previous_file, firmware_path, previous_sha256):
+            log_revert_event(device_info, False, "Previous firmware file not available")
+            return 1
+
+    # Verify SHA256 if we have the file locally
+    if previous_sha256 and os.path.isfile(firmware_path):
+        actual = compute_sha256(firmware_path)
+        if actual != previous_sha256:
+            print(f"  ✗ SHA256 mismatch for previous firmware file!")
+            print(f"    Expected: {previous_sha256}")
+            print(f"    Got:      {actual}")
+            log_revert_event(device_info, False, "SHA256 mismatch")
+            return 1
+
+    # Flash using SeaChest
+    sg_device = device_info.get("sg_device", "")
+    if not sg_device:
+        print(f"Error: No sg_device for this drive", file=sys.stderr)
+        log_revert_event(device_info, False, "No sg_device")
+        return 3
+
+    success, message = flash_seachest(sg_device, firmware_path)
+    log_revert_event(device_info, success, message)
+
+    if success:
+        print(f"\n✓ Revert successful")
+        print(f"  {device_info.get('model', '')} reverted from {current_fw} to {previous_fw or 'previous version'}")
+        return 0
+    else:
+        print(f"\n✗ Revert failed: {message}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

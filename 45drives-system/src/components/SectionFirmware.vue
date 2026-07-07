@@ -62,6 +62,7 @@
                         <DownloadIcon class="h-4 w-4" aria-hidden="true" />
                         {{ device.flashing ? 'Flashing...' : 'Update' }}
                       </button>
+                      <button v-if="device.type === 'hdd' && device.previous_firmware_file" :disabled="device.reverting" @click="revertDevice(device)" class="inline-flex items-center gap-1 rounded-md bg-orange-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors">{{ device.reverting ? 'Reverting...' : '↩ Revert' }}</button>
                     </div>
                   </td>
                 </tr>
@@ -73,6 +74,19 @@
     </div>
     <div v-else class="text-sm text-muted py-4 text-center">
       All firmware is up to date.
+    </div>
+    <!-- Revert section: show current HDDs that have a previous firmware available -->
+    <div v-if="revertableDevices.length > 0" class="mt-3 border-t border-default pt-3">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="text-xs font-medium text-muted uppercase tracking-wide">Up-to-date HDDs (revert available)</h4>
+        <button :disabled="revertingAll" @click="revertAll()" class="inline-flex items-center gap-1 rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors">{{ revertingAll ? 'Reverting All...' : '↩ Revert All' }}</button>
+      </div>
+      <div class="space-y-1">
+        <div v-for="(device, idx) in revertableDevices" :key="'rev-'+idx" class="flex items-center justify-between px-3 py-1.5 rounded bg-accent text-sm">
+          <span class="text-muted">{{ device.device }} <span class="text-xs text-gray-400">({{ device.model }})</span> — <span class="font-mono text-xs">{{ device.current_firmware }}</span></span>
+          <button :disabled="device.reverting" @click="revertDevice(device)" class="inline-flex items-center gap-1 rounded-md bg-orange-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors">{{ device.reverting ? 'Reverting...' : '↩ Revert' }}</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -154,36 +168,62 @@
           <span class="text-sm font-medium">Firmware Update:</span>
           <span class="text-sm font-mono text-muted ml-2">{{ isValidFirmwareVersion(confirmDevice.current_firmware) ? confirmDevice.current_firmware : '-' }} → {{ isValidFirmwareVersion(confirmDevice.latest_firmware) ? confirmDevice.latest_firmware : '-' }}</span>
         </div>
+        <!-- Storage membership warnings (ZFS/Ceph/RAID) -->
+        <div v-if="confirmWarnings.length > 0" class="mb-3 space-y-2">
+          <div v-for="(warn, i) in confirmWarnings" :key="i"
+            :class="warn.severity === 'error' ? 'rounded-md bg-red-50 border border-red-200 p-3' : 'rounded-md bg-blue-50 border border-blue-200 p-3'">
+            <p :class="warn.severity === 'error' ? 'text-sm font-medium text-red-800' : 'text-sm font-medium text-blue-800'">
+              {{ warn.severity === 'error' ? '⛔' : 'ℹ️' }} {{ warn.message }}
+            </p>
+            <p v-if="warn.action" class="text-xs mt-1 font-mono"
+              :class="warn.severity === 'error' ? 'text-red-700' : 'text-blue-700'">
+              {{ warn.action }}
+            </p>
+          </div>
+        </div>
+        <!-- Blocked notice -->
+        <div v-if="confirmBlocked" class="mb-3 rounded-md bg-red-100 border border-red-300 p-4">
+          <p class="text-sm font-bold text-red-900">🚫 Flash Blocked</p>
+          <p class="text-xs text-red-800 mt-1">{{ confirmBlockReason }}</p>
+          <p class="text-xs text-red-700 mt-2">Resolve the above issue(s) and try again.</p>
+        </div>
         <!-- What will happen -->
-        <div v-if="confirmActions.length > 0" class="mb-3 rounded-md bg-blue-50 border border-blue-200 p-3">
+        <div v-if="!confirmBlocked && confirmActions.length > 0" class="mb-3 rounded-md bg-blue-50 border border-blue-200 p-3">
           <h4 class="text-sm font-medium text-blue-800 mb-2">This will:</h4>
           <ul class="text-sm text-blue-700 list-disc pl-5 space-y-1">
             <li v-for="(action, i) in confirmActions" :key="i">{{ action }}</li>
           </ul>
         </div>
         <!-- Downloads needed -->
-        <div v-if="confirmDownloads.length > 0" class="mb-3 rounded-md bg-amber-50 border border-amber-200 p-3">
+        <div v-if="!confirmBlocked && confirmDownloads.length > 0" class="mb-3 rounded-md bg-amber-50 border border-amber-200 p-3">
           <h4 class="text-sm font-medium text-amber-800 mb-2">Downloads required from firmware repo:</h4>
           <ul class="text-sm text-amber-700 list-disc pl-5 space-y-1">
             <li v-for="(dl, i) in confirmDownloads" :key="i"><strong>{{ dl.name }}</strong> — {{ dl.reason }}</li>
           </ul>
         </div>
-        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
+        <div v-if="!confirmBlocked" class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
           <p class="text-xs text-yellow-700"><strong>Important:</strong> Do not power off the system during the flash process. A reboot may be required to activate the new firmware.</p>
           <p class="text-xs text-yellow-700 mt-1"><strong>Recommendation:</strong> Perform firmware updates during a scheduled maintenance window.</p>
         </div>
       </div>
     </div>
     <div v-if="!confirmLoading" class="px-6 py-3 border-t border-default space-y-3">
-      <div>
-        <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
-        <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
+      <div v-if="confirmBlocked">
+        <div class="flex justify-end">
+          <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Close</button>
+        </div>
       </div>
-      <div class="flex justify-end gap-2">
-        <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
-        <button @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-          Proceed with Flash
+      <div v-else>
+        <div>
+          <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
+          <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+          <button @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Proceed with Flash
         </button>
+      </div>
       </div>
     </div>
   </div>
@@ -320,8 +360,8 @@ export default {
       }
     });
 
-    // Only show HBA and NIC devices for this release
-    const allowedTypes = ['hba', 'nic'];
+    // Show HBA, NIC, and HDD devices
+    const allowedTypes = ['hba', 'nic', 'hdd'];
 
     const outdatedDevices = computed(() => devices.value.filter(d => {
       if (!allowedTypes.includes(d.type)) return false;
@@ -339,6 +379,11 @@ export default {
 
       return true;
     }));
+
+    // HDDs that are current (up-to-date) but have a previous firmware file for revert
+    const revertableDevices = computed(() => devices.value.filter(d =>
+      d.type === 'hdd' && d.update_available === 'current' && d.previous_firmware_file
+    ));
 
     // A device can be flashed if it's an allowed type with flashable flag and either:
     // - a firmware_file (normal flash), or
@@ -366,6 +411,9 @@ export default {
     const confirmLoading = ref(false);
     const confirmActions = ref([]);
     const confirmDownloads = ref([]);
+    const confirmWarnings = ref([]);
+    const confirmBlocked = ref(false);
+    const confirmBlockReason = ref('');
     const confirmDevice = ref({});
     const confirmInput = ref('');
 
@@ -373,6 +421,9 @@ export default {
       confirmDevice.value = device;
       confirmActions.value = [];
       confirmDownloads.value = [];
+      confirmWarnings.value = [];
+      confirmBlocked.value = false;
+      confirmBlockReason.value = '';
       confirmInput.value = '';
       confirmModalVisible.value = true;
       confirmLoading.value = true;
@@ -388,6 +439,9 @@ export default {
         const pfData = JSON.parse(pfProc.getStdout());
         confirmActions.value = pfData.actions || [];
         confirmDownloads.value = pfData.downloads || [];
+        confirmWarnings.value = pfData.warnings || [];
+        confirmBlocked.value = pfData.blocked || false;
+        confirmBlockReason.value = pfData.block_reason || '';
       } catch (e) {
         confirmActions.value = [`Flash ${device.model} using ${device.flash_tool || 'unknown'}`];
       }
@@ -578,7 +632,77 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
+    // ─── Revert firmware (flash previous version) ───
+    const revertingAll = ref(false);
+
+    const revertDevice = async (device) => {
+      if (!confirm(`Revert ${device.model} (${device.device}) to previous firmware ${device.previous_firmware || ''}?`)) return;
+      device.reverting = true;
+      flashLog.value = '';
+      flashComplete.value = false;
+      flashSuccess.value = false;
+      flashProgressVisible.value = true;
+      flashLog.value += `> REVERT: ${device.model} (${device.type})\n`;
+      flashLog.value += `> Current: ${device.current_firmware} → ${device.previous_firmware || 'previous'}\n`;
+      flashLog.value += `> Cache index: ${device.cache_index}\n\n--- Starting revert ---\n\n`;
+
+      try {
+        const cmd = new Command([
+          "python3", "-u", "/usr/share/45drives/firmware/firmware-revert",
+          "--cache-index", String(device.cache_index)
+        ], { superuser: "require" });
+        const proc = server.spawnProcess(cmd);
+        proc.stream((chunk) => {
+          flashLog.value += chunk;
+        });
+        const result = await unwrap(proc.wait());
+        const finalStdout = result.getStdout();
+        const finalStderr = result.getStderr();
+        if (finalStdout) flashLog.value += finalStdout;
+        if (finalStderr) flashLog.value += finalStderr + '\n';
+        flashLog.value += '\n--- ✓ Revert completed successfully ---\n';
+        flashSuccess.value = true;
+        await checkFirmware();
+      } catch (e) {
+        if (e.stdout) flashLog.value += e.stdout + '\n';
+        if (e.stderr) flashLog.value += e.stderr + '\n';
+        flashLog.value += `\n✗ REVERT FAILED: ${e.message || e}\n`;
+        flashSuccess.value = false;
+      }
+      flashComplete.value = true;
+      device.reverting = false;
+    };
+
+    const revertAll = async () => {
+      if (!confirm(`Revert ALL ${revertableDevices.value.length} up-to-date HDDs to previous firmware?`)) return;
+      revertingAll.value = true;
+      let success = 0, failed = 0;
+      for (const device of revertableDevices.value) {
+        device.reverting = true;
+        try {
+          const proc = await unwrap(server.execute(
+            new Command([
+              "python3", "-u", "/usr/share/45drives/firmware/firmware-revert",
+              "--cache-index", String(device.cache_index)
+            ], { superuser: "require" })
+          ));
+          const output = proc.getStdout() + proc.getStderr();
+          if (output.includes("Revert successful")) {
+            success++;
+          } else {
+            failed++;
+          }
+        } catch (e) {
+          failed++;
+        }
+        device.reverting = false;
+      }
+      revertingAll.value = false;
+      alert(`Revert All complete: ${success} succeeded, ${failed} failed.`);
+      await checkFirmware();
+    };
+
+    return { devices, outdatedDevices, revertableDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable, revertDevice, revertAll, revertingAll };
   }
 };
 </script>
