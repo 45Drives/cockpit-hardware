@@ -244,7 +244,10 @@
       </div>
 
       <!-- IPMI status -->
-      <div v-if="ipmiAvailable === true" class="rounded-md bg-green-50 border border-green-200 p-3">
+      <div v-if="ipmiAvailable === null" class="rounded-md bg-gray-50 border border-gray-200 p-3">
+        <p class="text-xs font-medium text-gray-600">⏳ Checking IPMI availability...</p>
+      </div>
+      <div v-else-if="ipmiAvailable === true" class="rounded-md bg-green-50 border border-green-200 p-3">
         <p class="text-xs font-medium text-green-800">✓ IPMI detected — will perform a full power cycle (cold boot) to activate firmware.</p>
       </div>
       <div v-else-if="ipmiAvailable === false" class="rounded-md bg-orange-50 border border-orange-200 p-3">
@@ -281,7 +284,7 @@
       <span v-else></span>
       <button
         @click="executeReboot()"
-        :disabled="rebootConfirmInput !== 'reboot now' || rebootExecuting"
+        :disabled="rebootConfirmInput !== 'reboot now' || rebootExecuting || ipmiAvailable === null"
         class="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {{ rebootExecuting ? 'Rebooting...' : 'Reboot Now' }}
