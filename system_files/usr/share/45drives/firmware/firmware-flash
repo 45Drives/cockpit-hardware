@@ -1905,7 +1905,7 @@ def main():
                 preflight_info["warnings"].append({
                     "severity": "error",
                     "message": f"This drive is a member of ZFS pool '{pool_name}'.",
-                    "action": f"Export the pool before flashing: zpool export {pool_name}",
+                    "action": f"Export the pool before flashing: zpool export {pool_name}" if pool_name not in ("(unknown pool)", "unknown") else "Export the pool before flashing (pool name unknown). Install ZFS tools and run: zpool status",
                 })
 
             # Ceph OSD check
@@ -2125,7 +2125,10 @@ def main():
         if zpool_info:
             pool_name = zpool_info.get("pool", "unknown")
             print(f"✗ REFUSED: Drive is a member of ZFS pool '{pool_name}'.", file=sys.stderr)
-            print(f"  Please export the pool first:  zpool export {pool_name}", file=sys.stderr)
+            if pool_name in ("unknown", "(unknown pool)"):
+                print(f"  ZFS tools are not available to identify the pool name. Install ZFS tools and run: zpool status", file=sys.stderr)
+            else:
+                print(f"  Please export the pool first:  zpool export {pool_name}", file=sys.stderr)
             log_flash_event(device_info, False, f"REFUSED: drive is member of zpool '{pool_name}'")
             return 4
 
