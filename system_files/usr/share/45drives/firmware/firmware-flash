@@ -1661,13 +1661,13 @@ def check_mdraid_membership(device_info):
                     current_array = parts[0].strip()
                     # Check if our device appears in the member list
                     member_part = parts[1] if len(parts) > 1 else ""
-                    # Match "sda[", "sda1[", etc.
-                    if f"{short_dev}[" in member_part or f"{short_dev}p" in member_part:
-                        state = "active" if "active" in member_part else "inactive"
-                        return {"array": f"/dev/{current_array}", "state": state}
-                    # Also check partitions like sda1, sda2
-                    for i in range(1, 16):
-                        if f"{short_dev}{i}[" in member_part:
+                    # Parse member tokens like "sda1[0]" / "nvme0n1p1[0]" and match exactly
+                    # (avoids false positives like sda vs sdap1).
+                    for tok in member_part.split():
+                        if "[" not in tok:
+                            continue
+                        member_name = tok.split("[", 1)[0]
+                        if _is_child_of_device(f"/dev/{member_name}", short_dev):
                             state = "active" if "active" in member_part else "inactive"
                             return {"array": f"/dev/{current_array}", "state": state}
     except (OSError, IOError):
@@ -1994,6 +1994,20 @@ def main():
                     "severity": "error",
                     "message": f"Partition {swap_dev} is currently in use as swap.",
                     "action": f"Disable swap before flashing: swapoff {swap_dev}",
+                })
+
+        # upgrade_from compatibility check
+        upgrade_from = device_info.get("upgrade_from", "")
+        if upgrade_from:
+            current_fw = device_info.get("current_firmware", "")
+            compatible_prefixes = [p.strip() for p in upgrade_from.split(",") if p.strip()]
+            if current_fw and not any(current_fw.startswith(prefix) for prefix in compatible_prefixes):
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Current firmware '{current_fw}' is not compatible with this upgrade (expected: {', '.join(compatible_prefixes)})"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"Firmware '{current_fw}' is not in the upgrade_from list.",
+                    "action": "This drive may be an OEM variant. Contact Seagate for compatible firmware.",
                 })
 
         flash_tool = device_info.get("flash_tool", "")
