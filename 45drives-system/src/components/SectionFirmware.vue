@@ -201,6 +201,12 @@
         </div>
       </div>
       <div v-else>
+        <div v-if="confirmDevice.type === 'hdd'" class="rounded-md bg-green-50 border border-green-200 p-3 mb-3">
+          <p class="text-xs text-green-800"><span class="font-semibold">✅ Pre-flight checks passed.</span></p>
+        </div>
+        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-3 mb-3">
+          <p class="text-xs text-yellow-800">⚠️ It is recommended to back up your data before proceeding to protect against any uncertainty.</p>
+        </div>
         <div>
           <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
           <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
@@ -607,7 +613,10 @@ export default {
         server.execute(
           new Command(cmd, { superuser: "require" }),
           false
-        );
+        ).catch((e) => {
+          rebootError.value = `Reboot command failed: ${e}`;
+          rebootExecuting.value = false;
+        });
         // Don't await — Cockpit will detect the connection drop and show reconnect overlay.
       } catch (e) {
         rebootError.value = `Reboot command failed: ${e}`;
