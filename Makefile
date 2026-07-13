@@ -74,7 +74,7 @@ houston-common/Makefile:
 	git submodule update --init
 
 houston-common: houston-common/Makefile bootstrap-yarn
-	jq 'del(.packageManager)' houston-common/package.json | sponge houston-common/package.json
+	tmp=$$(mktemp); jq 'del(.packageManager)' houston-common/package.json > $$tmp && mv $$tmp houston-common/package.json
 	$(MAKE) -C houston-common
 
 $(VERSION_FILES): ./manifest.json

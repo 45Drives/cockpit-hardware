@@ -1784,9 +1784,11 @@ def _check_vg_has_active_lvs(vg_name):
             parts = line.split()
             if len(parts) >= 2:
                 lv_attr = parts[1]
-                # LV attr: position 5 is open state ('o' = open/active)
+                # LV attr: position 5 is state ('a' = active);
+                # position 6 is open state ('o' = open)
                 # e.g. "-wi-ao----" means writable, inherited, active, open
-                if len(lv_attr) >= 6 and 'a' in lv_attr[4:6]:
+                # We block on ANY active LV, not just open ones, as the DM mapping is still live.
+                if len(lv_attr) >= 5 and lv_attr[4] == 'a':
                     return True
         return False
     except (subprocess.TimeoutExpired, Exception):
