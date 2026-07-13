@@ -38,6 +38,19 @@
             "ipmitool",
             "lshw",
             "45drives-tools >= 3.0.1"
+        ],
+        "debian_common": [
+            "cockpit-ws",
+            "cockpit-bridge",
+            "cockpit-system",
+            "cockpit-storaged",
+            "cockpit-packagekit",
+            "python3",
+            "dmidecode (>=3.3)",
+            "ipmitool",
+            "lshw",
+            "45drives-tools (>= 3.0.1)",
+            "iproute2"
         ]
     },
     "builds": [

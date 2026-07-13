@@ -62,7 +62,6 @@
                         <DownloadIcon class="h-4 w-4" aria-hidden="true" />
                         {{ device.flashing ? 'Flashing...' : 'Update' }}
                       </button>
-                      <button v-if="device.type === 'hdd' && device.previous_firmware_file" :disabled="device.reverting" @click="revertDevice(device)" class="inline-flex items-center gap-1 rounded-md bg-orange-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors">{{ device.reverting ? 'Reverting...' : '↩ Revert' }}</button>
                     </div>
                   </td>
                 </tr>
@@ -75,19 +74,7 @@
     <div v-else class="text-sm text-muted py-4 text-center">
       All firmware is up to date.
     </div>
-    <!-- Revert section: show current HDDs that have a previous firmware available -->
-    <div v-if="revertableDevices.length > 0" class="mt-3 border-t border-default pt-3">
-      <div class="flex items-center justify-between mb-2">
-        <h4 class="text-xs font-medium text-muted uppercase tracking-wide">Up-to-date HDDs (revert available)</h4>
-        <button :disabled="revertingAll" @click="revertAll()" class="inline-flex items-center gap-1 rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50 transition-colors">{{ revertingAll ? 'Reverting All...' : '↩ Revert All' }}</button>
-      </div>
-      <div class="space-y-1">
-        <div v-for="(device, idx) in revertableDevices" :key="'rev-'+idx" class="flex items-center justify-between px-3 py-1.5 rounded bg-accent text-sm">
-          <span class="text-muted">{{ device.device }} <span class="text-xs text-gray-400">({{ device.model }})</span> — <span class="font-mono text-xs">{{ device.current_firmware }}</span></span>
-          <button :disabled="device.reverting" @click="revertDevice(device)" class="inline-flex items-center gap-1 rounded-md bg-orange-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50 transition-colors">{{ device.reverting ? 'Reverting...' : '↩ Revert' }}</button>
-        </div>
-      </div>
-    </div>
+
   </div>
 </div>
 
@@ -218,7 +205,7 @@
           <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
           <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
         </div>
-        <div class="flex justify-end gap-2">
+        <div class="flex justify-end gap-2 mt-4">
           <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
           <button @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
             Proceed with Flash
@@ -265,15 +252,27 @@
         <input v-model="rebootConfirmInput" type="text" placeholder="reboot now" class="w-full bg-accent rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
       </div>
 
+      <!-- Reboot in progress -->
+      <div v-if="rebootExecuting" class="rounded-md bg-blue-50 border border-blue-200 p-3">
+        <div class="flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <p class="text-sm font-medium text-blue-800">Initiating reboot...</p>
+        </div>
+        <p class="text-xs text-blue-700 mt-1">This may take up to 30 seconds. The page will disconnect once the system goes down.</p>
+      </div>
+
       <!-- Reboot error -->
       <div v-if="rebootError" class="rounded-md bg-red-50 border border-red-200 p-3">
         <p class="text-sm text-red-800">{{ rebootError }}</p>
       </div>
     </div>
-
     <!-- Actions -->
     <div class="px-6 py-3 border-t border-default flex justify-between items-center">
-      <button @click="rebootModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+      <button v-if="!rebootExecuting" @click="rebootModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+      <span v-else></span>
       <button
         @click="executeReboot()"
         :disabled="rebootConfirmInput !== 'reboot now' || rebootExecuting"
@@ -379,11 +378,6 @@ export default {
 
       return true;
     }));
-
-    // HDDs that are current (up-to-date) but have a previous firmware file for revert
-    const revertableDevices = computed(() => devices.value.filter(d =>
-      d.type === 'hdd' && d.update_available === 'current' && d.previous_firmware_file
-    ));
 
     // A device can be flashed if it's an allowed type with flashable flag and either:
     // - a firmware_file (normal flash), or
@@ -611,11 +605,9 @@ export default {
           ? ["bash", "-c", "sync && ipmitool chassis power cycle"]
           : ["bash", "-c", "sync && systemctl reboot"];
         server.execute(
-          new Command(cmd, { superuser: "require" })
-        ).catch((e) => {
-          rebootError.value = `Reboot command failed: ${e}`;
-          rebootExecuting.value = false;
-        });
+          new Command(cmd, { superuser: "require" }),
+          false
+        );
         // Don't await — Cockpit will detect the connection drop and show reconnect overlay.
       } catch (e) {
         rebootError.value = `Reboot command failed: ${e}`;
@@ -632,77 +624,7 @@ export default {
       });
     });
 
-    // ─── Revert firmware (flash previous version) ───
-    const revertingAll = ref(false);
-
-    const revertDevice = async (device) => {
-      if (!confirm(`Revert ${device.model} (${device.device}) to previous firmware ${device.previous_firmware || ''}?`)) return;
-      device.reverting = true;
-      flashLog.value = '';
-      flashComplete.value = false;
-      flashSuccess.value = false;
-      flashProgressVisible.value = true;
-      flashLog.value += `> REVERT: ${device.model} (${device.type})\n`;
-      flashLog.value += `> Current: ${device.current_firmware} → ${device.previous_firmware || 'previous'}\n`;
-      flashLog.value += `> Cache index: ${device.cache_index}\n\n--- Starting revert ---\n\n`;
-
-      try {
-        const cmd = new Command([
-          "python3", "-u", "/usr/share/45drives/firmware/firmware-revert",
-          "--cache-index", String(device.cache_index)
-        ], { superuser: "require" });
-        const proc = server.spawnProcess(cmd);
-        proc.stream((chunk) => {
-          flashLog.value += chunk;
-        });
-        const result = await unwrap(proc.wait());
-        const finalStdout = result.getStdout();
-        const finalStderr = result.getStderr();
-        if (finalStdout) flashLog.value += finalStdout;
-        if (finalStderr) flashLog.value += finalStderr + '\n';
-        flashLog.value += '\n--- ✓ Revert completed successfully ---\n';
-        flashSuccess.value = true;
-        await checkFirmware();
-      } catch (e) {
-        if (e.stdout) flashLog.value += e.stdout + '\n';
-        if (e.stderr) flashLog.value += e.stderr + '\n';
-        flashLog.value += `\n✗ REVERT FAILED: ${e.message || e}\n`;
-        flashSuccess.value = false;
-      }
-      flashComplete.value = true;
-      device.reverting = false;
-    };
-
-    const revertAll = async () => {
-      if (!confirm(`Revert ALL ${revertableDevices.value.length} up-to-date HDDs to previous firmware?`)) return;
-      revertingAll.value = true;
-      let success = 0, failed = 0;
-      for (const device of revertableDevices.value) {
-        device.reverting = true;
-        try {
-          const proc = await unwrap(server.execute(
-            new Command([
-              "python3", "-u", "/usr/share/45drives/firmware/firmware-revert",
-              "--cache-index", String(device.cache_index)
-            ], { superuser: "require" })
-          ));
-          const output = proc.getStdout() + proc.getStderr();
-          if (output.includes("Revert successful")) {
-            success++;
-          } else {
-            failed++;
-          }
-        } catch (e) {
-          failed++;
-        }
-        device.reverting = false;
-      }
-      revertingAll.value = false;
-      alert(`Revert All complete: ${success} succeeded, ${failed} failed.`);
-      await checkFirmware();
-    };
-
-    return { devices, outdatedDevices, revertableDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable, revertDevice, revertAll, revertingAll };
+    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
   }
 };
 </script>
