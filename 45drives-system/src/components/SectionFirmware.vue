@@ -613,10 +613,7 @@ export default {
         server.execute(
           new Command(cmd, { superuser: "require" }),
           false
-        ).catch((e) => {
-          rebootError.value = `Reboot command failed: ${e}`;
-          rebootExecuting.value = false;
-        });
+        );
         // Don't await — Cockpit will detect the connection drop and show reconnect overlay.
       } catch (e) {
         rebootError.value = `Reboot command failed: ${e}`;
