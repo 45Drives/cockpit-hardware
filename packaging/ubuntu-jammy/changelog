@@ -1,6 +1,6 @@
 cockpit-45drives-hardware (2.8.3-1jammy) jammy; urgency=medium
 
-  * fix version umber + build package
+  * fix version number + build package
 
  -- Rachit Hans <rhans@45drives.com>  Wed, 24 Jun 2026 13:09:52 -0300
 

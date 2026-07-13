@@ -1326,6 +1326,7 @@ def check_zpool_membership(device_info):
     short_dev = device.replace("/dev/", "") if device else ""
 
     # --- Method 1: Parse zpool status output (requires zpool binary) ---
+    zpool_query_ok = False
     if shutil.which("zpool"):
         try:
             result = subprocess.run(
@@ -1333,6 +1334,10 @@ def check_zpool_membership(device_info):
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 universal_newlines=True, timeout=30
             )
+            # Mark query as successful if zpool ran and either returned pools
+            # or reported "no pools available" (meaning no imported pools exist)
+            if result.returncode == 0 or "no pools available" in (result.stderr or "").lower():
+                zpool_query_ok = True
             if result.returncode == 0:
                 output = result.stdout
 
@@ -1385,12 +1390,12 @@ def check_zpool_membership(device_info):
         except (subprocess.TimeoutExpired, Exception):
             pass
 
-    # --- Method 2: blkid fallback (ONLY when zpool binary is missing) ---
-    # If zpool was available and ran successfully, the drive is NOT in any
-    # active/imported pool — even if blkid still shows zfs_member (exported
-    # pools leave the superblock intact). Only fall back to blkid when we
-    # cannot query pool state at all.
-    if not shutil.which("zpool") and short_dev:
+    # --- Method 2: blkid fallback when zpool state cannot be queried ---
+    # If zpool ran successfully, the drive is NOT in any active/imported pool —
+    # even if blkid still shows zfs_member (exported pools leave the superblock
+    # intact). Only fall back to blkid when we cannot query pool state at all
+    # (missing binary, permission error, timeout, broken ZFS install).
+    if not zpool_query_ok and short_dev:
         try:
             devs_to_check = [f"/dev/{short_dev}"]
             child_devs = _get_child_devices(short_dev)
