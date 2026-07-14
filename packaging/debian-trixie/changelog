@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.8.4-1trixie) trixie; urgency=medium
+
+  * Add support for updating Seagate HDD drives firmware
+
+ -- Rachit Hans <rhans@45drives.com>  Tue, 14 Jul 2026 06:43:07 -0300
+
 cockpit-45drives-hardware (2.8.1-1trixie) trixie; urgency=medium
 
   * Feature: 45drive system to allow HBA and NIC cards firmware update

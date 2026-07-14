@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.3-1
+## cockpit-45drives-hardware 2.8.4-1
 
-* fix version umber + build package
+* Add support for updating Seagate HDD drives firmware
