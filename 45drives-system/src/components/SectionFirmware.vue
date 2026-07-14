@@ -74,6 +74,7 @@
     <div v-else class="text-sm text-muted py-4 text-center">
       All firmware is up to date.
     </div>
+
   </div>
 </div>
 
@@ -154,36 +155,68 @@
           <span class="text-sm font-medium">Firmware Update:</span>
           <span class="text-sm font-mono text-muted ml-2">{{ isValidFirmwareVersion(confirmDevice.current_firmware) ? confirmDevice.current_firmware : '-' }} → {{ isValidFirmwareVersion(confirmDevice.latest_firmware) ? confirmDevice.latest_firmware : '-' }}</span>
         </div>
+        <!-- Storage membership warnings (ZFS/Ceph/RAID) -->
+        <div v-if="confirmWarnings.length > 0" class="mb-3 space-y-2">
+          <div v-for="(warn, i) in confirmWarnings" :key="i"
+            :class="warn.severity === 'error' ? 'rounded-md bg-red-50 border border-red-200 p-3' : 'rounded-md bg-blue-50 border border-blue-200 p-3'">
+            <p :class="warn.severity === 'error' ? 'text-sm font-medium text-red-800' : 'text-sm font-medium text-blue-800'">
+              {{ warn.severity === 'error' ? '⛔' : 'ℹ️' }} {{ warn.message }}
+            </p>
+            <p v-if="warn.action" class="text-xs mt-1 font-mono"
+              :class="warn.severity === 'error' ? 'text-red-700' : 'text-blue-700'">
+              {{ warn.action }}
+            </p>
+          </div>
+        </div>
+        <!-- Blocked notice -->
+        <div v-if="confirmBlocked" class="mb-3 rounded-md bg-red-100 border border-red-300 p-4">
+          <p class="text-sm font-bold text-red-900">🚫 Flash Blocked</p>
+          <p class="text-xs text-red-800 mt-1">{{ confirmBlockReason }}</p>
+          <p class="text-xs text-red-700 mt-2">Resolve the above issue(s) and try again.</p>
+        </div>
         <!-- What will happen -->
-        <div v-if="confirmActions.length > 0" class="mb-3 rounded-md bg-blue-50 border border-blue-200 p-3">
+        <div v-if="!confirmBlocked && confirmActions.length > 0" class="mb-3 rounded-md bg-blue-50 border border-blue-200 p-3">
           <h4 class="text-sm font-medium text-blue-800 mb-2">This will:</h4>
           <ul class="text-sm text-blue-700 list-disc pl-5 space-y-1">
             <li v-for="(action, i) in confirmActions" :key="i">{{ action }}</li>
           </ul>
         </div>
         <!-- Downloads needed -->
-        <div v-if="confirmDownloads.length > 0" class="mb-3 rounded-md bg-amber-50 border border-amber-200 p-3">
+        <div v-if="!confirmBlocked && confirmDownloads.length > 0" class="mb-3 rounded-md bg-amber-50 border border-amber-200 p-3">
           <h4 class="text-sm font-medium text-amber-800 mb-2">Downloads required from firmware repo:</h4>
           <ul class="text-sm text-amber-700 list-disc pl-5 space-y-1">
             <li v-for="(dl, i) in confirmDownloads" :key="i"><strong>{{ dl.name }}</strong> — {{ dl.reason }}</li>
           </ul>
         </div>
-        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
+        <div v-if="!confirmBlocked" class="rounded-md bg-yellow-50 border border-yellow-200 p-4 mt-4">
           <p class="text-xs text-yellow-700"><strong>Important:</strong> Do not power off the system during the flash process. A reboot may be required to activate the new firmware.</p>
           <p class="text-xs text-yellow-700 mt-1"><strong>Recommendation:</strong> Perform firmware updates during a scheduled maintenance window.</p>
         </div>
       </div>
     </div>
     <div v-if="!confirmLoading" class="px-6 py-3 border-t border-default space-y-3">
-      <div>
-        <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
-        <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
+      <div v-if="confirmBlocked">
+        <div class="flex justify-end">
+          <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Close</button>
+        </div>
       </div>
-      <div class="flex justify-end gap-2">
-        <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
-        <button @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
-          Proceed with Flash
+      <div v-else>
+        <div v-if="confirmDevice.type === 'hdd'" class="rounded-md bg-green-50 border border-green-200 p-3 mb-3">
+          <p class="text-xs text-green-800"><span class="font-semibold">✅ Pre-flight checks passed.</span></p>
+        </div>
+        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-3 mb-3">
+          <p class="text-xs text-yellow-800">⚠️ It is recommended to back up your data before proceeding to protect against any uncertainty.</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">confirm flash</span> to proceed:</label>
+          <input v-model="confirmInput" type="text" placeholder="confirm flash" class="w-full rounded-md border bg-accent border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" @keyup.enter="confirmInput === 'confirm flash' && proceedSingleFlash()" />
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+          <button @click="confirmModalVisible = false; confirmInput = ''" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+          <button @click="proceedSingleFlash()" :disabled="confirmInput !== 'confirm flash'" class="inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+            Proceed with Flash
         </button>
+      </div>
       </div>
     </div>
   </div>
@@ -210,10 +243,34 @@
         <p class="text-xs font-medium text-blue-800">{{ rebootPendingDevices.size }} firmware update(s) pending activation.</p>
       </div>
 
+      <!-- IPMI status -->
+      <div v-if="ipmiAvailable === null" class="rounded-md bg-gray-50 border border-gray-200 p-3">
+        <p class="text-xs font-medium text-gray-600">⏳ Checking IPMI availability...</p>
+      </div>
+      <div v-else-if="ipmiAvailable === true" class="rounded-md bg-green-50 border border-green-200 p-3">
+        <p class="text-xs font-medium text-green-800">✓ IPMI detected — will perform a full power cycle (cold boot) to activate firmware.</p>
+      </div>
+      <div v-else-if="ipmiAvailable === false" class="rounded-md bg-orange-50 border border-orange-200 p-3">
+        <p class="text-xs font-medium text-orange-800">⚠ IPMI not available — performing soft reboot only.</p>
+        <p class="text-xs text-orange-700 mt-1">Some NIC firmware (e.g. ConnectX-5) may not activate until a full power cycle is performed manually.</p>
+      </div>
+
       <!-- Confirmation input -->
       <div>
         <label class="block text-sm font-medium text-default mb-1">Type <span class="font-mono font-bold text-red-600">reboot now</span> to confirm:</label>
         <input v-model="rebootConfirmInput" type="text" placeholder="reboot now" class="w-full bg-accent rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500" />
+      </div>
+
+      <!-- Reboot in progress -->
+      <div v-if="rebootExecuting" class="rounded-md bg-blue-50 border border-blue-200 p-3">
+        <div class="flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <p class="text-sm font-medium text-blue-800">Initiating reboot...</p>
+        </div>
+        <p class="text-xs text-blue-700 mt-1">This may take up to 30 seconds. The page will disconnect once the system goes down.</p>
       </div>
 
       <!-- Reboot error -->
@@ -221,13 +278,13 @@
         <p class="text-sm text-red-800">{{ rebootError }}</p>
       </div>
     </div>
-
     <!-- Actions -->
     <div class="px-6 py-3 border-t border-default flex justify-between items-center">
-      <button @click="rebootModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+      <button v-if="!rebootExecuting" @click="rebootModalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Cancel</button>
+      <span v-else></span>
       <button
         @click="executeReboot()"
-        :disabled="rebootConfirmInput !== 'reboot now' || rebootExecuting"
+        :disabled="rebootConfirmInput !== 'reboot now' || rebootExecuting || ipmiAvailable === null"
         class="inline-flex items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {{ rebootExecuting ? 'Rebooting...' : 'Reboot Now' }}
@@ -311,11 +368,15 @@ export default {
       }
     });
 
-    // Only show HBA and NIC devices for this release
-    const allowedTypes = ['hba', 'nic'];
+    // Show HBA, NIC, and HDD devices
+    const allowedTypes = ['hba', 'nic', 'hdd'];
 
     const outdatedDevices = computed(() => devices.value.filter(d => {
       if (!allowedTypes.includes(d.type)) return false;
+
+      // Always show devices with a pending reboot (they were just flashed)
+      if (rebootPendingDevices.value.has(d.cache_index)) return true;
+
       if (d.update_available !== 'outdated') return false;
 
       const latest = normalizeFirmwareVersion(d.latest_firmware);
@@ -353,6 +414,9 @@ export default {
     const confirmLoading = ref(false);
     const confirmActions = ref([]);
     const confirmDownloads = ref([]);
+    const confirmWarnings = ref([]);
+    const confirmBlocked = ref(false);
+    const confirmBlockReason = ref('');
     const confirmDevice = ref({});
     const confirmInput = ref('');
 
@@ -360,6 +424,9 @@ export default {
       confirmDevice.value = device;
       confirmActions.value = [];
       confirmDownloads.value = [];
+      confirmWarnings.value = [];
+      confirmBlocked.value = false;
+      confirmBlockReason.value = '';
       confirmInput.value = '';
       confirmModalVisible.value = true;
       confirmLoading.value = true;
@@ -375,6 +442,9 @@ export default {
         const pfData = JSON.parse(pfProc.getStdout());
         confirmActions.value = pfData.actions || [];
         confirmDownloads.value = pfData.downloads || [];
+        confirmWarnings.value = pfData.warnings || [];
+        confirmBlocked.value = pfData.blocked || false;
+        confirmBlockReason.value = pfData.block_reason || '';
       } catch (e) {
         confirmActions.value = [`Flash ${device.model} using ${device.flash_tool || 'unknown'}`];
       }
@@ -520,15 +590,34 @@ export default {
       rebootModalVisible.value = true;
       rebootConfirmInput.value = '';
       rebootError.value = '';
+      checkIpmi();
+    };
+
+    const ipmiAvailable = ref(null); // null = not checked, true/false
+
+    const checkIpmi = async () => {
+      try {
+        const result = await unwrap(server.execute(
+          new Command(["bash", "-c", "which ipmitool && ipmitool chassis status"], { superuser: "try" })
+        ));
+        ipmiAvailable.value = result.getStdout().includes('System Power');
+      } catch (e) {
+        ipmiAvailable.value = false;
+      }
     };
 
     const executeReboot = async () => {
       rebootExecuting.value = true;
       rebootError.value = '';
       try {
-        await unwrap(server.execute(
-          new Command(["systemctl", "reboot"], { superuser: "require" })
-        ));
+        const cmd = ipmiAvailable.value
+          ? ["bash", "-c", "sync && ipmitool chassis power cycle"]
+          : ["bash", "-c", "sync && systemctl reboot"];
+        server.execute(
+          new Command(cmd, { superuser: "require" }),
+          false
+        );
+        // Don't await — Cockpit will detect the connection drop and show reconnect overlay.
       } catch (e) {
         rebootError.value = `Reboot command failed: ${e}`;
         rebootExecuting.value = false;
@@ -544,7 +633,7 @@ export default {
       });
     });
 
-    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot };
+    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
   }
 };
 </script>

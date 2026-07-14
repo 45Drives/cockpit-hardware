@@ -14,3 +14,5 @@ rm .yarnrc.yml .yarn -rf
 yarn set version stable
 
 yarn config set nodeLinker node-modules
+yarn config set enableScripts true
+yarn config set approvedGitRepositories --json '["**"]'

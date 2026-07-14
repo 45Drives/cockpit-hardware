@@ -406,6 +406,9 @@ def main():
                 "family": entry.get("family", ""),
                 "release_notes": entry.get("release_notes", ""),
                 "upgrade_from": entry.get("upgrade_from", ""),
+                "previous_firmware": entry.get("previous_firmware", ""),
+                "previous_firmware_file": entry.get("previous_firmware_file", ""),
+                "previous_sha256": entry.get("previous_sha256", ""),
             }
 
             # Look up flash tool binary SHA256 from manifest.flash_tools[]

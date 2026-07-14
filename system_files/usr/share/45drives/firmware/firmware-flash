@@ -608,15 +608,20 @@ def flash_niccli(device_info, firmware_path):
 
     # Flash using niccli
     cmd = f"{niccli_bin} -i {adapter_id} fw --update -f {shlex.quote(firmware_path)} --yes"
-    print(f"Running: {cmd}")
+    print(f"Running: {cmd}", flush=True)
 
     try:
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=300, input="y\n"
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True
         )
-        output = result.stdout + result.stderr
-        print(output)
+        output_lines = []
+        for line in proc.stdout:
+            line = line.rstrip('\n')
+            print(line, flush=True)
+            output_lines.append(line)
+        proc.wait(timeout=300)
+        output = '\n'.join(output_lines)
 
         lower_output = output.lower()
         explicit_failure_markers = [
@@ -637,11 +642,13 @@ def flash_niccli(device_info, firmware_path):
              "updated to package version" in output.lower() or \
              "update successful" in output.lower():
             return True, output
-        elif result.returncode == 0:
+        elif proc.returncode == 0:
             return True, output
         else:
-            return False, f"niccli exit code {result.returncode}: {output}"
+            return False, f"niccli exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
         return False, "niccli firmware update timed out (300s)"
     except Exception as e:
         return False, str(e)
@@ -712,20 +719,30 @@ def flash_mlxup(device_info, firmware_path=None):
         print(f"  (mlxup downloads firmware from NVIDIA servers automatically)")
 
     try:
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=300
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True
         )
-        output = result.stdout + result.stderr
-        print(output)
+        output_lines = []
+        for line in proc.stdout:
+            line = line.rstrip('\n')
+            print(line, flush=True)
+            output_lines.append(line)
+        proc.wait(timeout=300)
+        output = '\n'.join(output_lines)
 
-        if result.returncode == 0:
+        if proc.returncode == 0:
             return True, output
+        elif "pending reset" in output.lower() or "pending reboot" in output.lower():
+            # Card has a pending NVM update from a previous flash — needs reboot first
+            return False, "Device has a pending firmware update — reboot required before flashing again."
         elif "already updated" in output.lower() or "up to date" in output.lower():
             return True, "Firmware already up-to-date."
         else:
-            return False, f"mlxup exit code {result.returncode}: {output}"
+            return False, f"mlxup exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
         return False, "mlxup firmware update timed out (300s)"
     except Exception as e:
         return False, str(e)
@@ -920,23 +937,30 @@ def flash_tool_package(device_info):
     if not cmd.strip().startswith("cd "):
         cmd = f"cd {extract_dir} && {cmd}"
 
-    print(f"  Running: {cmd}")
+    print(f"  Running: {cmd}", flush=True)
 
     try:
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=600, cwd=extract_dir
+        proc = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True, cwd=extract_dir
         )
-        output = result.stdout + result.stderr
-        print(output)
+        output_lines = []
+        for line in proc.stdout:
+            line = line.rstrip('\n')
+            print(line, flush=True)
+            output_lines.append(line)
+        proc.wait(timeout=600)
+        output = '\n'.join(output_lines)
 
-        if result.returncode == 0:
+        if proc.returncode == 0:
             return True, output
         elif "no update available" in output.lower() or "up to date" in output.lower():
             return True, "Firmware already up-to-date."
         else:
-            return False, f"{flash_tool or tool_package} exit code {result.returncode}: {output}"
+            return False, f"{flash_tool or tool_package} exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
         return False, f"{flash_tool or tool_package} timed out (600s)"
     except Exception as e:
         return False, str(e)
@@ -1208,6 +1232,606 @@ def _interpret_drive_state(state, dg):
     return "unknown"
 
 
+def _get_child_devices(short_dev):
+    """Get all child block devices (partitions) of a disk using lsblk.
+
+    Returns a list of full paths like ["/dev/sda1", "/dev/sda2", "/dev/dm-3"].
+    Uses lsblk for accurate kernel-level device ancestry — avoids substring
+    matching bugs where /dev/sda could match /dev/sdaa.
+    """
+    children = []
+    seen = set()
+
+    def _add(path):
+        """Add a path and its realpath to the children list."""
+        if path and path not in seen:
+            children.append(path)
+            seen.add(path)
+        try:
+            rp = os.path.realpath(path)
+            if rp and rp != path and rp not in seen:
+                children.append(rp)
+                seen.add(rp)
+        except (OSError, ValueError):
+            pass
+
+    try:
+        # Try -o PATH first (util-linux >= 2.33)
+        result = subprocess.run(
+            ["lsblk", "-ln", "-o", "PATH", f"/dev/{short_dev}"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=10
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            for line in result.stdout.splitlines():
+                path = line.strip()
+                if path and path != f"/dev/{short_dev}":
+                    _add(path)
+        else:
+            # Fallback: -o NAME (works on older util-linux), prepend /dev/
+            result = subprocess.run(
+                ["lsblk", "-ln", "-o", "NAME", f"/dev/{short_dev}"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=10
+            )
+            if result.returncode == 0:
+                for line in result.stdout.splitlines():
+                    name = line.strip()
+                    if name and name != short_dev:
+                        _add(f"/dev/{name}")
+    except (subprocess.TimeoutExpired, Exception):
+        # Last-resort fallback: probe common partition suffixes
+        for i in range(1, 16):
+            for fmt in [f"/dev/{short_dev}{i}", f"/dev/{short_dev}p{i}"]:
+                if os.path.exists(fmt):
+                    _add(fmt)
+    return children
+
+
+def _is_child_of_device(candidate_path, short_dev):
+    """Check if candidate_path is the device itself or a child partition.
+
+    Uses exact matching against the device and its lsblk children to avoid
+    substring false-positives (e.g. /dev/sda matching /dev/sdaa1).
+    """
+    # Exact match on the device itself
+    if candidate_path == f"/dev/{short_dev}":
+        return True
+    # Resolve symlinks (handles /dev/mapper/... or /dev/disk/by-id/...)
+    try:
+        real = os.path.realpath(candidate_path)
+    except (OSError, ValueError):
+        real = candidate_path
+    if real == f"/dev/{short_dev}":
+        return True
+    # Check against known children (which include both paths and realpaths)
+    children = _get_child_devices(short_dev)
+    children_set = set(children)
+    if candidate_path in children_set or real in children_set:
+        return True
+    return False
+
+
+def check_zpool_membership(device_info):
+    """Check if a disk is a member of a ZFS zpool.
+
+    Checks both the block device name and serial against zpool status output.
+
+    Returns:
+        None          — disk is NOT in any zpool (safe to flash)
+        dict          — disk IS in a zpool: {"pool": <name>, "state": <state>}
+    """
+    device = device_info.get("device", "")  # e.g. /dev/sda
+    serial = (device_info.get("serial") or "").strip()
+    short_dev = device.replace("/dev/", "") if device else ""
+
+    # --- Method 1: Parse zpool status output (requires zpool binary) ---
+    zpool_query_ok = False
+    if shutil.which("zpool"):
+        try:
+            result = subprocess.run(
+                ["zpool", "status", "-P"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=30
+            )
+            # Mark query as successful if zpool ran and either returned pools
+            # or reported "no pools available" (meaning no imported pools exist)
+            if result.returncode == 0 or "no pools available" in (result.stderr or "").lower():
+                zpool_query_ok = True
+            if result.returncode == 0:
+                output = result.stdout
+
+                # Build the exact set of device paths that belong to this disk
+                # (the disk itself + all its partitions) for precise matching
+                our_devices = set()
+                if short_dev:
+                    our_devices.add(f"/dev/{short_dev}")
+                    our_devices.add(short_dev)
+                    for child in _get_child_devices(short_dev):
+                        our_devices.add(child)
+                        our_devices.add(child.replace("/dev/", ""))
+
+                # Parse zpool status output to find pool name and device membership
+                current_pool = None
+                current_state = None
+                for line in output.splitlines():
+                    line_stripped = line.strip()
+
+                    # Pool name line: "  pool: mypool"
+                    if line_stripped.startswith("pool:"):
+                        current_pool = line_stripped.split(":", 1)[1].strip()
+                    # Pool state line: "  state: ONLINE"
+                    elif line_stripped.startswith("state:"):
+                        current_state = line_stripped.split(":", 1)[1].strip()
+                    # Device lines contain paths like /dev/sda1 or /dev/disk/by-id/...
+                    elif current_pool and short_dev:
+                        # Extract the first token (device path) from the zpool status line
+                        tokens = line_stripped.split()
+                        if not tokens:
+                            continue
+                        dev_token = tokens[0]
+
+                        # Exact match: token is one of our device paths
+                        if dev_token in our_devices:
+                            return {"pool": current_pool, "state": current_state or "UNKNOWN"}
+                        # Resolve symlinks (by-id, by-path, by-vdev)
+                        if dev_token.startswith("/") and os.path.islink(dev_token):
+                            try:
+                                real = os.path.realpath(dev_token)
+                                real_name = real.replace("/dev/", "")
+                                if real in our_devices or real_name in our_devices:
+                                    return {"pool": current_pool, "state": current_state or "UNKNOWN"}
+                            except (OSError, ValueError):
+                                pass
+                        # Match by serial in by-id path (unambiguous identifier)
+                        if serial and serial in line_stripped:
+                            return {"pool": current_pool, "state": current_state or "UNKNOWN"}
+
+        except (subprocess.TimeoutExpired, Exception):
+            pass
+
+    # --- Method 2: blkid fallback when zpool state cannot be queried ---
+    # If zpool ran successfully, the drive is NOT in any active/imported pool —
+    # even if blkid still shows zfs_member (exported pools leave the superblock
+    # intact). Only fall back to blkid when we cannot query pool state at all
+    # (missing binary, permission error, timeout, broken ZFS install).
+    if not zpool_query_ok and short_dev:
+        try:
+            devs_to_check = [f"/dev/{short_dev}"]
+            child_devs = _get_child_devices(short_dev)
+            devs_to_check.extend(child_devs)
+
+            for check_dev in devs_to_check:
+                if not os.path.exists(check_dev):
+                    continue
+                blkid_p = subprocess.run(
+                    ["blkid", "-o", "value", "-s", "TYPE", check_dev],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=5
+                )
+                if "zfs_member" in blkid_p.stdout:
+                    return {"pool": "(unknown pool)", "state": "UNKNOWN"}
+        except (subprocess.TimeoutExpired, Exception):
+            pass
+
+    return None
+
+
+def _resolve_vg_from_lv(lv_path):
+    """Resolve the VG name from an LV device path (e.g. /dev/ceph-xxx/osd-block-yyy).
+
+    Works with both /dev/VG/LV paths and /dev/dm-X device-mapper paths.
+    Returns the VG name string, or \"\" if it can't be determined.
+    """
+    if not lv_path:
+        return ""
+
+    # Method 1: If path looks like /dev/<vg_name>/<lv_name>, parse directly
+    # ceph-volume creates paths like /dev/ceph-XXXX/osd-block-YYYY
+    parts = lv_path.rstrip("/").split("/")
+    if len(parts) >= 4 and parts[1] == "dev" and not parts[2].startswith("dm-"):
+        candidate_vg = parts[2]
+        # Verify it's a real VG via lvs
+        if shutil.which("lvs"):
+            try:
+                result = subprocess.run(
+                    ["lvs", "--noheadings", "-o", "vg_name", lv_path],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    return result.stdout.strip()
+            except (subprocess.TimeoutExpired, Exception):
+                pass
+        # Return the parsed VG name even without lvs confirmation
+        return candidate_vg
+
+    # Method 2: Use lvs to resolve dm-X or other paths
+    if shutil.which("lvs"):
+        try:
+            result = subprocess.run(
+                ["lvs", "--noheadings", "-o", "vg_name", "-S", f"lv_dm_path={lv_path}"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=5
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip().split()[0]
+        except (subprocess.TimeoutExpired, Exception):
+            pass
+
+    return ""
+
+
+def check_ceph_osd_membership(device_info):
+    """Check if a disk is backing a Ceph OSD.
+
+    Checks using ceph-volume, /var/lib/ceph/osd mounts, and blkid for
+    ceph_bluestore signatures.
+
+    Returns:
+        None          — disk is NOT a Ceph OSD (safe to flash)
+        dict          — disk IS a Ceph OSD: {"osd_id": <id>, "status": "up"|"down"|"unknown"}
+    """
+    device = device_info.get("device", "")  # e.g. /dev/sda
+    serial = (device_info.get("serial") or "").strip()
+    short_dev = device.replace("/dev/", "") if device else ""
+
+    if not short_dev:
+        return None
+
+    # Method 1: ceph-volume lvm list (most reliable if ceph-volume is installed)
+    if shutil.which("ceph-volume"):
+        try:
+            result = subprocess.run(
+                ["ceph-volume", "lvm", "list", "--format=json"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=30
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                try:
+                    cv_data = json.loads(result.stdout)
+                    for osd_id, volumes in cv_data.items():
+                        for vol in volumes:
+                            # Check all device paths in the volume using exact matching
+                            matched = False
+                            for key in ("lv_path", "devices", "path"):
+                                val = vol.get(key, "")
+                                if isinstance(val, list):
+                                    for v in val:
+                                        if _is_child_of_device(v.strip(), short_dev):
+                                            matched = True
+                                            break
+                                elif val and _is_child_of_device(str(val).strip(), short_dev):
+                                    matched = True
+                                if matched:
+                                    break
+                            if matched:
+                                osd_status = _get_ceph_osd_status(osd_id)
+                                # Collect the VG name(s) for Ceph LVM exemption
+                                ceph_vg = vol.get("vg_name", "")
+                                return {"osd_id": osd_id, "status": osd_status, "vg_name": ceph_vg}
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        except (subprocess.TimeoutExpired, Exception):
+            pass
+
+    # Method 2: Check /var/lib/ceph/osd/ceph-*/block symlinks
+    osd_base = "/var/lib/ceph/osd"
+    if os.path.isdir(osd_base):
+        for entry in os.listdir(osd_base):
+            osd_dir = os.path.join(osd_base, entry)
+            block_link = os.path.join(osd_dir, "block")
+            if os.path.islink(block_link):
+                target = os.path.realpath(block_link)
+                if _is_child_of_device(target, short_dev):
+                    osd_id = entry.replace("ceph-", "")
+                    osd_status = _get_ceph_osd_status(osd_id)
+                    # Resolve the VG name from the LV target so we can
+                    # exempt it in the LVM check when OSD is down
+                    ceph_vg = _resolve_vg_from_lv(target)
+                    return {"osd_id": osd_id, "status": osd_status, "vg_name": ceph_vg}
+
+    # Method 3: blkid check for ceph signatures (ceph_bluestore)
+    try:
+        devs_to_check = [f"/dev/{short_dev}"] + _get_child_devices(short_dev)
+        for check_dev in devs_to_check:
+            if not os.path.exists(check_dev):
+                continue
+            blkid_result = subprocess.run(
+                ["blkid", "-o", "value", "-s", "TYPE", check_dev],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=5
+            )
+            if "ceph" in blkid_result.stdout.lower():
+                return {"osd_id": "unknown", "status": "unknown", "vg_name": ""}
+    except (subprocess.TimeoutExpired, Exception):
+        pass
+
+    return None
+
+
+def _get_ceph_osd_status(osd_id):
+    """Query whether a Ceph OSD is currently up/in. Returns 'up', 'down', or 'unknown'."""
+    try:
+        # Try systemctl first (fastest, no ceph auth needed)
+        result = subprocess.run(
+            ["systemctl", "is-active", f"ceph-osd@{osd_id}"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=5
+        )
+        if result.stdout.strip() == "active":
+            return "up"
+        elif result.stdout.strip() in ("inactive", "dead"):
+            return "down"
+    except (subprocess.TimeoutExpired, Exception):
+        pass
+
+    # Fallback: try ceph osd status
+    if shutil.which("ceph"):
+        try:
+            result = subprocess.run(
+                ["ceph", "osd", "dump", "--format=json"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                universal_newlines=True, timeout=15
+            )
+            if result.returncode == 0:
+                osd_dump = json.loads(result.stdout)
+                for osd in osd_dump.get("osds", []):
+                    if str(osd.get("osd")) == str(osd_id):
+                        if osd.get("up") == 1:
+                            return "up"
+                        else:
+                            return "down"
+        except (subprocess.TimeoutExpired, json.JSONDecodeError, Exception):
+            pass
+
+    return "unknown"
+
+
+def check_mounted_filesystem(device_info):
+    """Check if a disk or any of its partitions are mounted.
+
+    Covers XFS, ext4, btrfs, and any other mounted filesystem.
+
+    Returns:
+        None          — nothing mounted (safe to flash)
+        dict          — mounted: {"mountpoint": <path>, "fstype": <type>, "partition": <dev>}
+    """
+    device = device_info.get("device", "")  # e.g. /dev/sda
+    short_dev = device.replace("/dev/", "") if device else ""
+
+    if not short_dev:
+        return None
+
+    try:
+        # Use findmnt to check all mounts — covers the device and all its partitions
+        result = subprocess.run(
+            ["findmnt", "-rno", "SOURCE,TARGET,FSTYPE"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=10
+        )
+        if result.returncode != 0:
+            # Fallback: read /proc/mounts directly
+            try:
+                with open("/proc/mounts", "r") as f:
+                    for line in f:
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            src, mnt, fstype = parts[0], parts[1], parts[2]
+                            if _is_child_of_device(src, short_dev):
+                                return {"mountpoint": mnt, "fstype": fstype, "partition": src}
+            except (OSError, IOError):
+                pass
+            return None
+
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) < 3:
+                continue
+            source, target, fstype = parts[0], parts[1], parts[2]
+            # Use exact device ancestry matching (avoids sda matching sdaa)
+            if _is_child_of_device(source, short_dev):
+                return {"mountpoint": target, "fstype": fstype, "partition": source}
+
+    except (subprocess.TimeoutExpired, Exception):
+        pass
+
+    return None
+
+
+def check_mdraid_membership(device_info):
+    """Check if a disk is a member of a Linux MD RAID array (mdadm).
+
+    Returns:
+        None          — not part of any md array (safe to flash)
+        dict          — is a member: {"array": <md device>, "state": <state>}
+    """
+    device = device_info.get("device", "")  # e.g. /dev/sda
+    short_dev = device.replace("/dev/", "") if device else ""
+
+    if not short_dev:
+        return None
+
+    # Method 1: Check /proc/mdstat
+    try:
+        if os.path.isfile("/proc/mdstat"):
+            with open("/proc/mdstat", "r") as f:
+                mdstat = f.read()
+
+            current_array = None
+            for line in mdstat.splitlines():
+                # Array definition line: "md0 : active raid1 sda1[0] sdb1[1]"
+                if line and not line.startswith(" ") and ":" in line:
+                    parts = line.split(":")
+                    current_array = parts[0].strip()
+                    # Check if our device appears in the member list
+                    member_part = parts[1] if len(parts) > 1 else ""
+                    # Parse member tokens like "sda1[0]" / "nvme0n1p1[0]" and match exactly
+                    # (avoids false positives like sda vs sdap1).
+                    for tok in member_part.split():
+                        if "[" not in tok:
+                            continue
+                        member_name = tok.split("[", 1)[0]
+                        if _is_child_of_device(f"/dev/{member_name}", short_dev):
+                            state = "active" if "active" in member_part else "inactive"
+                            return {"array": f"/dev/{current_array}", "state": state}
+    except (OSError, IOError):
+        pass
+
+    # Method 2: Use mdadm --examine on device and partitions
+    if shutil.which("mdadm"):
+        try:
+            devices_to_check = [f"/dev/{short_dev}"]
+            # Add partitions
+            for i in range(1, 10):
+                for fmt in [f"/dev/{short_dev}{i}", f"/dev/{short_dev}p{i}"]:
+                    if os.path.exists(fmt):
+                        devices_to_check.append(fmt)
+
+            for dev in devices_to_check:
+                result = subprocess.run(
+                    ["mdadm", "--examine", dev],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    universal_newlines=True, timeout=10
+                )
+                if result.returncode == 0 and "Array UUID" in result.stdout:
+                    # Extract the array name if possible
+                    array_name = "unknown"
+                    for line in result.stdout.splitlines():
+                        if "Name" in line and ":" in line:
+                            array_name = line.split(":", 1)[1].strip()
+                            break
+                    return {"array": array_name, "state": "active"}
+        except (subprocess.TimeoutExpired, Exception):
+            pass
+
+    return None
+
+
+def check_lvm_membership(device_info, ceph_vg_exempt=None):
+    """Check if a disk is a Linux LVM Physical Volume with active Volume Groups.
+
+    Args:
+        device_info: device dict from cache
+        ceph_vg_exempt: optional set of VG names to exempt (e.g. Ceph OSD VGs
+                        when the OSD is confirmed DOWN — avoids contradicting
+                        the "Ceph OSD DOWN = safe" determination)
+
+    Returns:
+        None          — not an LVM PV or VG is inactive (safe to flash)
+        dict          — is an active LVM PV: {"vg_name": <name>, "pv_device": <dev>}
+    """
+    device = device_info.get("device", "")  # e.g. /dev/sda
+    short_dev = device.replace("/dev/", "") if device else ""
+
+    if not short_dev:
+        return None
+
+    if not shutil.which("pvs"):
+        return None
+
+    if ceph_vg_exempt is None:
+        ceph_vg_exempt = set()
+
+    try:
+        # pvs --noheadings -o pv_name,vg_name,vg_attr
+        result = subprocess.run(
+            ["pvs", "--noheadings", "--nosuffix", "-o", "pv_name,vg_name,vg_attr"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=15
+        )
+        if result.returncode != 0:
+            return None
+
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) < 2:
+                continue
+            pv_name = parts[0]
+            vg_name = parts[1] if len(parts) >= 2 else ""
+            vg_attr = parts[2] if len(parts) >= 3 else ""
+
+            # Use exact device ancestry matching (avoids sda matching sdaa)
+            if not _is_child_of_device(pv_name, short_dev):
+                continue
+
+            if not vg_name:
+                # PV exists but no VG assigned — safe
+                continue
+
+            # Skip Ceph VGs when the OSD is confirmed down
+            if vg_name in ceph_vg_exempt:
+                continue
+
+            # Check if VG has active LVs
+            lv_active = _check_vg_has_active_lvs(vg_name)
+            if lv_active:
+                return {"vg_name": vg_name, "pv_device": pv_name}
+
+    except (subprocess.TimeoutExpired, Exception):
+        pass
+
+    return None
+
+
+def _check_vg_has_active_lvs(vg_name):
+    """Check if a Volume Group has any active (open) Logical Volumes."""
+    try:
+        result = subprocess.run(
+            ["lvs", "--noheadings", "-o", "lv_name,lv_attr", "-S", f"vg_name={vg_name}"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=10
+        )
+        if result.returncode != 0:
+            return False
+
+        for line in result.stdout.splitlines():
+            parts = line.split()
+            if len(parts) >= 2:
+                lv_attr = parts[1]
+                # LV attr: position 5 is state ('a' = active);
+                # position 6 is open state ('o' = open)
+                # e.g. "-wi-ao----" means writable, inherited, active, open
+                # We block on ANY active LV, not just open ones, as the DM mapping is still live.
+                if len(lv_attr) >= 5 and lv_attr[4] == 'a':
+                    return True
+        return False
+    except (subprocess.TimeoutExpired, Exception):
+        return False
+
+
+def check_swap_usage(device_info):
+    """Check if a disk or partition is being used as swap.
+
+    Returns:
+        None          — not used as swap (safe to flash)
+        dict          — is swap: {"swap_device": <dev>}
+    """
+    device = device_info.get("device", "")  # e.g. /dev/sda
+    short_dev = device.replace("/dev/", "") if device else ""
+
+    if not short_dev:
+        return None
+
+    try:
+        with open("/proc/swaps", "r") as f:
+            lines = f.readlines()
+
+        # Skip header line
+        for line in lines[1:]:
+            parts = line.split()
+            if not parts:
+                continue
+            swap_dev = parts[0]
+            if _is_child_of_device(swap_dev, short_dev):
+                return {"swap_device": swap_dev}
+
+    except (OSError, IOError):
+        pass
+
+    return None
+
+
 def main():
     parser = argparse.ArgumentParser(description="Flash firmware to a device")
     parser.add_argument("--cache-index", type=int, required=True, help="Index of device in cache to flash")
@@ -1237,43 +1861,7 @@ def main():
     if device_info.get("update_available") != "outdated":
         print(f"Warning: Device firmware is already current or unknown", file=sys.stderr)
 
-    # Pre-flight: RAID membership check for HDDs behind HBA controllers
-    if device_info.get("type") == "hdd" and "SeaChest" in device_info.get("flash_tool", ""):
-        raid_status = check_raid_membership(device_info)
-        if raid_status == "raid":
-            print(f"✗ REFUSED: Drive is part of a RAID virtual disk.", file=sys.stderr)
-            print(f"  Seagate strongly warns against firmware updates on RAID-member drives.", file=sys.stderr)
-            print(f"  Remove the drive from the RAID array first, or use your RAID controller's tools.", file=sys.stderr)
-            log_flash_event(device_info, False, "REFUSED: drive is RAID member")
-            return 4
-        elif raid_status == "rebuilding":
-            print(f"✗ REFUSED: Drive is currently rebuilding in a RAID array.", file=sys.stderr)
-            log_flash_event(device_info, False, "REFUSED: drive is rebuilding in RAID")
-            return 4
-        elif raid_status == "jbod":
-            pass  # Safe to flash
-        # "unknown" = couldn't determine, proceed with caution
-
-    # Pre-flight: upgrade_from compatibility check (Seagate chain-flash protection)
-    upgrade_from = device_info.get("upgrade_from", "")
-    if upgrade_from:
-        current_fw = device_info.get("current_firmware", "")
-        compatible_prefixes = [p.strip() for p in upgrade_from.split(",") if p.strip()]
-        if current_fw and not any(current_fw.startswith(prefix) for prefix in compatible_prefixes):
-            print(f"✗ REFUSED: Current firmware '{current_fw}' is not compatible with this upgrade.", file=sys.stderr)
-            print(f"  This firmware can only be applied to drives running: {', '.join(compatible_prefixes)}", file=sys.stderr)
-            print(f"  Your drive may have an OEM firmware variant. Contact your vendor.", file=sys.stderr)
-            log_flash_event(device_info, False, f"REFUSED: current FW '{current_fw}' not in upgrade_from list")
-            return 5
-
-    if args.dry_run:
-        print(f"Would flash: {device_info.get('model', '')} ({device_info.get('device', '')})")
-        print(f"  Current FW: {device_info.get('current_firmware', '')}")
-        print(f"  Target FW:  {device_info.get('latest_firmware', '')}")
-        print(f"  Tool: {device_info.get('flash_tool', '')}")
-        print(f"  File: {device_info.get('firmware_file', '')}")
-        return 0
-
+    # ─── Preflight mode: output JSON with warnings/blockers, do NOT exit early ───
     if args.preflight:
         # Output JSON describing what will happen
         preflight_info = {
@@ -1286,7 +1874,146 @@ def main():
             "firmware_file": device_info.get("firmware_file", ""),
             "downloads": [],
             "actions": [],
+            "warnings": [],
+            "blocked": False,
+            "block_reason": "",
         }
+
+        # Storage membership checks for HDDs
+        if device_info.get("type") == "hdd":
+            # RAID check
+            if "SeaChest" in device_info.get("flash_tool", ""):
+                raid_status = check_raid_membership(device_info)
+                if raid_status == "raid":
+                    preflight_info["blocked"] = True
+                    preflight_info["block_reason"] = "Drive is part of a RAID virtual disk"
+                    preflight_info["warnings"].append({
+                        "severity": "error",
+                        "message": "This drive is a member of a RAID virtual disk.",
+                        "action": "Remove the drive from the RAID array first, or use your RAID controller's tools.",
+                    })
+                elif raid_status == "rebuilding":
+                    preflight_info["blocked"] = True
+                    preflight_info["block_reason"] = "Drive is currently rebuilding in a RAID array"
+                    preflight_info["warnings"].append({
+                        "severity": "error",
+                        "message": "This drive is currently rebuilding in a RAID array.",
+                        "action": "Wait for the rebuild to complete before attempting firmware updates.",
+                    })
+
+            # ZFS zpool check
+            zpool_info = check_zpool_membership(device_info)
+            if zpool_info:
+                pool_name = zpool_info.get("pool", "unknown")
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Drive is a member of ZFS pool '{pool_name}'"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"This drive is a member of ZFS pool '{pool_name}'.",
+                    "action": f"Export the pool before flashing: zpool export {pool_name}" if pool_name not in ("(unknown pool)", "unknown") else "Export the pool before flashing (pool name unknown). Install ZFS tools and run: zpool status",
+                })
+
+            # Ceph OSD check
+            ceph_info = check_ceph_osd_membership(device_info)
+            if ceph_info:
+                osd_id = ceph_info.get("osd_id", "unknown")
+                osd_status = ceph_info.get("status", "unknown")
+                if osd_status == "up":
+                    preflight_info["blocked"] = True
+                    preflight_info["block_reason"] = f"Drive is backing Ceph OSD.{osd_id} (currently UP)"
+                    preflight_info["warnings"].append({
+                        "severity": "error",
+                        "message": f"This drive is backing Ceph OSD.{osd_id} which is currently UP.",
+                        "action": f"Take down the OSD first: ceph osd out {osd_id} && systemctl stop ceph-osd@{osd_id}",
+                    })
+                elif osd_status == "unknown":
+                    preflight_info["blocked"] = True
+                    preflight_info["block_reason"] = f"Drive appears to be a Ceph OSD (osd.{osd_id}) — status unknown"
+                    preflight_info["warnings"].append({
+                        "severity": "error",
+                        "message": f"This drive appears to be a Ceph OSD (osd.{osd_id}) but its status cannot be determined.",
+                        "action": f"Ensure the OSD is stopped: systemctl stop ceph-osd@{osd_id}",
+                    })
+                else:
+                    # OSD is down — safe but note it
+                    preflight_info["warnings"].append({
+                        "severity": "info",
+                        "message": f"Drive is Ceph OSD.{osd_id} (currently DOWN — safe to flash).",
+                        "action": "",
+                    })
+
+            # Mounted filesystem check (XFS, ext4, btrfs, etc.)
+            mount_info = check_mounted_filesystem(device_info)
+            if mount_info:
+                mnt = mount_info.get("mountpoint", "?")
+                fstype = mount_info.get("fstype", "?")
+                partition = mount_info.get("partition", "?")
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Drive has a mounted {fstype} filesystem at {mnt}"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"Partition {partition} is mounted at {mnt} ({fstype}).",
+                    "action": f"Unmount before flashing: umount {mnt}",
+                })
+
+            # Linux MD RAID check (mdadm)
+            md_info = check_mdraid_membership(device_info)
+            if md_info:
+                array = md_info.get("array", "unknown")
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Drive is a member of MD RAID array {array}"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"This drive is a member of Linux MD RAID array {array}.",
+                    "action": f"Stop the array or fail the drive out: mdadm {array} --fail /dev/<partition> --remove /dev/<partition>",
+                })
+
+            # LVM Physical Volume check
+            # If Ceph OSD is DOWN, exempt its VG from blocking (the OSD service
+            # is stopped so the LV is not actively in use — avoid contradicting
+            # the "Ceph OSD DOWN = safe" determination)
+            ceph_vg_exempt = set()
+            if ceph_info and ceph_info.get("status") == "down":
+                ceph_vg = ceph_info.get("vg_name", "")
+                if ceph_vg:
+                    ceph_vg_exempt.add(ceph_vg)
+            lvm_info = check_lvm_membership(device_info, ceph_vg_exempt=ceph_vg_exempt)
+            if lvm_info:
+                vg_name = lvm_info.get("vg_name", "unknown")
+                pv_dev = lvm_info.get("pv_device", "?")
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Drive is an LVM PV in active Volume Group '{vg_name}'"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"This drive ({pv_dev}) is an LVM Physical Volume in active VG '{vg_name}'.",
+                    "action": f"Deactivate the VG first: vgchange -an {vg_name}",
+                })
+
+            # Swap check
+            swap_info = check_swap_usage(device_info)
+            if swap_info:
+                swap_dev = swap_info.get("swap_device", "?")
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Drive is in use as swap ({swap_dev})"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"Partition {swap_dev} is currently in use as swap.",
+                    "action": f"Disable swap before flashing: swapoff {swap_dev}",
+                })
+
+        # upgrade_from compatibility check
+        upgrade_from = device_info.get("upgrade_from", "")
+        if upgrade_from:
+            current_fw = device_info.get("current_firmware", "")
+            compatible_prefixes = [p.strip() for p in upgrade_from.split(",") if p.strip()]
+            if current_fw and not any(current_fw.startswith(prefix) for prefix in compatible_prefixes):
+                preflight_info["blocked"] = True
+                preflight_info["block_reason"] = f"Current firmware '{current_fw}' is not compatible with this upgrade (expected: {', '.join(compatible_prefixes)})"
+                preflight_info["warnings"].append({
+                    "severity": "error",
+                    "message": f"Firmware '{current_fw}' is not in the upgrade_from list.",
+                    "action": "This drive may be an OEM variant. Contact Seagate for compatible firmware.",
+                })
 
         flash_tool = device_info.get("flash_tool", "")
         firmware_file = device_info.get("firmware_file", "")
@@ -1373,6 +2100,111 @@ def main():
 
         print(json.dumps(preflight_info))
         return 0
+
+    # ─── Dry-run mode ───
+    if args.dry_run:
+        print(f"Would flash: {device_info.get('model', '')} ({device_info.get('device', '')})")
+        print(f"  Current FW: {device_info.get('current_firmware', '')}")
+        print(f"  Target FW:  {device_info.get('latest_firmware', '')}")
+        print(f"  Tool: {device_info.get('flash_tool', '')}")
+        print(f"  File: {device_info.get('firmware_file', '')}")
+        return 0
+
+    # ─── Actual flash: enforce storage membership guards ───
+    if device_info.get("type") == "hdd":
+        # RAID check
+        if "SeaChest" in device_info.get("flash_tool", ""):
+            raid_status = check_raid_membership(device_info)
+            if raid_status == "raid":
+                print(f"✗ REFUSED: Drive is part of a RAID virtual disk.", file=sys.stderr)
+                print(f"  Remove the drive from the RAID array first.", file=sys.stderr)
+                log_flash_event(device_info, False, "REFUSED: drive is RAID member")
+                return 4
+            elif raid_status == "rebuilding":
+                print(f"✗ REFUSED: Drive is currently rebuilding in a RAID array.", file=sys.stderr)
+                log_flash_event(device_info, False, "REFUSED: drive is rebuilding in RAID")
+                return 4
+
+        # ZFS zpool check
+        zpool_info = check_zpool_membership(device_info)
+        if zpool_info:
+            pool_name = zpool_info.get("pool", "unknown")
+            print(f"✗ REFUSED: Drive is a member of ZFS pool '{pool_name}'.", file=sys.stderr)
+            if pool_name in ("unknown", "(unknown pool)"):
+                print(f"  ZFS tools are not available to identify the pool name. Install ZFS tools and run: zpool status", file=sys.stderr)
+            else:
+                print(f"  Please export the pool first:  zpool export {pool_name}", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: drive is member of zpool '{pool_name}'")
+            return 4
+
+        # Ceph OSD check
+        ceph_info = check_ceph_osd_membership(device_info)
+        if ceph_info:
+            osd_id = ceph_info.get("osd_id", "unknown")
+            osd_status = ceph_info.get("status", "unknown")
+            if osd_status != "down":
+                print(f"✗ REFUSED: Drive is backing Ceph OSD.{osd_id} ({osd_status}).", file=sys.stderr)
+                print(f"  Take down the OSD: ceph osd out {osd_id} && systemctl stop ceph-osd@{osd_id}", file=sys.stderr)
+                log_flash_event(device_info, False, f"REFUSED: drive is Ceph OSD.{osd_id} ({osd_status})")
+                return 4
+            else:
+                print(f"  ℹ Drive is Ceph OSD.{osd_id} (DOWN) — proceeding with flash.", file=sys.stderr)
+
+        # Mounted filesystem check (XFS, ext4, btrfs, etc.)
+        mount_info = check_mounted_filesystem(device_info)
+        if mount_info:
+            mnt = mount_info.get("mountpoint", "?")
+            fstype = mount_info.get("fstype", "?")
+            partition = mount_info.get("partition", "?")
+            print(f"✗ REFUSED: {partition} is mounted at {mnt} ({fstype}).", file=sys.stderr)
+            print(f"  Unmount before flashing: umount {mnt}", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: {partition} mounted at {mnt} ({fstype})")
+            return 4
+
+        # Linux MD RAID check (mdadm)
+        md_info = check_mdraid_membership(device_info)
+        if md_info:
+            array = md_info.get("array", "unknown")
+            print(f"✗ REFUSED: Drive is a member of MD RAID array {array}.", file=sys.stderr)
+            print(f"  Stop the array or fail the drive out first.", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: drive is member of MD array {array}")
+            return 4
+
+        # LVM Physical Volume check
+        # If Ceph OSD is DOWN, exempt its VG from blocking
+        ceph_vg_exempt = set()
+        if ceph_info and ceph_info.get("status") == "down":
+            ceph_vg = ceph_info.get("vg_name", "")
+            if ceph_vg:
+                ceph_vg_exempt.add(ceph_vg)
+        lvm_info = check_lvm_membership(device_info, ceph_vg_exempt=ceph_vg_exempt)
+        if lvm_info:
+            vg_name = lvm_info.get("vg_name", "unknown")
+            pv_dev = lvm_info.get("pv_device", "?")
+            print(f"✗ REFUSED: {pv_dev} is an LVM PV in active VG '{vg_name}'.", file=sys.stderr)
+            print(f"  Deactivate the VG first: vgchange -an {vg_name}", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: drive is LVM PV in VG '{vg_name}'")
+            return 4
+
+        # Swap check
+        swap_info = check_swap_usage(device_info)
+        if swap_info:
+            swap_dev = swap_info.get("swap_device", "?")
+            print(f"✗ REFUSED: {swap_dev} is in use as swap.", file=sys.stderr)
+            print(f"  Disable swap first: swapoff {swap_dev}", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: {swap_dev} is swap")
+            return 4
+
+    # upgrade_from compatibility check (Seagate chain-flash protection)
+    upgrade_from = device_info.get("upgrade_from", "")
+    if upgrade_from:
+        current_fw = device_info.get("current_firmware", "")
+        compatible_prefixes = [p.strip() for p in upgrade_from.split(",") if p.strip()]
+        if current_fw and not any(current_fw.startswith(prefix) for prefix in compatible_prefixes):
+            print(f"✗ REFUSED: Current firmware '{current_fw}' is not compatible with this upgrade.", file=sys.stderr)
+            print(f"  Compatible: {', '.join(compatible_prefixes)}", file=sys.stderr)
+            log_flash_event(device_info, False, f"REFUSED: current FW '{current_fw}' not in upgrade_from list")
+            return 5
 
     print(f"Flashing: {device_info.get('model', '')} ({device_info.get('device', '')})")
     print(f"  Current: {device_info.get('current_firmware', '')} -> Target: {device_info.get('latest_firmware', '')}")
