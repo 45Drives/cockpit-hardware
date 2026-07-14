@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.8.4-2focal) focal; urgency=medium
+
+  * Fix: show backup warning only for HDD firmware updates
+
+ -- Rachit Hans <rhans@45drives.com>  Tue, 14 Jul 2026 08:29:05 -0300
+
 cockpit-45drives-hardware (2.8.4-1focal) focal; urgency=medium
 
   * Add support for updating Seagate HDD drives firmware

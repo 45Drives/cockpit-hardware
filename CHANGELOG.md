@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.4-1
+## cockpit-45drives-hardware 2.8.4-2
 
-* Add support for updating Seagate HDD drives firmware
+* Fix: show backup warning only for HDD firmware updates
