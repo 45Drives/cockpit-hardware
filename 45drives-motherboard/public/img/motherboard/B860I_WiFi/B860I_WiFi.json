@@ -1,0 +1,68 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 530,
+        "y0": 334,
+        "width": 250,
+        "height": 342,
+        "diam": 0,
+        "filename": "CPUSocket.png"
+    },
+    {
+        "type": "PCIE1",
+        "id": "11",
+        "shape": "rect",
+        "x0": 340,
+        "y0": 1025,
+        "width": 550,
+        "height": 20,
+        "diam": 24,
+        "filename": "PCI_SLOT_11.png"
+    },
+  {
+        "type": "M2_1",
+        "id": "21",
+        "shape": "rect",
+        "x0": 400,
+        "y0": 865,
+        "width": 450,
+        "height": 60,
+        "diam": 24,
+        "filename": "PCI_SLOT_21.png"
+    },
+    {
+        "type": "M2_WiFi",
+        "id": "31",
+        "shape": "rect",
+        "x0": 64,
+        "y0": 672,
+        "width": 150,
+        "height": 82,
+        "diam": 24,
+        "filename": "PCI_SLOT_31.png"
+    },  
+    {
+        "type": "Controller0-ChannelA-DIMM0",
+        "id": 1,
+        "shape": "rect",
+        "x0": 944,
+        "y0": 75,
+        "width": 15,
+        "height": 811,
+        "diam": 20,
+        "filename": "Controller0-ChannelA-DIMM0.png"
+    },
+    {
+        "type": "Controller0-ChannelB-DIMM0",
+        "id": 2,
+        "shape": "rect",
+        "x0": 1003,
+        "y0": 75,
+        "width": 15,
+        "height": 811,
+        "diam": 20,
+        "filename": "Controller0-ChannelB-DIMM0.png"
+    }
+]

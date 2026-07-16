@@ -20,7 +20,7 @@ import json
 
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
-	"Manufacturer":  ["Supermicro","ASRockRack","Giga Computing","Gigabyte","ASUSTeK COMPUTER INC."],
+	"Manufacturer":  ["Supermicro","ASRockRack","ASRock","Giga Computing","Gigabyte","ASUSTeK COMPUTER INC."],
 	"Product Name":  [
 		"X11DPL-i",
 		"X11SPL-F",
@@ -48,14 +48,15 @@ g_dmi_mobo_fields = {
 		"ProArt X870E-CREATOR WIFI",
   		"MW34-SP0-00",
 		"GENOAD8X-2T/BCM",
-		"GENOAD8UD-2T/X550"
+		"GENOAD8UD-2T/X550",
+		"B860I WiFi"
 	],
 	"Serial Number": None
 }
 
 #supported CPU types
 g_dmi_cpu_fields = {
-	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4","SP6"],
+	"Socket Designation":  ["CPU","CPU1","CPU2","P0","P1","CPU0","AM5","AM4","SP6","CPUSocket"],
 	"Version":  [
 		"Intel(R) Xeon(R) Silver 4110 CPU @ 2.10GHz",
 		"AMD EPYC 7282 16-Core Processor",
@@ -84,7 +85,8 @@ g_dmi_cpu_fields = {
 		"Intel(R) Xeon(R) E E-2434",
 		"Intel(R) Xeon(R) E E-2478",
   		"Intel(R) Core(TM) i7-14700",
-		"12th Gen Intel(R) Core(TM) i7-12700K"
+		"12th Gen Intel(R) Core(TM) i7-12700K",
+		"Intel(R) Core(TM) Ultra 5 225"
 	],
 	"Current Speed": None,
 	"Max Speed": None,
@@ -308,6 +310,11 @@ def main():
 		print("{\"Motherboard Info\":[",mobo,",")
 		print(cpu,",")
 		print(sensor_readings,"]}")
+	elif mobo and cpu:
+		empty_sensor = "{\"Sensor Readings\":[{}]}"
+		print("{\"Motherboard Info\":[",mobo,",")
+		print(cpu,",")
+		print(empty_sensor,"]}")
 
 if __name__ == "__main__":
     main()
