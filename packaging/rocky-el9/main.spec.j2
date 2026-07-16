@@ -67,6 +67,10 @@ fi
 systemctl daemon-reload
 
 %changelog
+* Thu Jul 16 2026 Rachit Hans <rhans@45drives.com> 2.8.4-3
+- fix: use niccli --pci for direct adapter targeting, fixes BCM57412 flash failures
+- fix: prioritize already-up-to-date check before failure markers to prevent false
+  flash failures
 * Tue Jul 14 2026 Rachit Hans <rhans@45drives.com> 2.8.4-2
 - Fix: show backup warning only for HDD firmware updates
 * Tue Jul 14 2026 Rachit Hans <rhans@45drives.com> 2.8.4-1
