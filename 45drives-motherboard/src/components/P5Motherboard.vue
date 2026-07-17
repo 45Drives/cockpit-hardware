@@ -275,7 +275,7 @@ export default {
 			};
 
 			class peripheral {
-				constructor(pType, x0, y0, width, height, fill, img_idx, wScale = 1.0) {
+				constructor(pType, x0, y0, width, height, fill, img_idx, wScale = 1.0, rotation = 0) {
 					this.pType = pType;
 					this.x0 = x0;
 					this.y0 = y0;
@@ -284,11 +284,21 @@ export default {
 					this.fill = fill;
 					this.img_idx = img_idx;
 					this.wScale = wScale;
+					this.rotation = rotation;
 				}
 				show() {
 					m.push();
 					if (this.img_idx != -1) {
-						if (this.pType == "RAM") {
+						if (this.rotation !== 0) {
+							let aspectRatio =
+								peripheralImages[this.img_idx].width /
+								peripheralImages[this.img_idx].height;
+							let newWidth = peripheralImages[this.img_idx].width * this.wScale;
+							let newHeight = newWidth / aspectRatio;
+							m.translate(this.x0, this.y0);
+							m.rotate(this.rotation);
+							m.image(peripheralImages[this.img_idx], 0, 0, newWidth, newHeight);
+						} else if (this.pType == "RAM") {
 							m.image(
 								peripheralImages[this.img_idx],
 								this.x0,
@@ -599,6 +609,14 @@ export default {
 										components[c]["height"]
 									);
 									MASK_ARR[c] = newMask;
+
+									// Detect horizontal PCI slots (e.g., B550I Mini-ITX boards)
+									let isHorizontalSlot = components[c]["width"] > components[c]["height"] * 3;
+									let origSlotX0 = components[c]["x0"];
+									let origSlotY0 = components[c]["y0"];
+									let origSlotWidth = components[c]["width"];
+									let origSlotHeight = components[c]["height"];
+									let peripheralCountBefore = peripherals.length;
 
 									// Only add the PCI card if the slot is in use
 									if (pci_info["PCI Info"][i]["Current Usage"] === "In Use") {
@@ -1212,35 +1230,63 @@ export default {
 												components[c]["height"] =
 													components[c]["width"] / (100.0 / 890.0);
 											}
-} else if (components[c]["type"].search("M2") == -1) {
-													// Generic card fallback if no Card Type/Model properties (skip M2 slots)
-													peripherals.push(
-														new peripheral(
-															"PCI",
-															components[c]["x0"] -
-															components[c]["width"],
-															0,
-															components[c]["width"],
-															components[c]["height"],
-															"#FF800080",
-															peripheralImages.length,
-															components[c]["width"] * pciScale
-														)
-													);
-													peripheralImages.push(
-														m.loadImage("img/motherboard/generic_pci_card.png")
-													);
-													components[c]["x0"] =
-														components[c]["x0"] -
-														components[c]["width"] * WIDTHOFFSET;
-													components[c]["y0"] = 0;
-													components[c]["width"] =
-														100.0 * components[c]["width"] * pciScale;
-													components[c]["height"] =
-														components[c]["width"] / (100.0 / 890.0);
+										} else if (components[c]["type"].search("M2") == -1) {
+											// Generic card fallback if no Card Type/Model properties (skip M2 slots)
+											peripherals.push(
+												new peripheral(
+													"PCI",
+													components[c]["x0"] -
+													components[c]["width"],
+													0,
+													components[c]["width"],
+													components[c]["height"],
+													"#FF800080",
+													peripheralImages.length,
+													components[c]["width"] * pciScale
+												)
+											);
+											peripheralImages.push(
+												m.loadImage("img/motherboard/generic_pci_card.png")
+											);
+											components[c]["x0"] =
+												components[c]["x0"] -
+												components[c]["width"] * WIDTHOFFSET;
+											components[c]["y0"] = 0;
+											components[c]["width"] =
+												100.0 * components[c]["width"] * pciScale;
+											components[c]["height"] =
+												components[c]["width"] / (100.0 / 890.0);
 										}
 
 
+									}
+
+									// Fix positioning for horizontal PCI slots
+									if (isHorizontalSlot && peripherals.length > peripheralCountBefore) {
+										let p = peripherals[peripherals.length - 1];
+										let scaleFix = origSlotHeight / origSlotWidth;
+
+										// Recalculate scale using slot height (narrow dimension)
+										p.wScale = origSlotHeight * pciScale;
+										p.rotation = -m.HALF_PI;
+
+										// Compute corrected card dimensions
+										let cardW = components[c]["width"] * scaleFix;
+										let cardH = components[c]["height"] * scaleFix;
+
+										// Position: bracket extends from left edge (x=0), PCB sits in slot
+										// Mirrors vertical slot behavior where cards extend from y=0
+										p.x0 = 25;
+										// Center PCB (not bracket) on the slot — offset accounts for bracket portion
+										let bracketOffset = origSlotHeight * 0.65;
+										p.y0 = origSlotY0 + origSlotHeight / 2 + cardW / 2 + bracketOffset;
+
+										// Update component bounding box for mouse/popup detection
+										// After -90° rotation: visual bounds are (x0, y0-cardW, cardH, cardW)
+										components[c]["x0"] = 25;
+										components[c]["y0"] = origSlotY0 + origSlotHeight / 2 - cardW / 2 + bracketOffset;
+										components[c]["width"] = cardH;
+										components[c]["height"] = cardW;
 									}
 
 								}
