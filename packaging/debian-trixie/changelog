@@ -1,3 +1,23 @@
+cockpit-45drives-hardware (2.8.4-3trixie) trixie; urgency=medium
+
+  * fix: use niccli --pci for direct adapter targeting, fixes BCM57412 flash failures
+  * fix: prioritize already-up-to-date check before failure markers to prevent false
+    flash failures
+
+ -- Rachit Hans <rhans@45drives.com>  Thu, 16 Jul 2026 14:04:54 -0300
+
+cockpit-45drives-hardware (2.8.4-2trixie) trixie; urgency=medium
+
+  * Fix: show backup warning only for HDD firmware updates
+
+ -- Rachit Hans <rhans@45drives.com>  Tue, 14 Jul 2026 08:29:05 -0300
+
+cockpit-45drives-hardware (2.8.4-1trixie) trixie; urgency=medium
+
+  * Add support for updating Seagate HDD drives firmware
+
+ -- Rachit Hans <rhans@45drives.com>  Tue, 14 Jul 2026 06:43:07 -0300
+
 cockpit-45drives-hardware (2.8.1-1trixie) trixie; urgency=medium
 
   * Feature: 45drive system to allow HBA and NIC cards firmware update

@@ -566,48 +566,13 @@ def flash_niccli(device_info, firmware_path):
         else:
             return False, "niccli integrity check failed and re-download from repo also failed"
 
-    # Get adapter list from niccli
-    print(f"Discovering Broadcom adapter ID for PCI {bus_info}...")
-    try:
-        result = subprocess.run(
-            [niccli_bin, "--list"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True, timeout=30
-        )
-        if result.returncode != 0:
-            # niccli returns non-zero when no devices found
-            if "not found" in result.stdout.lower() or "not found" in result.stderr.lower():
-                return False, "No Broadcom NICs found by niccli"
-            return False, f"niccli --list failed: {result.stdout}{result.stderr}"
+    # Flash using niccli --pci (directly targets by PCI BDF address)
+    # This is more reliable than --list parsing which can fail when niccli
+    # doesn't enumerate all adapters or output format varies between versions.
+    print(f"Flashing Broadcom NIC at PCI {bus_info}...")
 
-        nic_list = result.stdout
-        print(f"niccli --list output:\n{nic_list}")
-    except Exception as e:
-        return False, f"Failed to run niccli --list: {e}"
-
-    # Find adapter ID matching our PCI bus address
-    # niccli --list output format: <id> <model> <mac> <fw_ver> <pci_addr> ...
-    adapter_id = None
-    # Strip domain prefix for matching (0000:42:00.0 → 42:00.0)
-    short_bus = bus_info
-    if short_bus.startswith("0000:"):
-        short_bus = short_bus[5:]
-    # Also match without function for multi-port (42:00.0 → 42:00)
-    bus_slot = short_bus.rsplit(".", 1)[0] if "." in short_bus else short_bus
-
-    for line in nic_list.splitlines():
-        # Match by PCI address in the line
-        if short_bus in line or bus_info in line or bus_slot in line:
-            # Adapter ID is the first token, strip trailing ')' (e.g. "1)" → "1")
-            parts = line.split()
-            if parts:
-                adapter_id = parts[0].strip().rstrip(")")
-                break
-
-    if not adapter_id:
-        return False, f"Could not find niccli adapter ID for PCI bus {bus_info}"
-
-    # Flash using niccli
-    cmd = f"{niccli_bin} -i {adapter_id} fw --update -f {shlex.quote(firmware_path)} --yes"
+    # Try --pci first (modern niccli), fall back to -i with --list lookup
+    cmd = f"{niccli_bin} --pci {bus_info} fw --update -f {shlex.quote(firmware_path)} --yes"
     print(f"Running: {cmd}", flush=True)
 
     try:
@@ -624,6 +589,12 @@ def flash_niccli(device_info, firmware_path):
         output = '\n'.join(output_lines)
 
         lower_output = output.lower()
+
+        # Check "already up-to-date" FIRST — niccli emits "Command fw failed" and
+        # HWRM IPC errors even when it simply skipped because firmware is current.
+        if "already up-to-date" in lower_output or "skipping update" in lower_output:
+            return True, "Firmware already up-to-date. Reboot to activate."
+
         explicit_failure_markers = [
             "command fw failed",
             "internal hwrm command ipc failed",
@@ -631,12 +602,10 @@ def flash_niccli(device_info, firmware_path):
         ]
         has_explicit_failure = any(marker in lower_output for marker in explicit_failure_markers)
 
-        # Some niccli outputs include "already up-to-date" and then emit an explicit
-        # fw failure block. Treat explicit failure markers as authoritative.
         if has_explicit_failure:
             return False, f"niccli reported firmware update failure: {output}"
 
-        if "already up-to-date" in output.lower():
+        if "already up-to-date" in lower_output:
             return True, "Firmware already up-to-date. Reboot to activate."
         elif "update is in progress" in output.lower() or \
              "updated to package version" in output.lower() or \

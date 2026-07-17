@@ -204,7 +204,7 @@
         <div v-if="confirmDevice.type === 'hdd'" class="rounded-md bg-green-50 border border-green-200 p-3 mb-3">
           <p class="text-xs text-green-800"><span class="font-semibold">✅ Pre-flight checks passed.</span></p>
         </div>
-        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-3 mb-3">
+        <div v-if="confirmDevice.type === 'hdd'" class="rounded-md bg-yellow-50 border border-yellow-200 p-3 mb-3">
           <p class="text-xs text-yellow-800">⚠️ It is recommended to back up your data before proceeding to protect against any uncertainty.</p>
         </div>
         <div>
