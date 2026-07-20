@@ -1,3 +1,10 @@
+cockpit-45drives-hardware (2.8.5-1focal) focal; urgency=medium
+
+  * Updates motherboard view to handle horizontally-orientated PCI slots, adds missing
+    gpgv/gnupg2 deps (for proxinator minimal installations)
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 20 Jul 2026 07:04:10 -0300
+
 cockpit-45drives-hardware (2.8.4-3focal) focal; urgency=medium
 
   * fix: use niccli --pci for direct adapter targeting, fixes BCM57412 flash failures
