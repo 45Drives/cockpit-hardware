@@ -103,6 +103,7 @@ import { RefreshIcon as RefreshIconOutline } from "@heroicons/vue/outline";
 import { ref } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
+import { pushNotification, Notification } from "@45drives/houston-common-ui";
 
 export default {
   components: {
@@ -209,6 +210,34 @@ export default {
           new Command(["/usr/share/cockpit/45drives-system/scripts/server_info"], { superuser: "require" })
         ));
         let sysInfo = JSON.parse(proc.getStdout());
+        if (sysInfo["error_msg"]) {
+          const missingNotification = new Notification(
+            "Server Info Missing",
+            sysInfo["error_msg"],
+            "error",
+            "never",
+            "server-info-missing"
+          ).addAction("Fix now", async () => {
+            try {
+              await unwrap(server.execute(
+                new Command(["/opt/45drives/tools/server_identifier"], { superuser: "require" })
+              ));
+              missingNotification.remove();
+              await getSystemInfo();
+            } catch (error) {
+              pushNotification(
+                new Notification(
+                  "Fix Failed",
+                  `server_identifier failed: ${error.message || error}`,
+                  "error",
+                  10_000
+                )
+              );
+            }
+          }, false);
+          pushNotification(missingNotification);
+          return;
+        }
         sysModel.value = sysInfo["Model"];
         sysChassis.value = sysInfo["Chassis Size"];
         sysSerial.value = sysInfo["Serial"];
@@ -220,47 +249,11 @@ export default {
         serverImgPath.value = getSystemImgPath(sysInfo["Model"]);
       } catch (err) {
         console.log(err);
-        try {
-          console.log(err.stdout);
-          let errorJson = JSON.parse(err.stdout);
-          fatalErrorMsg.value.length = 0;
-          fatalErrorMsg.value.push(errorJson["error_msg"]);
-          fatalErrorMsg.value.push("Click \"Fix\" to run /opt/45drives/tools/server_identifier");
-          fatalError.value = true;
-          if (
-            errorJson["error_msg"] ==
-            "/etc/45drives/server_info/server_info.json does not exist"
-          ) {
-            showFixButton.value = true;
-            fixButtonHandler.value = async () => {
-              try {
-                const fixState = await unwrap(server.execute(
-                  new Command(["/opt/45drives/tools/server_identifier"], { superuser: "require" })
-                ));
-                fatalError.value = false;
-                fatalErrorMsg.value.length = 0;
-                showFixButton.value = false;
-                getSystemInfo();
-              } catch (error) {
-                console.log(error);
-                fatalError.value = true;
-                fatalErrorMsg.value.length = 0;
-                if (error.message) fatalErrorMsg.value.push(error.message);
-                fatalErrorMsg.value.push("An error occurred when running /opt/45drives/tools/server_identifier");
-                showFixButton.value = false;
-              }
-            };
-          }else{
-
-          }
-        } catch (error) {
-          console.log(error);
-          fatalError.value = true;
-          fatalErrorMsg.value.length = 0;
-          if (error.message) fatalErrorMsg.value.push(error.message);
-          fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/server_info");
-          showFixButton.value = false;
-        }
+        fatalError.value = true;
+        fatalErrorMsg.value.length = 0;
+        if (err.message) fatalErrorMsg.value.push(err.message);
+        fatalErrorMsg.value.push("An error occurred when trying to run /usr/share/cockpit/45drives-system/scripts/server_info");
+        showFixButton.value = false;
       }
     };
 
