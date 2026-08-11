@@ -41,7 +41,8 @@ export default {
 				"GENOAD8X-2T/BCM": "GENOAD8X-2TBCM",
 				"GENOAD8UD-2T/X550": "GENOAD8UD-2TX550",
 				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI",
-				"MS73-HB2-000": "MS73-HB0-000"
+				"MS73-HB2-000": "MS73-HB0-000",
+				"B860I WiFi": "B860I_WiFi"
 			};
 
 			const raw_mobo_name = String(
