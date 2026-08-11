@@ -156,6 +156,24 @@ export default {
             case "NVME-F8X3":
               pageLayout.value = "B";
               break;
+            case "NVME-F8X1-U2":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X2-U2":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X3-U2":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X1-EDSFF":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X2-EDSFF":
+              pageLayout.value = "B";
+              break;
+            case "NVME-F8X3-EDSFF":
+              pageLayout.value = "B";
+              break;  
             case "E16":
               pageLayout.value = "A";
               break;
@@ -251,6 +269,24 @@ export default {
               pageLayout.value = "BZ";
               break;
             case "NVME-F8X3":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X1-U2":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X2-U2":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X3-U2":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X1-EDSFF":
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X2-EDSFF":   
+              pageLayout.value = "BZ";
+              break;
+            case "NVME-F8X3-EDSFF":
               pageLayout.value = "BZ";
               break;
             case "E16":
