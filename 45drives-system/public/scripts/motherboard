@@ -47,7 +47,8 @@ g_dmi_mobo_fields = {
 		"ProArt X870E-CREATOR WIFI",
   		"MW34-SP0-00",
 		"GENOAD8X-2T/BCM",
-		"GENOAD8UD-2T/X550"
+		"GENOAD8UD-2T/X550",
+		"TURIND8X-2T/500W"
 	],
 	"Serial Number": None
 }
