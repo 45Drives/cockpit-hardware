@@ -387,12 +387,34 @@ def fix_slot_type(slot, motherboard_model):
             return
 
     slot_type = str(slot.get("Type", "")).strip()
-    if slot_type not in ("", "-", "Unknown", "<OUT OF SPEC>"):
+    if slot_type not in ("", "-", "Unknown", "<OUT OF SPEC>") and "<OUT OF SPEC>" not in slot_type:
         return
 
-    inferred = infer_pcie_type_from_sysfs(slot.get("Bus Address", ""))
+    bus_address = slot.get("Bus Address", "")
+    inferred = infer_pcie_type_from_sysfs(bus_address)
+
+    # If direct sysfs read failed, try reading the first downstream device
+    if not inferred and bus_address:
+        dev_path = f"/sys/bus/pci/devices/{bus_address}"
+        if os.path.isdir(dev_path):
+            for entry in sorted(os.listdir(dev_path)):
+                if _PCI_ADDR_RE.match(entry):
+                    inferred = infer_pcie_type_from_sysfs(entry)
+                    if inferred:
+                        break
+
+    # Last resort: strip <OUT OF SPEC> and keep just the width
+    if not inferred and "<OUT OF SPEC>" in slot_type:
+        width_match = re.search(r"x(\d+)", slot_type)
+        if width_match:
+            inferred = f"PCI Express x{width_match.group(1)}"
+
     if inferred:
-        slot["Type"] = inferred
+        # Preserve M.2 Slot wrapper for M2_ designations
+        if designation.startswith("M2_"):
+            slot["Type"] = f"M.2 Slot ({inferred})"
+        else:
+            slot["Type"] = inferred
         slot["PCI Type"] = inferred
 
 
@@ -662,6 +684,16 @@ def process_pci_slots_and_devices(
     motherboard_model = motherboard_info["Motherboard"][0].get("Product Name", "")
     mw34_claimed = set()
 
+    # For GENOA boards: collect all dmidecode bus addresses to avoid
+    # sibling scanning from claiming another slot's direct address.
+    genoa_dmi_buses = set()
+    genoa_claimed = set()  # track resolved endpoints to prevent double-claim
+    if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+        for s in pci_slots:
+            ba = s.get("Bus Address", "")
+            if ba and ba != "0000:00:00.0":
+                genoa_dmi_buses.add(ba)
+
     for slot in pci_slots:
         designation = slot.get("Designation", "")
         slot_type = slot.get("Type", "")
@@ -716,6 +748,39 @@ def process_pci_slots_and_devices(
                     if cand not in mw34_claimed and cand in lspci_devices:
                         slot["Bus Address"] = cand
                         break
+
+        # ---------- ASRock GENOA special handling ----------
+        # dmidecode bus addresses point to one root port function (e.g. c0:03.1)
+        # but cards may be on sibling functions (e.g. c0:03.3). Scan all siblings.
+        # Exclude siblings that are another slot's direct dmidecode bus address.
+        if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+            bus = slot.get("Bus Address", "")
+            found = False
+            if bus and bus != "0000:00:00.0":
+                candidates = [bus]
+                m = re.match(r'^(0000:[0-9a-fA-F]{2}:[0-9a-fA-F]{2})\.[0-9a-fA-F]$', bus)
+                if m:
+                    prefix = m.group(1)
+                    for fn in range(8):
+                        sibling = f"{prefix}.{fn}"
+                        if sibling != bus and sibling in lspci_devices \
+                                and sibling not in genoa_dmi_buses:
+                            candidates.append(sibling)
+                for cand in candidates:
+                    if slot_has_pci_device(cand, lspci_devices):
+                        endpoint = first_endpoint_addr(cand, lspci_devices)
+                        resolved = endpoint or cand
+                        if resolved in genoa_claimed:
+                            continue  # already claimed by another slot
+                        slot["Bus Address"] = resolved
+                        slot["Current Usage"] = "In Use"
+                        genoa_claimed.add(resolved)
+                        found = True
+                        break
+            if not found:
+                slot["Current Usage"] = "Available"
+            matched_devices.setdefault(designation, slot)
+            continue
 
         if designation not in matched_devices:
             matched_devices[designation] = slot
@@ -993,6 +1058,49 @@ def main():
                     break
             # Fallback: detect network card from lspci_devices (like MZ73)
             if not net_matched and slot.get("Card Type", "-") == "-":
+                devinfo = lspci_devices.get(bus)
+                if devinfo and "ethernet" in str(devinfo[0]).strip('"').lower():
+                    slot["Card Type"] = "Network Card"
+                    model = getNetworkCardModel(bus)
+                    if model not in ("-", "unknown"):
+                        slot["Card Model"] = model
+                    elif len(devinfo) > 2:
+                        slot["Card Model"] = devinfo[2].strip('"')
+            for card in sata_cards:
+                if card.get("Bus Address") == bus:
+                    slot["Card Type"] = card["Card Type"]
+                    slot["Card Model"] = card["Card Model"]
+                    slot["Connections"] = card.get("Connections", [])
+                    break
+
+    # ASRock GENOA: bus addresses from dmidecode are bridges, so re-match after
+    # process_pci_slots_and_devices() has resolved to endpoint addresses.
+    if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+        for slot in matched_devices:
+            bus = slot.get("Bus Address", "")
+            if not bus or bus == "0000:00:00.0":
+                continue
+            existing_card_type = slot.get("Card Type", "-")
+            # Refresh NIC model with resolved endpoint bus address
+            if existing_card_type == "Network Card":
+                slot["Card Model"] = getNetworkCardModel(bus)
+                continue
+            if existing_card_type not in ("", "-"):
+                continue  # HBA/SATA already identified, no refresh needed
+            for hba in hba_cards:
+                if hba["Bus Address"] == bus:
+                    slot["Card Type"] = "HBA"
+                    slot["Card Model"] = hba["Model"]
+                    break
+            net_matched = False
+            for card in network_cards:
+                if card.get("Bus Address") == bus:
+                    slot["Card Type"] = "Network Card"
+                    slot["Card Model"] = getNetworkCardModel(bus)
+                    slot.setdefault("Connections", []).append(card)
+                    net_matched = True
+                    break
+            if not net_matched and slot.get("Card Type", "-") in ("", "-"):
                 devinfo = lspci_devices.get(bus)
                 if devinfo and "ethernet" in str(devinfo[0]).strip('"').lower():
                     slot["Card Type"] = "Network Card"

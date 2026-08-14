@@ -69,7 +69,8 @@ export default {
       "ProArt X870E-CREATOR WIFI",
       "MW34-SP0-00",
       "GENOAD8X-2T/BCM",
-      "GENOAD8UD-2T/X550"
+      "GENOAD8UD-2T/X550",
+      "B860I WiFi"
     ]);
 
     const adminCheck = ref(false);

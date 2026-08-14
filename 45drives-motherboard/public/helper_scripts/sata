@@ -263,6 +263,16 @@ g_motherboard_sata_addresses = {
     ["pci-0000:00:17.0-ata-7", "SATA_6_7"],
     ["pci-0000:00:17.0-ata-8", "SATA_6_7"],
 ],
+	"B860I WiFi":[
+		["pci-0000:80:17.0-ata-1", "SATA3_0"],
+		["pci-0000:80:17.0-ata-2", "SATA3_1"],
+		["pci-0000:80:17.0-ata-3", "SATA3_2"],
+		["pci-0000:80:17.0-ata-4", "SATA3_3"],
+		["pci-0000:80:17.0-ata-5", "SATA3_0"],
+		["pci-0000:80:17.0-ata-6", "SATA3_1"],
+		["pci-0000:80:17.0-ata-7", "SATA3_2"],
+		["pci-0000:80:17.0-ata-8", "SATA3_3"],
+	],
 }
 
 # Helper function to dynamically fetch SATA PCI addresses

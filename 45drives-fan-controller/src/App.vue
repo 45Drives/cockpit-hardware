@@ -34,7 +34,7 @@ async function checkChassisSize() {
     });
     const info = JSON.parse(raw);
     chassisSize.value = info["Chassis Size"] || "Unknown";
-    chassisSupported.value = ["NVME-F8X1", "NVME-F8X2", "NVME-F8X3"].includes(chassisSize.value);
+    chassisSupported.value = ["NVME-F8X1", "NVME-F8X2", "NVME-F8X3", "NVME-F8X1-U2", "NVME-F8X2-U2", "NVME-F8X3-U2", "NVME-F8X1-EDSFF", "NVME-F8X2-EDSFF", "NVME-F8X3-EDSFF"].includes(chassisSize.value);
   } catch (err) {
     console.error("Failed to read server info for chassis check:", err);
     chassisSize.value = "Unknown";

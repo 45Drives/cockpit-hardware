@@ -3,6 +3,7 @@ import "@fontsource/red-hat-text/600.css";
 import "@fontsource/red-hat-text/400.css";
 import FfdHeader from "./components/FfdHeader.vue";
 import SectionContainer from "./components/SectionContainer.vue";
+import { NotificationView } from "@45drives/houston-common-ui";
 import { ref , onMounted, provide} from "vue";
 
 const adminCheck = ref(false);
@@ -120,6 +121,7 @@ onMounted(()=>{
 <template>
   <div class="h-full flex flex-col overflow-hidden">
     <FfdHeader moduleName="System" centerName />
+    <NotificationView />
     <SectionContainer v-if="adminCheck && adminFlag" />
     <div
       v-else-if="adminCheck && !adminFlag"
