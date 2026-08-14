@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.5-1
+## cockpit-45drives-hardware 2.8.6-1
 
-* Updates motherboard view to handle horizontally-orientated PCI slots, adds missing gpgv/gnupg2 deps (for proxinator minimal installations)
+* Adds ASRock B860I mobo support, adds F8X3-U2 and F8X3-EDFSS units, and fixes ASRock GENOAD8X-25/BCM mapping
