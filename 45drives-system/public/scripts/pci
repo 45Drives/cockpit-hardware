@@ -30,6 +30,7 @@ g_network_card_models = [
     "XXV710",
     "82599ES",
     "BCM57412",
+    "BCM57416",
     "MT27800",
 ]
 
@@ -148,6 +149,7 @@ GENOA_SLOT_IDS = {
     "PCIE4": "20",
     "PCIE5": "21",
     "PCIE6": "22",
+    "PCIE7": "23",
     "MCIO1": "33",
     "MCIO2": "35",
     "MCIO3": "37",
@@ -155,6 +157,12 @@ GENOA_SLOT_IDS = {
     "M2_1": "1",
     "M2_2": "2",
 }
+
+ASROCK_GENOA_TURIN_PREFIXES = (
+    "GENOAD8X",
+    "GENOAD8UD",
+    "TURIND8X",
+)
 
 # Gigabyte B550I board
 PCIE_SLOT_LUT_B550I = {
@@ -237,6 +245,10 @@ def get_motherboard_model_server_info():
     return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
 
 
+def is_asrock_genoa_turin_board(motherboard_model):
+    return motherboard_model.startswith(ASROCK_GENOA_TURIN_PREFIXES)
+
+
 # ---------------------------------------------------------------------------
 # LSPCI PARSER
 # ---------------------------------------------------------------------------
@@ -271,7 +283,7 @@ def parse_lspci_output():
             # Skip onboard BCM57416 NIC duplicates etc.
             continue
 
-        if motherboard_model.startswith("GENOAD8X") and \
+        if is_asrock_genoa_turin_board(motherboard_model) and \
            any(excl in " ".join(rest_of_line) for excl in exclusion_strings):
             continue
 
@@ -609,9 +621,9 @@ def dmidecode():
                         if current_slot.get("Bus Address") not in ("0000:00:00.0", "0000:ff:00.0"):
                             cards.append(current_slot)
 
-                # GENOA: allow slots with placeholder bus addresses
-                # GENOA: trust dmidecode Current Usage as-is
-                elif motherboard_model.startswith("GENOAD8X"):
+                # ASRock Genoa/Turin family: allow slots with placeholder bus addresses
+                # and trust dmidecode Current Usage as-is.
+                elif is_asrock_genoa_turin_board(motherboard_model):
                     if designation not in slot_seen:
                         slot_seen[designation] = True
                         cards.append(current_slot)
@@ -644,15 +656,17 @@ def dmidecode():
             designation = current_slot["Designation"]
             stripped = re.sub(r"_[A-Z]$", "", designation)
 
-            # GENOA: normalize compound designations (e.g. "PCIE7/MCIO1" → "MCIO1")
-            if motherboard_model.startswith("GENOAD8X") and "/" in stripped:
+            # ASRock Genoa/Turin family: normalize compound designations.
+            if is_asrock_genoa_turin_board(motherboard_model) and "/" in stripped:
                 stripped = stripped.split("/")[-1]
 
-            # GENOAD8UD: normalize compound MCIO designations (e.g. "MCIO1-1" → "MCIO1")
-            if motherboard_model.startswith("GENOAD8UD") and re.match(r"MCIO\d+-[12]$", stripped):
+            # GENOAD8UD/TURIND8X: normalize compound MCIO designations.
+            if motherboard_model.startswith(("GENOAD8UD", "TURIND8X")) and re.match(r"MCIO\d+-[12]$", stripped):
                 stripped = re.sub(r"-[12]$", "", stripped)
 
-            current_slot["Designation"] = stripped
+            # For Genoa/Turin boards: preserve original compound designations for display
+            if not is_asrock_genoa_turin_board(motherboard_model):
+                current_slot["Designation"] = stripped
 
             if designation == "N/A":
                 current_slot = None
@@ -723,8 +737,8 @@ def dmidecode():
             desig = current_slot.get("Designation", "")
             bus_addr = current_slot.get("Bus Address", "")
             if desig != "N/A" and desig not in slot_seen:
-                # GENOA: trust dmidecode Current Usage as-is
-                if motherboard_model.startswith("GENOAD8X"):
+                # ASRock Genoa/Turin family: trust dmidecode Current Usage as-is.
+                if is_asrock_genoa_turin_board(motherboard_model):
                     cards.append(current_slot)
                 elif bus_addr and bus_addr not in ("0000:00:00.0", "0000:ff:00.0"):
                     cards.append(current_slot)
@@ -732,8 +746,8 @@ def dmidecode():
     if motherboard_model == "MH53-G40-000":
         return normalize_mh53_pci_slots(cards, parse_lspci_output())
 
-    # GENOA: apply static unique IDs
-    if motherboard_model.startswith("GENOAD8X"):
+    # ASRock Genoa/Turin family: apply static unique IDs.
+    if is_asrock_genoa_turin_board(motherboard_model):
         for slot in cards:
             desig = slot.get("Designation", "")
             if desig in GENOA_SLOT_IDS:
@@ -753,11 +767,11 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
     matched_devices = {}
     mw34_claimed = set()
 
-    # For GENOA boards: collect all dmidecode bus addresses to avoid
+    # For ASRock Genoa/Turin boards: collect all dmidecode bus addresses to avoid
     # sibling scanning from claiming another slot's direct address.
     genoa_dmi_buses = set()
     genoa_claimed = set()  # track resolved endpoints to prevent double-claim
-    if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+    if is_asrock_genoa_turin_board(motherboard_model):
         for s in pci_slots:
             ba = s.get("Bus Address", "")
             if ba and ba != "0000:00:00.0":
@@ -832,11 +846,11 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
                         slot["Bus Address"] = cand
                         break
 
-        # ---------- ASRock GENOA special handling ----------
+        # ---------- ASRock Genoa/Turin special handling ----------
         # dmidecode bus addresses point to one root port function (e.g. c0:03.1)
         # but cards may be on sibling functions (e.g. c0:03.3). Scan all siblings.
         # Exclude siblings that are another slot's direct dmidecode bus address.
-        if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+        if is_asrock_genoa_turin_board(motherboard_model):
             bus = slot.get("Bus Address", "")
             found = False
             if bus and bus != "0000:00:00.0":
@@ -1456,9 +1470,9 @@ def main():
                 elif len(devinfo) > 2:
                     slot["Card Model"] = devinfo[2].strip('"')
 
-    # ASRock GENOA: bus addresses from dmidecode are bridges, so re-match after
+    # ASRock Genoa/Turin: bus addresses from dmidecode are bridges, so re-match after
     # process_pci_slots_and_devices() has resolved to endpoint addresses.
-    if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+    if is_asrock_genoa_turin_board(motherboard_model):
         for slot in matched:
             bus = slot.get("Bus Address", "")
             if not bus or bus == "0000:00:00.0":

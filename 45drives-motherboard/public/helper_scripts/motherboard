@@ -49,7 +49,8 @@ g_dmi_mobo_fields = {
   		"MW34-SP0-00",
 		"GENOAD8X-2T/BCM",
 		"GENOAD8UD-2T/X550",
-		"B860I WiFi"
+		"B860I WiFi",
+		"TURIND8X-2T/500W"
 	],
 	"Serial Number": None
 }
