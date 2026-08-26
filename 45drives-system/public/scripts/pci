@@ -5,6 +5,8 @@ import json
 import os
 import sys
 import shutil
+import glob
+import time
 
 # ---------------------------------------------------------------------------
 # CONSTANTS
@@ -22,6 +24,11 @@ g_storcli64_fields = [
     "SAS9305-16i",
     "SAS9305-24i"
 ]
+
+# Querying an HBA makes its driver (e.g. mpt3sas) log to the kernel ring buffer,
+# so storcli results are cached between runs instead of re-queried per page load.
+HBA_FW_CACHE_FILE = "/var/cache/45drives/firmware/hba-fw-by-bus.json"
+HBA_FW_CACHE_TTL = 3600
 
 g_network_card_models = [
     "X540-AT2",
@@ -1147,8 +1154,76 @@ def _fw_from_version_obj(version_obj):
     return ""
 
 
-def get_hba_fw_by_bus_storcli():
-    """Return map of PCI bus addresses to HBA firmware versions via storcli."""
+def get_hba_fw_by_bus_sysfs():
+    """Return map of PCI bus addresses to HBA firmware versions read from sysfs.
+
+    Unlike storcli, reading version_fw sends no command to the controller, so it
+    does not make mpt3sas emit log_info() messages on every page load.
+    """
+    fw_map = {}
+    for host_dir in glob.glob("/sys/class/scsi_host/host*"):
+        fw_path = os.path.join(host_dir, "version_fw")
+        if not os.path.isfile(fw_path):
+            continue
+        try:
+            with open(fw_path, "r") as f:
+                fw = f.read().strip()
+            device_path = os.path.realpath(os.path.join(host_dir, "device"))
+        except (OSError, IOError):
+            continue
+        if not fw or fw == "00.00.00.00":
+            continue
+        addrs = re.findall(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-9a-f]", device_path)
+        if not addrs:
+            continue
+        pci = addrs[-1]
+        fw_map[pci] = fw
+        fw_map[pci[5:]] = fw
+    return fw_map
+
+
+def _read_hba_fw_cache():
+    try:
+        if time.time() - os.path.getmtime(HBA_FW_CACHE_FILE) > HBA_FW_CACHE_TTL:
+            return None
+        with open(HBA_FW_CACHE_FILE, "r") as f:
+            data = json.load(f)
+    except (OSError, IOError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _write_hba_fw_cache(fw_map):
+    tmp_path = HBA_FW_CACHE_FILE + ".tmp"
+    try:
+        os.makedirs(os.path.dirname(HBA_FW_CACHE_FILE), exist_ok=True)
+        with open(tmp_path, "w") as f:
+            json.dump(fw_map, f)
+        os.replace(tmp_path, HBA_FW_CACHE_FILE)
+    except (OSError, IOError):
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+
+def get_hba_fw_by_bus_storcli(use_cache=True):
+    """Return map of PCI bus addresses to HBA firmware versions via storcli.
+
+    Results are cached on disk: firmware only changes on a flash, and every
+    query makes the HBA driver log to the kernel ring buffer.
+    """
+    if use_cache:
+        cached = _read_hba_fw_cache()
+        if cached is not None:
+            return cached
+    fw_map = _query_hba_fw_by_bus_storcli()
+    if fw_map:
+        _write_hba_fw_cache(fw_map)
+    return fw_map
+
+
+def _query_hba_fw_by_bus_storcli():
     fw_map = {}
 
     for storcli in _storcli_candidates():
@@ -1347,6 +1422,7 @@ def get_ocu_usage_from_by_path():
 # ---------------------------------------------------------------------------
 
 def main():
+    use_fw_cache = "--refresh" not in sys.argv
     pci_slots = dmidecode()
     # make sure **every** slot dict has the key (future-proof)
     for s in pci_slots:
@@ -1560,8 +1636,20 @@ def main():
 
     # ---------- append firmware info ----------
     hba_info = get_hba_server_info()
-    hba_fw_by_bus = get_hba_fw_by_bus_storcli()
+    hba_fw_by_bus_sysfs = get_hba_fw_by_bus_sysfs()
+    hba_fw_by_bus_storcli = None
     nic_fw_by_bus = get_nic_fw_by_bus()
+
+    def lookup_hba_fw(bus_short, bus):
+        """Resolve HBA firmware, only falling back to storcli if sysfs can't answer."""
+        nonlocal hba_fw_by_bus_storcli
+        fw = hba_fw_by_bus_sysfs.get(bus_short) or hba_fw_by_bus_sysfs.get(bus.lower())
+        if fw:
+            return fw
+        if hba_fw_by_bus_storcli is None:
+            hba_fw_by_bus_storcli = get_hba_fw_by_bus_storcli(use_cache=use_fw_cache)
+        return hba_fw_by_bus_storcli.get(bus_short) or hba_fw_by_bus_storcli.get(bus.lower())
+
     for slot in matched:
         bus = slot.get("Bus Address", "")
         if not bus:
@@ -1584,11 +1672,11 @@ def main():
                 break
 
         # If server_info lacks firmware (common on some MegaRAID cards),
-        # fall back to live storcli query by PCI bus.
+        # fall back to sysfs and then to a live storcli query by PCI bus.
         current_fw = str(slot.get("Firmware Version", "")).strip()
         card_type = str(slot.get("Card Type", "")).strip()
         if current_fw in ("", "-", "unknown", "Unknown") and card_type == "HBA":
-            fw = hba_fw_by_bus.get(bus_short) or hba_fw_by_bus.get(bus.lower())
+            fw = lookup_hba_fw(bus_short, bus)
             if fw:
                 slot["Firmware Version"] = fw
 

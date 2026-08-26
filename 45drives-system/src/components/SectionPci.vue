@@ -289,9 +289,13 @@ export default {
     const loadFirmwareCache = async () => {
       try {
         const cacheProc = await unwrap(server.execute(
-          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" }),
+          false
         ));
-        return JSON.parse(cacheProc.getStdout());
+        if (cacheProc.exitStatus === 0) {
+          return JSON.parse(cacheProc.getStdout());
+        }
+        throw new Error("firmware cache missing");
       } catch (e) {
         // Cache doesn't exist yet — generate it
         console.log("Firmware cache not found, running firmware-check...");
@@ -305,8 +309,10 @@ export default {
             return null;
           }
           const retryProc = await unwrap(server.execute(
-            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
+            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" }),
+            false
           ));
+          if (retryProc.exitStatus !== 0) return null;
           return JSON.parse(retryProc.getStdout());
         } catch (e2) {
           console.log("Firmware check failed:", e2);
@@ -356,28 +362,43 @@ export default {
     const rebootModalVisible = ref(false);
     const REBOOT_PENDING_FILE = '/var/cache/45drives/firmware/reboot-pending.json';
 
+    // Reads/writes tolerate a missing file and always exit 0, so cockpit doesn't
+    // log an error every time the page loads on a system that was never flashed.
+    const REBOOT_PENDING_READ_SCRIPT = `
+import json
+f = ${JSON.stringify(REBOOT_PENDING_FILE)}
+try:
+    with open(f) as fh:
+        pending = json.load(fh)
+except Exception:
+    pending = []
+print(json.dumps(pending if isinstance(pending, list) else []))
+`;
+
+    const REBOOT_PENDING_ADD_SCRIPT = `
+import json, os, sys
+f, idx = sys.argv[1], int(sys.argv[2])
+try:
+    with open(f) as fh:
+        pending = json.load(fh)
+except Exception:
+    pending = []
+if not isinstance(pending, list):
+    pending = []
+pending = [int(x) for x in pending if isinstance(x, int) or str(x).lstrip("-").isdigit()]
+if idx not in pending:
+    pending.append(idx)
+os.makedirs(os.path.dirname(f), exist_ok=True)
+with open(f, "w") as fh:
+    json.dump(pending, fh)
+`;
+
     const saveRebootPending = async (cacheIndex) => {
+      const idx = Number(cacheIndex);
+      if (!Number.isFinite(idx)) return;
       try {
-        // Read existing pending list
-        let pending = [];
-        try {
-          const proc = await unwrap(server.execute(
-            new Command(["cat", REBOOT_PENDING_FILE], { superuser: "try" })
-          ));
-          pending = JSON.parse(proc.getStdout());
-        } catch (e) { /* file doesn't exist yet */ }
-        // Normalize to numeric values for compatibility with SectionFirmware
-        pending = Array.isArray(pending)
-          ? pending.map(Number).filter(n => Number.isFinite(n))
-          : [];
-        const idx = Number(cacheIndex);
-        if (!Number.isFinite(idx)) return;
-        if (!pending.includes(idx)) {
-          pending.push(idx);
-        }
-        const data = JSON.stringify(pending);
         await unwrap(server.execute(
-          new Command(["python3", "-c", "import sys; open(sys.argv[1],'w').write(sys.argv[2])", REBOOT_PENDING_FILE, data], { superuser: "require" })
+          new Command(["python3", "-c", REBOOT_PENDING_ADD_SCRIPT, REBOOT_PENDING_FILE, String(idx)], { superuser: "require" })
         ));
       } catch (e) {
         console.log("Failed to save reboot-pending state:", e);
@@ -387,8 +408,10 @@ export default {
     const loadRebootPending = async () => {
       try {
         const proc = await unwrap(server.execute(
-          new Command(["cat", REBOOT_PENDING_FILE], { superuser: "try" })
+          new Command(["python3", "-c", REBOOT_PENDING_READ_SCRIPT], { superuser: "try" }),
+          false
         ));
+        if (proc.exitStatus !== 0) return [];
         const pending = JSON.parse(proc.getStdout());
         return Array.isArray(pending)
           ? pending.map(Number).filter(n => Number.isFinite(n))
@@ -580,8 +603,10 @@ export default {
         }
       }
       try {
+        const pciArgs = ["/usr/share/cockpit/45drives-system/scripts/pci"];
+        if (runFirmwareCheck) pciArgs.push("--refresh");
         const proc = await unwrap(server.execute(
-          new Command(["/usr/share/cockpit/45drives-system/scripts/pci"], { superuser: "try" })
+          new Command(pciArgs, { superuser: "try" })
         ));
         let pciInfo = JSON.parse(proc.getStdout());
         const cache = await loadFirmwareCache();

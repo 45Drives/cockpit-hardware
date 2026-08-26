@@ -18,6 +18,7 @@ import subprocess
 import sys
 import re
 import os
+import fcntl
 import tempfile
 from pathlib import Path
 from datetime import datetime
@@ -487,5 +488,53 @@ def main():
     return 2 if has_outdated else 0
 
 
+def cache_mtime():
+    try:
+        return os.path.getmtime(CACHE_PATH)
+    except OSError:
+        return 0.0
+
+
+def exit_code_from_cache():
+    """Derive the usual exit code from an existing cache file."""
+    try:
+        with open(CACHE_PATH, "r") as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        return 1
+    outdated = cache.get("summary", {}).get("outdated", 0)
+    print("Firmware check skipped: reusing results from a concurrent run")
+    return 2 if outdated else 0
+
+
+def run():
+    """Run main() under an exclusive lock.
+
+    The System page has several components that each kick off a check when the
+    cache is missing. Discovery queries the HBA, which makes the kernel driver
+    log on every query, so only one run is allowed at a time and callers that
+    were waiting reuse the result instead of querying again.
+    """
+    lock_path = os.path.join(os.path.dirname(CACHE_PATH), ".firmware-check.lock")
+    try:
+        os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+        lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o644)
+    except OSError:
+        return main()
+
+    try:
+        mtime_before = cache_mtime()
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            # Another run finished while we waited — its results are ours too.
+            if cache_mtime() > mtime_before:
+                return exit_code_from_cache()
+        return main()
+    finally:
+        os.close(lock_fd)
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())
