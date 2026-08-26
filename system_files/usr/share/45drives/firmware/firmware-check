@@ -527,17 +527,26 @@ def run():
         return main()
 
     try:
+        waited = False
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX)
+                waited = True
+            except OSError:
+                pass
         except OSError:
-            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            # Locking unavailable here (e.g. unsupported filesystem) — run unserialized.
+            pass
+
+        if waited and time.time() - cache_mtime() < CONCURRENT_CACHE_MAX_AGE:
             # A concurrent run just finished; its results are ours too. Freshness
             # is judged against wall clock rather than a before/after mtime
             # comparison, which is unreliable at 1s filesystem granularity.
-            if time.time() - cache_mtime() < CONCURRENT_CACHE_MAX_AGE:
-                code = exit_code_from_cache()
-                if code != 1:
-                    return code
+            code = exit_code_from_cache()
+            if code != 1:
+                return code
         return main()
     finally:
         os.close(lock_fd)
