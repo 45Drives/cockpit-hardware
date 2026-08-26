@@ -19,6 +19,7 @@ import sys
 import re
 import os
 import fcntl
+import time
 import tempfile
 from pathlib import Path
 from datetime import datetime
@@ -32,6 +33,9 @@ DISCOVER_SCRIPT = "/usr/share/45drives/firmware/firmware-discover"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
 REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
 GPG_PUBKEY = "/usr/share/45drives/firmware/45drives-firmware.gpg"
+
+# How recent a cache must be for a run that waited on the lock to reuse it.
+CONCURRENT_CACHE_MAX_AGE = 300
 
 # For development, allow override via environment
 if os.environ.get("FIRMWARE_MANIFEST_PATH"):
@@ -523,14 +527,17 @@ def run():
         return main()
 
     try:
-        mtime_before = cache_mtime()
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
-            # Another run finished while we waited — its results are ours too.
-            if cache_mtime() > mtime_before:
-                return exit_code_from_cache()
+            # A concurrent run just finished; its results are ours too. Freshness
+            # is judged against wall clock rather than a before/after mtime
+            # comparison, which is unreliable at 1s filesystem granularity.
+            if time.time() - cache_mtime() < CONCURRENT_CACHE_MAX_AGE:
+                code = exit_code_from_cache()
+                if code != 1:
+                    return code
         return main()
     finally:
         os.close(lock_fd)

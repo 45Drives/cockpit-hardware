@@ -1194,7 +1194,7 @@ def _read_hba_fw_cache():
 
 
 def _write_hba_fw_cache(fw_map):
-    tmp_path = HBA_FW_CACHE_FILE + ".tmp"
+    tmp_path = "{}.{}.tmp".format(HBA_FW_CACHE_FILE, os.getpid())
     try:
         os.makedirs(os.path.dirname(HBA_FW_CACHE_FILE), exist_ok=True)
         with open(tmp_path, "w") as f:
