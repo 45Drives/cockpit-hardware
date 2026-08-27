@@ -1,3 +1,9 @@
+cockpit-45drives-hardware (2.8.7-1jammy) jammy; urgency=medium
+
+  * Adds ASRock TURIN motherboard
+
+ -- Jordan Keough <jkeough@45drives.com>  Thu, 20 Aug 2026 11:57:39 -0300
+
 cockpit-45drives-hardware (2.8.6-1jammy) jammy; urgency=medium
 
   * Adds ASRock B860I mobo support, adds F8X3-U2 and F8X3-EDFSS units, and fixes

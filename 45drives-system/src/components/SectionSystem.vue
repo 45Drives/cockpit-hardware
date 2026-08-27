@@ -261,8 +261,10 @@ export default {
       let cacheData = null;
       try {
         const cacheProc = await unwrap(server.execute(
-          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" })
+          new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "try" }),
+          false
         ));
+        if (cacheProc.exitStatus !== 0) throw new Error("firmware cache missing");
         cacheData = JSON.parse(cacheProc.getStdout());
       } catch (e) {
         // Cache doesn't exist yet — generate it
@@ -277,8 +279,10 @@ export default {
             return;
           }
           const retryProc = await unwrap(server.execute(
-            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" })
+            new Command(["cat", "/var/cache/45drives/firmware/status.json"], { superuser: "require" }),
+            false
           ));
+          if (retryProc.exitStatus !== 0) return;
           cacheData = JSON.parse(retryProc.getStdout());
         } catch (e2) {
           console.log("Firmware check failed:", e2);
