@@ -100,12 +100,6 @@
   // the caddy sprites, which makes the drives look blurry.
   const DISPLAY_SCALE = 1;
 
-  // Bay label geometry. Bays occupy y 10..130 of the 144x165 chassis, so the
-  // labels sit in the empty strip below them.
-  const BAY_WIDTH = 30;
-  const BAY_LABEL_Y = 134;
-  const BAY_LABEL_SIZE = 10;
-
   const diskLocations = [    // Chassis image is 144x165, bays measured from x4-homelab.png
     { x: 10, y: 10, BAY: "1-1", HDD: true, occupied: false, image: null },
     { x: 42, y: 10, BAY: "1-2", HDD: true, occupied: false, image: null },
@@ -303,23 +297,6 @@
               );
             }
           }
-
-          // Bay labels ("1-1".."1-4") drawn under each bay. The selected bay is
-          // highlighted to match the selection outline above.
-          p5.push();
-          p5.noStroke();
-          p5.textAlign(p5.CENTER, p5.TOP);
-          p5.textSize(BAY_LABEL_SIZE);
-          p5.textStyle(p5.BOLD);
-          diskLocations.forEach((loc) => {
-            if (loc.BAY === currentDisk.value) {
-              p5.fill(206, 242, 212);
-            } else {
-              p5.fill(200);
-            }
-            p5.text(loc.BAY, loc.x + BAY_WIDTH / 2, BAY_LABEL_Y);
-          });
-          p5.pop();
         };
   
         p5.mouseClicked = (_) => {
