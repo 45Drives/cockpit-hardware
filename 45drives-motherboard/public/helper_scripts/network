@@ -104,6 +104,10 @@ def get_motherboard_model_server_info():
 def is_BCM57416_onboard_ethernet(device_name):
 	return "BCM57416" in device_name
 
+
+def is_asrock_genoa_turin_board(motherboard_model):
+	return motherboard_model.startswith(("GENOAD8X", "GENOAD8UD", "TURIND8X"))
+
 def get_network_info():
 	try:
 		ipaddr_result = subprocess.Popen(
@@ -234,7 +238,7 @@ def get_network_info():
 			device_name = hw_entry[2]
 			
 			# Exclude onboard ethernet from PCI matching
-			if motherboard_model.startswith('MZ73') or motherboard_model.startswith('ROMED8') or motherboard_model.startswith('GENOAD8X'):
+			if motherboard_model.startswith('MZ73') or motherboard_model.startswith('ROMED8') or is_asrock_genoa_turin_board(motherboard_model):
 				if is_BCM57416_onboard_ethernet(device_name):
 					continue
 

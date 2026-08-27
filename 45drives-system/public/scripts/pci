@@ -5,6 +5,8 @@ import json
 import os
 import sys
 import shutil
+import glob
+import time
 
 # ---------------------------------------------------------------------------
 # CONSTANTS
@@ -23,6 +25,11 @@ g_storcli64_fields = [
     "SAS9305-24i"
 ]
 
+# Querying an HBA makes its driver (e.g. mpt3sas) log to the kernel ring buffer,
+# so storcli results are cached between runs instead of re-queried per page load.
+HBA_FW_CACHE_FILE = "/var/cache/45drives/firmware/hba-fw-by-bus.json"
+HBA_FW_CACHE_TTL = 3600
+
 g_network_card_models = [
     "X540-AT2",
     "X550",
@@ -30,6 +37,7 @@ g_network_card_models = [
     "XXV710",
     "82599ES",
     "BCM57412",
+    "BCM57416",
     "MT27800",
 ]
 
@@ -148,6 +156,7 @@ GENOA_SLOT_IDS = {
     "PCIE4": "20",
     "PCIE5": "21",
     "PCIE6": "22",
+    "PCIE7": "23",
     "MCIO1": "33",
     "MCIO2": "35",
     "MCIO3": "37",
@@ -155,6 +164,12 @@ GENOA_SLOT_IDS = {
     "M2_1": "1",
     "M2_2": "2",
 }
+
+ASROCK_GENOA_TURIN_PREFIXES = (
+    "GENOAD8X",
+    "GENOAD8UD",
+    "TURIND8X",
+)
 
 # Gigabyte B550I board
 PCIE_SLOT_LUT_B550I = {
@@ -237,6 +252,10 @@ def get_motherboard_model_server_info():
     return "{\"Motherboard\":[{\"Manufacturer\": \"?\", \"Product Name\": \"?\", \"Serial Number\": \"?\"}]}"
 
 
+def is_asrock_genoa_turin_board(motherboard_model):
+    return motherboard_model.startswith(ASROCK_GENOA_TURIN_PREFIXES)
+
+
 # ---------------------------------------------------------------------------
 # LSPCI PARSER
 # ---------------------------------------------------------------------------
@@ -271,7 +290,7 @@ def parse_lspci_output():
             # Skip onboard BCM57416 NIC duplicates etc.
             continue
 
-        if motherboard_model.startswith("GENOAD8X") and \
+        if is_asrock_genoa_turin_board(motherboard_model) and \
            any(excl in " ".join(rest_of_line) for excl in exclusion_strings):
             continue
 
@@ -609,9 +628,9 @@ def dmidecode():
                         if current_slot.get("Bus Address") not in ("0000:00:00.0", "0000:ff:00.0"):
                             cards.append(current_slot)
 
-                # GENOA: allow slots with placeholder bus addresses
-                # GENOA: trust dmidecode Current Usage as-is
-                elif motherboard_model.startswith("GENOAD8X"):
+                # ASRock Genoa/Turin family: allow slots with placeholder bus addresses
+                # and trust dmidecode Current Usage as-is.
+                elif is_asrock_genoa_turin_board(motherboard_model):
                     if designation not in slot_seen:
                         slot_seen[designation] = True
                         cards.append(current_slot)
@@ -644,15 +663,17 @@ def dmidecode():
             designation = current_slot["Designation"]
             stripped = re.sub(r"_[A-Z]$", "", designation)
 
-            # GENOA: normalize compound designations (e.g. "PCIE7/MCIO1" → "MCIO1")
-            if motherboard_model.startswith("GENOAD8X") and "/" in stripped:
+            # ASRock Genoa/Turin family: normalize compound designations.
+            if is_asrock_genoa_turin_board(motherboard_model) and "/" in stripped:
                 stripped = stripped.split("/")[-1]
 
-            # GENOAD8UD: normalize compound MCIO designations (e.g. "MCIO1-1" → "MCIO1")
-            if motherboard_model.startswith("GENOAD8UD") and re.match(r"MCIO\d+-[12]$", stripped):
+            # GENOAD8UD/TURIND8X: normalize compound MCIO designations.
+            if motherboard_model.startswith(("GENOAD8UD", "TURIND8X")) and re.match(r"MCIO\d+-[12]$", stripped):
                 stripped = re.sub(r"-[12]$", "", stripped)
 
-            current_slot["Designation"] = stripped
+            # For Genoa/Turin boards: preserve original compound designations for display
+            if not is_asrock_genoa_turin_board(motherboard_model):
+                current_slot["Designation"] = stripped
 
             if designation == "N/A":
                 current_slot = None
@@ -723,8 +744,8 @@ def dmidecode():
             desig = current_slot.get("Designation", "")
             bus_addr = current_slot.get("Bus Address", "")
             if desig != "N/A" and desig not in slot_seen:
-                # GENOA: trust dmidecode Current Usage as-is
-                if motherboard_model.startswith("GENOAD8X"):
+                # ASRock Genoa/Turin family: trust dmidecode Current Usage as-is.
+                if is_asrock_genoa_turin_board(motherboard_model):
                     cards.append(current_slot)
                 elif bus_addr and bus_addr not in ("0000:00:00.0", "0000:ff:00.0"):
                     cards.append(current_slot)
@@ -732,8 +753,8 @@ def dmidecode():
     if motherboard_model == "MH53-G40-000":
         return normalize_mh53_pci_slots(cards, parse_lspci_output())
 
-    # GENOA: apply static unique IDs
-    if motherboard_model.startswith("GENOAD8X"):
+    # ASRock Genoa/Turin family: apply static unique IDs.
+    if is_asrock_genoa_turin_board(motherboard_model):
         for slot in cards:
             desig = slot.get("Designation", "")
             if desig in GENOA_SLOT_IDS:
@@ -753,11 +774,11 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
     matched_devices = {}
     mw34_claimed = set()
 
-    # For GENOA boards: collect all dmidecode bus addresses to avoid
+    # For ASRock Genoa/Turin boards: collect all dmidecode bus addresses to avoid
     # sibling scanning from claiming another slot's direct address.
     genoa_dmi_buses = set()
     genoa_claimed = set()  # track resolved endpoints to prevent double-claim
-    if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+    if is_asrock_genoa_turin_board(motherboard_model):
         for s in pci_slots:
             ba = s.get("Bus Address", "")
             if ba and ba != "0000:00:00.0":
@@ -832,11 +853,11 @@ def process_pci_slots_and_devices(pci_slots, devices, lspci_devices):
                         slot["Bus Address"] = cand
                         break
 
-        # ---------- ASRock GENOA special handling ----------
+        # ---------- ASRock Genoa/Turin special handling ----------
         # dmidecode bus addresses point to one root port function (e.g. c0:03.1)
         # but cards may be on sibling functions (e.g. c0:03.3). Scan all siblings.
         # Exclude siblings that are another slot's direct dmidecode bus address.
-        if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+        if is_asrock_genoa_turin_board(motherboard_model):
             bus = slot.get("Bus Address", "")
             found = False
             if bus and bus != "0000:00:00.0":
@@ -1133,8 +1154,76 @@ def _fw_from_version_obj(version_obj):
     return ""
 
 
-def get_hba_fw_by_bus_storcli():
-    """Return map of PCI bus addresses to HBA firmware versions via storcli."""
+def get_hba_fw_by_bus_sysfs():
+    """Return map of PCI bus addresses to HBA firmware versions read from sysfs.
+
+    Unlike storcli, reading version_fw sends no command to the controller, so it
+    does not make mpt3sas emit log_info() messages on every page load.
+    """
+    fw_map = {}
+    for host_dir in glob.glob("/sys/class/scsi_host/host*"):
+        fw_path = os.path.join(host_dir, "version_fw")
+        if not os.path.isfile(fw_path):
+            continue
+        try:
+            with open(fw_path, "r") as f:
+                fw = f.read().strip()
+            device_path = os.path.realpath(os.path.join(host_dir, "device"))
+        except (OSError, IOError):
+            continue
+        if not fw or fw == "00.00.00.00":
+            continue
+        addrs = re.findall(r"[0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-9a-f]", device_path)
+        if not addrs:
+            continue
+        pci = addrs[-1]
+        fw_map[pci] = fw
+        fw_map[pci[5:]] = fw
+    return fw_map
+
+
+def _read_hba_fw_cache():
+    try:
+        if time.time() - os.path.getmtime(HBA_FW_CACHE_FILE) > HBA_FW_CACHE_TTL:
+            return None
+        with open(HBA_FW_CACHE_FILE, "r") as f:
+            data = json.load(f)
+    except (OSError, IOError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _write_hba_fw_cache(fw_map):
+    tmp_path = "{}.{}.tmp".format(HBA_FW_CACHE_FILE, os.getpid())
+    try:
+        os.makedirs(os.path.dirname(HBA_FW_CACHE_FILE), exist_ok=True)
+        with open(tmp_path, "w") as f:
+            json.dump(fw_map, f)
+        os.replace(tmp_path, HBA_FW_CACHE_FILE)
+    except (OSError, IOError):
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+
+
+def get_hba_fw_by_bus_storcli(use_cache=True):
+    """Return map of PCI bus addresses to HBA firmware versions via storcli.
+
+    Results are cached on disk: firmware only changes on a flash, and every
+    query makes the HBA driver log to the kernel ring buffer.
+    """
+    if use_cache:
+        cached = _read_hba_fw_cache()
+        if cached is not None:
+            return cached
+    fw_map = _query_hba_fw_by_bus_storcli()
+    if fw_map:
+        _write_hba_fw_cache(fw_map)
+    return fw_map
+
+
+def _query_hba_fw_by_bus_storcli():
     fw_map = {}
 
     for storcli in _storcli_candidates():
@@ -1333,6 +1422,7 @@ def get_ocu_usage_from_by_path():
 # ---------------------------------------------------------------------------
 
 def main():
+    use_fw_cache = "--refresh" not in sys.argv
     pci_slots = dmidecode()
     # make sure **every** slot dict has the key (future-proof)
     for s in pci_slots:
@@ -1456,9 +1546,9 @@ def main():
                 elif len(devinfo) > 2:
                     slot["Card Model"] = devinfo[2].strip('"')
 
-    # ASRock GENOA: bus addresses from dmidecode are bridges, so re-match after
+    # ASRock Genoa/Turin: bus addresses from dmidecode are bridges, so re-match after
     # process_pci_slots_and_devices() has resolved to endpoint addresses.
-    if motherboard_model.startswith(("GENOAD8X", "GENOAD8UD")):
+    if is_asrock_genoa_turin_board(motherboard_model):
         for slot in matched:
             bus = slot.get("Bus Address", "")
             if not bus or bus == "0000:00:00.0":
@@ -1546,8 +1636,20 @@ def main():
 
     # ---------- append firmware info ----------
     hba_info = get_hba_server_info()
-    hba_fw_by_bus = get_hba_fw_by_bus_storcli()
+    hba_fw_by_bus_sysfs = get_hba_fw_by_bus_sysfs()
+    hba_fw_by_bus_storcli = None
     nic_fw_by_bus = get_nic_fw_by_bus()
+
+    def lookup_hba_fw(bus_short, bus):
+        """Resolve HBA firmware, only falling back to storcli if sysfs can't answer."""
+        nonlocal hba_fw_by_bus_storcli
+        fw = hba_fw_by_bus_sysfs.get(bus_short) or hba_fw_by_bus_sysfs.get(bus.lower())
+        if fw:
+            return fw
+        if hba_fw_by_bus_storcli is None:
+            hba_fw_by_bus_storcli = get_hba_fw_by_bus_storcli(use_cache=use_fw_cache)
+        return hba_fw_by_bus_storcli.get(bus_short) or hba_fw_by_bus_storcli.get(bus.lower())
+
     for slot in matched:
         bus = slot.get("Bus Address", "")
         if not bus:
@@ -1570,11 +1672,11 @@ def main():
                 break
 
         # If server_info lacks firmware (common on some MegaRAID cards),
-        # fall back to live storcli query by PCI bus.
+        # fall back to sysfs and then to a live storcli query by PCI bus.
         current_fw = str(slot.get("Firmware Version", "")).strip()
         card_type = str(slot.get("Card Type", "")).strip()
         if current_fw in ("", "-", "unknown", "Unknown") and card_type == "HBA":
-            fw = hba_fw_by_bus.get(bus_short) or hba_fw_by_bus.get(bus.lower())
+            fw = lookup_hba_fw(bus_short, bus)
             if fw:
                 slot["Firmware Version"] = fw
 

@@ -1,3 +1,23 @@
+cockpit-45drives-hardware (2.8.7-1bookworm) bookworm; urgency=medium
+
+  * Adds ASRock TURIN motherboard
+
+ -- Jordan Keough <jkeough@45drives.com>  Thu, 20 Aug 2026 11:57:39 -0300
+
+cockpit-45drives-hardware (2.8.6-1bookworm) bookworm; urgency=medium
+
+  * Adds ASRock B860I mobo support, adds F8X3-U2 and F8X3-EDFSS units, and fixes
+    ASRock GENOAD8X-25/BCM mapping
+
+ -- Jordan Keough <jkeough@45drives.com>  Fri, 14 Aug 2026 08:00:25 -0300
+
+cockpit-45drives-hardware (2.8.5-1bookworm) bookworm; urgency=medium
+
+  * Updates motherboard view to handle horizontally-orientated PCI slots, adds missing
+    gpgv/gnupg2 deps (for proxinator minimal installations)
+
+ -- Jordan Keough <jkeough@45drives.com>  Mon, 20 Jul 2026 07:04:10 -0300
+
 cockpit-45drives-hardware (2.8.4-3bookworm) bookworm; urgency=medium
 
   * fix: use niccli --pci for direct adapter targeting, fixes BCM57412 flash failures

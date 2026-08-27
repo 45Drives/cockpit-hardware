@@ -16,6 +16,7 @@ import subprocess
 import re
 import os
 import json
+import sys
 
 g_dmi_fields = [
 	"Size",
@@ -260,7 +261,7 @@ def ipmitool_sensor():
             ["ipmitool", "sensor"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
         ).stdout
     except Exception as e:
-        print(f"ERROR: Unable to run ipmitool: {e}")
+        print(f"ERROR: Unable to run ipmitool: {e}", file=sys.stderr)
         return {}
     if ipmitool_sensor_result is None:
         return {}
@@ -339,7 +340,7 @@ def dmidecode():
 					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
 					if bank_locator in ROMED8_locator_tags:
 						current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
-				elif motherboard_model.startswith("GENOAD8X") and bank_locator:
+				elif motherboard_model.startswith(("GENOAD8X", "TURIND8X")) and bank_locator:
 					chan = bank_locator.split()[-1]          # "A" … "K"
 					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
 					if bank_locator in GENOA_locator_tags:
@@ -389,7 +390,7 @@ def dmidecode():
 			current_slot["Locator"] = f"DIMM {chan}1"
 			if bank_locator in GENOA_locator_tags:
 				current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
-		if motherboard_model.startswith("GENOAD8X") and bank_locator:
+		if motherboard_model.startswith(("GENOAD8X", "TURIND8X")) and bank_locator:
 			chan = bank_locator.split()[-1]
 			current_slot["Locator"] = f"DIMM {chan}"
 			if bank_locator in GENOA_locator_tags:
