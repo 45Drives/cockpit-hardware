@@ -100,11 +100,12 @@
   // the caddy sprites, which makes the drives look blurry.
   const DISPLAY_SCALE = 1;
 
-  // Bay label geometry. Bays occupy y 10..130 of the 144x165 chassis, so the
-  // labels sit in the empty strip below them.
+  // Bay label geometry. Labels sit in the strip above the bay opening so they
+  // never overlap the drive art. BAY_LABEL_GAP is the clear space kept between
+  // the bottom of the text and the top of the drive.
   const BAY_WIDTH = 30;
-  const BAY_LABEL_Y = 134;
-  const BAY_LABEL_SIZE = 10;
+  const BAY_LABEL_SIZE = 7;
+  const BAY_LABEL_GAP = 2;
 
   const diskLocations = [    // Chassis image is 144x165, bays measured from x4-homelab.png
     { x: 10, y: 10, BAY: "1-1", HDD: true, occupied: false, image: null },
@@ -246,15 +247,9 @@
         p5.setup = (_) => {
           const canvas = p5.createCanvas(
             assets.chassis.image.width,
-            // assets.chassis.image.height + assets.fade.image.height
             assets.chassis.image.height
           );
           canvas.parent("p5-x4-homelab");
-          // p5.image(assets.fade.image, 0, 0);
-          // increment the y positions of the disks by the height of the fade.
-          diskLocations.forEach((loc) => {
-            // loc.y += assets.fade.image.height;
-          });
           resizeHook(p5,canvas.id(),assets.chassis.image.width * DISPLAY_SCALE);
         };
         // NOTE: Draw is here
@@ -267,7 +262,6 @@
           } else {
             p5.frameRate(24);
           }
-          // p5.image(assets.chassis.image, 0, assets.fade.image.height);
           p5.image(assets.chassis.image, 0, 0);
           diskLocations.forEach((loc) => {
             if (loc.occupied && loc.image) {
@@ -304,20 +298,23 @@
             }
           }
 
-          // Bay labels ("1-1".."1-4") drawn under each bay. The selected bay is
-          // highlighted to match the selection outline above.
+          // Bay labels ("1-1".."1-4") drawn in the strip above each bay so they
+          // never sit on top of the drive art. The selected bay is highlighted
+          // to match the selection outline.
           p5.push();
-          p5.noStroke();
-          p5.textAlign(p5.CENTER, p5.TOP);
+          p5.textAlign(p5.CENTER, p5.BOTTOM);
           p5.textSize(BAY_LABEL_SIZE);
           p5.textStyle(p5.BOLD);
+          p5.noStroke();
           diskLocations.forEach((loc) => {
+            const cx = loc.x + BAY_WIDTH / 2;
+            const by = loc.y - BAY_LABEL_GAP;
             if (loc.BAY === currentDisk.value) {
               p5.fill(206, 242, 212);
             } else {
-              p5.fill(200);
+              p5.fill(235);
             }
-            p5.text(loc.BAY, loc.x + BAY_WIDTH / 2, BAY_LABEL_Y);
+            p5.text(loc.BAY, cx, by);
           });
           p5.pop();
         };
