@@ -210,6 +210,9 @@ export default {
             case "X15":
               pageLayout.value = "B";
               break;
+            case "X4":
+              pageLayout.value = "B";
+              break;
             case "PRO4":
               pageLayout.value = "B";
               break;
@@ -323,6 +326,9 @@ export default {
               pageLayout.value = "BZ";
               break;
             case "X15":
+              pageLayout.value = "BZ";
+              break;
+            case "X4":
               pageLayout.value = "BZ";
               break;
             case "PRO4":
