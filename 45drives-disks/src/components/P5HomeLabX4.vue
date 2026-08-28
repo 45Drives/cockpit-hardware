@@ -104,14 +104,14 @@
   // never overlap the drive art. BAY_LABEL_GAP is the clear space kept between
   // the bottom of the text and the top of the drive.
   const BAY_WIDTH = 30;
-  const BAY_LABEL_SIZE = 7;
-  const BAY_LABEL_GAP = 2;
+  const BAY_LABEL_SIZE = 7.5;
+  const BAY_LABEL_GAP = 1;
 
   const diskLocations = [    // Chassis image is 144x165, bays measured from x4-homelab.png
-    { x: 10, y: 10, BAY: "1-1", HDD: true, occupied: false, image: null },
-    { x: 42, y: 10, BAY: "1-2", HDD: true, occupied: false, image: null },
-    { x: 73, y: 10, BAY: "1-3", HDD: true, occupied: false, image: null },
-    { x: 105, y: 10, BAY: "1-4", HDD: true, occupied: false, image: null },
+    { x: 10, y: 11, BAY: "1-1", HDD: true, occupied: false, image: null },
+    { x: 42, y: 11, BAY: "1-2", HDD: true, occupied: false, image: null },
+    { x: 73, y: 11, BAY: "1-3", HDD: true, occupied: false, image: null },
+    { x: 105, y: 11, BAY: "1-4", HDD: true, occupied: false, image: null },
   ];
 
   
