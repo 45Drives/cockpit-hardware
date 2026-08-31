@@ -1,3 +1,3 @@
-## cockpit-45drives-hardware 2.8.7-1
+## cockpit-45drives-hardware 2.8.9-1
 
-* Adds ASRock TURIN motherboard
+* added support for X4

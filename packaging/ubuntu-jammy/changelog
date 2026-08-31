@@ -1,3 +1,16 @@
+cockpit-45drives-hardware (2.8.9-1jammy) jammy; urgency=medium
+
+  * added support for X4
+
+ -- Rachit Hans <rhans@45drives.com>  Fri, 28 Aug 2026 11:34:05 -0300
+
+cockpit-45drives-hardware (2.8.8-1jammy) jammy; urgency=medium
+
+  * Fixes overly-aggressive firmware check backend which results in dmesg spam from
+    storcli64/mp3tsas, etc
+
+ -- Jordan Keough <jkeough@45drives.com>  Thu, 27 Aug 2026 05:33:01 -0300
+
 cockpit-45drives-hardware (2.8.7-1jammy) jammy; urgency=medium
 
   * Adds ASRock TURIN motherboard

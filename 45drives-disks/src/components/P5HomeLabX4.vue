@@ -92,26 +92,14 @@
     },
     loadingFlag: true,
   };
- 
-  // Chassis art is 144x165 so that one drive bay is exactly the width of the
-  // shared 30x120 caddy sprites, matching every other chassis sketch. Disks are
-  // drawn 1:1 and the canvas is displayed 1:1, so nothing is ever interpolated.
-  // Raising DISPLAY_SCALE makes the unit bigger but the browser then upscales
-  // the caddy sprites, which makes the drives look blurry.
+
   const DISPLAY_SCALE = 1;
 
-  // Bay label geometry. Labels sit in the strip above the bay opening so they
-  // never overlap the drive art. BAY_LABEL_GAP is the clear space kept between
-  // the bottom of the text and the top of the drive.
-  const BAY_WIDTH = 30;
-  const BAY_LABEL_SIZE = 7.5;
-  const BAY_LABEL_GAP = 1;
-
-  const diskLocations = [    // Chassis image is 144x165, bays measured from x4-homelab.png
-    { x: 10, y: 11, BAY: "1-1", HDD: true, occupied: false, image: null },
-    { x: 42, y: 11, BAY: "1-2", HDD: true, occupied: false, image: null },
-    { x: 73, y: 11, BAY: "1-3", HDD: true, occupied: false, image: null },
-    { x: 105, y: 11, BAY: "1-4", HDD: true, occupied: false, image: null },
+  const diskLocations = [    // Chassis image is 147x188, bays measured from x4-homelab.png
+    { x: 9, y: 25, BAY: "1-1", HDD: true, occupied: false, image: null },
+    { x: 42, y: 25, BAY: "1-2", HDD: true, occupied: false, image: null },
+    { x: 75, y: 25, BAY: "1-3", HDD: true, occupied: false, image: null },
+    { x: 108, y: 25, BAY: "1-4", HDD: true, occupied: false, image: null },
   ];
 
   
@@ -297,26 +285,6 @@
               );
             }
           }
-
-          // Bay labels ("1-1".."1-4") drawn in the strip above each bay so they
-          // never sit on top of the drive art. The selected bay is highlighted
-          // to match the selection outline.
-          p5.push();
-          p5.textAlign(p5.CENTER, p5.BOTTOM);
-          p5.textSize(BAY_LABEL_SIZE);
-          p5.textStyle(p5.BOLD);
-          p5.noStroke();
-          diskLocations.forEach((loc) => {
-            const cx = loc.x + BAY_WIDTH / 2;
-            const by = loc.y - BAY_LABEL_GAP;
-            if (loc.BAY === currentDisk.value) {
-              p5.fill(206, 242, 212);
-            } else {
-              p5.fill(235);
-            }
-            p5.text(loc.BAY, cx, by);
-          });
-          p5.pop();
         };
   
         p5.mouseClicked = (_) => {
