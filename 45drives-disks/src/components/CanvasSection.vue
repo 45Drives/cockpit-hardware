@@ -36,13 +36,13 @@
       <P5F8X3NVME v-if="activeSketchStr === 'StorinatorF8X3NVME'" />
       <P5StornadoE16 v-if="activeSketchStr === 'StornadoE16'" />
       <P5Stornado2U v-if="activeSketchStr === 'Stornado2U'" />
-      <P5StorinatorQ30 v-else-if="activeSketchStr === 'StorinatorQ30'" />
+      <P5StorinatorQ30 v-else-if="activeSketchStr === 'StorinatorQ30'" :chassisImage="chassisImage" />
       <P5Stornado v-else-if="activeSketchStr === 'StornadoAV15'" />
       <P5StorinatorXL60H16 v-else-if="activeSketchStr === 'StorinatorXL60H16'" />
-      <P5StorinatorS45 v-else-if="activeSketchStr === 'StorinatorS45'" />
+      <P5StorinatorS45 v-else-if="activeSketchStr === 'StorinatorS45'" :chassisImage="chassisImage" />
       <P5StorinatorS45H16 v-else-if="activeSketchStr === 'StorinatorS45H16'" />
       <P5StorinatorQ30H16 v-else-if="activeSketchStr === 'StorinatorQ30H16'" />
-      <P5StorinatorAV15 v-else-if="activeSketchStr === 'StorinatorAV15'" />
+      <P5StorinatorAV15 v-else-if="activeSketchStr === 'StorinatorAV15'" :chassisImage="chassisImage" />
       <P5HomeLabHL15BEAST v-else-if="activeSketchStr === 'HomeLabHL15_BEAST'" />
       <P5HomeLabHL15 v-else-if="activeSketchStr === 'HomeLabHL15'" />
       <P5HomeLabHL4 v-else-if="activeSketchStr === 'HomeLabHL4'" />
@@ -54,7 +54,7 @@
       <P5StorinatorQ30H32 v-else-if="activeSketchStr === 'StorinatorQ30H32'" />
       <P5StorinatorS45H32 v-else-if="activeSketchStr === 'StorinatorS45H32'" />
       <P5StorinatorXL60H32 v-else-if="activeSketchStr === 'StorinatorXL60H32'" />
-      <P5StorinatorXL60 v-else-if="activeSketchStr === 'StorinatorXL60'" />
+      <P5StorinatorXL60 v-else-if="activeSketchStr === 'StorinatorXL60'" :chassisImage="chassisImage" />
       <P5StorinatorC8 v-else-if="activeSketchStr === 'StorinatorC8'" />
       <P5StorinatorMI4 v-else-if="activeSketchStr === 'StorinatorMI4'" />
       <P5ProxinatorVM8 v-else-if="activeSketchStr === 'ProxinatorVM8'" />
@@ -112,6 +112,14 @@ import P5StornadoF16 from "./P5StornadoF16.vue";
 import P5StudioSTUDIO8 from "./P5StudioSTUDIO8.vue";
 import { Switch, SwitchGroup, SwitchLabel } from '@headlessui/vue'
 
+// null = UBM artwork not added yet; the Disk Viewer shows the unsupported model message
+const UBM_CHASSIS_IMAGES = {
+  StorinatorAV15: null,
+  StorinatorQ30: null,
+  StorinatorS45: null,
+  StorinatorXL60: null,
+};
+
 export default {
   components: {
     P5StornadoF2,
@@ -164,7 +172,7 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|X4|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|NVME-F8X1-U2|NVME-F8X1-EDSFF|NVME-F8X2-U2|NVME-F8X2-EDSFF|NVME-F8X3-U2|NVME-F8X3-EDSFF|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|E16|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|X4|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|NVME-F8X1-U2|NVME-F8X1-EDSFF|NVME-F8X2-U2|NVME-F8X2-EDSFF|NVME-F8X3-U2|NVME-F8X3-EDSFF|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|E16|VM8|VM16|VM32|STUDIO8|F16|VM2)(_UBM)?/m.exec(
           modelString
         );
       let enableString = testString
@@ -185,7 +193,11 @@ export default {
 
     const canvasCardBody = ref();
     const canvasReady = ref(false);
-    const activeSketchStr = enableSketch(serverModel.value);
+    const sketchStr = enableSketch(serverModel.value);
+    const isUbm = /_UBM\b/.test(serverModel.value);
+    const ubmPending = isUbm && UBM_CHASSIS_IMAGES[sketchStr] === null;
+    const activeSketchStr = ubmPending ? "" : sketchStr;
+    const chassisImage = isUbm ? UBM_CHASSIS_IMAGES[sketchStr] : undefined;
     watch(enableZfsAnimations,()=>{});
 
     // Poll for the P5 canvas appearing in the DOM
@@ -206,6 +218,7 @@ export default {
       canvasCardBody,
       canvasReady,
       activeSketchStr,
+      chassisImage,
       zfsInfo,
       enableZfsAnimations
     };

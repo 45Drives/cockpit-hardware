@@ -16,6 +16,21 @@ import ZfsSection from "./components/ZfsSection.vue";
 // DEV MODE: Set to true to limit lsdev to chassis template size (for testing on spoofed servers)
 const DEV_MODE = false;
 
+const CHASSIS_LAYOUT = Object.fromEntries(
+  Object.entries({
+    A: ["E16", "2U", "F2", "VM16", "VM32", "C8", "C8_UBM", "MI4", "MI4_UBM", "F16", "STUDIO8"],
+    B: [
+      "F8X1", "F8X2", "F8X3",
+      "NVME-F8X1", "NVME-F8X2", "NVME-F8X3",
+      "NVME-F8X1-U2", "NVME-F8X2-U2", "NVME-F8X3-U2",
+      "NVME-F8X1-EDSFF", "NVME-F8X2-EDSFF", "NVME-F8X3-EDSFF",
+      "VM8", "AV15", "AV15_UBM", "HL4", "HL8", "HL15", "HL15_BEAST", "X15", "X4",
+      "PRO4", "PRO8", "PRO15", "Q30", "Q30_UBM", "S45", "S45_UBM",
+    ],
+    C: ["VM2", "XL60", "XL60_UBM"],
+  }).flatMap(([layout, sizes]) => sizes.map((size) => [size, layout]))
+);
+
 export default {
   name: "App",
   components: {
@@ -133,243 +148,14 @@ export default {
     };
 
     const setPageLayout = () => {
-      if (preloadChecks.zfs.finished && preloadChecks.zfs.failed) {
-        // no zfs
-        if (!preloadChecks.serverInfo.failed) {
-          // server info is available.
-          switch (preloadChecks.serverInfo.content["Chassis Size"]) {
-            case "F8X1":
-              pageLayout.value = "B";
-              break;
-            case "F8X2":
-              pageLayout.value = "B";
-              break;
-            case "F8X3":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X1":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X2":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X3":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X1-U2":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X2-U2":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X3-U2":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X1-EDSFF":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X2-EDSFF":
-              pageLayout.value = "B";
-              break;
-            case "NVME-F8X3-EDSFF":
-              pageLayout.value = "B";
-              break;  
-            case "E16":
-              pageLayout.value = "A";
-              break;
-            case "2U":
-              pageLayout.value = "A";
-              break;
-            case "F2":
-              pageLayout.value = "A";
-              break;
-            case "VM2":
-              pageLayout.value = "C";
-              break;
-            case "VM8":
-              pageLayout.value = "B";
-              break;
-            case "VM16":
-              pageLayout.value = "A";
-              break;
-            case "VM32":
-              pageLayout.value = "A";
-              break;
-            case "AV15":
-              pageLayout.value = "B";
-              break;
-            case "HL4":
-              pageLayout.value = "B";
-              break;
-            case "HL8":
-              pageLayout.value = "B";
-              break;
-            case "HL15":
-              pageLayout.value = "B";
-              break;
-            case "X15":
-              pageLayout.value = "B";
-              break;
-            case "X4":
-              pageLayout.value = "B";
-              break;
-            case "PRO4":
-              pageLayout.value = "B";
-              break;
-            case "PRO8":
-              pageLayout.value = "B";
-              break;
-            case "PRO15":
-              pageLayout.value = "B";
-              break;
-            case "C8":
-              pageLayout.value = "A";
-              break;
-            case "MI4":
-              pageLayout.value = "A";
-              break;
-            case "Q30":
-              pageLayout.value = "B";
-              break;
-            case "S45":
-              pageLayout.value = "B";
-              break;
-            case "XL60":
-              pageLayout.value = "C";
-              break;
-            case "F16":
-              pageLayout.value = "A";
-              break;
-            case "STUDIO8":
-              pageLayout.value = "A";
-              break;
-            case "HL15_BEAST":
-              pageLayout.value = "B";
-              break;
-            default:
-              console.log("UNKNOWN CHASSIS SIZE");
-          }
-        }
-        preloadChecks.pageStatus.ready = true
-      } else {
-        //zfs info needs to be displayed
-        if (preloadChecks.zfs.finished && !preloadChecks.serverInfo.failed) {
-          // server info is available.
-          switch (preloadChecks.serverInfo.content["Chassis Size"]) {
-            case "F8X1":
-              pageLayout.value = "BZ";
-              break;
-            case "F8X2":
-              pageLayout.value = "BZ";
-              break;
-            case "F8X3":
-              pageLayout.value = "BZ";
-              break;              
-            case "NVME-F8X1":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X2":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X3":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X1-U2":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X2-U2":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X3-U2":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X1-EDSFF":
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X2-EDSFF":   
-              pageLayout.value = "BZ";
-              break;
-            case "NVME-F8X3-EDSFF":
-              pageLayout.value = "BZ";
-              break;
-            case "E16":
-              pageLayout.value = "AZ";
-              break;
-            case "2U":
-              pageLayout.value = "AZ";
-              break;       
-            case "F2":
-              pageLayout.value = "AZ";
-              break;      
-            case "VM2":
-              pageLayout.value = "CZ";
-              break;          
-            case "VM8":
-              pageLayout.value = "BZ";
-              break;
-            case "VM16":
-              pageLayout.value = "AZ";
-              break;
-            case "VM32":
-              pageLayout.value = "AZ";
-              break;
-            case "AV15":
-              pageLayout.value = "BZ";
-              break;
-            case "HL4":
-              pageLayout.value = "BZ";
-              break; 
-            case "HL8":
-              pageLayout.value = "BZ";
-              break;
-            case "HL15":
-              pageLayout.value = "BZ";
-              break;
-            case "X15":
-              pageLayout.value = "BZ";
-              break;
-            case "X4":
-              pageLayout.value = "BZ";
-              break;
-            case "PRO4":
-              pageLayout.value = "BZ";
-              break;
-            case "PRO8":
-              pageLayout.value = "BZ";
-              break;
-            case "PRO15":
-              pageLayout.value = "BZ";
-              break;
-            case "C8":
-              pageLayout.value = "AZ";
-              break;
-            case "MI4":
-              pageLayout.value = "AZ";
-              break;
-            case "Q30":
-              pageLayout.value = "BZ";
-              break;
-            case "S45":
-              pageLayout.value = "BZ";
-              break;
-            case "XL60":
-              pageLayout.value = "CZ";
-              break;
-            case "F16":
-              pageLayout.value = "AZ";
-              break;  
-            case "STUDIO8":
-              pageLayout.value = "AZ";
-              break;
-            case "HL15_BEAST":
-              pageLayout.value = "BZ";
-              break;
-            default:
-              console.log("UNKNOWN CHASSIS SIZE");
-          }
-        }
-        preloadChecks.pageStatus.ready = true
+      if (preloadChecks.zfs.finished && !preloadChecks.serverInfo.failed) {
+        const chassis = preloadChecks.serverInfo.content?.["Chassis Size"];
+        const base = CHASSIS_LAYOUT[chassis];
+        if (!base) console.log("UNKNOWN CHASSIS SIZE", chassis);
+        // Unknown chassis falls back to full-width "A" rather than keeping the ZFS default "AZ"
+        pageLayout.value = (base ?? "A") + (preloadChecks.zfs.failed ? "" : "Z");
       }
+      preloadChecks.pageStatus.ready = true;
     };
 
     let serverInfoFailNotification = null;
