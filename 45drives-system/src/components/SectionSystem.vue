@@ -136,7 +136,7 @@ export default {
       }
       console.log('[Debug]: MODEL ->', model)
       const regExpModel =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*?(NVME-F8X1-U2|NVME-F8X1-EDSFF|NVME-F8X2-U2|NVME-F8X2-EDSFF|NVME-F8X3-U2|NVME-F8X3-EDSFF|NVME-F8X1|NVME-F8X2|NVME-F8X3|HL15_BEAST|HL15|HL4|HL8|X15|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|F8X1|F8X2|F8X3|F2|VM2|VM4|VM8|VM16|VM32|STUDIO8|STUDIO15|F16|2UGW_REV2|1UGW|2U)(_UBM)?.*/;
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio|Gateway).*?(NVME-F8X1-U2|NVME-F8X1-EDSFF|NVME-F8X2-U2|NVME-F8X2-EDSFF|NVME-F8X3-U2|NVME-F8X3-EDSFF|NVME-F8X1|NVME-F8X2|NVME-F8X3|HL15_BEAST|HL15|HL4|HL8|X15|PRO4|PRO8|PRO15|AV15|Q30|S45|XL60|C8|MI4|F8X1|F8X2|F8X3|F2|VM2|VM4|VM8|VM16|VM32|STUDIO8|STUDIO15|F16|2UGW_REV2|1UGW|2U).*/;
       const match = model.match(regExpModel);
       const imgPathLookup = {
         "Storinator": {
@@ -144,10 +144,6 @@ export default {
           "Q30": "img/storinatorQ30.png",
           "S45": "img/storinatorS45.png",
           "XL60": "img/storinatorXL60.png",
-          "AV15_UBM": "img/storinatorAV15.png",
-          "Q30_UBM": "img/storinatorQ30.png",
-          "S45_UBM": "img/storinatorS45.png",
-          "XL60_UBM": "img/storinatorXL60.png",
           "C8": "img/storinatorC8.png",
           "MI4": "img/storinatorMI4.png",
           "F8X1": "img/F8X1.png",
@@ -199,8 +195,7 @@ export default {
       };
 
       if(!match) return "img/45dlogo.png";
-      const models = imgPathLookup[match[1]];
-      return models[match[2] + (match[3] ?? "")] ?? models[match[2]];
+      return imgPathLookup[match[1]][match[2]];
     };
 
     const getSystemInfo = async () => {
