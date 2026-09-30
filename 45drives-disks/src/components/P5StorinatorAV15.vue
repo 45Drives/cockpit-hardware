@@ -217,8 +217,7 @@ const diskLocations = [
 
 export default {
   name: "P5StorinatorAV15",
-  props: { chassisImage: String },
-  setup(props) {
+  setup() {
     const diskInfoObj = ref({});
     const currentDisk = inject("currentDisk");
     const lsdevJson = inject("lsdevJson");
@@ -315,7 +314,7 @@ export default {
       loadingAnimation(p5);
       zfsAnimation(p5);
       p5.preload = (_) => {
-        assets.chassis.image = p5.loadImage(props.chassisImage || assets.chassis.path);
+        assets.chassis.image = p5.loadImage(assets.chassis.path);
         assets.fade.image = p5.loadImage(assets.fade.path);
         Object.entries(assets.disks.caddy).forEach(([dsk, val]) => {
           assets.disks.caddy[dsk].image = p5.loadImage(val.path);
