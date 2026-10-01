@@ -43,3 +43,6 @@ firmware-repo/*.rom
 firmware-repo/*.pkg
 documentation/Firmware_Distribution_Architecture.md
 documentation/Firmware_Project_DNA.md
+
+# svg_assets.py backups
+design/**/backups/
