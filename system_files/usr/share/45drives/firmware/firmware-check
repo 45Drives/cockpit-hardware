@@ -11,6 +11,13 @@ Exit codes:
     0 = all firmware current
     1 = error
     2 = one or more devices have outdated firmware
+    3 = the manifest could not be downloaded from MANIFEST_URL. There is no
+        fallback to a local manifest: the previous results are kept in the
+        cache, marked with manifest_source="unavailable" and the error, so
+        Cockpit warns and the systemd unit shows as failed.
+
+The local MANIFEST_PATH is only read when MANIFEST_URL is explicitly set to
+an empty value in repo.conf (offline/air-gapped mode).
 """
 
 import json
@@ -20,9 +27,10 @@ import re
 import os
 import fcntl
 import time
+import ssl
 import tempfile
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 
@@ -71,6 +79,39 @@ def get_repo_config():
     return config
 
 
+def _is_true(val):
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
+def make_ssl_context(config=None):
+    """TLS context for repo downloads.
+
+    Python 3.13+ enables VERIFY_X509_STRICT by default, which rejects CA certs
+    that are not fully RFC 5280 compliant (e.g. missing Authority Key
+    Identifier). TLS-inspection firewalls commonly issue such CAs, so a CA the
+    admin has installed in the system trust store (and that curl accepts) gets
+    rejected. We clear only that flag: the chain is still verified against the
+    system trust store and the hostname is still checked. Content integrity
+    does not rely on TLS anyway -- the manifest is GPG-verified and every
+    firmware/tool download is checked against a pinned SHA256.
+
+    Set TLS_X509_STRICT=true in repo.conf (or FIRMWARE_TLS_X509_STRICT=1) to
+    keep Python's strict default.
+    """
+    if config is None:
+        config = get_repo_config()
+    ctx = ssl.create_default_context()
+    strict = os.environ.get("FIRMWARE_TLS_X509_STRICT", config.get("TLS_X509_STRICT", "false"))
+    if not _is_true(strict) and hasattr(ssl, "VERIFY_X509_STRICT"):
+        ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    return ctx
+
+
+# Outcome of the last remote manifest fetch, recorded into the status cache so
+# Cockpit can show that the check ran against a stale local manifest.
+MANIFEST_FETCH = {"source": "local", "error": ""}
+
+
 def has_repo_configured():
     """Check if a firmware repo URL is configured."""
     config = get_repo_config()
@@ -84,9 +125,10 @@ def fetch_remote_manifest():
     if not manifest_url:
         return None
 
+    ctx = make_ssl_context(config)
     try:
         req = Request(manifest_url, headers={"User-Agent": "45drives-firmware-check/1.0"})
-        response = urlopen(req, timeout=15)
+        response = urlopen(req, timeout=15, context=ctx)
         manifest_bytes = response.read()
 
         # Enforce a size limit before any processing (10 MB)
@@ -111,10 +153,11 @@ def fetch_remote_manifest():
             # Fetch signature — MUST exist
             try:
                 sig_req = Request(sig_url, headers={"User-Agent": "45drives-firmware-check/1.0"})
-                sig_response = urlopen(sig_req, timeout=10)
+                sig_response = urlopen(sig_req, timeout=10, context=ctx)
                 sig_bytes = sig_response.read()
             except (HTTPError, URLError) as e:
                 print(f"GPG: Signature not available at {sig_url} ({e}) — rejecting remote manifest!", file=sys.stderr)
+                MANIFEST_FETCH["error"] = f"Signature not available: {e}"
                 return None
 
             # Verify signature — MUST pass before we trust the content
@@ -122,6 +165,7 @@ def fetch_remote_manifest():
                 print("GPG: Manifest signature verified ✓", file=sys.stderr)
             else:
                 print("GPG: Manifest signature INVALID — rejecting remote manifest!", file=sys.stderr)
+                MANIFEST_FETCH["error"] = "Manifest signature invalid"
                 return None
         else:
             print("GPG: Verification disabled via VERIFY_GPG=false (internal mode)", file=sys.stderr)
@@ -129,11 +173,16 @@ def fetch_remote_manifest():
         # Only decode JSON after signature verification passes (or is disabled)
         data = json.loads(manifest_bytes.decode("utf-8"))
         if "components" not in data:
+            MANIFEST_FETCH["error"] = "Remote manifest has no 'components'"
             return None
 
+        MANIFEST_FETCH["source"] = "remote"
+        MANIFEST_FETCH["error"] = ""
         return data
     except (HTTPError, URLError, json.JSONDecodeError, Exception) as e:
-        print(f"Note: Could not fetch remote manifest ({e}), using local.", file=sys.stderr)
+        MANIFEST_FETCH["error"] = str(e)
+        print(f"ERROR: Could not download the firmware manifest from {manifest_url} ({e}).",
+              file=sys.stderr)
     return None
 
 
@@ -172,13 +221,23 @@ def verify_gpg_signature(data_bytes, sig_bytes, pubkey_path):
 
 
 def load_manifest():
-    """Load firmware manifest. Tries remote first (if configured), falls back to local."""
-    # Try remote manifest
-    remote = fetch_remote_manifest()
-    if remote:
-        return remote
+    """Load the firmware manifest.
 
-    # Fall back to local
+    If MANIFEST_URL is set (the default), the manifest comes only from there;
+    a failed download returns None instead of silently using a possibly stale
+    local file. The local MANIFEST_PATH is read only in offline mode, i.e.
+    when MANIFEST_URL is explicitly empty in repo.conf.
+    """
+    if get_repo_config().get("MANIFEST_URL"):
+        remote = fetch_remote_manifest()
+        if remote:
+            return remote
+        MANIFEST_FETCH["source"] = "unavailable"
+        if not MANIFEST_FETCH["error"]:
+            MANIFEST_FETCH["error"] = "Remote manifest could not be downloaded"
+        return None
+
+    MANIFEST_FETCH["source"] = "local-only"
     try:
         with open(MANIFEST_PATH, "r") as f:
             return json.load(f)
@@ -353,6 +412,12 @@ def main():
     # Load manifest
     manifest = load_manifest()
     if not manifest:
+        if MANIFEST_FETCH["source"] == "unavailable":
+            mark_cache_unavailable(MANIFEST_FETCH["error"])
+            print("Firmware check failed: the firmware manifest could not be downloaded. "
+                  "Previous results (if any) were kept and marked as out of date.",
+                  file=sys.stderr)
+            return 3
         return 1
 
     # Run discovery
@@ -362,9 +427,11 @@ def main():
 
     # Compare each device
     results = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
         "hostname": discovered.get("hostname", ""),
         "manifest_version": manifest.get("schema_version", ""),
+        "manifest_source": MANIFEST_FETCH["source"],
+        "manifest_fetch_error": MANIFEST_FETCH["error"],
         "summary": {
             "total": 0,
             "current": 0,
@@ -489,6 +556,31 @@ def main():
     print(f"Firmware check complete: {s['total']} devices, "
           f"{s['current']} current, {s['outdated']} outdated, {s['unknown']} unknown")
 
+    return result_exit_code(has_outdated, MANIFEST_FETCH["source"])
+
+
+def mark_cache_unavailable(error):
+    """Keep the last results but flag them as not refreshed, so Cockpit can
+    warn instead of presenting old data as current."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
+    try:
+        with open(CACHE_PATH, "r") as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        # No previous results: record that nothing was checked. No timestamp,
+        # so Cockpit shows "No results available" rather than "up to date".
+        cache = {"results_available": False, "devices": [],
+                 "summary": {"total": 0, "current": 0, "outdated": 0, "unknown": 0}}
+    cache["manifest_source"] = "unavailable"
+    cache["manifest_fetch_error"] = error
+    cache["manifest_fetch_failed_at"] = now
+    write_cache(cache)
+
+
+def result_exit_code(has_outdated, manifest_source):
+    """0 = current, 2 = outdated, 3 = manifest could not be downloaded."""
+    if manifest_source == "unavailable":
+        return 3
     return 2 if has_outdated else 0
 
 
@@ -508,7 +600,7 @@ def exit_code_from_cache():
         return 1
     outdated = cache.get("summary", {}).get("outdated", 0)
     print("Firmware check skipped: reusing results from a concurrent run")
-    return 2 if outdated else 0
+    return result_exit_code(bool(outdated), cache.get("manifest_source", ""))
 
 
 def run():
@@ -553,4 +645,6 @@ def run():
 
 
 if __name__ == "__main__":
+    # --fail-on-stale-manifest is accepted for compatibility; it is now the
+    # default behaviour.
     sys.exit(run())

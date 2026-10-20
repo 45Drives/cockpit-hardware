@@ -26,6 +26,7 @@ from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
 from urllib.parse import quote
 import hashlib
+import ssl
 
 
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
@@ -89,6 +90,36 @@ def get_repo_url():
     return "https://fw.45drives.com"
 
 
+def make_ssl_context():
+    """TLS context for repo downloads.
+
+    Clears Python 3.13+'s VERIFY_X509_STRICT so CAs from TLS-inspection
+    firewalls (often missing Authority Key Identifier) are accepted when the
+    admin has installed them in the system trust store. Chain and hostname are
+    still verified; every download is also checked against a pinned SHA256.
+    Set TLS_X509_STRICT=true in repo.conf (or FIRMWARE_TLS_X509_STRICT=1) to
+    keep the strict default.
+    """
+    strict = "false"
+    conf_path = os.environ.get("FIRMWARE_REPO_CONF") or REPO_CONF
+    try:
+        with open(conf_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                if key.strip() == "TLS_X509_STRICT":
+                    strict = val.strip()
+    except FileNotFoundError:
+        pass
+    strict = os.environ.get("FIRMWARE_TLS_X509_STRICT", strict)
+    ctx = ssl.create_default_context()
+    if strict.strip().lower() not in ("1", "true", "yes", "on") and hasattr(ssl, "VERIFY_X509_STRICT"):
+        ctx.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    return ctx
+
+
 def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
     """Download a firmware file from the repo if not available locally.
     
@@ -122,7 +153,7 @@ def fetch_firmware_from_repo(firmware_file, dest_path, expected_sha256=""):
 
     try:
         req = Request(url, headers={"User-Agent": "45drives-firmware-flash/1.0"})
-        response = urlopen(req, timeout=60)
+        response = urlopen(req, timeout=60, context=make_ssl_context())
 
         # Ensure destination directory exists
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
@@ -203,7 +234,7 @@ def fetch_tool_from_repo(tool_name, dest_path, expected_sha256=""):
 
     try:
         req = Request(url, headers={"User-Agent": "45drives-firmware-flash/1.0"})
-        response = urlopen(req, timeout=60)
+        response = urlopen(req, timeout=60, context=make_ssl_context())
 
         os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
@@ -515,6 +546,52 @@ def flash_nvme(device_path, firmware_path):
         return False, str(e)
 
 
+def check_niccli_health(niccli_bin, bus_info):
+    """Query niccli for device health before flashing.
+
+    Returns (healthy: bool, problems: list[str]). If the health query itself
+    fails (e.g. older niccli without 'show --all'), returns (True, []) so we
+    don't block flashing on tool-version quirks.
+    """
+    try:
+        result = subprocess.run(
+            [niccli_bin, "--pci", bus_info, "show", "--all"],
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True, timeout=60,
+        )
+    except Exception as e:
+        print(f"  ⚠ Could not query NIC health ({e}); continuing.")
+        return True, []
+
+    output = result.stdout or ""
+    # Only an explicit unhealthy signal blocks flashing. NVM config 0.0.0 and
+    # "Firmware Version: Not Available" can appear on healthy cards, so they
+    # are reported only as supporting detail alongside an explicit signal.
+    problems = []
+    details = []
+    for raw in output.splitlines():
+        line = raw.strip()
+        lower = line.lower()
+        key, _, value = line.partition(":")
+        key_l = key.strip().lower()
+        value_s = value.strip()
+        if lower.startswith("controller is not operational"):
+            problems.append("Controller is not operational")
+        elif key_l == "device health" and value_s and not value_s.lower().startswith("good"):
+            problems.append(f"Device Health: {value_s}")
+        elif key_l in ("active nvm config version", "nvm config version") and value_s == "0.0.0":
+            details.append(f"{key.strip()}: {value_s}")
+        elif key_l == "firmware version" and value_s.lower() == "not available":
+            details.append("Firmware Version: Not Available")
+
+    if problems:
+        problems += details
+    # De-duplicate while preserving order
+    seen = set()
+    problems = [p for p in problems if not (p in seen or seen.add(p))]
+    return (len(problems) == 0), problems
+
+
 def flash_niccli(device_info, firmware_path):
     """Flash Broadcom NIC using niccli.
     
@@ -569,6 +646,27 @@ def flash_niccli(device_info, firmware_path):
     # Flash using niccli --pci (directly targets by PCI BDF address)
     # This is more reliable than --list parsing which can fail when niccli
     # doesn't enumerate all adapters or output format varies between versions.
+    # Pre-flash health check: refuse to flash a card whose firmware controller
+    # is already non-operational — a failed write can leave it unrecoverable.
+    print(f"Checking Broadcom NIC health at PCI {bus_info}...", flush=True)
+    healthy, problems = check_niccli_health(niccli_bin, bus_info)
+    if not healthy:
+        print("  ✗ WARNING: This network card is in a bad state:")
+        for p in problems:
+            print(f"      - {p}")
+        print("    Recommended: fully power off the server (remove AC power ~30s),")
+        print("    power on, and re-check. If the card still reports a bad state,")
+        print("    contact 45Drives support — it may need vendor recovery or RMA.")
+        if os.environ.get("FW_FLASH_IGNORE_NIC_HEALTH") != "1":
+            return False, (
+                "NIC health check failed (" + "; ".join(problems) + "). "
+                "Flash aborted to avoid further damage. Cold power cycle the "
+                "server and retry, or contact support."
+            )
+        print("  ⚠ FW_FLASH_IGNORE_NIC_HEALTH=1 set — proceeding anyway.")
+    else:
+        print("  ✓ NIC health OK")
+
     print(f"Flashing Broadcom NIC at PCI {bus_info}...")
 
     # Try --pci first (modern niccli), fall back to -i with --list lookup
@@ -798,7 +896,7 @@ def flash_tool_package(device_info):
 
             try:
                 req = Request(url, headers={"User-Agent": "45drives-firmware-flash/1.0"})
-                response = urlopen(req, timeout=120)
+                response = urlopen(req, timeout=120, context=make_ssl_context())
 
                 sha256_hash = hashlib.sha256()
                 with open(tarball_path, "wb") as f:
