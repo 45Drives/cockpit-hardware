@@ -8,6 +8,8 @@ Wants=network-online.target
 Type=oneshot
 # firmware-check returns 2 when outdated firmware is detected (not an error)
 SuccessExitStatus=2
+# Exit 3 (unit fails) if the manifest could not be downloaded from
+# fw.45drives.com. There is no fallback to a local copy.
 ExecStart=/usr/bin/python3 /usr/share/45drives/firmware/firmware-check
 # Run as root (needed for dmidecode, ipmitool, storcli, etc.)
 User=root

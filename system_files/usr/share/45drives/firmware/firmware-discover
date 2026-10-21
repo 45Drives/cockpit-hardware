@@ -501,8 +501,8 @@ def main():
     }
 
     # Get timestamp
-    from datetime import datetime
-    results["timestamp"] = datetime.utcnow().isoformat() + "Z"
+    from datetime import datetime, timezone
+    results["timestamp"] = datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z"
 
     # Get hostname
     stdout, _, _ = run_cmd("hostname")

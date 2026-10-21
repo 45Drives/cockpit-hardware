@@ -23,11 +23,24 @@
     </div>
   </div>
   <div class="card-body max-h-[32rem] overflow-y-auto">
+    <div v-if="manifestWarning" class="mb-2 rounded-md border border-yellow-400 bg-yellow-50 px-3 py-2 text-sm text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200">
+      <strong>Firmware results may be out of date.</strong>
+      This server could not reach the 45Drives firmware server to get the latest firmware list.
+      <template v-if="noResults">No firmware check has completed yet, so no results are available.</template>
+      <template v-else>The results below are from the last successful check and may not show newer firmware
+      that has been released since.</template>
+      <div class="mt-1"><strong>Likely cause:</strong> {{ manifestExplain.reason }}</div>
+      <div><strong>What to do:</strong> {{ manifestExplain.action }}</div>
+      <div class="mt-1 text-xs break-all opacity-80">Technical details: {{ manifestWarning }}</div>
+    </div>
     <div v-if="checking && devices.length === 0" class="text-sm text-muted py-4 text-center">
       Running firmware discovery and comparison...
     </div>
     <div v-else-if="error" class="text-sm text-red-600 py-4">
       {{ error }}
+    </div>
+    <div v-else-if="noResults" class="text-sm text-muted py-4 text-center">
+      No results available.
     </div>
     <div v-else-if="outdatedDevices.length > 0" class="mt-2 flex flex-col">
       <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -307,6 +320,51 @@ export default {
     const checking = ref(false);
     const error = ref("");
     const lastChecked = ref("");
+    const manifestWarning = ref("");
+    const noResults = ref(false);
+    const manifestExplain = computed(() => {
+      const e = (manifestWarning.value || "").toLowerCase();
+      if (/name or service not known|temporary failure in name resolution|nodename nor servname|getaddrinfo/.test(e)) {
+        return {
+          reason: "The server could not look up the firmware server's address (DNS problem or no internet access).",
+          action: "Check this server's DNS settings and internet connection, and that fw.45drives.com is reachable.",
+        };
+      }
+      if (/certificate|ssl|tls/.test(e)) {
+        return {
+          reason: "The secure (HTTPS) connection was rejected because the certificate could not be trusted. This often happens behind firewalls that inspect HTTPS traffic.",
+          action: "Make sure your organization's certificate authority is installed on this server, or ask your network admin to allow fw.45drives.com.",
+        };
+      }
+      if (/timed out|timeout/.test(e)) {
+        return {
+          reason: "The firmware server did not respond in time.",
+          action: "Check the network connection and firewall rules, then click the refresh button to try again.",
+        };
+      }
+      if (/refused|unreachable|no route|reset/.test(e)) {
+        return {
+          reason: "The connection to the firmware server was blocked or dropped.",
+          action: "Ask your network admin to allow HTTPS access to fw.45drives.com.",
+        };
+      }
+      if (/http error|404|403|500|502|503/.test(e)) {
+        return {
+          reason: "The firmware server returned an error.",
+          action: "Try again later. If it keeps happening, contact 45Drives support.",
+        };
+      }
+      if (/gpg|signature/.test(e)) {
+        return {
+          reason: "The downloaded firmware list failed its security check and was rejected.",
+          action: "Contact 45Drives support. Something may be modifying downloads on your network.",
+        };
+      }
+      return {
+        reason: "The firmware list could not be downloaded.",
+        action: "Check the network connection, then click the refresh button to try again. Contact 45Drives support if it continues.",
+      };
+    });
     const checkFirmwareBadge = inject('checkFirmwareBadge', () => {});
 
     const loadCache = async () => {
@@ -318,9 +376,13 @@ export default {
         if (proc.exitStatus !== 0) return false;
         const cache = JSON.parse(proc.getStdout());
         devices.value = cache.devices || [];
-        if (cache.timestamp) {
-          lastChecked.value = new Date(cache.timestamp).toLocaleString();
-        }
+        noResults.value = cache.results_available === false;
+        lastChecked.value = cache.timestamp ? new Date(cache.timestamp).toLocaleString() : "";
+        // "unavailable": download failed, results not refreshed.
+        // "local": older firmware-check that fell back to a local copy.
+        manifestWarning.value = (cache.manifest_source === "unavailable" || cache.manifest_source === "local")
+          ? (cache.manifest_fetch_error || "Remote manifest fetch failed.")
+          : "";
         error.value = "";
       } catch (e) {
         return false;
@@ -648,7 +710,7 @@ print(json.dumps({"state": "current", "pending": pending if isinstance(pending, 
       });
     });
 
-    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
+    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, manifestWarning, manifestExplain, noResults, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
   }
 };
 </script>
