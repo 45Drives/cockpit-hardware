@@ -85,7 +85,13 @@
       </div>
     </div>
     <div v-else class="text-sm text-muted py-4 text-center">
-      All firmware is up to date.
+      {{ blockedDevices.length > 0 ? 'No firmware updates available.' : 'All firmware is up to date.' }}
+    </div>
+    <div v-if="!error && !noResults && blockedDevices.length > 0" class="mx-auto mt-3 mb-3 max-w-2xl rounded-md border border-default bg-accent px-4 py-3 text-sm">
+      <div v-for="(device, idx) in blockedDevices" :key="'blocked-' + idx" class="flex items-start gap-2 py-0.5">
+        <InformationCircleIcon class="h-5 w-5 flex-shrink-0 text-blue-500" aria-hidden="true" />
+        <span><span class="font-semibold">{{ device.model }}</span> <span class="font-mono">({{ device.current_firmware }})</span>: updates for this firmware version are not available in Houston.</span>
+      </div>
     </div>
 
   </div>
@@ -452,6 +458,8 @@ export default {
       return true;
     }));
 
+    const blockedDevices = computed(() => devices.value.filter(d => d.blocked_reason === 'niccli_min_version'));
+
     // A device can be flashed if it's an allowed type with flashable flag and either:
     // - a firmware_file (normal flash), or
     // - a tool_package (self-contained package with its own firmware)
@@ -710,7 +718,7 @@ print(json.dumps({"state": "current", "pending": pending if isinstance(pending, 
       });
     });
 
-    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, manifestWarning, manifestExplain, noResults, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
+    return { devices, outdatedDevices, blockedDevices, canFlash, checking, error, lastChecked, manifestWarning, manifestExplain, noResults, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
   }
 };
 </script>

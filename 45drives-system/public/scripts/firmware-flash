@@ -426,8 +426,23 @@ def flash_mellanox(device, tool_sha256=""):
         return {"success": False, "error": str(e), "reboot_needed": False}
 
 
+NICCLI_MIN_FW_MAJOR = 228
+
+
+def niccli_fw_major(fw):
+    """Return the Broadcom package major version (e.g. 216) or None."""
+    m = re.search(r"pkg\s+(\d+)\.", fw or "") or re.match(r"\s*(\d+)\.", fw or "")
+    return int(m.group(1)) if m else None
+
+
 def flash_broadcom_nic(device, firmware_path, tool_sha256=""):
     """Flash Broadcom NIC using niccli."""
+    current_fw = device.get("current_firmware", "")
+    major = niccli_fw_major(current_fw)
+    if major is not None and major < NICCLI_MIN_FW_MAJOR:
+        return {"success": False, "reboot_needed": False,
+                "error": (f"Firmware {current_fw} is below {NICCLI_MIN_FW_MAJOR}; niccli update "
+                          "not supported by Broadcom. Contact 45Drives support.")}
     tool_path = find_tool("niccli", tool_sha256)
     if not tool_path:
         return {"success": False, "error": "niccli not found on system", "reboot_needed": False}
