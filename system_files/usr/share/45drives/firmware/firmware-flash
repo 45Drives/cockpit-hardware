@@ -14,6 +14,7 @@ Exit codes:
 """
 
 import json
+import re
 import subprocess
 import sys
 import os
@@ -592,6 +593,18 @@ def check_niccli_health(niccli_bin, bus_info):
     return (len(problems) == 0), problems
 
 
+NICCLI_MIN_FW_MAJOR = 228
+
+
+def niccli_fw_major(fw):
+    """Return the Broadcom package major version (e.g. 216) or None.
+
+    Accepts '216.0.333.11' or ethtool-style '214.4.91.1/pkg 216.0.333.11'.
+    """
+    m = re.search(r"pkg\s+(\d+)\.", fw or "") or re.match(r"\s*(\d+)\.", fw or "")
+    return int(m.group(1)) if m else None
+
+
 def flash_niccli(device_info, firmware_path):
     """Flash Broadcom NIC using niccli.
     
@@ -601,6 +614,15 @@ def flash_niccli(device_info, firmware_path):
     bus_info = device_info.get("bus_info", "")
     if not bus_info:
         return False, "No bus_info available for niccli flash"
+
+    # Broadcom: niccli is only supported for updating from firmware >= 228.
+    current_fw = device_info.get("current_firmware", "")
+    major = niccli_fw_major(current_fw)
+    if major is not None and major < NICCLI_MIN_FW_MAJOR:
+        print(f"  ✗ REFUSED: current firmware {current_fw} is older than {NICCLI_MIN_FW_MAJOR}.")
+        print(f"    Broadcom does not support niccli updates below {NICCLI_MIN_FW_MAJOR}; contact 45Drives support.")
+        return False, (f"Firmware {current_fw} is below {NICCLI_MIN_FW_MAJOR}; "
+                       "niccli update not supported. Contact 45Drives support.")
 
     # Find niccli binary
     niccli_bin = None

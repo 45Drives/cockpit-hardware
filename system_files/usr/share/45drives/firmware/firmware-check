@@ -329,6 +329,18 @@ def get_version_prefix(version_str):
     return m.group(1).upper() if m else ""
 
 
+NICCLI_MIN_FW_MAJOR = 228
+
+
+def niccli_fw_major(fw):
+    """Return the Broadcom package major version (e.g. 216) or None.
+
+    Accepts '216.0.333.11' or ethtool-style '214.4.91.1/pkg 216.0.333.11'.
+    """
+    m = re.search(r"pkg\s+(\d+)\.", fw or "") or re.match(r"\s*(\d+)\.", fw or "")
+    return int(m.group(1)) if m else None
+
+
 def compare_firmware(device_fw, manifest_fw):
     """
     Compare firmware versions.
@@ -482,6 +494,22 @@ def main():
                 "previous_firmware_file": entry.get("previous_firmware_file", ""),
                 "previous_sha256": entry.get("previous_sha256", ""),
             }
+
+            # Broadcom: niccli only supports updating from firmware >= 228.
+            # Older cards need bnxtnvm to 228 first; a direct niccli update
+            # can leave the NVM unbootable. Hide the update entirely.
+            if flash_tool.lower() == "niccli":
+                major = niccli_fw_major(device.get("firmware", ""))
+                if major is not None and major < NICCLI_MIN_FW_MAJOR:
+                    status = "unknown"
+                    device_result["update_available"] = status
+                    device_result["flashable"] = False
+                    device_result["blocked_reason"] = "niccli_min_version"
+                    device_result["release_notes"] = (
+                        f"Firmware {device.get('firmware', '')} is older than "
+                        f"{NICCLI_MIN_FW_MAJOR}. It cannot be updated from here; "
+                        "contact 45Drives support."
+                    )
 
             # Look up flash tool binary SHA256 from manifest.flash_tools[]
             tool_binary_sha256 = ""
