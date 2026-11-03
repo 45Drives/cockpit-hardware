@@ -90,6 +90,9 @@ def validate_release(entry):
         if not ((entry.get("firmware_file") and entry.get("sha256"))
                 or (entry.get("tool_package") and entry.get("tool_package_sha256"))):
             raise ValueError("Approval requires a firmware image or tool package with its SHA256")
+        if str(entry.get("flash_tool", "")).strip().lower() == "mlxup" and (
+                entry.get("tool_package") or not entry.get("firmware_file")):
+            raise ValueError("mlxup releases require a pinned firmware image and cannot use a tool package")
         if entry.get("tool_package"):
             command = entry.get("flash_command")
             if not isinstance(command, str) or not command.strip():

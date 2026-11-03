@@ -123,6 +123,13 @@ class QualificationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 catalog(flash_command=command)
 
+    def test_mlxup_tool_package_cannot_be_approved(self):
+        with self.assertRaises(ValueError):
+            catalog(flash_tool="mlxup", flash_command="mlxup --update --yes")
+        with self.assertRaises(ValueError):
+            catalog(flash_tool="mlxup", tool_package="", tool_package_sha256="", firmware_file="", sha256="")
+        catalog(flash_tool="mlxup", tool_package="", tool_package_sha256="", firmware_file="fw.bin", sha256="b" * 64)
+
     def test_proxmox_does_not_inherit_debian_profile(self):
         with patch.object(policy, "PROXMOX_VERSION_TOOL") as tool, patch.object(policy.subprocess, "run", return_value=Mock(returncode=0, stdout="pve-manager/9.0.11/abcdef")):
             tool.is_file.return_value = True

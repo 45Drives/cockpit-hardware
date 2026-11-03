@@ -851,6 +851,8 @@ def flash_tool_package(device_info):
         return False, "No tool_package specified in manifest"
 
     flash_tool = device_info.get("flash_tool", "")
+    if str(flash_tool).strip().lower() == "mlxup":
+        return False, "mlxup updates must use a pinned firmware image for the selected adapter, not a tool package"
     flash_command = device_info.get("flash_command", "")
     expected_sha256 = device_info.get("tool_package_sha256", "")
 
