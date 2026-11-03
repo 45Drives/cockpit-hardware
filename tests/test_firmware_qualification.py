@@ -28,7 +28,7 @@ def catalog(category="nic", **changes):
              "flash_tool": "nvmupdate64e", "tool_package": "intel.tar.gz", "tool_package_sha256": "a" * 64,
              "release_status": "approved", "update_method": "self_service", "validation_profiles": [profile()]}
     entry.update(changes)
-    return qualification.build_catalogs({"components": {category: [entry]}, "flash_tools": []})[0]
+    return qualification.build_catalog({"components": {category: [entry]}, "flash_tools": []})
 
 
 HOST = {"os": {"id": "rocky", "version_id": "9.8"}, "architecture": "x86_64", "kernel_release": "lab-kernel"}
@@ -99,13 +99,18 @@ class QualificationTests(unittest.TestCase):
         self.assertFalse(qualification.evaluate_qualification(entry, dict(HOST, kernel_release="other"), LIVE)["eligible"])
         self.assertFalse(qualification.evaluate_qualification(entry, HOST, dict(LIVE, driver_version="other"))["eligible"])
 
-    def test_legacy_catalog_omits_cards_and_preserves_other_inventory(self):
-        source = {"components": {"nic": [{"model_match": "E810"}], "hba": [{"model_match": "9600-16i"}], "hdd": [{"model_match": "ST123"}]}}
-        qualified, legacy = qualification.build_catalogs(source)
-        self.assertEqual(legacy["components"]["nic"], [])
-        self.assertEqual(legacy["components"]["hba"], [])
-        self.assertEqual(legacy["components"]["hdd"], source["components"]["hdd"])
-        self.assertEqual(qualified["components"]["nic"][0]["release_status"], "draft")
+    def test_catalog_hides_unapproved_payloads_from_older_clients(self):
+        source = {"components": {"nic": [{"model_match": "E810", "flashable": True,
+                                          "firmware_file": "nic/e810.bin", "sha256": "a" * 64}],
+                                 "hba": [{"model_match": "9600-16i"}], "hdd": [{"model_match": "ST123"}]}}
+        published = qualification.build_catalog(source)
+        nic = published["components"]["nic"][0]
+        self.assertEqual(nic["release_status"], "draft")
+        self.assertFalse(nic["flashable"])
+        self.assertNotIn("firmware_file", nic)
+        self.assertNotIn("sha256", nic)
+        self.assertEqual(published["components"]["hdd"], source["components"]["hdd"])
+        self.assertEqual(published["schema_version"], "2.0")
         self.assertNotIn("release_status", source["components"]["nic"][0])
 
     def test_hba_uses_same_qualification_policy(self):

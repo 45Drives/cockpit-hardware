@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIRMWARE = ROOT / "system_files/usr/share/45drives/firmware"
 sys.path.insert(0, str(FIRMWARE))
 import firmware_policy as policy
-from firmware_qualification import build_catalogs, evaluate_qualification
+from firmware_qualification import build_catalog, evaluate_qualification
 
 
 def load_script(path):
@@ -59,14 +59,14 @@ class FirmwarePolicyTests(unittest.TestCase):
         return {"type": "nic", "model": model, "bus_info": address, "device": "enp65s0f0"}
 
     def qualified_catalog(self, model, os_id="rocky", version="9.8"):
-        return build_catalogs({"components": {"nic": [{
+        return build_catalog({"components": {"nic": [{
             "model_match": model, "latest_firmware": "5.10", "flashable": True,
             "flash_tool": "nvmupdate64e", "tool_package": "intel.tar.gz",
             "tool_package_sha256": "a" * 64,
             "release_status": "approved", "update_method": "self_service",
             "validation_profiles": [{"id": "lab-profile", "qualification": "45drives_validated",
                 "test_report_id": "LAB-001", "os": {"id": os_id, "version_ids": [version], "architecture": "x86_64"}}]
-        }]}})[0]
+        }]}})
 
     def test_onboard_ports_on_rome_and_genoa_are_blocked(self):
         nic = self.nic(onboard="1")

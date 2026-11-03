@@ -33,14 +33,13 @@ from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
-from urllib.parse import urlsplit, urlunsplit
 
 from firmware_policy import get_board_info, get_os_info, get_host_environment, nic_update_policy, pci_identity
 from firmware_qualification import POLICY_VERSION, QUALIFIED_TYPES, UNVALIDATED_NOTE
 from firmware_runtime import bind_release
 
 
-MANIFEST_PATH = "/usr/share/45drives/firmware/manifest-v2.json"
+MANIFEST_PATH = "/usr/share/45drives/firmware/manifest.json"
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 DISCOVER_SCRIPT = "/usr/share/45drives/firmware/firmware-discover"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
@@ -65,7 +64,7 @@ def get_repo_config():
     """Read repo.conf and return dict of key=value pairs. Falls back to built-in defaults."""
     config = {
         "REPO_URL": "https://fw.45drives.com",
-        "MANIFEST_URL": "https://fw.45drives.com/manifest-v2.json",
+        "MANIFEST_URL": "https://fw.45drives.com/manifest.json",
         "VERIFY_GPG": "true",
     }
     conf_path = REPO_CONF
@@ -81,12 +80,6 @@ def get_repo_config():
                 config[key.strip()] = val.strip()
     except FileNotFoundError:
         pass
-    # Existing installations may explicitly configure the old catalog URL.
-    # New clients require the qualified catalog; never silently fall back.
-    if config.get("MANIFEST_URL"):
-        parts = urlsplit(config["MANIFEST_URL"])
-        if parts.path.endswith("/manifest.json"):
-            config["MANIFEST_URL"] = urlunsplit(parts._replace(path=parts.path[:-13] + "manifest-v2.json"))
     return config
 
 

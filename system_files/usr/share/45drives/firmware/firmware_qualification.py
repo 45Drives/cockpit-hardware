@@ -130,19 +130,31 @@ def evaluate_qualification(entry, host, device=None):
     return denied("os_unvalidated")
 
 
-def build_catalogs(source):
-    """Export v2 plus a legacy catalog with no actionable NIC/HBA entries."""
-    qualified = json.loads(json.dumps(source))
-    qualified["schema_version"] = "2.0"
-    qualified["qualification_policy_version"] = POLICY_VERSION
+PAYLOAD_FIELDS = ("firmware_file", "sha256", "tool_package", "tool_package_sha256")
+
+
+def build_catalog(source):
+    """Build the single published manifest.json.
+
+    NIC/HBA entries carry qualification fields for current clients. Clients
+    released before qualification ignore those fields, so any NIC/HBA release
+    that is not approved for self-service is published with flashable=false and
+    no firmware payload: older clients cannot flash drafts, withdrawn, or
+    support-assisted releases. (Older clients do not check the OS.)
+    """
+    catalog = json.loads(json.dumps(source))
+    catalog["schema_version"] = "2.0"
+    catalog["qualification_policy_version"] = POLICY_VERSION
     for category in QUALIFIED_TYPES:
-        for entry in qualified.get("components", {}).get(category, []):
+        for entry in catalog.get("components", {}).get(category, []):
             entry.setdefault("release_id", release_id(category, entry))
             entry.setdefault("release_status", "draft")
             entry.setdefault("update_method", "support_assisted")
             entry.setdefault("validation_profiles", [])
             validate_release(entry)
-    legacy = json.loads(json.dumps(source))
-    for category in QUALIFIED_TYPES:
-        legacy.get("components", {})[category] = []
-    return qualified, legacy
+            if not (entry["release_status"] == "approved"
+                    and entry["update_method"] == "self_service"):
+                entry["flashable"] = False
+                for field in PAYLOAD_FIELDS:
+                    entry.pop(field, None)
+    return catalog

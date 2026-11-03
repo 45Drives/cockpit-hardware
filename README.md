@@ -31,7 +31,7 @@ Monitors and manages firmware versions for all permanent hardware components in 
 
 #### Firmware Architecture
 ```
-fw.45drives.com (GPG-signed manifest-v2.json + firmware files)
+fw.45drives.com (GPG-signed manifest.json + firmware files)
         │
         ▼ firmware-check (gpgv verify → version compare)
 /var/cache/45drives/firmware/status.json
@@ -94,13 +94,13 @@ a Debian qualification. Optional profile fields `kernel_releases` (string list)
 and `driver: {"name": "ice", "versions": ["tested-version"]}` constrain coverage
 when required. Broader kernel/driver coverage must be justified in the lab report.
 
-The checker defaults to `manifest-v2.json`, including upgrading configured URLs
-ending in `/manifest.json`. It never falls back to the legacy catalog. The v2
-catalog requires `schema_version: "2.0"`, `qualification_policy_version: 1`, and
-a stable `release_id` per entry. FirmwareAdmin exports these automatically and
-exports a legacy catalog without NIC/HBA entries for clients that ignore the
-new fields. Install the updated clients before publishing new qualified
-releases; older clients with cached data cannot enforce this policy.
+The checker reads the signed `manifest.json`. NIC/HBA entries require
+`schema_version: "2.0"`, `qualification_policy_version: 1`, and a stable
+`release_id`; FirmwareAdmin adds these automatically. NIC/HBA releases that are
+not approved for self-service are published with `flashable: false` and no
+firmware payload, so older clients (which ignore qualification fields) cannot
+flash them. Older clients do not check the OS for approved releases; update
+clients to enforce OS qualification.
 
 Both flash entry points use the main flasher's live authorization. It verifies
 the current signed release, PCI identity, running firmware, OS/architecture,
