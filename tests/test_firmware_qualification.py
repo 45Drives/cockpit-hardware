@@ -25,7 +25,7 @@ def profile(os_id="rocky", version="9.8", arch="x86_64"):
 
 def catalog(category="nic", **changes):
     entry = {"model_match": "E810", "latest_firmware": "5.10", "flashable": True,
-             "flash_tool": "nvmupdate64e", "tool_package": "intel.tar.gz", "tool_package_sha256": "a" * 64,
+             "flash_tool": "nvmupdate64e", "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg", "tool_package": "intel.tar.gz", "tool_package_sha256": "a" * 64,
              "release_status": "approved", "update_method": "self_service", "validation_profiles": [profile()]}
     entry.update(changes)
     return qualification.build_catalog({"components": {category: [entry]}, "flash_tools": []})
@@ -118,6 +118,11 @@ class QualificationTests(unittest.TestCase):
         self.assertTrue(qualification.evaluate_qualification(release, HOST)["eligible"])
         self.assertFalse(qualification.evaluate_qualification(release, dict(HOST, os={"id": "rocky", "version_id": "8.10"}))["eligible"])
 
+    def test_tool_package_approval_requires_flash_command(self):
+        for command in ("", "   ", None):
+            with self.assertRaises(ValueError):
+                catalog(flash_command=command)
+
     def test_proxmox_does_not_inherit_debian_profile(self):
         with patch.object(policy, "PROXMOX_VERSION_TOOL") as tool, patch.object(policy.subprocess, "run", return_value=Mock(returncode=0, stdout="pve-manager/9.0.11/abcdef")):
             tool.is_file.return_value = True
@@ -143,7 +148,7 @@ class AuthorizationTests(unittest.TestCase):
     def test_current_signed_entry_overrides_tampered_cached_commands(self):
         self.cached.update(flash_command="evil", firmware_file="evil", sha256="evil", controller_index=99)
         result = runtime.authorize_device(self.cached)
-        self.assertEqual(result["flash_command"], "")
+        self.assertEqual(result["flash_command"], "nvmupdate64e -u -l -c nvmupdate.cfg")
         self.assertEqual(result["firmware_file"], "")
         self.assertNotEqual(result.get("controller_index"), 99)
 

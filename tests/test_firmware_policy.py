@@ -61,7 +61,7 @@ class FirmwarePolicyTests(unittest.TestCase):
     def qualified_catalog(self, model, os_id="rocky", version="9.8"):
         return build_catalog({"components": {"nic": [{
             "model_match": model, "latest_firmware": "5.10", "flashable": True,
-            "flash_tool": "nvmupdate64e", "tool_package": "intel.tar.gz",
+            "flash_tool": "nvmupdate64e", "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg", "tool_package": "intel.tar.gz",
             "tool_package_sha256": "a" * 64,
             "release_status": "approved", "update_method": "self_service",
             "validation_profiles": [{"id": "lab-profile", "qualification": "45drives_validated",

@@ -90,6 +90,10 @@ def validate_release(entry):
         if not ((entry.get("firmware_file") and entry.get("sha256"))
                 or (entry.get("tool_package") and entry.get("tool_package_sha256"))):
             raise ValueError("Approval requires a firmware image or tool package with its SHA256")
+        if entry.get("tool_package"):
+            command = entry.get("flash_command")
+            if not isinstance(command, str) or not command.strip():
+                raise ValueError("Approval requires a flash command for tool packages")
         for path, digest in (("firmware_file", "sha256"), ("tool_package", "tool_package_sha256")):
             if entry.get(path) and (not isinstance(entry.get(digest), str)
                                     or not re.fullmatch(r"[0-9a-fA-F]{64}", entry[digest])):
