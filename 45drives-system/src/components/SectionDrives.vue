@@ -31,7 +31,7 @@
                 <tr v-else-if="drives.length === 0">
                   <td colspan="6" class="py-4 text-center text-sm text-muted">No drives detected</td>
                 </tr>
-                <tr v-for="drive in drives" :key="drive.device" class="cursor-pointer hover:bg-accent" @click="showDriveInfo(drive)">
+                <tr v-for="drive in drives" :key="drive.device" :class="{ 'cursor-pointer hover:bg-accent': canUpdateDrive(drive) }" @click="showDriveInfo(drive)">
                   <td class="whitespace-nowrap py-3 pl-4 pr-3 text-sm font-medium text-default sm:pl-6">/dev/{{ drive.device }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-default">{{ drive.model || '—' }}</td>
                   <td class="whitespace-nowrap px-3 py-3 text-sm text-muted">{{ drive.family || '—' }}</td>
@@ -387,7 +387,13 @@ export default {
       loadDrives();
     });
 
+    const canUpdateDrive = (drive) => drive?.flashable === true
+      && !drive.isHdd
+      && drive.updateStatus === "outdated"
+      && Boolean(drive.latestFirmware?.trim() && drive.firmwareFile);
+
     const showDriveInfo = (drive) => {
+      if (!canUpdateDrive(drive)) return;
       modalData.value = { ...drive };
       modalVisible.value = true;
     };
@@ -533,6 +539,7 @@ export default {
       loadDrives,
       modalVisible,
       modalData,
+      canUpdateDrive,
       showDriveInfo,
       flashDrive,
       confirmModalVisible,

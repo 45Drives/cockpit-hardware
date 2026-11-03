@@ -18,6 +18,7 @@ import re
 import os
 import shutil
 from pathlib import Path
+from firmware_policy import get_host_environment, permanent_nic_mac
 
 
 def run_cmd(cmd, timeout=30):
@@ -259,9 +260,10 @@ def discover_hba():
                     model = basics.get("Model", "")
                     serial = basics.get("Serial Number", "")
                     ctrl_idx = basics.get("Controller", idx)
-                    fw = resp.get("Version", {}).get("Firmware Version", "")
-                    if not fw:
-                        fw = resp.get("Version", {}).get("Firmware Package Build", "")
+                    versions = resp.get("Version", {})
+                    package_fw = versions.get("Firmware Package Build", "") or versions.get("FW Package Build", "")
+                    component_fw = versions.get("Firmware Version", "")
+                    fw = package_fw or component_fw
                     # Extract PCI bus address (storcli format "DD:BB:DD:FF" → "DDDD:BB:DD.F")
                     bus_info = ""
                     pci_raw = basics.get("PCI Address", "")
@@ -294,6 +296,8 @@ def discover_hba():
                             "model": model,
                             "serial": serial,
                             "firmware": fw,
+                            "firmware_package": package_fw,
+                            "firmware_component": component_fw,
                             "tool": tool,
                             "controller_index": ctrl_idx,
                             "bus_info": bus_info,
@@ -370,7 +374,13 @@ def discover_nic():
         driver = info.get("driver", "")
         bus = info.get("bus-info", "")
 
-        if not firmware or not driver or not bus or bus == "N/A":
+        if not driver or not bus or bus == "N/A":
+            continue
+
+        # Only PCI adapters have updatable firmware. Skip USB network devices
+        # such as the BMC's RNDIS/CDC-Ethernet interface (usb0).
+        subsystem = os.path.realpath(f"/sys/class/net/{iface}/device/subsystem")
+        if os.path.basename(subsystem) != "pci" or bus.startswith("usb"):
             continue
 
         # Deduplicate multi-port NICs by PCI slot (strip function .X suffix)
@@ -423,6 +433,8 @@ def discover_nic():
             "part_number": part_number,
             "serial": "",
             "driver": driver,
+            "driver_version": info.get("version", ""),
+            "permanent_mac": permanent_nic_mac({"bus_info": bus}),
             "firmware": fw_normalized,
             "firmware_raw": firmware,
             "bus_info": bus,
@@ -497,6 +509,7 @@ def main():
     results = {
         "timestamp": "",
         "hostname": "",
+        "host": get_host_environment(),
         "devices": [],
     }
 

@@ -30,6 +30,10 @@ import sys
 import urllib.request
 import urllib.error
 
+sys.path.insert(0, "/usr/share/45drives/firmware")
+from firmware_policy import nic_update_block_reason
+from firmware_runtime import canonical_pci
+
 ###############################################################################
 # Configuration
 ###############################################################################
@@ -269,7 +273,8 @@ def get_device_from_cache(device_type, device_path):
     
     Tries the cockpit cache first, then falls back to the system cache.
     """
-    for cache_path in [CACHE_FILE, CACHE_FILE_SYSTEM]:
+    cache_paths = [CACHE_FILE_SYSTEM] if device_type in ("nic", "hba") else [CACHE_FILE, CACHE_FILE_SYSTEM]
+    for cache_path in cache_paths:
         try:
             with open(cache_path) as f:
                 cache = json.load(f)
@@ -526,6 +531,32 @@ def main():
     # Ensure device_path is set (cache entry may have None if discovered without PCI info)
     if not device.get("device_path"):
         device["device_path"] = args.device_path
+
+    device["type"] = args.type
+    blocked = nic_update_block_reason(device)
+    if blocked:
+        print(json.dumps({"success": False, "error": blocked, "reboot_needed": False}))
+        sys.exit(2)
+
+    # NIC/HBA updates have one implementation and one authorization path.
+    # Never use this legacy wrapper's automatic image/tool selection for them.
+    if args.type in ("nic", "hba"):
+        target = canonical_pci(device)
+        index = device.get("cache_index")
+        revision = device.get("release_revision")
+        if not target or not isinstance(index, int) or not revision:
+            print(json.dumps({"success": False, "error": "Refresh firmware inventory to load validated update information.",
+                              "reboot_needed": False}))
+            sys.exit(2)
+        result = subprocess.run(
+            [sys.executable, "/usr/share/45drives/firmware/firmware-flash", "--cache-index", str(index),
+             "--device-pci", target, "--release-revision", revision, "--allow-download"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        print(json.dumps({"success": result.returncode == 0,
+                          "output": result.stdout,
+                          "error": result.stderr if result.returncode else "",
+                          "reboot_needed": result.returncode == 0 and device.get("requires_reboot") is True}))
+        sys.exit(0 if result.returncode == 0 else 1)
 
     if not device.get("flashable", False):
         output = {"success": False, "error": "Device is not marked as flashable in manifest", "reboot_needed": False}

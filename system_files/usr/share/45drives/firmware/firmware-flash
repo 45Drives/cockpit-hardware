@@ -29,6 +29,10 @@ from urllib.parse import quote
 import hashlib
 import ssl
 
+from firmware_policy import nic_update_block_reason, permanent_nic_mac
+from firmware_qualification import QUALIFIED_TYPES
+from firmware_runtime import authorize_device, canonical_pci, UpdateNotQualified
+
 
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
@@ -745,7 +749,11 @@ def flash_niccli(device_info, firmware_path):
 
 def flash_mlxup(device_info, firmware_path=None):
     """Flash Mellanox/NVIDIA NIC using mlxup with a pinned firmware .bin file."""
-    bus_info = device_info.get("bus_info", "")
+    bus_info = canonical_pci(device_info)
+    if not bus_info:
+        return False, "Cannot identify the selected PCI adapter; refusing an unscoped mlxup update"
+    if not firmware_path or not os.path.isfile(firmware_path):
+        return False, "An approved local firmware image is required; automatic NVIDIA image selection is disabled"
 
     # Find mlxup binary
     mlxup_bin = None
@@ -790,26 +798,14 @@ def flash_mlxup(device_info, firmware_path=None):
         else:
             return False, "mlxup integrity check failed and re-download from repo also failed"
 
-    # Build command — use --image-file if we have a pinned firmware file
-    if firmware_path and os.path.isfile(firmware_path):
-        if bus_info:
-            cmd = f"{mlxup_bin} --update --dev {bus_info} --image-file {shlex.quote(firmware_path)} --force --yes"
-        else:
-            cmd = f"{mlxup_bin} --update --image-file {shlex.quote(firmware_path)} --force --yes"
-        print(f"Running: {cmd}")
-        print(f"  (using pinned firmware image from 45Drives repo)")
-    else:
-        # Fallback to auto-update from NVIDIA (legacy behavior)
-        if bus_info:
-            cmd = f"{mlxup_bin} --update --dev {bus_info} --yes"
-        else:
-            cmd = f"{mlxup_bin} --update --yes"
-        print(f"Running: {cmd}")
-        print(f"  (mlxup downloads firmware from NVIDIA servers automatically)")
+    # Preserve the vendor's normal version/applicability checks. Never choose
+    # an unqualified image online, force a downgrade, or update another adapter.
+    cmd = [mlxup_bin, "--update", "--dev", bus_info, "--image-file", firmware_path, "--yes"]
+    print("Running: " + " ".join(shlex.quote(arg) for arg in cmd))
 
     try:
         proc = subprocess.Popen(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cmd, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             universal_newlines=True
         )
         output_lines = []
@@ -825,8 +821,6 @@ def flash_mlxup(device_info, firmware_path=None):
         elif "pending reset" in output.lower() or "pending reboot" in output.lower():
             # Card has a pending NVM update from a previous flash — needs reboot first
             return False, "Device has a pending firmware update — reboot required before flashing again."
-        elif "already updated" in output.lower() or "up to date" in output.lower():
-            return True, "Firmware already up-to-date."
         else:
             return False, f"mlxup exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
@@ -859,6 +853,14 @@ def flash_tool_package(device_info):
     flash_tool = device_info.get("flash_tool", "")
     flash_command = device_info.get("flash_command", "")
     expected_sha256 = device_info.get("tool_package_sha256", "")
+
+    # An unscoped Intel update can also flash onboard adapters while updating
+    # an add-on card. Always select the requested card by its permanent MAC.
+    intel_mac = ""
+    if "nvmupdate" in flash_tool.lower():
+        intel_mac = permanent_nic_mac(device_info)
+        if not intel_mac:
+            return False, "Cannot identify the selected NIC's permanent MAC; refusing an unscoped Intel NVM update"
 
     # Fail-closed: refuse to proceed without an integrity hash — tool packages run as root
     if not expected_sha256:
@@ -1018,19 +1020,33 @@ def flash_tool_package(device_info):
     cmd = cmd.replace("<firmware_path>", shlex.quote(device_info.get("firmware_file", "")))
     cmd = cmd.replace("<sg_device>", device_info.get("sg_device", ""))
 
+    if intel_mac:
+        try:
+            argv = shlex.split(cmd)
+        except ValueError as e:
+            return False, f"Invalid Intel NVM update command: {e}"
+        if not argv or os.path.basename(argv[0]) != flash_tool:
+            return False, "Intel NVM updates require a direct tool command to select a single adapter"
+        # Replace any selector in the manifest with the live target's MAC.
+        while "-m" in argv:
+            index = argv.index("-m")
+            del argv[index:index + 2]
+        argv = [tool_bin] + argv[1:] + ["-m", intel_mac]
+        cmd = " ".join(shlex.quote(arg) for arg in argv)
+
     # If the command starts with the tool name (no path prefix), add ./
     if flash_tool and cmd.strip().startswith(flash_tool) and not cmd.strip().startswith("./"):
         cmd = "./" + cmd.strip()
 
     # If the command doesn't have an explicit cd, prepend one to the extraction dir
-    if not cmd.strip().startswith("cd "):
+    if not intel_mac and not cmd.strip().startswith("cd "):
         cmd = f"cd {extract_dir} && {cmd}"
 
     print(f"  Running: {cmd}", flush=True)
 
     try:
         proc = subprocess.Popen(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            argv if intel_mac else cmd, shell=not bool(intel_mac), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             universal_newlines=True, cwd=extract_dir
         )
         output_lines = []
@@ -1043,8 +1059,6 @@ def flash_tool_package(device_info):
 
         if proc.returncode == 0:
             return True, output
-        elif "no update available" in output.lower() or "up to date" in output.lower():
-            return True, "Firmware already up-to-date."
         else:
             return False, f"{flash_tool or tool_package} exit code {proc.returncode}: {output}"
     except subprocess.TimeoutExpired:
@@ -1061,8 +1075,16 @@ flash_nvmupdate = flash_tool_package
 
 def flash_device(device_info):
     """Flash a device based on its type and tool."""
+    if device_info.get("type") in QUALIFIED_TYPES:
+        try:
+            device_info = authorize_device(device_info)
+        except (UpdateNotQualified, OSError, ValueError) as exc:
+            return False, str(exc)
     flash_tool = device_info.get("flash_tool", "")
     firmware_file = device_info.get("firmware_file", "")
+    blocked = nic_update_block_reason(device_info)
+    if blocked:
+        return False, blocked
     device_type = device_info.get("type", "")
     expected_sha256 = device_info.get("sha256", "")
     tool_package = device_info.get("tool_package", "")
@@ -1071,6 +1093,9 @@ def flash_device(device_info):
     # This is fully data-driven — works for any tarball-based tool without code changes
     if tool_package:
         return flash_tool_package(device_info)
+
+    if "nvmupdate" in flash_tool.lower():
+        return False, "Intel NVM updates require a tool package so the update can be limited to the selected adapter"
 
     if not firmware_file:
         return False, "No firmware file specified in manifest"
@@ -1924,6 +1949,8 @@ def check_swap_usage(device_info):
 def main():
     parser = argparse.ArgumentParser(description="Flash firmware to a device")
     parser.add_argument("--cache-index", type=int, required=True, help="Index of device in cache to flash")
+    parser.add_argument("--device-pci", help="Expected selected PCI adapter; prevents cache-index changes selecting another card")
+    parser.add_argument("--release-revision", help="Expected release revision shown in the confirmation")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without flashing")
     parser.add_argument("--preflight", action="store_true", help="Output JSON describing what will happen (downloads needed, etc.)")
     parser.add_argument("--allow-download", action="store_true", help="Allow downloading missing tools/firmware from repo (UI passes this after user confirms)")
@@ -1942,6 +1969,29 @@ def main():
         return 1
 
     device_info = devices[args.cache_index]
+
+    blocked = nic_update_block_reason(device_info)
+    if args.device_pci and canonical_pci(device_info) != canonical_pci({"bus_info": args.device_pci}):
+        blocked = "The selected adapter changed. Refresh firmware inventory before updating."
+    if args.release_revision and args.release_revision != device_info.get("release_revision"):
+        blocked = "The selected firmware release changed. Refresh and review the current update."
+    if not blocked and device_info.get("type") in QUALIFIED_TYPES:
+        try:
+            device_info = authorize_device(device_info)
+        except (UpdateNotQualified, OSError, ValueError) as exc:
+            blocked = str(exc)
+    if blocked:
+        if args.preflight:
+            print(json.dumps({
+                "model": device_info.get("model", ""),
+                "device": device_info.get("device", ""),
+                "type": device_info.get("type", ""),
+                "downloads": [], "actions": [], "warnings": [],
+                "blocked": True, "block_reason": blocked,
+            }))
+            return 0
+        print(f"Error: {blocked}", file=sys.stderr)
+        return 3
 
     if not device_info.get("flashable", False):
         print(f"Error: Device is not flashable: {device_info.get('model', 'unknown')}", file=sys.stderr)
@@ -2181,7 +2231,7 @@ def main():
         if "mlxup" in flash_tool:
             preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using mlxup (pinned firmware image from 45Drives repo)")
         elif "nvmupdate" in flash_tool:
-            preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using nvmupdate64e (auto-detects NIC and applies correct firmware)")
+            preflight_info["actions"].append(f"Flash only the selected {device_info.get('model', '')} using nvmupdate64e (selected by permanent MAC address)")
         else:
             preflight_info["actions"].append(f"Flash {device_info.get('model', '')} using {flash_tool}")
         if device_info.get("requires_reboot"):
@@ -2315,7 +2365,7 @@ def resolve_storcli_path(flash_tool):
     """Resolve the full path for storcli/storcli64, matching flash logic."""
     tool = flash_tool if flash_tool else "storcli64"
     # Extract the base tool name (e.g. "storcli64" from "storcli64")
-    for base in ("storcli64", "storcli"):
+    for base in ("storcli2", "storcli64", "storcli"):
         if base in tool:
             tool = base
             break

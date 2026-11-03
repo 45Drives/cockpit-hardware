@@ -33,9 +33,14 @@ from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
+from urllib.parse import urlsplit, urlunsplit
+
+from firmware_policy import get_board_info, get_os_info, get_host_environment, nic_update_policy, pci_identity
+from firmware_qualification import POLICY_VERSION, QUALIFIED_TYPES, UNVALIDATED_NOTE
+from firmware_runtime import bind_release
 
 
-MANIFEST_PATH = "/usr/share/45drives/firmware/manifest.json"
+MANIFEST_PATH = "/usr/share/45drives/firmware/manifest-v2.json"
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 DISCOVER_SCRIPT = "/usr/share/45drives/firmware/firmware-discover"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
@@ -60,7 +65,7 @@ def get_repo_config():
     """Read repo.conf and return dict of key=value pairs. Falls back to built-in defaults."""
     config = {
         "REPO_URL": "https://fw.45drives.com",
-        "MANIFEST_URL": "https://fw.45drives.com/manifest.json",
+        "MANIFEST_URL": "https://fw.45drives.com/manifest-v2.json",
         "VERIFY_GPG": "true",
     }
     conf_path = REPO_CONF
@@ -76,6 +81,12 @@ def get_repo_config():
                 config[key.strip()] = val.strip()
     except FileNotFoundError:
         pass
+    # Existing installations may explicitly configure the old catalog URL.
+    # New clients require the qualified catalog; never silently fall back.
+    if config.get("MANIFEST_URL"):
+        parts = urlsplit(config["MANIFEST_URL"])
+        if parts.path.endswith("/manifest.json"):
+            config["MANIFEST_URL"] = urlunsplit(parts._replace(path=parts.path[:-13] + "manifest-v2.json"))
     return config
 
 
@@ -438,12 +449,15 @@ def main():
         return 1
 
     # Compare each device
+    host = get_host_environment()
     results = {
         "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat() + "Z",
         "hostname": discovered.get("hostname", ""),
         "manifest_version": manifest.get("schema_version", ""),
         "manifest_source": MANIFEST_FETCH["source"],
         "manifest_fetch_error": MANIFEST_FETCH["error"],
+        "qualification_policy_version": POLICY_VERSION,
+        "host": host,
         "summary": {
             "total": 0,
             "current": 0,
@@ -454,9 +468,17 @@ def main():
     }
 
     has_outdated = False
+    board = get_board_info()
+    os_info = get_os_info()
 
     for idx, device in enumerate(discovered.get("devices", [])):
-        entry = match_device_to_manifest(device, manifest)
+        if device.get("type") in QUALIFIED_TYPES:
+            for key, value in pci_identity(device).items():
+                if value:
+                    device[key] = value
+        policy = nic_update_policy(device, board, os_info)
+        # Hardware and OS restrictions take precedence over generic NIC images.
+        entry = None if policy.get("blocked_reason") else match_device_to_manifest(device, manifest)
 
         if entry:
             flash_tool = entry.get("flash_tool", "")
@@ -495,21 +517,29 @@ def main():
                 "previous_sha256": entry.get("previous_sha256", ""),
             }
 
+            if device.get("type") in QUALIFIED_TYPES:
+                device_result.update(bind_release(device, entry, manifest, host))
+                if not device_result.get("eligible"):
+                    status = "unknown"
+                    device_result.update(update_available=status, flashable=False, latest_firmware="")
+
             # Broadcom: niccli only supports updating from firmware >= 228.
             # Older cards need bnxtnvm to 228 first; a direct niccli update
             # can leave the NVM unbootable. Hide the update entirely.
             if flash_tool.lower() == "niccli":
                 major = niccli_fw_major(device.get("firmware", ""))
-                if major is not None and major < NICCLI_MIN_FW_MAJOR:
+                if major is None or major < NICCLI_MIN_FW_MAJOR:
                     status = "unknown"
                     device_result["update_available"] = status
                     device_result["flashable"] = False
                     device_result["blocked_reason"] = "niccli_min_version"
+                    device_result["eligible"] = False
                     device_result["release_notes"] = (
                         f"Firmware {device.get('firmware', '')} is older than "
                         f"{NICCLI_MIN_FW_MAJOR}. It cannot be updated from here; "
                         "contact 45Drives support."
                     )
+                    device_result["firmware_update_note"] = device_result["release_notes"]
 
             # Look up flash tool binary SHA256 from manifest.flash_tools[]
             tool_binary_sha256 = ""
@@ -568,6 +598,15 @@ def main():
                 "family": device.get("family", ""),
                 "release_notes": "No manifest entry found for this device",
             }
+
+        device_result.update(policy)
+        if policy.get("blocked_reason"):
+            device_result["release_notes"] = policy["firmware_update_note"]
+            device_result["eligible"] = False
+        if device.get("type") in QUALIFIED_TYPES and not entry:
+            device_result.update(eligible=False, qualification_policy_version=POLICY_VERSION)
+            if not device_result.get("blocked_reason"):
+                device_result.update(blocked_reason="qualification_required", firmware_update_note=UNVALIDATED_NOTE)
 
         results["devices"].append(device_result)
         results["summary"]["total"] += 1
