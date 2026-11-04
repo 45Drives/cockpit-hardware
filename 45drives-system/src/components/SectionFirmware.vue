@@ -1,7 +1,7 @@
 <template>
 <div class="card mt-2">
   <div class="card-header flex flex-row items-center justify-between">
-    <h3 class="text-header text-default">Firmware Updates Available</h3>
+    <h3 class="text-header text-default">Firmware</h3>
     <div class="flex items-center gap-2">
       <span v-if="lastChecked" class="text-xs text-muted">Last checked: {{ lastChecked }}</span>
       <button
@@ -85,13 +85,7 @@
       </div>
     </div>
     <div v-else class="text-sm text-muted py-4 text-center">
-      {{ blockedDevices.length > 0 ? 'No firmware updates available.' : 'All firmware is up to date.' }}
-    </div>
-    <div v-if="!error && !noResults && blockedDevices.length > 0" class="mx-auto mt-3 mb-3 max-w-2xl rounded-md border border-default bg-accent px-4 py-3 text-sm">
-      <div v-for="(device, idx) in blockedDevices" :key="'blocked-' + idx" class="flex items-start gap-2 py-0.5">
-        <InformationCircleIcon class="h-5 w-5 flex-shrink-0 text-blue-500" aria-hidden="true" />
-        <span><span class="font-semibold">{{ device.model }}</span> <span class="font-mono">({{ device.current_firmware }})</span>: updates for this firmware version are not available in Houston.</span>
-      </div>
+      No firmware updates available.
     </div>
 
   </div>
@@ -318,6 +312,7 @@
 import { RefreshIcon as RefreshIconOutline, InformationCircleIcon, DownloadIcon } from "@heroicons/vue/outline";
 import { ref, computed, inject, watch, nextTick } from "vue";
 import { server, Command, unwrap } from "@45drives/houston-common-lib";
+import { isCard, isQualifiedCard, hasAvailableUpdate, catalogIsCurrent } from "../firmware-policy";
 
 export default {
   components: { RefreshIconOutline, InformationCircleIcon, DownloadIcon },
@@ -328,6 +323,7 @@ export default {
     const lastChecked = ref("");
     const manifestWarning = ref("");
     const noResults = ref(false);
+    const qualificationCurrent = ref(false);
     const manifestExplain = computed(() => {
       const e = (manifestWarning.value || "").toLowerCase();
       if (/name or service not known|temporary failure in name resolution|nodename nor servname|getaddrinfo/.test(e)) {
@@ -383,6 +379,7 @@ export default {
         const cache = JSON.parse(proc.getStdout());
         devices.value = cache.devices || [];
         noResults.value = cache.results_available === false;
+        qualificationCurrent.value = catalogIsCurrent(cache);
         lastChecked.value = cache.timestamp ? new Date(cache.timestamp).toLocaleString() : "";
         // "unavailable": download failed, results not refreshed.
         // "local": older firmware-check that fell back to a local copy.
@@ -419,10 +416,10 @@ export default {
     };
 
     const isValidFirmwareVersion = (version) => {
-      if (!version) return false;
-      // Valid firmware versions contain alphanumeric, dots, hyphens, underscores, and spaces
-      // Invalid if it's all semicolons, control chars, or other junk
-      return /^[a-zA-Z0-9.\-_\s]+$/.test(version) && !/^[;]+$/.test(version);
+      if (typeof version !== "string") return false;
+      // Driver output can include commas (Intel ixgbe), /pkg (Broadcom),
+      // or parenthesized identifiers (Mellanox). Reject control chars and junk.
+      return /^[a-zA-Z0-9.,()/_ -]+$/.test(version) && /[a-zA-Z0-9]/.test(version);
     };
 
     const normalizeFirmwareVersion = (version) => {
@@ -443,6 +440,8 @@ export default {
 
     const outdatedDevices = computed(() => devices.value.filter(d => {
       if (!allowedTypes.includes(d.type)) return false;
+      if (d.blocked_reason) return false;
+      if (isCard(d) && (!qualificationCurrent.value || !isQualifiedCard(d))) return false;
 
       // Always show devices with a pending reboot (they were just flashed)
       if (rebootPendingDevices.value.has(d.cache_index)) return true;
@@ -458,13 +457,13 @@ export default {
       return true;
     }));
 
-    const blockedDevices = computed(() => devices.value.filter(d => d.blocked_reason === 'niccli_min_version'));
-
     // A device can be flashed if it's an allowed type with flashable flag and either:
     // - a firmware_file (normal flash), or
     // - a tool_package (self-contained package with its own firmware)
     const canFlash = (device) => {
       if (!allowedTypes.includes(device.type)) return false;
+      if (isCard(device) && (!qualificationCurrent.value || !hasAvailableUpdate(device))) return false;
+      if (device.blocked_reason) return false;
       if (!device.flashable) return false;
       if (device.firmware_file) return true;
       if (device.tool_package) return true;
@@ -493,6 +492,7 @@ export default {
     const confirmInput = ref('');
 
     const startFlash = async (device) => {
+      if (!canFlash(device) || rebootPendingDevices.value.has(device.cache_index)) return;
       confirmDevice.value = device;
       confirmActions.value = [];
       confirmDownloads.value = [];
@@ -508,6 +508,7 @@ export default {
           new Command([
             "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
             "--cache-index", String(device.cache_index),
+            ...(isCard(device) ? ["--device-pci", device.bus_info, "--release-revision", device.release_revision] : []),
             "--preflight"
           ], { superuser: "require" })
         ));
@@ -518,12 +519,14 @@ export default {
         confirmBlocked.value = pfData.blocked || false;
         confirmBlockReason.value = pfData.block_reason || '';
       } catch (e) {
-        confirmActions.value = [`Flash ${device.model} using ${device.flash_tool || 'unknown'}`];
+        confirmBlocked.value = true;
+        confirmBlockReason.value = 'Preflight could not be completed. Refresh firmware inventory and try again.';
       }
       confirmLoading.value = false;
     };
 
     const proceedSingleFlash = () => {
+      if (confirmLoading.value || confirmBlocked.value || confirmInput.value !== 'confirm flash' || !canFlash(confirmDevice.value)) return;
       confirmModalVisible.value = false;
       confirmInput.value = '';
       flashDevice(confirmDevice.value);
@@ -630,6 +633,7 @@ print(json.dumps({"state": "current", "pending": pending if isinstance(pending, 
         const cmd = new Command([
           "python3", "-u", "/usr/share/45drives/firmware/firmware-flash",
           "--cache-index", String(device.cache_index),
+          ...(isCard(device) ? ["--device-pci", device.bus_info, "--release-revision", device.release_revision] : []),
           "--allow-download"
         ], { superuser: "require" });
         const proc = server.spawnProcess(cmd);
@@ -643,7 +647,7 @@ print(json.dumps({"state": "current", "pending": pending if isinstance(pending, 
         const finalStderr = result.getStderr();
         if (finalStdout) flashLog.value += finalStdout;
         if (finalStderr) flashLog.value += finalStderr + '\n';
-        flashLog.value += '\n--- ✓ Update completed successfully ---\n';
+        flashLog.value += '\n--- ✓ Firmware write completed; activation and verification may still be required ---\n';
         if (device.requires_reboot) {
           flashRebootRequired.value = true;
           rebootPendingDevices.value.add(device.cache_index);
@@ -718,7 +722,7 @@ print(json.dumps({"state": "current", "pending": pending if isinstance(pending, 
       });
     });
 
-    return { devices, outdatedDevices, blockedDevices, canFlash, checking, error, lastChecked, manifestWarning, manifestExplain, noResults, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
+    return { devices, outdatedDevices, canFlash, checking, error, lastChecked, manifestWarning, manifestExplain, noResults, checkFirmware, isValidFirmwareVersion, infoVisible, infoDevice, showInfo, startFlash, flashDevice, confirmModalVisible, confirmLoading, confirmActions, confirmDownloads, confirmWarnings, confirmBlocked, confirmBlockReason, confirmDevice, confirmInput, proceedSingleFlash, flashProgressVisible, flashLog, flashLogEl, flashComplete, flashSuccess, flashRebootRequired, rebootPendingDevices, colorizeLog, rebootModalVisible, rebootConfirmInput, rebootError, rebootExecuting, safeReboot, executeReboot, ipmiAvailable };
   }
 };
 </script>

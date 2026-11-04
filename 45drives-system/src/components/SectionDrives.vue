@@ -98,7 +98,7 @@
     </div>
     <div class="px-6 py-3 border-t border-default flex justify-end gap-2">
       <button @click="modalVisible = false" class="inline-flex items-center rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">Close</button>
-      <button v-if="modalData.flashable" :disabled="modalData.flashing" @click="flashDrive(modalData); modalVisible = false" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">{{ modalData.flashing ? 'Flashing...' : 'Update Now' }}</button>
+      <button v-if="canUpdateDrive(modalData)" :disabled="modalData.flashing" @click="flashDrive(modalData); modalVisible = false" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50">{{ modalData.flashing ? 'Flashing...' : 'Update Now' }}</button>
     </div>
   </div>
 </div>
@@ -387,6 +387,11 @@ export default {
       loadDrives();
     });
 
+    const canUpdateDrive = (drive) => drive?.flashable === true
+      && !drive.isHdd
+      && drive.updateStatus === "outdated"
+      && Boolean(drive.latestFirmware?.trim() && drive.firmwareFile);
+
     const showDriveInfo = (drive) => {
       modalData.value = { ...drive };
       modalVisible.value = true;
@@ -533,6 +538,7 @@ export default {
       loadDrives,
       modalVisible,
       modalData,
+      canUpdateDrive,
       showDriveInfo,
       flashDrive,
       confirmModalVisible,

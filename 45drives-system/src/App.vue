@@ -5,6 +5,7 @@ import FfdHeader from "./components/FfdHeader.vue";
 import SectionContainer from "./components/SectionContainer.vue";
 import { NotificationView } from "@45drives/houston-common-ui";
 import { ref , onMounted, provide} from "vue";
+import { hasAvailableUpdate, catalogIsCurrent } from "./firmware-policy";
 
 const adminCheck = ref(false);
 const adminFlag = ref(false);
@@ -12,7 +13,7 @@ const adminFlag = ref(false);
 const BADGE_DISMISS_KEY = "45drives.firmware.badge.dismissed";
 
 const getBadgeFingerprint = (cache) => {
-  const devices = cache?.devices || [];
+  const devices = catalogIsCurrent(cache) ? (cache.devices || []).filter(hasAvailableUpdate) : [];
   const updatesAvailable = devices.filter(d => d.update_available === "outdated").length;
   const rebootRequired = devices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
   return `${cache?.timestamp || ""}:${updatesAvailable}:${rebootRequired ? 1 : 0}`;
@@ -41,7 +42,7 @@ const checkFirmwareBadge = () => {
         const cache = JSON.parse(content);
         const devices = cache.devices || [];
         // Only count HBA/NIC devices for badge (drive flashing not yet enabled)
-        const actionableDevices = devices.filter(d => d.type === 'hba' || d.type === 'nic');
+        const actionableDevices = catalogIsCurrent(cache) ? devices.filter(hasAvailableUpdate) : [];
         const updatesAvailable = actionableDevices.filter(d => d.update_available === "outdated").length;
         const rebootRequired = actionableDevices.some(d => d.update_available === "outdated" && d.requires_reboot === true);
         const currentFingerprint = getBadgeFingerprint(cache);
