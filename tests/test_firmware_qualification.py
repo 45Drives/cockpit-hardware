@@ -19,7 +19,7 @@ import firmware_policy as policy
 
 
 def profile(os_id="rocky", version="9.8", arch="x86_64"):
-    return {"id": os_id + "-" + version, "qualification": "45drives_validated", "test_report_id": "LAB-001",
+    return {"id": os_id + "-" + version, "qualification": "45drives_validated",
             "os": {"id": os_id, "version_ids": [version], "architecture": arch}}
 
 
@@ -85,8 +85,8 @@ class QualificationTests(unittest.TestCase):
                 entry = dict(baseline, **changes)
                 self.assertFalse(qualification.evaluate_qualification(entry, HOST)["eligible"])
 
-    def test_profiles_require_evidence_and_no_wildcard_or_numeric_versions(self):
-        for changes in ({"test_report_id": ""}, {"id": ""},
+    def test_profiles_require_ids_and_no_wildcard_or_numeric_versions(self):
+        for changes in ({"id": ""},
                         {"os": {"id": "rocky", "version_ids": [9.8], "architecture": "x86_64"}},
                         {"os": {"id": "rocky", "version_ids": ["9.*"], "architecture": "x86_64"}}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):

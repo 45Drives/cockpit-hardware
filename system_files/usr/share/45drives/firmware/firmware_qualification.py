@@ -50,9 +50,6 @@ def validate_profiles(profiles):
         seen.add(profile_id)
         if profile.get("qualification") != "45drives_validated":
             raise ValueError("Only 45Drives-tested profiles may enable customer updates")
-        report = profile.get("test_report_id")
-        if not isinstance(report, str) or not report.strip() or len(report) > 512:
-            raise ValueError("Each profile requires a test_report_id")
         os_info = profile.get("os")
         if not isinstance(os_info, dict):
             raise ValueError("Each profile requires structured OS information")

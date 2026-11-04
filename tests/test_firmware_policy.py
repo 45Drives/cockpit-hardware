@@ -65,7 +65,7 @@ class FirmwarePolicyTests(unittest.TestCase):
             "tool_package_sha256": "a" * 64,
             "release_status": "approved",
             "validation_profiles": [{"id": "lab-profile", "qualification": "45drives_validated",
-                "test_report_id": "LAB-001", "os": {"id": os_id, "version_ids": [version], "architecture": "x86_64"}}]
+                "os": {"id": os_id, "version_ids": [version], "architecture": "x86_64"}}]
         }]}})
 
     def test_onboard_ports_on_rome_and_genoa_are_blocked(self):
