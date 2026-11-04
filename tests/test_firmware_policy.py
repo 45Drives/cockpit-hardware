@@ -63,7 +63,7 @@ class FirmwarePolicyTests(unittest.TestCase):
             "model_match": model, "latest_firmware": "5.10", "flashable": True,
             "flash_tool": "nvmupdate64e", "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg", "tool_package": "intel.tar.gz",
             "tool_package_sha256": "a" * 64,
-            "release_status": "approved", "update_method": "self_service",
+            "release_status": "approved",
             "validation_profiles": [{"id": "lab-profile", "qualification": "45drives_validated",
                 "test_report_id": "LAB-001", "os": {"id": os_id, "version_ids": [version], "architecture": "x86_64"}}]
         }]}})
