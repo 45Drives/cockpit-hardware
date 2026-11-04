@@ -69,13 +69,10 @@ FirmwareAdmin stores these fields on each NIC/HBA entry (example draft only):
 ```json
 {
   "release_status": "draft",
-  "update_method": "self_service",
   "validation_profiles": [
     {
       "id": "rocky-9.8-x86_64",
-      "os": {"id": "rocky", "version_ids": ["9.8"], "architecture": "x86_64"},
-      "qualification": "45drives_validated",
-      "test_report_id": "REPLACE-WITH-ACTUAL-LAB-REPORT"
+      "os": {"id": "rocky", "version_ids": ["9.8"], "architecture": "x86_64"}
     }
   ]
 }
