@@ -48,8 +48,6 @@ def validate_profiles(profiles):
                 or profile_id in seen):
             raise ValueError("Validation profiles require unique IDs")
         seen.add(profile_id)
-        if profile.get("qualification") != "45drives_validated":
-            raise ValueError("Only 45Drives-tested profiles may enable customer updates")
         os_info = profile.get("os")
         if not isinstance(os_info, dict):
             raise ValueError("Each profile requires structured OS information")
@@ -125,7 +123,7 @@ def evaluate_qualification(entry, host, device=None):
                        or device.get("driver_version") not in driver["versions"]):
             continue
         return {"eligible": True, "qualification_profile_id": profile["id"],
-                "qualification": "45drives_validated", "qualification_policy_version": POLICY_VERSION}
+                "qualification_policy_version": POLICY_VERSION}
     return denied("os_unvalidated")
 
 

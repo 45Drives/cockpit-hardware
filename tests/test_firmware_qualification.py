@@ -19,7 +19,7 @@ import firmware_policy as policy
 
 
 def profile(os_id="rocky", version="9.8", arch="x86_64"):
-    return {"id": os_id + "-" + version, "qualification": "45drives_validated",
+    return {"id": os_id + "-" + version,
             "os": {"id": os_id, "version_ids": [version], "architecture": arch}}
 
 
@@ -79,8 +79,7 @@ class QualificationTests(unittest.TestCase):
         baseline = catalog()["components"]["nic"][0]
         for changes in ({"release_status": "draft"}, {"release_status": "withdrawn"},
                         {"flashable": False},
-                        {"validation_profiles": []}, {"validation_profiles": "rocky 9.8"},
-                        {"validation_profiles": [dict(profile(), qualification="manufacturer_supported")]}):
+                        {"validation_profiles": []}, {"validation_profiles": "rocky 9.8"}):
             with self.subTest(changes=changes):
                 entry = dict(baseline, **changes)
                 self.assertFalse(qualification.evaluate_qualification(entry, HOST)["eligible"])

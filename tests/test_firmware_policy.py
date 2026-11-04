@@ -64,7 +64,7 @@ class FirmwarePolicyTests(unittest.TestCase):
             "flash_tool": "nvmupdate64e", "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg", "tool_package": "intel.tar.gz",
             "tool_package_sha256": "a" * 64,
             "release_status": "approved",
-            "validation_profiles": [{"id": "lab-profile", "qualification": "45drives_validated",
+            "validation_profiles": [{"id": "lab-profile",
                 "os": {"id": os_id, "version_ids": [version], "architecture": "x86_64"}}]
         }]}})
 
