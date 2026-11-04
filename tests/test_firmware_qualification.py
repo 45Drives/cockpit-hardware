@@ -26,7 +26,7 @@ def profile(os_id="rocky", version="9.8", arch="x86_64"):
 def catalog(category="nic", **changes):
     entry = {"model_match": "E810", "latest_firmware": "5.10", "flashable": True,
              "flash_tool": "nvmupdate64e", "flash_command": "nvmupdate64e -u -l -c nvmupdate.cfg", "tool_package": "intel.tar.gz", "tool_package_sha256": "a" * 64,
-             "release_status": "approved", "update_method": "self_service", "validation_profiles": [profile()]}
+             "release_status": "approved", "validation_profiles": [profile()]}
     entry.update(changes)
     return qualification.build_catalog({"components": {category: [entry]}, "flash_tools": []})
 
@@ -75,10 +75,10 @@ class QualificationTests(unittest.TestCase):
         entry["validation_profiles"].append(profile("rocky", "8.10"))
         self.assertTrue(qualification.evaluate_qualification(entry, host)["eligible"])
 
-    def test_draft_withdrawn_support_assisted_and_malformed_never_enable(self):
+    def test_draft_withdrawn_and_malformed_never_enable(self):
         baseline = catalog()["components"]["nic"][0]
         for changes in ({"release_status": "draft"}, {"release_status": "withdrawn"},
-                        {"update_method": "support_assisted"}, {"flashable": False},
+                        {"flashable": False},
                         {"validation_profiles": []}, {"validation_profiles": "rocky 9.8"},
                         {"validation_profiles": [dict(profile(), qualification="manufacturer_supported")]}):
             with self.subTest(changes=changes):

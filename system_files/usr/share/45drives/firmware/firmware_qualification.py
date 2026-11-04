@@ -11,7 +11,6 @@ import re
 
 QUALIFIED_TYPES = ("nic", "hba")
 RELEASE_STATUSES = ("draft", "approved", "withdrawn")
-UPDATE_METHODS = ("self_service", "support_assisted")
 UNVALIDATED_NOTE = "No validated firmware update available for this configuration."
 POLICY_VERSION = 1
 
@@ -77,8 +76,6 @@ def validate_profiles(profiles):
 def validate_release(entry):
     if entry.get("release_status", "draft") not in RELEASE_STATUSES:
         raise ValueError("Invalid release_status")
-    if entry.get("update_method", "support_assisted") not in UPDATE_METHODS:
-        raise ValueError("Invalid update_method")
     profiles = validate_profiles(entry.get("validation_profiles", []))
     if entry.get("release_status") == "approved":
         if not profiles:
@@ -115,8 +112,6 @@ def evaluate_qualification(entry, host, device=None):
         return denied("qualification_invalid")
     if entry.get("release_status") != "approved":
         return denied("release_" + entry.get("release_status", "draft"))
-    if entry.get("update_method") != "self_service":
-        return denied("support_assisted", "Firmware updates for this device require support assistance.")
     if entry.get("flashable") is not True:
         return denied("release_not_flashable")
     os_info = host.get("os", {})
@@ -145,9 +140,9 @@ def build_catalog(source):
 
     NIC/HBA entries carry qualification fields for current clients. Clients
     released before qualification ignore those fields, so any NIC/HBA release
-    that is not approved for self-service is published with flashable=false and
-    no firmware payload: older clients cannot flash drafts, withdrawn, or
-    support-assisted releases. (Older clients do not check the OS.)
+    that is not approved is published with flashable=false and no firmware
+    payload: older clients cannot flash draft or withdrawn releases. (Older
+    clients do not check the OS.)
     """
     catalog = json.loads(json.dumps(source))
     catalog["schema_version"] = "2.0"
@@ -156,11 +151,10 @@ def build_catalog(source):
         for entry in catalog.get("components", {}).get(category, []):
             entry.setdefault("release_id", release_id(category, entry))
             entry.setdefault("release_status", "draft")
-            entry.setdefault("update_method", "support_assisted")
+            entry.pop("update_method", None)
             entry.setdefault("validation_profiles", [])
             validate_release(entry)
-            if not (entry["release_status"] == "approved"
-                    and entry["update_method"] == "self_service"):
+            if entry["release_status"] != "approved":
                 entry["flashable"] = False
                 for field in PAYLOAD_FIELDS:
                     entry.pop(field, None)

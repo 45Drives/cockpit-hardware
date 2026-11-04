@@ -39,7 +39,6 @@ def bind_release(device, entry, manifest, host):
     result["flashable"] = entry.get("flashable") is True
     result["release_id"] = entry.get("release_id", "")
     result["release_status"] = entry.get("release_status", "draft")
-    result["update_method"] = entry.get("update_method", "support_assisted")
     result["release_revision"] = release_revision(entry, manifest.get("flash_tools", []))
     result["validation_profiles"] = entry.get("validation_profiles", [])
     result["flash_tool_sha256s"] = {
