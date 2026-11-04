@@ -151,7 +151,11 @@ def build_catalog(source):
         for entry in catalog.get("components", {}).get(category, []):
             entry.setdefault("release_id", release_id(category, entry))
             entry.setdefault("release_status", "draft")
-            entry.pop("update_method", None)
+            # Output-only, for clients that still gate on update_method.
+            # Derived from approval; never an input or a gate here.
+            entry["update_method"] = (
+                "self_service" if entry["release_status"] == "approved" else "support_assisted"
+            )
             entry.setdefault("validation_profiles", [])
             validate_release(entry)
             if entry["release_status"] != "approved":
