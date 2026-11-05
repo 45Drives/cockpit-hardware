@@ -1,3 +1,5 @@
-## cockpit-45drives-hardware 2.8.11-1
+## cockpit-45drives-hardware 2.8.12-1
 
-* Block firmware updates on Broadcom NICs below firmware 228 (not supported by niccli); show a note in Houston instead
+* Firmware updates for NICs and HBAs are now only offered on operating systems they have been validated on; other systems show "No validated firmware update available for this configuration"
+* Mellanox NIC updates no longer force downgrades and only update the selected adapter
+* Drive details remain viewable when no firmware update is available
