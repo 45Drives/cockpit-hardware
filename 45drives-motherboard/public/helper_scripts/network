@@ -106,7 +106,7 @@ def is_BCM57416_onboard_ethernet(device_name):
 
 
 def is_asrock_genoa_turin_board(motherboard_model):
-	return motherboard_model.startswith(("GENOAD8X", "GENOAD8UD", "TURIND8X"))
+	return motherboard_model.startswith(("GENOAD8X", "GENOAD8UD", "TURIND8X", "TURIND8UD"))
 
 def get_network_info():
 	try:
