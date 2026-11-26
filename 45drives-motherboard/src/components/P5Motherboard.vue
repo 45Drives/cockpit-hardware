@@ -86,8 +86,17 @@ export default {
 			const mobo_json_path = `img/motherboard/${mobo_name}/${mobo_name}.json`;
 
 			m.createComponentMasks = function (a) {
-				const img_path = `img/motherboard/${String(mobo_name)}/${mobo_json[a]["filename"]}`;
-				MASK_ARR.push(m.loadImage(img_path));
+				const componentData = mobo_json[a];
+				if (componentData["filename"]) {
+					const img_path = `img/motherboard/${String(mobo_name)}/${componentData["filename"]}`;
+					MASK_ARR.push(m.loadImage(img_path));
+				} else {
+					MASK_ARR.push(m.generateMask(
+						background_img.width, background_img.height,
+						componentData["x0"], componentData["y0"],
+						componentData["width"], componentData["height"]
+					));
+				}
 			};
 
 			class component {
@@ -1408,6 +1417,9 @@ export default {
 
 					for (let c = 0; c < components.length; c++) {
 						let connectorType = components[c].type;
+						if (raw_mobo_name === "B860I WiFi" && /^SATA3_[0-3]$/.test(connectorType)) {
+							components[c].popup.content = "Connector: " + connectorType + "\nNo drive connected";
+						}
 						if (connectorMap[connectorType]) {
 							let popup_str = "Connector: " + connectorType + "\n";
 

@@ -4,6 +4,36 @@ import subprocess
 import os
 import sys
 import json
+import glob
+
+HWMON = "/sys/class/hwmon"
+
+
+def board_name():
+	try:
+		with open("/sys/class/dmi/id/board_name") as f:
+			return f.read().strip()
+	except OSError:
+		return ""
+
+
+def get_coretemp_readings():
+	for name_file in sorted(glob.glob(os.path.join(HWMON, "hwmon*", "name"))):
+		hwmon = os.path.dirname(name_file)
+		try:
+			with open(name_file) as f:
+				if f.read().strip() != "coretemp":
+					continue
+			for label_file in glob.glob(os.path.join(hwmon, "temp*_label")):
+				with open(label_file) as f:
+					if f.read().strip() != "Package id 0":
+						continue
+				with open(label_file.replace("_label", "_input")) as f:
+					return {"CPU Temp": "%.1f (C)" % (int(f.read().strip()) / 1000.0)}
+		except (OSError, ValueError) as error:
+			print("Unable to read coretemp CPU temperature from %s: %s" % (hwmon, error), file=sys.stderr)
+	print("coretemp CPU package temperature unavailable; check that the coretemp driver is loaded.", file=sys.stderr)
+	return {}
 
 #supported CPU types
 g_dmi_cpu_fields = {
@@ -208,7 +238,10 @@ def get_sensor_readings():
 
 def main():
 	cpus = get_cpu_info()
-	sensor_readings = get_sensor_readings()
+	if board_name() == "B860I WiFi":
+		sensor_readings = get_coretemp_readings()
+	else:
+		sensor_readings = get_sensor_readings()
 	server_info_json = get_motherboard_model_server_info()
 	server_info = json.loads(server_info_json)  # Parse the JSON string into a Python dictionary
 	mobo_model = server_info.get("Motherboard", [{}])[0].get("Product Name", "?")

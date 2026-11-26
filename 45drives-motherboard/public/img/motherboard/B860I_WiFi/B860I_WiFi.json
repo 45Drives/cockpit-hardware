@@ -1,5 +1,41 @@
 [
     {
+        "type": "SATA3_3",
+        "id": "sata3",
+        "shape": "rect",
+        "x0": 1054,
+        "y0": 592,
+        "width": 46,
+        "height": 102
+    },
+    {
+        "type": "SATA3_0",
+        "id": "sata0",
+        "shape": "rect",
+        "x0": 1102,
+        "y0": 592,
+        "width": 46,
+        "height": 102
+    },
+    {
+        "type": "SATA3_2",
+        "id": "sata2",
+        "shape": "rect",
+        "x0": 1054,
+        "y0": 702,
+        "width": 46,
+        "height": 104
+    },
+    {
+        "type": "SATA3_1",
+        "id": "sata1",
+        "shape": "rect",
+        "x0": 1102,
+        "y0": 702,
+        "width": 46,
+        "height": 104
+    },
+    {
         "type": "cpu",
         "id": 1,
         "shape": "rect",

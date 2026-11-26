@@ -17,6 +17,8 @@ import re
 import subprocess
 import os
 import json
+import sys
+from pathlib import Path
 
 # supported motherboard manufacturers and models can be adjusted here
 g_dmi_mobo_fields = {
@@ -303,10 +305,30 @@ def get_sensor_readings():
 	return sensor_readings_json_str
 
 
+def get_coretemp_readings():
+	for hwmon in sorted(Path("/sys/class/hwmon").glob("hwmon*")):
+		try:
+			if (hwmon / "name").read_text().strip() != "coretemp":
+				continue
+			for label in hwmon.glob("temp*_label"):
+				if label.read_text().strip() != "Package id 0":
+					continue
+				input_file = label.with_name(label.name.replace("_label", "_input"))
+				temperature = int(input_file.read_text().strip()) / 1000.0
+				return json.dumps({"Sensor Readings": [{"CPU1 Temp": f"{temperature:.1f} (C)"}]})
+		except (OSError, ValueError) as error:
+			print(f"Unable to read coretemp CPU temperature from {hwmon}: {error}", file=sys.stderr)
+	print("coretemp CPU package temperature unavailable; check that the coretemp driver is loaded.", file=sys.stderr)
+	return json.dumps({"Sensor Readings": [{}]})
+
+
 def main():
 	mobo = get_motherboard_model()
 	cpu = get_cpu_info()
-	sensor_readings = get_sensor_readings()
+	if mobo and json.loads(mobo)["Motherboard"][0]["Product Name"] == "B860I WiFi":
+		sensor_readings = get_coretemp_readings()
+	else:
+		sensor_readings = get_sensor_readings()
 	
 	if mobo and cpu and sensor_readings:
 		print("{\"Motherboard Info\":[",mobo,",")
