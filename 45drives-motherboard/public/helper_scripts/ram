@@ -17,6 +17,91 @@ import re
 import os
 import json
 import sys
+import ctypes
+import fcntl
+import glob
+
+I2C_DEVICES = "/sys/bus/i2c/devices"
+I2C_SLAVE = 0x0703
+I2C_SMBUS = 0x0720
+SPD5118_DEVICE_TYPE = 0x1851  # MR0/MR1 = 0x51 0x18, read as a little-endian SMBus word
+SPD5118_TEMPERATURE = 0x31    # MR49/MR50
+
+# DDR5 SPD hub addresses on the Intel SMBus; 0x50/0x52 follow Intel's channel A/B layout.
+B860I_SPD_ADDRESSES = {
+	"Controller0-ChannelA-DIMM0": 0x50,
+	"Controller0-ChannelB-DIMM0": 0x52,
+}
+
+
+class I2cSmbusIoctlData(ctypes.Structure):
+	_fields_ = [
+		("read_write", ctypes.c_uint8),
+		("command", ctypes.c_uint8),
+		("size", ctypes.c_uint32),
+		("data", ctypes.c_void_p),
+	]
+
+
+def board_name():
+	try:
+		with open("/sys/class/dmi/id/board_name") as f:
+			return f.read().strip()
+	except OSError:
+		return ""
+
+
+def find_i801_bus():
+	for name_file in sorted(glob.glob(os.path.join(I2C_DEVICES, "i2c-*", "name"))):
+		try:
+			with open(name_file) as f:
+				if f.read().startswith("SMBus I801 adapter"):
+					return int(os.path.basename(os.path.dirname(name_file)).split("-")[1])
+		except (OSError, ValueError):
+			continue
+	return None
+
+
+def read_spd5118_word(fd, register):
+	data = (ctypes.c_uint8 * 34)()
+	request = I2cSmbusIoctlData(1, register, 3, ctypes.cast(data, ctypes.c_void_p).value)
+	fcntl.ioctl(fd, I2C_SMBUS, request)
+	return data[0] | (data[1] << 8)
+
+
+def spd5118_temperatures(addresses):
+	bus = find_i801_bus()
+	if bus is None:
+		print("DIMM temperature unavailable: Intel SMBus (i2c_i801) adapter not found.", file=sys.stderr)
+		return {}
+	device = "/dev/i2c-%d" % bus
+	temps = {}
+	for locator, address in addresses.items():
+		hwmon_inputs = glob.glob(os.path.join(I2C_DEVICES, "%d-%04x" % (bus, address), "hwmon", "hwmon*", "temp1_input"))
+		try:
+			if hwmon_inputs:
+				with open(hwmon_inputs[0]) as f:
+					temps[locator] = "%.1f (C)" % (int(f.read()) / 1000.0)
+				continue
+			if not os.path.exists(device):
+				subprocess.call(["modprobe", "i2c-dev"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+			fd = os.open(device, os.O_RDWR)
+			try:
+				fcntl.ioctl(fd, I2C_SLAVE, address)
+				device_type = read_spd5118_word(fd, 0x00)
+				if device_type != SPD5118_DEVICE_TYPE:
+					raise OSError("device type 0x%04x is not an SPD5118 hub" % device_type)
+				raw = read_spd5118_word(fd, SPD5118_TEMPERATURE)
+			finally:
+				os.close(fd)
+		except (OSError, ValueError) as error:
+			print("DIMM temperature unavailable for %s at %s 0x%02x: %s" % (locator, device, address, error), file=sys.stderr)
+			continue
+		value = (raw >> 2) & 0x7FF
+		if value & 0x400:
+			value -= 0x800
+		temps[locator] = "%.1f (C)" % (value * 0.25)
+	return temps
 
 g_dmi_fields = [
 	"Size",
@@ -345,7 +430,7 @@ def dmidecode():
 					current_slot["Locator"] = f"DIMM {chan}"  # e.g. "DIMM A"
 					if bank_locator in GENOA_locator_tags:
 						current_slot["Temperature Keys"] = [GENOA_locator_tags[bank_locator]]
-				elif motherboard_model.startswith("GENOAD8UD") and bank_locator:
+				elif motherboard_model.startswith(("GENOAD8UD", "TURIND8UD")) and bank_locator:
 					chan = bank_locator.split()[-1]          # "A" … "K"
 					current_slot["Locator"] = f"DIMM {chan}1"  # e.g. "DIMM A1"
 					if bank_locator in GENOA_locator_tags:
@@ -385,7 +470,7 @@ def dmidecode():
 			current_slot["Locator"] = f"DIMM {chan}"
 			if bank_locator in ROMED8_locator_tags:
 				current_slot["Temperature Keys"] = [ROMED8_locator_tags[bank_locator]]
-		if motherboard_model.startswith("GENOAD8UD") and bank_locator:
+		if motherboard_model.startswith(("GENOAD8UD", "TURIND8UD")) and bank_locator:
 			chan = bank_locator.split()[-1]
 			current_slot["Locator"] = f"DIMM {chan}1"
 			if bank_locator in GENOA_locator_tags:
@@ -409,7 +494,10 @@ def dmidecode():
 
 def main():
     ram = dmidecode()
-    temps = ipmitool_sensor()
+    if board_name() == "B860I WiFi":
+        temps = spd5118_temperatures(B860I_SPD_ADDRESSES)
+    else:
+        temps = ipmitool_sensor()
     output_str = "{\"Ram Info\":[]}"
 
     if ram:

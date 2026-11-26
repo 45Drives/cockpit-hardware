@@ -158,6 +158,7 @@ ASROCK_GENOA_TURIN_PREFIXES = (
     "GENOAD8X",
     "GENOAD8UD",
     "TURIND8X",
+    "TURIND8UD",
 )
 
 PCIE_SLOT_LUT_B550I = {
@@ -626,9 +627,9 @@ def dmidecode():
         # (e.g. "PCIE7/MCIO1" → "MCIO1").
         if is_asrock_genoa_turin_board(motherboard_model) and "/" in stripped_designation:
             stripped_designation = stripped_designation.split("/")[-1]
-        # GENOAD8UD/TURIND8X: normalize compound MCIO designations
+        # GENOAD8UD/TURIND8UD/TURIND8X: normalize compound MCIO designations
         # (e.g. "MCIO1-1" → "MCIO1").
-        if motherboard_model.startswith(("GENOAD8UD", "TURIND8X")) and re.match(r"MCIO\d+-[12]$", stripped_designation):
+        if motherboard_model.startswith(("GENOAD8UD", "TURIND8UD", "TURIND8X")) and re.match(r"MCIO\d+-[12]$", stripped_designation):
             stripped_designation = re.sub(r"-[12]$", "", stripped_designation)
 
         # For Genoa/Turin boards: preserve original compound designations for display
@@ -1131,6 +1132,12 @@ def main():
                     slot["Card Model"] = card["Card Model"]
                     slot["Connections"] = card.get("Connections", [])
                     break
+            # Describe whatever else is attached (NVMe drive, GPU, ...) so cabled
+            # MCIO ports and unrecognised cards can be identified from the viewer.
+            devinfo = lspci_devices.get(bus)
+            if slot.get("Card Type", "-") in ("", "-") and _is_lspci_endpoint(devinfo) and len(devinfo) > 2:
+                slot["Card Type"] = devinfo[0].strip('"')
+                slot["Card Model"] = devinfo[2].strip('"')
 
     for slot in matched_devices:
         fix_slot_type(slot, motherboard_model)

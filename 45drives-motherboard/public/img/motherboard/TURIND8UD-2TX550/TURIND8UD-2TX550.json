@@ -1,0 +1,223 @@
+[
+    {
+        "type": "cpu",
+        "id": 1,
+        "shape": "rect",
+        "x0": 460,
+        "y0": 323,
+        "width": 314,
+        "height": 405,
+        "diam": 0,
+        "filename": "CPU1.png"
+    },
+    {
+        "type": "MCIO1",
+        "id": "81",
+        "shape": "rect",
+        "x0": 412,
+        "y0": 836,
+        "width": 24,
+        "height": 90,
+        "diam": 24,
+        "filename": "MCIO_SLOT_1.png"
+    },
+    {
+        "type": "MCIO2",
+        "id": "83",
+        "shape": "rect",
+        "x0": 360,
+        "y0": 836,
+        "width": 24,
+        "height": 90,
+        "diam": 24,
+        "filename": "MCIO_SLOT_2.png"
+    },
+    {
+        "type": "MCIO3",
+        "id": "85",
+        "shape": "rect",
+        "x0": 258,
+        "y0": 891,
+        "width": 90,
+        "height": 24,
+        "diam": 24,
+        "filename": "MCIO_SLOT_3.png"
+    },
+    {
+        "type": "MCIO4",
+        "id": "87",
+        "shape": "rect",
+        "x0": 150,
+        "y0": 891,
+        "width": 90,
+        "height": 24,
+        "diam": 24,
+        "filename": "MCIO_SLOT_4.png"
+    },
+    {
+        "type": "MCIO5",
+        "id": "89",
+        "shape": "rect",
+        "x0": 81,
+        "y0": 891,
+        "width": 60,
+        "height": 24,
+        "diam": 24,
+        "filename": "MCIO_SLOT_5.png"
+    },
+    {
+        "type": "PCIE3",
+        "id": "19",
+        "shape": "rect",
+        "x0": 52,
+        "y0": 166,
+        "width": 26,
+        "height": 300,
+        "diam": 24,
+        "filename": "PCI_SLOT_3.png"
+    },
+    {
+        "type": "PCIE4",
+        "id": "20",
+        "shape": "rect",
+        "x0": 123,
+        "y0": 166,
+        "width": 26,
+        "height": 300,
+        "diam": 24,
+        "filename": "PCI_SLOT_4.png"
+    },
+    {
+        "type": "PCIE5",
+        "id": "21",
+        "shape": "rect",
+        "x0": 193,
+        "y0": 166,
+        "width": 26,
+        "height": 300,
+        "diam": 24,
+        "filename": "PCI_SLOT_5.png"
+    },
+    {
+        "type": "PCIE6",
+        "id": "22",
+        "shape": "rect",
+        "x0": 263,
+        "y0": 166,
+        "width": 26,
+        "height": 300,
+        "diam": 24,
+        "filename": "PCI_SLOT_6.png"
+    },
+    {
+        "type": "M2_1",
+        "id": "1",
+        "shape": "rect",
+        "x0": 150,
+        "y0": 578,
+        "width": 75,
+        "height": 24,
+        "diam": 24,
+        "filename": "M2_SLOT_1.png"
+    },
+    {
+        "type": "M2_2",
+        "id": "2",
+        "shape": "rect",
+        "x0": 64,
+        "y0": 546,
+        "width": 75,
+        "height": 24,
+        "diam": 24,
+        "filename": "M2_SLOT_2.png"
+    },
+    {
+        "type": "DIMM A1",
+        "id": 1,
+        "shape": "rect",
+        "x0": 420,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_A1.png"
+    },
+    {
+        "type": "DIMM B1",
+        "id": 2,
+        "shape": "rect",
+        "x0": 395,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_B1.png"
+    },
+    {
+        "type": "DIMM C1",
+        "id": 3,
+        "shape": "rect",
+        "x0": 369,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_C1.png"
+    },
+    {
+        "type": "DIMM E1",
+        "id": 4,
+        "shape": "rect",
+        "x0": 344,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_E1.png"
+    },
+    {
+        "type": "DIMM G1",
+        "id": 5,
+        "shape": "rect",
+        "x0": 799,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_G1.png"
+    },
+    {
+        "type": "DIMM H1",
+        "id": 6,
+        "shape": "rect",
+        "x0": 825,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_H1.png"
+    },
+    {
+        "type": "DIMM I1",
+        "id": 7,
+        "shape": "rect",
+        "x0": 850,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_I1.png"
+    },
+    {
+        "type": "DIMM K1",
+        "id": 8,
+        "shape": "rect",
+        "x0": 877,
+        "y0": 286,
+        "width": 23,
+        "height": 490,
+        "diam": 20,
+        "filename": "DIMM_K1.png"
+    }
+]
+

@@ -40,6 +40,7 @@ export default {
 				"ROMED8-2T/BCM" : "ROMED8-2T",
 				"GENOAD8X-2T/BCM": "GENOAD8X-2TBCM",
 				"GENOAD8UD-2T/X550": "GENOAD8UD-2TX550",
+				"TURIND8UD-2T/X550": "TURIND8UD-2TX550",
 				"TURIND8X-2T/500W": "TURIND8X-2T500W",
 				"ProArt X870E-CREATOR WIFI": "ProArt_X870E-CREATOR_WIFI",
 				"MS73-HB2-000": "MS73-HB0-000",
@@ -85,8 +86,17 @@ export default {
 			const mobo_json_path = `img/motherboard/${mobo_name}/${mobo_name}.json`;
 
 			m.createComponentMasks = function (a) {
-				const img_path = `img/motherboard/${String(mobo_name)}/${mobo_json[a]["filename"]}`;
-				MASK_ARR.push(m.loadImage(img_path));
+				const componentData = mobo_json[a];
+				if (componentData["filename"]) {
+					const img_path = `img/motherboard/${String(mobo_name)}/${componentData["filename"]}`;
+					MASK_ARR.push(m.loadImage(img_path));
+				} else {
+					MASK_ARR.push(m.generateMask(
+						background_img.width, background_img.height,
+						componentData["x0"], componentData["y0"],
+						componentData["width"], componentData["height"]
+					));
+				}
 			};
 
 			class component {
@@ -569,6 +579,51 @@ export default {
 				}
 			};
 
+			// GENOAD8UD/TURIND8UD: DMI splits each x8 MCIO connector into two x4 entries
+			// ("MCIO4-1", "MCIO4-2") while the board json carries one component per
+			// connector ("MCIO4"). Other boards keep their existing slot handling.
+			const hasCabledMcio = /^(GENOAD8UD|TURIND8UD)/.test(String(mobo_name));
+			const mcioConnector = (designation) => {
+				if (!hasCabledMcio) return null;
+				const match = /^(MCIO\d+)(?:-([12]))?$/.exec(designation || "");
+				return match ? { name: match[1], half: match[2] } : null;
+			};
+
+			const formatPciPopup = (entry) =>
+				JSON.stringify(entry, null, " ")
+					.replaceAll("{\n", "")
+					.replaceAll('"', "")
+					.replaceAll("[", "")
+					.replaceAll("]\n", "")
+					.replaceAll("}", "")
+					.replaceAll(",", "")
+					.replaceAll("    ", "  ")
+					.slice(0, -1);
+
+			// MCIO connectors are cabled, so they never get a PCI card graphic:
+			// keep the connector footprint for hover/popup and highlight it when in use.
+			m.populateMcio = function (c, connectorName) {
+				const entries = pci_info["PCI Info"].filter((entry) => {
+					const connector = mcioConnector(entry["Designation"]);
+					return connector && connector.name === connectorName;
+				});
+				const comp = components[c];
+				comp.popup.content = entries.map(formatPciPopup).join("\n");
+				MASK_ARR[c] = m.generateMask(
+					background_img.width,
+					background_img.height,
+					comp["x0"],
+					comp["y0"],
+					comp["width"],
+					comp["height"]
+				);
+				if (entries.some((entry) => entry["Current Usage"] === "In Use")) {
+					peripherals.push(
+						new peripheral("MCIO", comp["x0"], comp["y0"], comp["width"], comp["height"], "#FF800090", -1)
+					);
+				}
+			};
+
 			m.getPCI = function () {
 				let VERTOFFSET = 5.37;
 				let VERTSCALE = 19.0;
@@ -579,27 +634,21 @@ export default {
 							for (let c = 0; c < components.length; c++) {
 								let isM2Component = components[c]["type"].search("M2") != -1;
 								let isM2PciEntry = pci_info["PCI Info"][i]["Designation"] && pci_info["PCI Info"][i]["Designation"].search("M2") != -1;
-								if (
-									components[c]["id"] == pci_info["PCI Info"][i]["ID"] &&
+								const entryMcio = mcioConnector(pci_info["PCI Info"][i]["Designation"]);
+								const matchesSlot = entryMcio && entryMcio.half
+									? components[c]["type"] === entryMcio.name && entryMcio.half === "1"
+									: components[c]["id"] == pci_info["PCI Info"][i]["ID"] &&
 									(
 										(isM2Component && isM2PciEntry && pci_info["PCI Info"][i]["Designation"] == components[c]["type"]) ||
-							(!isM2Component && !isM2PciEntry && (components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1 || components[c]["type"].search("MCIO") != -1))
-									)
-								) {
+										(!isM2Component && !isM2PciEntry && (components[c]["type"].search("pci") != -1 || components[c]["type"].search("PCI") != -1 || components[c]["type"].search("MCIO") != -1))
+									);
+								if (matchesSlot) {
+									if (entryMcio && components[c]["type"].search("MCIO") != -1) {
+										m.populateMcio(c, entryMcio.name);
+										continue;
+									}
 
-									components[c].popup.content = JSON.stringify(
-										pci_info["PCI Info"][i],
-										null,
-										" "			
-									)
-										.replaceAll("{\n", "")
-										.replaceAll('"', "")
-										.replaceAll("[", "")
-										.replaceAll("]\n", "")
-										.replaceAll("}", "")
-										.replaceAll(",", "")
-										.replaceAll("    ", "  ")
-										.slice(0, -1);
+									components[c].popup.content = formatPciPopup(pci_info["PCI Info"][i]);
 
 									// Apply the mask regardless of usage status
 									let newMask = m.generateMask(
@@ -1368,6 +1417,9 @@ export default {
 
 					for (let c = 0; c < components.length; c++) {
 						let connectorType = components[c].type;
+						if (raw_mobo_name === "B860I WiFi" && /^SATA3_[0-3]$/.test(connectorType)) {
+							components[c].popup.content = "Connector: " + connectorType + "\nNo drive connected";
+						}
 						if (connectorMap[connectorType]) {
 							let popup_str = "Connector: " + connectorType + "\n";
 

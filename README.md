@@ -135,7 +135,23 @@ Shows the physical layout and placement of all PCI cards, Memory modules and SAT
 <img src="https://raw.githubusercontent.com/45Drives/cockpit-hardware/master/documentation/45drives-motherboard.png">
 
 Currently supports the following motherboard models:
+* ASRock B860I WiFi
+* ASRockRack EC266D2I-2T/AQC
 * ASRockRack EPC621D8A
+* ASRockRack GENOAD8UD-2T/X550
+* ASRockRack GENOAD8X-2T/BCM
+* ASRockRack ROMED8-2T (and ROMED8-2T/BCM)
+* ASRockRack TURIND8UD-2T/X550
+* ASRockRack TURIND8X-2T/500W
+* ASUS ProArt X870E-CREATOR WIFI
+* Gigabyte B550I AORUS PRO AX
+* Gigabyte MC13-LE1-000
+* Gigabyte ME03-CE0-000
+* Gigabyte MH53-G40-000
+* Gigabyte MS03-6L0-000
+* Gigabyte MS73-HB0-000 (and MS73-HB2-000)
+* Gigabyte MW34-SP0-00
+* Gigabyte MZ73-LM0-000
 * Supermicro H11SSL-i
 * Supermicro H12SSL-i
 * Supermicro X11DPL-i
@@ -147,6 +163,7 @@ Currently supports the following motherboard models:
 * Supermicro X11SSM-F
 * Supermicro X12DPi-N6
 * Supermicro X12SPL-F
+* Supermicro X13SAE-F
 
 Note: All of the interactive information displayed in this module is also available in the 45Drives System module. If your board is not in the list of supported motherboards, the information can be obtained there.
 

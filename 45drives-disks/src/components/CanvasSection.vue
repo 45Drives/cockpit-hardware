@@ -27,6 +27,7 @@
         </svg>
         <span class="text-sm text-muted">Loading disk viewer...</span>
       </div>
+      <P5StorinatorUBM v-if="activeSketchStr === 'StorinatorUBM'" :size="ubmSize" />
       <P5StornadoF2 v-if="activeSketchStr === 'StornadoF2'" />
       <P5F8X1 v-if="activeSketchStr === 'StorinatorF8X1'" />
       <P5F8X2 v-if="activeSketchStr === 'StorinatorF8X2'" />
@@ -110,7 +111,10 @@ import P5ProxinatorVM32 from "./P5ProxinatorVM32.vue";
 import P5ProxinatorVM2 from "./P5ProxinatorVM2.vue";
 import P5StornadoF16 from "./P5StornadoF16.vue";
 import P5StudioSTUDIO8 from "./P5StudioSTUDIO8.vue";
+import P5StorinatorUBM from "./P5StorinatorUBM.vue";
 import { Switch, SwitchGroup, SwitchLabel } from '@headlessui/vue'
+
+const UBM_STORINATOR_SIZES = ["AV15", "Q30", "S45", "XL60"];
 
 export default {
   components: {
@@ -150,6 +154,7 @@ export default {
     P5ProxinatorVM2,
     P5StornadoF16,
     P5StudioSTUDIO8,
+    P5StorinatorUBM,
     Switch,
     SwitchGroup,
     SwitchLabel,
@@ -164,7 +169,7 @@ export default {
 
     const enableSketch = (modelString) => {
       let testString =
-        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|X4|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|NVME-F8X1-U2|NVME-F8X1-EDSFF|NVME-F8X2-U2|NVME-F8X2-EDSFF|NVME-F8X3-U2|NVME-F8X3-EDSFF|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|E16|VM8|VM16|VM32|STUDIO8|F16|VM2)/m.exec(
+        /(Storinator|Stornado|HomeLab|Professional|Proxinator|Studio)-(H8)?(H16|H32)?-?(HL15_BEAST|HL15|HL4|HL8|X15|X4|PRO15|PRO4|PRO8|AV15|Q30|S45|XL60|F2|2U|MI4|C8|NVME-F8X1-U2|NVME-F8X1-EDSFF|NVME-F8X2-U2|NVME-F8X2-EDSFF|NVME-F8X3-U2|NVME-F8X3-EDSFF|NVME-F8X1|NVME-F8X2|NVME-F8X3|F8X1|F8X2|F8X3|E16|VM8|VM16|VM32|STUDIO8|F16|VM2)(_UBM)?/m.exec(
           modelString
         );
       let enableString = testString
@@ -185,7 +190,12 @@ export default {
 
     const canvasCardBody = ref();
     const canvasReady = ref(false);
-    const activeSketchStr = enableSketch(serverModel.value);
+    const sketchStr = enableSketch(serverModel.value);
+    const isUbm = /_UBM\b/.test(serverModel.value);
+    const ubmSize = isUbm
+      ? UBM_STORINATOR_SIZES.find((size) => sketchStr === `Storinator${size}`)
+      : undefined;
+    const activeSketchStr = ubmSize ? "StorinatorUBM" : sketchStr;
     watch(enableZfsAnimations,()=>{});
 
     // Poll for the P5 canvas appearing in the DOM
@@ -206,6 +216,7 @@ export default {
       canvasCardBody,
       canvasReady,
       activeSketchStr,
+      ubmSize,
       zfsInfo,
       enableZfsAnimations
     };
