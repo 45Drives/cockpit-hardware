@@ -319,7 +319,9 @@ def discover_hba():
                             "bus_info": bus_info,
                         })
             except (json.JSONDecodeError, KeyError):
-                pass
+                # Unparseable output: try the next copy of this tool instead
+                # of treating it as done.
+                continue
             # Keep going: storcli64 and storcli2 see different controller
             # generations, so a mixed system needs both tools.
             seen_tools.add(os.path.basename(tool))
