@@ -36,6 +36,9 @@ from firmware_runtime import authorize_device, canonical_pci, UpdateNotQualified
 
 CACHE_PATH = "/var/cache/45drives/firmware/status.json"
 FIRMWARE_DIR = "/usr/share/45drives/firmware/files"
+STORCLI2_REBOOT_REQUIRED_MSG = ("This firmware activates on reboot, but the firmware catalog "
+                                "does not mark it as requiring a reboot (requires_reboot). "
+                                "Update refused; contact 45Drives support.")
 SEACHEST_PATH = "/opt/45drives/tools/SeaChest_Firmware"
 REPO_CONF = "/usr/share/45drives/firmware/repo.conf"
 LOG_DIR = "/var/log/45drives"
@@ -502,6 +505,17 @@ def flash_storcli(device_info, firmware_path):
         cmd_template = cmd_template.replace("<firmware_path>", shlex.quote(firmware_path))
         # Replace controller index placeholder with actual index
         cmd_template = cmd_template.replace("/cX", f"/c{ctrl_idx}")
+
+    # storcli2 (9600/9660) defaults to online activation, which the controller
+    # rejects for full package updates ("Need offline activation"). Stage the
+    # image for activation on next reset instead.
+    # Offline activation only takes effect after a reboot, so the catalog must
+    # say so; otherwise the UI never prompts for a reboot or marks it pending.
+    if tool == "storcli2" and " download " in f" {cmd_template} ":
+        if "activationtype=" not in cmd_template:
+            cmd_template += " activationtype=offline"
+        if "activationtype=offline" in cmd_template and device_info.get("requires_reboot") is not True:
+            return False, STORCLI2_REBOOT_REQUIRED_MSG
 
     print(f"Running: {cmd_template}")
 
@@ -2239,6 +2253,14 @@ def main():
         if device_info.get("requires_reboot"):
             preflight_info["actions"].append("Reboot required after flash to activate new firmware")
 
+        # storcli2 flashes use offline activation (see flash_storcli); block
+        # up front if the catalog does not declare the reboot requirement.
+        if ("storcli2" in flash_tool.lower()
+                and "activationtype=online" not in device_info.get("flash_command", "")
+                and device_info.get("requires_reboot") is not True):
+            preflight_info["blocked"] = True
+            preflight_info["block_reason"] = STORCLI2_REBOOT_REQUIRED_MSG
+
         print(json.dumps(preflight_info))
         return 0
 
@@ -2435,12 +2457,18 @@ def verify_firmware_after_flash(device_info):
                 universal_newlines=True, timeout=30
             )
             if result.returncode == 0:
+                # Prefer the package version (what firmware-discover reports);
+                # "Firmware Version" is the component build and can differ.
+                found = {}
                 for line in result.stdout.splitlines():
-                    if "FW Package Build" in line or "Firmware Version" in line:
-                        parts = line.split("=")
-                        if len(parts) >= 2:
-                            actual_fw = parts[-1].strip()
-                            break
+                    key, sep, val = line.partition("=")
+                    if sep:
+                        found.setdefault(key.strip(), val.strip())
+                for key in ("FW Package Build", "Firmware Package Build",
+                            "Package Version", "Firmware Version"):
+                    if found.get(key):
+                        actual_fw = found[key]
+                        break
 
         elif device_type == "nvme" and device_path:
             # Use nvme id-ctrl to re-read firmware

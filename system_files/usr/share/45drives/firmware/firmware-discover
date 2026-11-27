@@ -240,6 +240,8 @@ def discover_hba():
     """Discover HBA/RAID controller firmware using storcli64 or storcli2.
     Falls back to lspci detection if neither is available."""
     devices = []
+    seen_bus = set()
+    seen_tools = set()
 
     # Try storcli at known paths (prefer /opt/45drives/tools, fall back to vendor locations)
     for tool in [
@@ -247,6 +249,8 @@ def discover_hba():
         "/opt/MegaRAID/storcli/storcli64", "/opt/MegaRAID/storcli/storcli2",
         "storcli64", "storcli2",
     ]:
+        if os.path.basename(tool) in seen_tools:
+            continue
         stdout, _, rc = run_cmd([tool, "/call", "show", "all", "J"])
         if rc == 0 and stdout:
             try:
@@ -257,16 +261,24 @@ def discover_hba():
                     if not resp:
                         continue
                     basics = resp.get("Basics", {})
-                    model = basics.get("Model", "")
-                    serial = basics.get("Serial Number", "")
-                    ctrl_idx = basics.get("Controller", idx)
+                    # storcli64 uses "Model"; storcli2 (9600/9660) uses "Product Name"
+                    model = (basics.get("Model", "") or basics.get("Board Name", "")
+                             or basics.get("Product Name", "")).strip()
+                    serial = basics.get("Serial Number", "").strip()
+                    ctrl_idx = basics.get("Controller",
+                                          ctrl.get("Command Status", {}).get("Controller", idx))
                     versions = resp.get("Version", {})
-                    package_fw = versions.get("Firmware Package Build", "") or versions.get("FW Package Build", "")
+                    # storcli2 reports the package as "Package Version"; its
+                    # "Firmware Version" is the component build (differs in suffix).
+                    package_fw = (versions.get("Firmware Package Build", "")
+                                  or versions.get("FW Package Build", "")
+                                  or versions.get("Package Version", ""))
                     component_fw = versions.get("Firmware Version", "")
                     fw = package_fw or component_fw
                     # Extract PCI bus address (storcli format "DD:BB:DD:FF" → "DDDD:BB:DD.F")
                     bus_info = ""
-                    pci_raw = basics.get("PCI Address", "")
+                    pci_raw = (basics.get("PCI Address", "")
+                               or resp.get("HostInterface", {}).get("PCI Address", ""))
                     if pci_raw:
                         parts = pci_raw.split(":")
                         if len(parts) == 4:
@@ -290,7 +302,11 @@ def discover_hba():
                         except (OSError, IOError):
                             pass
 
+                    if bus_info and bus_info in seen_bus:
+                        continue
                     if model:
+                        if bus_info:
+                            seen_bus.add(bus_info)
                         devices.append({
                             "type": "hba",
                             "model": model,
@@ -303,9 +319,12 @@ def discover_hba():
                             "bus_info": bus_info,
                         })
             except (json.JSONDecodeError, KeyError):
-                pass
-            if devices:
-                break
+                # Unparseable output: try the next copy of this tool instead
+                # of treating it as done.
+                continue
+            # Keep going: storcli64 and storcli2 see different controller
+            # generations, so a mixed system needs both tools.
+            seen_tools.add(os.path.basename(tool))
 
     # Fallback: use lspci to detect RAID/SAS controllers if storcli not available
     if not devices:
