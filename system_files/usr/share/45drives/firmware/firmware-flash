@@ -2435,12 +2435,18 @@ def verify_firmware_after_flash(device_info):
                 universal_newlines=True, timeout=30
             )
             if result.returncode == 0:
+                # Prefer the package version (what firmware-discover reports);
+                # "Firmware Version" is the component build and can differ.
+                found = {}
                 for line in result.stdout.splitlines():
-                    if "FW Package Build" in line or "Firmware Version" in line:
-                        parts = line.split("=")
-                        if len(parts) >= 2:
-                            actual_fw = parts[-1].strip()
-                            break
+                    key, sep, val = line.partition("=")
+                    if sep:
+                        found.setdefault(key.strip(), val.strip())
+                for key in ("FW Package Build", "Firmware Package Build",
+                            "Package Version", "Firmware Version"):
+                    if found.get(key):
+                        actual_fw = found[key]
+                        break
 
         elif device_type == "nvme" and device_path:
             # Use nvme id-ctrl to re-read firmware
