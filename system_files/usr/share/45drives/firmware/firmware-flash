@@ -503,6 +503,13 @@ def flash_storcli(device_info, firmware_path):
         # Replace controller index placeholder with actual index
         cmd_template = cmd_template.replace("/cX", f"/c{ctrl_idx}")
 
+    # storcli2 (9600/9660) defaults to online activation, which the controller
+    # rejects for full package updates ("Need offline activation"). Stage the
+    # image for activation on next reset instead.
+    if tool == "storcli2" and " download " in f" {cmd_template} " \
+            and "activationtype=" not in cmd_template:
+        cmd_template += " activationtype=offline"
+
     print(f"Running: {cmd_template}")
 
     try:
